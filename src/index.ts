@@ -73,7 +73,24 @@ class LensServiceWidget {
     // 初始化服務
     this.openAI = new OpenAIService(config.azureOpenAI || config.llmAPI);
     this.indexing = new IndexingService(this.openAI, config.siteConfig);
-    this.agent = new SupervisorAgent(this.openAI, this.pluginManager, config.rules || []);
+
+    // 獲取 Telegram 配置
+    const telegramEnabled = localStorage.getItem('telegram_enabled') === 'true';
+    const telegramBotToken = (window as any).NEXT_PUBLIC_TELEGRAM_BOT_TOKEN ||
+                             process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
+    const telegramChatId = (window as any).NEXT_PUBLIC_TELEGRAM_CHAT_ID ||
+                           process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
+
+    const telegramConfig = (telegramEnabled && telegramBotToken && telegramChatId)
+      ? { botToken: telegramBotToken, chatId: telegramChatId }
+      : undefined;
+
+    this.agent = new SupervisorAgent(
+      this.openAI,
+      this.pluginManager,
+      config.rules || [],
+      telegramConfig
+    );
     this.capture = new CaptureService();
 
     // 初始化 UI

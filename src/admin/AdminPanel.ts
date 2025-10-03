@@ -316,6 +316,28 @@ export class AdminPanel {
       });
     }
 
+    // Telegram 設定表單
+    const telegramSettingsForm = this.container.querySelector('#telegram-settings-form') as HTMLFormElement;
+    if (telegramSettingsForm) {
+      telegramSettingsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const enabledCheckbox = this.container!.querySelector('#telegram-enabled') as HTMLInputElement;
+        const enabled = enabledCheckbox?.checked || false;
+
+        this.setTelegramEnabled(enabled);
+        alert(`Telegram 通知已${enabled ? '啟用' : '停用'}`);
+
+        // 重新渲染頁面
+        const contentDiv = this.container!.querySelector('#admin-content');
+        if (contentDiv) {
+          contentDiv.innerHTML = this.renderPageContent();
+          this.bindEvents();
+        }
+      });
+    }
+
     // 密碼更改表單
     const changePasswordForm = this.container.querySelector('#change-password-form') as HTMLFormElement;
     if (changePasswordForm) {
@@ -1344,9 +1366,57 @@ export class AdminPanel {
   private renderSystemSettings(): string {
     const currentPassword = StorageService.loadAdminPassword();
     const ipWhitelist = this.getIPWhitelist();
+    const telegramEnabled = this.getTelegramEnabled();
+    const hasTelegramConfig = this.hasTelegramConfig();
 
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
+
+      <!-- Telegram 通知設定 -->
+      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">Telegram 通知</h3>
+        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">當 AI 無法回答問題時，發送通知到 Telegram</p>
+
+        ${!hasTelegramConfig ? `
+          <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+            <p style="color: #92400e; font-size: 14px; margin: 0;">
+              ⚠️ 未配置 Telegram Bot Token 和 Chat ID，此功能已禁用
+            </p>
+          </div>
+        ` : ''}
+
+        <form id="telegram-settings-form">
+          <div style="margin-bottom: 16px;">
+            <label style="display: flex; align-items: center; cursor: ${hasTelegramConfig ? 'pointer' : 'not-allowed'};">
+              <input
+                type="checkbox"
+                id="telegram-enabled"
+                ${telegramEnabled ? 'checked' : ''}
+                ${!hasTelegramConfig ? 'disabled' : ''}
+                style="margin-right: 8px; cursor: ${hasTelegramConfig ? 'pointer' : 'not-allowed'};"
+              />
+              <span style="color: ${hasTelegramConfig ? '#1f2937' : '#9ca3af'};">啟用 Telegram 通知</span>
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            ${!hasTelegramConfig ? 'disabled' : ''}
+            style="
+              padding: 10px 20px;
+              background: ${hasTelegramConfig ? '#7c3aed' : '#d1d5db'};
+              color: white;
+              border: none;
+              border-radius: 8px;
+              font-size: 14px;
+              font-weight: 500;
+              cursor: ${hasTelegramConfig ? 'pointer' : 'not-allowed'};
+            "
+          >
+            儲存設定
+          </button>
+        </form>
+      </div>
 
       <!-- 密碼設定 -->
       <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
@@ -1601,6 +1671,32 @@ export class AdminPanel {
         </div>
       </div>
     `;
+  }
+
+  /**
+   * 檢查是否有 Telegram 配置
+   */
+  private hasTelegramConfig(): boolean {
+    const botToken = (window as any).NEXT_PUBLIC_TELEGRAM_BOT_TOKEN ||
+                     process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
+    const chatId = (window as any).NEXT_PUBLIC_TELEGRAM_CHAT_ID ||
+                   process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
+    return !!(botToken && chatId);
+  }
+
+  /**
+   * 獲取 Telegram 啟用狀態
+   */
+  private getTelegramEnabled(): boolean {
+    const enabled = localStorage.getItem('telegram_enabled');
+    return enabled === 'true';
+  }
+
+  /**
+   * 設置 Telegram 啟用狀態
+   */
+  private setTelegramEnabled(enabled: boolean): void {
+    localStorage.setItem('telegram_enabled', enabled.toString());
   }
 }
 

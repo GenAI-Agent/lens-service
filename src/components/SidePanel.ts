@@ -310,18 +310,26 @@ export class SidePanel {
       const response = await fetch(`/api/conversations?userId=${userId}`);
 
       if (!response.ok) {
-        throw new Error('Failed to fetch conversations');
+        console.error('Failed to fetch conversations:', response.statusText);
+        alert('載入歷史記錄失敗，請稍後再試');
+        return;
       }
 
       const conversations = await response.json();
 
-      // 顯示歷史記錄（簡單實現，可以後續優化）
-      alert(`找到 ${conversations.length} 條對話記錄\n\n${conversations.map((c: any) =>
-        `對話 ID: ${c.conversationId}\n時間: ${new Date(c.createdAt).toLocaleString()}`
-      ).join('\n\n')}`);
+      // 顯示歷史記錄
+      if (conversations.length === 0) {
+        alert('目前沒有對話記錄');
+      } else {
+        const historyText = conversations.map((c: any) =>
+          `對話 ID: ${c.conversationId}\n時間: ${new Date(c.createdAt).toLocaleString()}\n訊息數: ${Array.isArray(c.messages) ? c.messages.length : 0}`
+        ).join('\n\n');
+
+        alert(`找到 ${conversations.length} 條對話記錄\n\n${historyText}`);
+      }
     } catch (error) {
       console.error('Failed to load history:', error);
-      alert('載入歷史記錄失敗');
+      alert('載入歷史記錄失敗，請檢查網路連接');
     }
   }
   
