@@ -225,9 +225,9 @@ export const styles = {
     background: white;
     border: 1px solid #e5e7eb;
     color: #6b7280;
-    border-radius: 8px;
-    width: 36px;
-    height: 36px;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;

@@ -154,6 +154,11 @@ class LensServiceWidget {
     try {
       let response: string;
       let sources: any[] | undefined;
+      let needsHumanReply = false;
+
+      // 獲取 session ID 和 user ID
+      const sessionId = this.conversationState?.sessionId || this.generateSessionId();
+      const userId = localStorage.getItem('lens_service_user_id') || 'default_user';
 
       if (imageBase64) {
         // 帶圖片的訊息 - 使用 vision 模型
@@ -163,13 +168,16 @@ class LensServiceWidget {
           this.conversationState?.messages.slice(0, -1) || []  // 不包含剛添加的用戶訊息
         );
       } else {
-        // 純文字訊息 - 使用 agent 處理
+        // 純文字訊息 - 使用 agent 處理（新的兩階段流程）
         const result = await this.agent.processMessage(
           message,
-          this.conversationState?.messages || []
+          this.conversationState?.messages || [],
+          sessionId,
+          userId
         );
         response = result.response;
         sources = result.sources;
+        needsHumanReply = result.needsHumanReply;
       }
 
       // 添加助手回應
@@ -183,6 +191,9 @@ class LensServiceWidget {
       this.conversationState?.messages.push(assistantMessage);
       this.panel.addMessage(assistantMessage);
       this.saveConversationState();
+
+      // 保存對話記錄到資料庫
+      await this.saveConversationToDatabase(sessionId, userId);
     } catch (error) {
       console.error('Error processing message:', error);
 
@@ -194,6 +205,35 @@ class LensServiceWidget {
       };
 
       this.panel.addMessage(errorMessage);
+    }
+  }
+
+  /**
+   * 保存對話記錄到資料庫
+   */
+  private async saveConversationToDatabase(sessionId: string, userId: string): Promise<void> {
+    if (!this.conversationState) return;
+
+    try {
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId,
+          conversationId: sessionId,
+          messages: this.conversationState.messages
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save conversation');
+      }
+
+      console.log('✅ Conversation saved to database');
+    } catch (error) {
+      console.error('Failed to save conversation to database:', error);
     }
   }
   

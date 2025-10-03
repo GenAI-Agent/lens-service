@@ -1,7 +1,7 @@
-var F = Object.defineProperty;
-var Y = (g, e, t) => e in g ? F(g, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : g[e] = t;
-var l = (g, e, t) => Y(g, typeof e != "symbol" ? e + "" : e, t);
-class Q {
+var K = Object.defineProperty;
+var Q = (m, e, t) => e in m ? K(m, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : m[e] = t;
+var l = (m, e, t) => Q(m, typeof e != "symbol" ? e + "" : e, t);
+class B {
   constructor(e) {
     l(this, "endpoint");
     l(this, "apiKey");
@@ -261,7 +261,7 @@ class b {
   }
 }
 l(b, "CONVERSATION_KEY", "sm_conversation"), l(b, "INDEX_KEY", "sm_indexed_pages"), l(b, "CONFIG_KEY", "sm_config"), l(b, "AGENT_TOOL_CONFIG_KEY", "sm_agent_tool_config"), l(b, "ADMIN_PASSWORD_KEY", "sm_admin_password");
-class B {
+class Y {
   constructor(e, t) {
     l(this, "openAI");
     l(this, "siteConfig");
@@ -319,10 +319,10 @@ class B {
         t.add(s);
         try {
           const a = await this.fetchPage(s);
-          this.extractLinks(a, s).forEach((c) => {
+          this.extractLinks(a, s).forEach((d) => {
             try {
-              const u = new URL(c);
-              this.isSameDomain(u.hostname, r) && n.push(c);
+              const u = new URL(d);
+              this.isSameDomain(u.hostname, r) && n.push(d);
             } catch {
             }
           });
@@ -371,7 +371,7 @@ class B {
   extractContent(e) {
     var s, a;
     const n = new DOMParser().parseFromString(e, "text/html"), o = ((s = n.querySelector("title")) == null ? void 0 : s.textContent) || "";
-    n.querySelectorAll("script, style, nav, footer, header").forEach((d) => d.remove());
+    n.querySelectorAll("script, style, nav, footer, header").forEach((c) => c.remove());
     const r = (((a = n.body) == null ? void 0 : a.textContent) || "").replace(/\s+/g, " ").trim();
     return { title: o, content: r };
   }
@@ -431,12 +431,14 @@ class B {
   }
 }
 class J {
-  constructor(e, t, n = []) {
+  constructor(e, t, n = [], o) {
     l(this, "openAI");
     l(this, "pluginManager");
     l(this, "rules");
     l(this, "currentRule");
-    this.openAI = e, this.pluginManager = t, this.rules = n, n.length > 0 && (this.currentRule = n.find((o) => o.isActive) || n[0]);
+    l(this, "telegramBotToken");
+    l(this, "telegramChatId");
+    this.openAI = e, this.pluginManager = t, this.rules = n, this.telegramBotToken = o == null ? void 0 : o.botToken, this.telegramChatId = o == null ? void 0 : o.chatId, n.length > 0 && (this.currentRule = n.find((i) => i.isActive) || n[0]);
   }
   /**
    * 設置當前規則
@@ -446,68 +448,174 @@ class J {
     t && (this.currentRule = t);
   }
   /**
-   * 處理用戶訊息
+   * 處理用戶訊息（新的兩階段流程）
    */
-  async processMessage(e, t) {
-    var a, d;
-    const n = this.shouldSearch(e);
-    let o = [], i = "";
-    n && (console.log("🔍 Searching for:", e), o = await this.pluginManager.search(e, 5), i = this.formatSearchContext(o), console.log(`✅ Found ${o.length} results from plugins`));
-    const r = this.buildMessages(
+  async processMessage(e, t, n, o) {
+    console.log("🤖 Starting two-stage LLM process...");
+    const i = await this.determineSearchTools(e);
+    console.log("🔧 Tools to use:", i);
+    let r = [], s = "";
+    i.length > 0 && (console.log("🔍 Searching with tools:", i), r = await this.pluginManager.search(e, 5), s = this.formatSearchContext(r), console.log(`✅ Found ${r.length} results`));
+    const { response: a, canAnswer: c } = await this.generateResponse(
       e,
       t,
-      i
+      s
     );
-    return { response: await this.openAI.chatCompletion(
-      r,
-      ((a = this.currentRule) == null ? void 0 : a.temperature) || 0.7,
-      ((d = this.currentRule) == null ? void 0 : d.maxTokens) || 1e3
-    ), sources: o };
+    return c ? { response: a, sources: r, needsHumanReply: !1 } : (console.log("⚠️ Cannot answer, sending to Telegram..."), await this.sendToTelegram(n, o, e), {
+      response: "此問題我們會在 3 小時內給予回覆，請稍候。",
+      sources: [],
+      needsHumanReply: !0
+    });
   }
   /**
-   * 判斷是否需要搜尋
+   * 階段 1: 使用 LLM 判斷需要使用哪些 search tools
    */
-  shouldSearch(e) {
-    const t = [
-      "搜尋",
-      "查詢",
-      "找",
-      "哪裡",
-      "如何",
-      "怎麼",
-      "什麼",
-      "search",
-      "find",
-      "where",
-      "how",
-      "what",
-      "which",
-      "功能",
-      "頁面",
-      "文件",
-      "說明",
-      "介紹",
-      "資訊",
-      "有沒有",
-      "可以",
-      "能不能",
-      "是否"
-    ], n = e.toLowerCase();
-    return t.some((o) => n.includes(o));
+  async determineSearchTools(e) {
+    const t = this.pluginManager.getEnabledPlugins().map((o) => ({
+      id: o.id,
+      name: o.name,
+      description: o.description || `Search ${o.name}`
+    }));
+    if (t.length === 0)
+      return [];
+    const n = `你是一個工具選擇助手。根據用戶的問題，判斷需要使用哪些搜尋工具。
+
+可用的工具：
+${t.map((o) => `- ${o.id}: ${o.description}`).join(`
+`)}
+
+請以 JSON 格式回覆，例如：
+{
+  "tools": ["manual-index", "frontend-pages"],
+  "reason": "用戶詢問功能說明，需要搜尋手動索引和前端頁面"
+}
+
+如果不需要任何工具，返回：
+{
+  "tools": [],
+  "reason": "這是一般對話，不需要搜尋"
+}`;
+    try {
+      const o = await this.openAI.chatCompletion(
+        [
+          { role: "system", content: n },
+          { role: "user", content: e }
+        ],
+        0.3,
+        500
+      ), i = JSON.parse(o);
+      return console.log("Tool selection reason:", i.reason), i.tools || [];
+    } catch (o) {
+      return console.error("Failed to determine tools:", o), t.map((i) => i.id);
+    }
+  }
+  /**
+   * 階段 3: 基於搜尋結果生成回覆
+   */
+  async generateResponse(e, t, n) {
+    var s, a, c;
+    let o = ((s = this.currentRule) == null ? void 0 : s.systemPrompt) || "你是一個專業的客服助手。";
+    o += `
+
+你的任務是根據提供的搜尋結果回答用戶問題。
+
+重要規則：
+1. 如果搜尋結果中有明確相關的資訊，請基於這些資訊回答
+2. 如果搜尋結果不足以回答問題，請在回覆中明確說明 "CANNOT_ANSWER"
+3. 不要編造或猜測資訊
+4. 如果能回答，請提供清晰、準確的答案
+
+${n ? `
+搜尋結果：
+${n}` : `
+沒有找到相關的搜尋結果。`}`;
+    const i = this.getRecentQA(t, 2), r = [
+      { role: "system", content: o }
+    ];
+    i.length > 0 && r.push({
+      role: "system",
+      content: `
+--- 對話記憶（前 ${i.length} 次 QA）---
+${i.join(`
+
+`)}`
+    }), r.push({
+      role: "user",
+      content: e
+    });
+    try {
+      const d = await this.openAI.chatCompletion(
+        r,
+        ((a = this.currentRule) == null ? void 0 : a.temperature) || 0.7,
+        ((c = this.currentRule) == null ? void 0 : c.maxTokens) || 1e3
+      ), u = !d.includes("CANNOT_ANSWER");
+      return { response: d.replace(/CANNOT_ANSWER/g, "").trim() || d, canAnswer: u };
+    } catch (d) {
+      return console.error("Failed to generate response:", d), {
+        response: "抱歉，系統暫時無法處理您的請求。",
+        canAnswer: !1
+      };
+    }
+  }
+  /**
+   * 獲取最近的 N 次 QA 對話
+   */
+  getRecentQA(e, t) {
+    const n = [];
+    let o = "";
+    for (let i = e.length - 1; i >= 0 && n.length < t; i--) {
+      const r = e[i];
+      r.role === "assistant" && o ? (n.unshift(`Q: ${o}
+A: ${r.content}`), o = "") : r.role === "user" && (o = r.content);
+    }
+    return n;
+  }
+  /**
+   * 發送無法回答的問題到 Telegram
+   */
+  async sendToTelegram(e, t, n) {
+    if (!this.telegramBotToken || !this.telegramChatId) {
+      console.warn("Telegram config not set, skipping notification");
+      return;
+    }
+    const o = `🔔 新的客服問題需要人工回覆
+
+Session ID: ${e}
+User ID: ${t}
+問題: ${n}
+
+請到後台管理系統查看並回覆。`;
+    try {
+      const i = await fetch(
+        `https://api.telegram.org/bot${this.telegramBotToken}/sendMessage`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            chat_id: this.telegramChatId,
+            text: o,
+            parse_mode: "HTML"
+          })
+        }
+      );
+      if (!i.ok)
+        throw new Error(`Telegram API error: ${i.statusText}`);
+      console.log("✅ Sent to Telegram successfully");
+    } catch (i) {
+      console.error("Failed to send to Telegram:", i);
+    }
   }
   /**
    * 格式化搜尋結果為上下文
    */
   formatSearchContext(e) {
     if (e.length === 0) return "";
-    let t = `
-
-以下是相關的參考資料：
-
-`;
+    let t = "";
     return e.forEach((n, o) => {
-      t += `[${o + 1}] ${n.title}
-`, n.type && (t += `來源類型：${this.getSourceTypeName(n.type)}
+      t += `[來源 ${o + 1}] ${n.title}
+`, n.type && (t += `類型：${this.getSourceTypeName(n.type)}
 `), t += `內容：${n.content || n.snippet}
 `, n.url && (t += `連結：${n.url}
 `), t += `
@@ -526,30 +634,6 @@ class J {
     }[e] || e;
   }
   /**
-   * 構建訊息列表
-   */
-  buildMessages(e, t, n) {
-    var s;
-    const o = [];
-    let i = ((s = this.currentRule) == null ? void 0 : s.systemPrompt) || "你是一個有幫助的 AI 助手。";
-    return n && (i += `
-
-` + n, i += `
-
-請根據以上內容回答用戶的問題。如果內容中有相關資訊，請引用並提供來源連結。`), o.push({
-      role: "system",
-      content: i
-    }), t.slice(-10).forEach((a) => {
-      a.role !== "system" && o.push({
-        role: a.role,
-        content: a.content
-      });
-    }), o.push({
-      role: "user",
-      content: e
-    }), o;
-  }
-  /**
    * 獲取所有規則
    */
   getRules() {
@@ -562,7 +646,7 @@ class J {
     return this.currentRule;
   }
 }
-const f = {
+const x = {
   container: `
     position: fixed;
     top: 0;
@@ -685,9 +769,9 @@ const f = {
     background: white;
     border: 1px solid #e5e7eb;
     color: #6b7280;
-    border-radius: 8px;
-    width: 36px;
-    height: 36px;
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -765,45 +849,50 @@ class H {
    */
   createContainer() {
     const e = document.createElement("div");
-    return e.id = "sm-container", e.style.cssText = f.container, e;
+    return e.id = "sm-container", e.style.cssText = x.container, e;
   }
   /**
    * 創建遮罩層
    */
   createOverlay() {
     const e = document.createElement("div");
-    return e.style.cssText = f.overlay, e.style.display = "none", e.addEventListener("click", () => this.close()), e;
+    return e.style.cssText = x.overlay, e.style.display = "none", e.addEventListener("click", () => this.close()), e;
   }
   /**
    * 創建面板
    */
   createPanel() {
     const e = document.createElement("div");
-    return e.style.cssText = f.panel, e.style.width = this.width, this.position === "right" ? (e.style.right = `-${this.width}`, e.style.left = "auto") : (e.style.left = `-${this.width}`, e.style.right = "auto"), e.innerHTML = `
-      <div id="sm-view-container" style="${f.viewContainer}">
+    return e.style.cssText = x.panel, e.style.width = this.width, this.position === "right" ? (e.style.right = `-${this.width}`, e.style.left = "auto") : (e.style.left = `-${this.width}`, e.style.right = "auto"), e.innerHTML = `
+      <div id="sm-view-container" style="${x.viewContainer}">
         <!-- 右上角工具按鈕 -->
-        <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; z-index: 10;">
-          <button id="sm-rules-tab" style="${f.iconButton}" title="規則">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; z-index: 10;">
+          <button id="sm-rules-tab" style="${x.iconButton}" title="規則">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
             </svg>
           </button>
-          <button id="sm-refresh-btn" style="${f.iconButton}" title="刷新">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button id="sm-history-btn" style="${x.iconButton}" title="歷史記錄">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </button>
+          <button id="sm-refresh-btn" style="${x.iconButton}" title="刷新">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0118.8-4.3M22 12.5a10 10 0 01-18.8 4.2"/>
             </svg>
           </button>
-          <button id="sm-close-btn" style="${f.iconButton}" title="關閉">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <button id="sm-close-btn" style="${x.iconButton}" title="關閉">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
           </button>
         </div>
 
         <!-- 對話視圖 -->
-        <div id="sm-chat-view" style="${f.chatView}">
-          <div id="sm-messages" style="${f.messagesContainer}"></div>
-          <div style="${f.inputContainer}">
+        <div id="sm-chat-view" style="${x.chatView}">
+          <div id="sm-messages" style="${x.messagesContainer}"></div>
+          <div style="${x.inputContainer}">
             <!-- 圖片預覽（預設隱藏） -->
             <div id="sm-image-preview" style="display: none; margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 8px; position: relative;">
               <img id="sm-preview-img" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;" />
@@ -816,9 +905,9 @@ class H {
                 type="text"
                 id="sm-input"
                 placeholder="輸入訊息..."
-                style="${f.input}"
+                style="${x.input}"
               />
-              <button id="sm-send-btn" style="${f.sendIconButton}" title="發送">
+              <button id="sm-send-btn" style="${x.sendIconButton}" title="發送">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                 </svg>
@@ -828,7 +917,7 @@ class H {
         </div>
 
         <!-- 規則視圖 -->
-        <div id="sm-rules-view" style="${f.rulesView}; display: none;">
+        <div id="sm-rules-view" style="${x.rulesView}; display: none;">
           <div id="sm-rules-list"></div>
         </div>
       </div>
@@ -838,7 +927,7 @@ class H {
    * 綁定事件
    */
   bindEvents(e) {
-    var n, o, i, r, s, a;
+    var n, o, i, r, s, a, c;
     (n = e.querySelector("#sm-close-btn")) == null || n.addEventListener("click", () => {
       this.close();
     }), (o = e.querySelector("#sm-send-btn")) == null || o.addEventListener("click", () => {
@@ -853,7 +942,9 @@ class H {
       this.showView("rules");
     }), (s = e.querySelector("#sm-refresh-btn")) == null || s.addEventListener("click", () => {
       this.clearMessages();
-    }), (a = e.querySelector("#sm-remove-image")) == null || a.addEventListener("click", () => {
+    }), (a = e.querySelector("#sm-history-btn")) == null || a.addEventListener("click", () => {
+      this.showHistory();
+    }), (c = e.querySelector("#sm-remove-image")) == null || c.addEventListener("click", () => {
       this.clearCapturedImage();
     });
   }
@@ -869,7 +960,7 @@ class H {
    */
   showView(e) {
     const t = this.panel.querySelector("#sm-chat-view"), n = this.panel.querySelector("#sm-rules-view"), o = this.panel.querySelector("#sm-chat-tab"), i = this.panel.querySelector("#sm-rules-tab");
-    e === "chat" ? (t.style.display = "flex", n.style.display = "none", o.style.cssText = f.tabButton + "; " + f.tabButtonActive, i.style.cssText = f.tabButton) : (t.style.display = "none", n.style.display = "block", o.style.cssText = f.tabButton, i.style.cssText = f.tabButton + "; " + f.tabButtonActive);
+    e === "chat" ? (t.style.display = "flex", n.style.display = "none", o.style.cssText = x.tabButton + "; " + x.tabButtonActive, i.style.cssText = x.tabButton) : (t.style.display = "none", n.style.display = "block", o.style.cssText = x.tabButton, i.style.cssText = x.tabButton + "; " + x.tabButtonActive);
   }
   /**
    * 添加訊息
@@ -878,11 +969,11 @@ class H {
     const t = this.panel.querySelector("#sm-messages");
     if (!t) return;
     const n = document.createElement("div");
-    if (n.style.cssText = e.role === "user" ? f.userMessage : f.assistantMessage, n.textContent = e.content, e.sources && e.sources.length > 0) {
+    if (n.style.cssText = e.role === "user" ? x.userMessage : x.assistantMessage, n.textContent = e.content, e.sources && e.sources.length > 0) {
       const o = document.createElement("div");
-      o.style.cssText = f.sources, o.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((i, r) => {
+      o.style.cssText = x.sources, o.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((i, r) => {
         const s = document.createElement("a");
-        s.href = i.url, s.target = "_blank", s.textContent = `[${r + 1}] ${i.title}`, s.style.cssText = f.sourceLink, o.appendChild(s), o.appendChild(document.createElement("br"));
+        s.href = i.url, s.target = "_blank", s.textContent = `[${r + 1}] ${i.title}`, s.style.cssText = x.sourceLink, o.appendChild(s), o.appendChild(document.createElement("br"));
       }), n.appendChild(o);
     }
     t.appendChild(n), t.scrollTop = t.scrollHeight;
@@ -894,9 +985,9 @@ class H {
     const n = this.panel.querySelector("#sm-rules-list");
     n && (n.innerHTML = "", e.forEach((o) => {
       const i = document.createElement("div");
-      i.style.cssText = f.ruleItem, o.id === t && (i.style.cssText += "; " + f.ruleItemActive), i.innerHTML = `
-        <h3 style="${f.ruleTitle}">${o.name}</h3>
-        <p style="${f.ruleDescription}">${o.description || ""}</p>
+      i.style.cssText = x.ruleItem, o.id === t && (i.style.cssText += "; " + x.ruleItemActive), i.innerHTML = `
+        <h3 style="${x.ruleTitle}">${o.name}</h3>
+        <p style="${x.ruleDescription}">${o.description || ""}</p>
       `, i.addEventListener("click", () => {
         this.onSelectRule && this.onSelectRule(o.id), this.showView("chat");
       }), n.appendChild(i);
@@ -908,6 +999,27 @@ class H {
   clearMessages() {
     const e = this.panel.querySelector("#sm-messages");
     e && (e.innerHTML = "");
+  }
+  /**
+   * 顯示歷史記錄
+   */
+  async showHistory() {
+    try {
+      const e = localStorage.getItem("lens_service_user_id") || "default_user", t = await fetch(`/api/conversations?userId=${e}`);
+      if (!t.ok)
+        throw new Error("Failed to fetch conversations");
+      const n = await t.json();
+      alert(`找到 ${n.length} 條對話記錄
+
+${n.map(
+        (o) => `對話 ID: ${o.conversationId}
+時間: ${new Date(o.createdAt).toLocaleString()}`
+      ).join(`
+
+`)}`);
+    } catch (e) {
+      console.error("Failed to load history:", e), alert("載入歷史記錄失敗");
+    }
   }
   /**
    * 打開面板
@@ -970,7 +1082,7 @@ class H {
     this.close(), this.container.parentElement && document.body.removeChild(this.container);
   }
 }
-class V {
+class j {
   constructor() {
     l(this, "isEnabled", !1);
     l(this, "onCapture");
@@ -1080,14 +1192,14 @@ class U {
     const o = ((s = n.textContent) == null ? void 0 : s.replace(/\s+/g, " ").trim()) || "", i = [];
     document.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach((a) => {
       var u;
-      const d = parseInt(a.tagName.substring(1)), c = ((u = a.textContent) == null ? void 0 : u.trim()) || "";
-      c && i.push({ level: d, text: c });
+      const c = parseInt(a.tagName.substring(1)), d = ((u = a.textContent) == null ? void 0 : u.trim()) || "";
+      d && i.push({ level: c, text: d });
     });
     const r = [];
     return document.querySelectorAll("a[href]").forEach((a) => {
       var u;
-      const d = ((u = a.textContent) == null ? void 0 : u.trim()) || "", c = a.href;
-      d && c && r.push({ text: d, href: c });
+      const c = ((u = a.textContent) == null ? void 0 : u.trim()) || "", d = a.href;
+      c && d && r.push({ text: c, href: d });
     }), {
       title: e,
       url: t,
@@ -1116,10 +1228,10 @@ class U {
     for (; i = o.nextNode(); ) {
       const r = i.textContent || "", s = r.toLowerCase();
       if (s.includes(n)) {
-        const a = i.parentElement, d = s.indexOf(n), c = Math.max(0, d - 50), u = Math.min(r.length, d + e.length + 50), w = r.substring(c, u);
+        const a = i.parentElement, c = s.indexOf(n), d = Math.max(0, c - 50), u = Math.min(r.length, c + e.length + 50), S = r.substring(d, u);
         t.push({
           text: r.trim(),
-          context: "..." + w + "...",
+          context: "..." + S + "...",
           element: a
         });
       }
@@ -1127,7 +1239,7 @@ class U {
     return t;
   }
 }
-class k {
+class T {
   /**
    * 獲取或創建當前用戶
    */
@@ -1206,7 +1318,7 @@ class k {
     return this.getCurrentUser().sessionId;
   }
 }
-l(k, "USER_KEY", "sm_user"), l(k, "SESSION_KEY", "sm_session");
+l(T, "USER_KEY", "sm_user"), l(T, "SESSION_KEY", "sm_session");
 class O {
   /**
    * 獲取當前對話
@@ -1225,7 +1337,7 @@ class O {
    * 創建新對話
    */
   static createNewConversation() {
-    const e = k.getUserId(), t = this.generateConversationId(), n = {
+    const e = T.getUserId(), t = this.generateConversationId(), n = {
       id: t,
       userId: e,
       messages: [],
@@ -1237,7 +1349,7 @@ class O {
         referrer: document.referrer
       }
     };
-    return this.saveConversation(n), localStorage.setItem(this.CURRENT_CONVERSATION_KEY, t), k.incrementConversationCount(), console.log("Created new conversation:", t), n;
+    return this.saveConversation(n), localStorage.setItem(this.CURRENT_CONVERSATION_KEY, t), T.incrementConversationCount(), console.log("Created new conversation:", t), n;
   }
   /**
    * 添加訊息到當前對話
@@ -1514,12 +1626,12 @@ class I {
     return n.sections.map((r) => {
       let s = r.relevance;
       const a = r.heading.toLowerCase();
-      o.forEach((c) => {
-        a.includes(c) && (s += 5);
+      o.forEach((d) => {
+        a.includes(d) && (s += 5);
       });
-      const d = r.content.toLowerCase();
-      return o.forEach((c) => {
-        const u = (d.match(new RegExp(c, "g")) || []).length;
+      const c = r.content.toLowerCase();
+      return o.forEach((d) => {
+        const u = (c.match(new RegExp(d, "g")) || []).length;
         s += u * 2;
       }), {
         heading: r.heading,
@@ -1569,7 +1681,7 @@ class I {
     return o;
   }
 }
-class A {
+class C {
   /**
    * 獲取所有手動索引
    */
@@ -1633,14 +1745,14 @@ class A {
     if (n.length === 0) return [];
     const o = new I(), i = o.extractKeywords(e), r = o.generateFingerprint(e);
     return n.map((a) => {
-      const d = this.calculateSimilarity(
+      const c = this.calculateSimilarity(
         i,
         r,
         a.keywords,
         a.fingerprint
       );
-      return { index: a, score: d };
-    }).filter((a) => a.score > 0).sort((a, d) => d.score - a.score).slice(0, t);
+      return { index: a, score: c };
+    }).filter((a) => a.score > 0).sort((a, c) => c.score - a.score).slice(0, t);
   }
   /**
    * 計算相似度
@@ -1707,8 +1819,8 @@ class A {
     }
   }
 }
-l(A, "STORAGE_KEY", "sm_manual_indexes");
-class z {
+l(C, "STORAGE_KEY", "sm_manual_indexes");
+class k {
   /**
    * 獲取所有 SQL 連接
    */
@@ -1822,14 +1934,14 @@ class z {
     const s = [];
     for (const a of r)
       try {
-        const d = await this.query(a.id, e, t);
-        for (const c of d)
+        const c = await this.query(a.id, e, t);
+        for (const d of c)
           s.push({
-            ...c,
+            ...d,
             connectionName: a.name
           });
-      } catch (d) {
-        console.error(`Failed to search connection ${a.name}:`, d);
+      } catch (c) {
+        console.error(`Failed to search connection ${a.name}:`, c);
       }
     return s.slice(0, o);
   }
@@ -1870,8 +1982,8 @@ class z {
     return JSON.stringify(e, null, 2);
   }
 }
-l(z, "STORAGE_KEY", "sm_sql_connections");
-class j {
+l(k, "STORAGE_KEY", "sm_sql_connections");
+class V {
   constructor() {
     l(this, "container", null);
     l(this, "isOpen", !1);
@@ -1967,6 +2079,29 @@ class j {
           <p style="color: #6b7280; margin: 0 0 32px 0;">管理後台</p>
 
           <form id="admin-login-form" style="position: relative; z-index: 1;">
+            <div style="margin-bottom: 16px;">
+              <label for="admin-username" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">用戶名</label>
+              <input
+                type="text"
+                id="admin-username"
+                name="username"
+                placeholder="請輸入用戶名"
+                autocomplete="username"
+                style="
+                  width: 100%;
+                  padding: 12px 16px;
+                  border: 1px solid #d1d5db;
+                  border-radius: 8px;
+                  font-size: 14px;
+                  box-sizing: border-box;
+                  background: white;
+                  color: #1f2937;
+                  outline: none;
+                  transition: border-color 0.2s;
+                "
+              />
+            </div>
+
             <div style="margin-bottom: 24px;">
               <label for="admin-password" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">密碼</label>
               <input
@@ -2009,7 +2144,7 @@ class j {
             </button>
           </form>
 
-          <p style="margin-top: 16px; font-size: 12px; color: #9ca3af; text-align: center;">預設密碼：1234</p>
+          <p style="margin-top: 16px; font-size: 12px; color: #9ca3af; text-align: center;">預設用戶名：lens，密碼：1234</p>
         </div>
       </div>
     `;
@@ -2021,12 +2156,30 @@ class j {
     if (!this.container) return;
     const e = this.container.querySelector("#admin-login-form");
     if (e) {
-      e.addEventListener("submit", (h) => {
+      e.addEventListener("submit", async (h) => {
         h.preventDefault(), h.stopPropagation();
-        const m = this.container.querySelector("#admin-password"), x = (m == null ? void 0 : m.value) || "";
-        console.log("Login attempt with password:", x), b.verifyAdminPassword(x) ? (this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), this.bindEvents(), console.log("Login successful")) : (alert("密碼錯誤"), m.value = "", m.focus());
+        const g = this.container.querySelector("#admin-username"), f = this.container.querySelector("#admin-password"), v = (g == null ? void 0 : g.value) || "", y = (f == null ? void 0 : f.value) || "";
+        console.log("Login attempt with username:", v);
+        try {
+          const w = await fetch("/api/admin/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ username: v, password: y })
+          });
+          if (w.ok) {
+            const A = await w.json();
+            console.log("Login successful:", A), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), this.bindEvents();
+          } else {
+            const A = await w.json();
+            alert(A.error || "登入失敗"), f.value = "", f.focus();
+          }
+        } catch (w) {
+          console.error("Login error:", w), alert("登入失敗，請稍後再試");
+        }
       });
-      const p = this.container.querySelector("#admin-password");
+      const p = this.container.querySelector("#admin-username");
       p && setTimeout(() => {
         p.focus();
       }, 100);
@@ -2036,8 +2189,8 @@ class j {
         const h = p.dataset.page;
         if (h) {
           this.currentPage = h;
-          const m = this.container.querySelector("#admin-content");
-          m && (m.innerHTML = this.renderPageContent()), this.container.innerHTML = this.renderAdminUI(), this.bindEvents();
+          const g = this.container.querySelector("#admin-content");
+          g && (g.innerHTML = this.renderPageContent()), this.container.innerHTML = this.renderAdminUI(), this.bindEvents();
         }
       });
     });
@@ -2048,118 +2201,118 @@ class j {
     const o = this.container.querySelector("#change-password-form");
     o && o.addEventListener("submit", (p) => {
       p.preventDefault(), p.stopPropagation();
-      const h = this.container.querySelector("#new-password"), m = (h == null ? void 0 : h.value) || "";
-      if (m.length < 4) {
+      const h = this.container.querySelector("#new-password"), g = (h == null ? void 0 : h.value) || "";
+      if (g.length < 4) {
         alert("密碼長度至少 4 個字元");
         return;
       }
-      b.saveAdminPassword(m), alert("密碼已更新");
-      const x = this.container.querySelector("#admin-content");
-      x && (x.innerHTML = this.renderPageContent(), this.bindEvents());
+      b.saveAdminPassword(g), alert("密碼已更新");
+      const f = this.container.querySelector("#admin-content");
+      f && (f.innerHTML = this.renderPageContent(), this.bindEvents());
     });
     const i = this.container.querySelector("#ip-whitelist-form");
     i && i.addEventListener("submit", (p) => {
       p.preventDefault(), p.stopPropagation();
-      const h = this.container.querySelector("#ip-list"), x = ((h == null ? void 0 : h.value) || "").split(`
+      const h = this.container.querySelector("#ip-list"), f = ((h == null ? void 0 : h.value) || "").split(`
 `).map((y) => y.trim()).filter((y) => y.length > 0);
-      this.saveIPWhitelist(x), alert(`已更新 IP 白名單（${x.length} 個 IP）`);
+      this.saveIPWhitelist(f), alert(`已更新 IP 白名單（${f.length} 個 IP）`);
       const v = this.container.querySelector("#admin-content");
       v && (v.innerHTML = this.renderPageContent(), this.bindEvents());
     });
     const r = this.container.querySelector("#add-manual-index-form");
     r && r.addEventListener("submit", (p) => {
       p.preventDefault(), p.stopPropagation();
-      const h = this.container.querySelector("#index-name"), m = this.container.querySelector("#index-description"), x = this.container.querySelector("#index-content"), v = (h == null ? void 0 : h.value) || "", y = (m == null ? void 0 : m.value) || "", S = (x == null ? void 0 : x.value) || "";
-      if (!v || !S) {
+      const h = this.container.querySelector("#index-name"), g = this.container.querySelector("#index-description"), f = this.container.querySelector("#index-content"), v = (h == null ? void 0 : h.value) || "", y = (g == null ? void 0 : g.value) || "", w = (f == null ? void 0 : f.value) || "";
+      if (!v || !w) {
         alert("請填寫名稱和內容");
         return;
       }
       try {
-        A.create({ name: v, description: y, content: S }), alert("索引已新增");
-        const C = this.container.querySelector("#admin-content");
-        C && (C.innerHTML = this.renderPageContent(), this.bindEvents());
-      } catch (C) {
-        alert(`新增失敗：${C instanceof Error ? C.message : "未知錯誤"}`);
+        C.create({ name: v, description: y, content: w }), alert("索引已新增");
+        const A = this.container.querySelector("#admin-content");
+        A && (A.innerHTML = this.renderPageContent(), this.bindEvents());
+      } catch (A) {
+        alert(`新增失敗：${A instanceof Error ? A.message : "未知錯誤"}`);
       }
     }), this.container.querySelectorAll(".delete-index-btn").forEach((p) => {
       p.addEventListener("click", () => {
         const h = p.dataset.id;
         if (h && confirm("確定要刪除這個索引嗎？"))
           try {
-            A.delete(h), alert("索引已刪除");
-            const m = this.container.querySelector("#admin-content");
-            m && (m.innerHTML = this.renderPageContent(), this.bindEvents());
-          } catch (m) {
-            alert(`刪除失敗：${m instanceof Error ? m.message : "未知錯誤"}`);
+            C.delete(h), alert("索引已刪除");
+            const g = this.container.querySelector("#admin-content");
+            g && (g.innerHTML = this.renderPageContent(), this.bindEvents());
+          } catch (g) {
+            alert(`刪除失敗：${g instanceof Error ? g.message : "未知錯誤"}`);
           }
       });
     });
     const a = this.container.querySelector("#api-config-form");
     a && a.addEventListener("submit", (p) => {
-      var L, M, P, T, $, q;
+      var L, M, z, P, $, q;
       p.preventDefault(), p.stopPropagation();
-      const h = ((L = this.container.querySelector("#llm-endpoint")) == null ? void 0 : L.value) || "", m = ((M = this.container.querySelector("#llm-api-key")) == null ? void 0 : M.value) || "", x = ((P = this.container.querySelector("#llm-deployment")) == null ? void 0 : P.value) || "", v = ((T = this.container.querySelector("#embed-endpoint")) == null ? void 0 : T.value) || "", y = (($ = this.container.querySelector("#embed-api-key")) == null ? void 0 : $.value) || "", S = ((q = this.container.querySelector("#embed-deployment")) == null ? void 0 : q.value) || "", C = {
+      const h = ((L = this.container.querySelector("#llm-endpoint")) == null ? void 0 : L.value) || "", g = ((M = this.container.querySelector("#llm-api-key")) == null ? void 0 : M.value) || "", f = ((z = this.container.querySelector("#llm-deployment")) == null ? void 0 : z.value) || "", v = ((P = this.container.querySelector("#embed-endpoint")) == null ? void 0 : P.value) || "", y = (($ = this.container.querySelector("#embed-api-key")) == null ? void 0 : $.value) || "", w = ((q = this.container.querySelector("#embed-deployment")) == null ? void 0 : q.value) || "", A = {
         azureOpenAI: {
           endpoint: h,
-          apiKey: m,
-          deployment: x,
-          embeddingDeployment: S
+          apiKey: g,
+          deployment: f,
+          embeddingDeployment: w
         },
         llmAPI: {
           endpoint: h,
-          apiKey: m,
-          deployment: x
+          apiKey: g,
+          deployment: f
         },
         embeddingAPI: {
           endpoint: v,
           apiKey: y,
-          deployment: S
+          deployment: w
         }
       };
-      b.saveConfig(C), alert("API 設定已儲存");
+      b.saveConfig(A), alert("API 設定已儲存");
     });
-    const d = this.container.querySelector("#agent-tool-config-form");
-    d && d.addEventListener("submit", (p) => {
+    const c = this.container.querySelector("#agent-tool-config-form");
+    c && c.addEventListener("submit", (p) => {
       var v, y;
       p.preventDefault(), p.stopPropagation();
-      const h = ((v = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : v.checked) || !1, m = ((y = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : y.checked) || !1, x = b.loadAgentToolConfig();
-      if (x) {
-        x.manualIndex.enabled = h, x.frontendPages.enabled = m, b.saveAgentToolConfig(x), alert("Agent 設定已儲存");
-        const S = this.container.querySelector("#admin-content");
-        S && (S.innerHTML = this.renderPageContent(), this.bindEvents());
+      const h = ((v = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : v.checked) || !1, g = ((y = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : y.checked) || !1, f = b.loadAgentToolConfig();
+      if (f) {
+        f.manualIndex.enabled = h, f.frontendPages.enabled = g, b.saveAgentToolConfig(f), alert("Agent 設定已儲存");
+        const w = this.container.querySelector("#admin-content");
+        w && (w.innerHTML = this.renderPageContent(), this.bindEvents());
       }
     });
-    const c = this.container.querySelector("#sql-plugin-config-form");
-    c && c.addEventListener("submit", (p) => {
-      var T, $, q, R, N, _, D, K;
+    const d = this.container.querySelector("#sql-plugin-config-form");
+    d && d.addEventListener("submit", (p) => {
+      var P, $, q, R, N, _, D, F;
       p.preventDefault(), p.stopPropagation();
-      const h = ((T = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : T.checked) || !1, m = parseInt((($ = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : $.value) || "5"), x = ((q = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : q.value) || "", v = ((R = this.container.querySelector("#sql-connection-id")) == null ? void 0 : R.value) || "", y = ((N = this.container.querySelector("#sql-search-table")) == null ? void 0 : N.value) || "knowledge_base", S = ((_ = this.container.querySelector("#sql-title-column")) == null ? void 0 : _.value) || "title", C = ((D = this.container.querySelector("#sql-content-column")) == null ? void 0 : D.value) || "content", L = ((K = this.container.querySelector("#sql-url-column")) == null ? void 0 : K.value) || "url", M = {
+      const h = ((P = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : P.checked) || !1, g = parseInt((($ = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : $.value) || "5"), f = ((q = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : q.value) || "", v = ((R = this.container.querySelector("#sql-connection-id")) == null ? void 0 : R.value) || "", y = ((N = this.container.querySelector("#sql-search-table")) == null ? void 0 : N.value) || "knowledge_base", w = ((_ = this.container.querySelector("#sql-title-column")) == null ? void 0 : _.value) || "title", A = ((D = this.container.querySelector("#sql-content-column")) == null ? void 0 : D.value) || "content", L = ((F = this.container.querySelector("#sql-url-column")) == null ? void 0 : F.value) || "url", M = {
         enabled: h,
-        priority: m,
-        apiEndpoint: x,
+        priority: g,
+        apiEndpoint: f,
         connectionId: v,
         searchTable: y,
-        titleColumn: S,
-        contentColumn: C,
+        titleColumn: w,
+        contentColumn: A,
         urlColumn: L
       };
       localStorage.setItem("sm_sql_plugin_config", JSON.stringify(M)), alert("SQL Plugin 設定已儲存");
-      const P = this.container.querySelector("#admin-content");
-      P && (P.innerHTML = this.renderPageContent(), this.bindEvents());
+      const z = this.container.querySelector("#admin-content");
+      z && (z.innerHTML = this.renderPageContent(), this.bindEvents());
     });
     const u = this.container.querySelector("#sql-connection-form");
     u && u.addEventListener("submit", (p) => {
-      var x, v;
+      var f, v;
       p.preventDefault(), p.stopPropagation();
-      const h = ((x = this.container.querySelector("#sql-conn-name")) == null ? void 0 : x.value) || "", m = (v = this.container.querySelector("#sql-conn-type")) == null ? void 0 : v.value;
+      const h = ((f = this.container.querySelector("#sql-conn-name")) == null ? void 0 : f.value) || "", g = (v = this.container.querySelector("#sql-conn-type")) == null ? void 0 : v.value;
       if (!h) {
         alert("請輸入連接名稱");
         return;
       }
       try {
-        z.create({
+        k.create({
           name: h,
-          type: m,
+          type: g,
           host: "localhost",
           port: 3306,
           database: "mydb",
@@ -2182,11 +2335,11 @@ class j {
         const h = p.dataset.id;
         if (h && confirm("確定要刪除這個連接嗎？"))
           try {
-            z.delete(h), alert("連接已刪除");
-            const m = this.container.querySelector("#admin-content");
-            m && (m.innerHTML = this.renderPageContent(), this.bindEvents());
-          } catch (m) {
-            console.error("Error deleting SQL connection:", m), alert("刪除失敗");
+            k.delete(h), alert("連接已刪除");
+            const g = this.container.querySelector("#admin-content");
+            g && (g.innerHTML = this.renderPageContent(), this.bindEvents());
+          } catch (g) {
+            console.error("Error deleting SQL connection:", g), alert("刪除失敗");
           }
       });
     });
@@ -2277,7 +2430,7 @@ class j {
    */
   renderDashboard() {
     var o, i;
-    const e = O.getAllConversations(), t = A.getAll(), n = b.loadAgentToolConfig();
+    const e = O.getAllConversations(), t = C.getAll(), n = b.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">儀表板</h2>
 
@@ -2334,7 +2487,7 @@ class j {
    * 渲染手動索引頁面
    */
   renderManualIndex() {
-    const e = A.getAll();
+    const e = C.getAll();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">手動索引</h2>
       <p style="color: #6b7280; margin-bottom: 24px;">手動新增索引內容供 Agent 搜尋</p>
@@ -2441,7 +2594,7 @@ class j {
    * 渲染 SQL 資料庫頁面
    */
   renderSQL() {
-    const e = z.getAll(), t = this.loadSQLPluginConfig();
+    const e = k.getAll(), t = this.loadSQLPluginConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">SQL 資料庫</h2>
       <p style="color: #6b7280; margin-bottom: 24px;">連接 SQL 資料庫作為搜尋來源</p>
@@ -2725,9 +2878,9 @@ class j {
                           ${s.sources && s.sources.length > 0 ? `
                             <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.1);">
                               <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">參考來源：</div>
-                              ${s.sources.map((a, d) => `
+                              ${s.sources.map((a, c) => `
                                 <div style="font-size: 12px; color: #7c3aed; margin-top: 2px;">
-                                  [${d + 1}] ${a.title}
+                                  [${c + 1}] ${a.title}
                                 </div>
                               `).join("")}
                             </div>
@@ -2748,7 +2901,7 @@ class j {
    * 渲染 Agent & API 設定頁面（合併）
    */
   renderAgentAndAPI() {
-    var n, o, i, r, s, a, d, c, u, w, p, h;
+    var n, o, i, r, s, a, c, d, u, S, p, h;
     const e = b.loadConfig() || {}, t = b.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">Agent & API 設定</h2>
@@ -2810,7 +2963,7 @@ class j {
                 id="embed-endpoint"
                 name="embedEndpoint"
                 placeholder="https://your-resource.openai.azure.com/"
-                value="${((d = e.embeddingAPI) == null ? void 0 : d.endpoint) || ((c = e.azureOpenAI) == null ? void 0 : c.endpoint) || ""}"
+                value="${((c = e.embeddingAPI) == null ? void 0 : c.endpoint) || ((d = e.azureOpenAI) == null ? void 0 : d.endpoint) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -2822,7 +2975,7 @@ class j {
                 id="embed-api-key"
                 name="embedApiKey"
                 placeholder="your-api-key"
-                value="${((u = e.embeddingAPI) == null ? void 0 : u.apiKey) || ((w = e.azureOpenAI) == null ? void 0 : w.apiKey) || ""}"
+                value="${((u = e.embeddingAPI) == null ? void 0 : u.apiKey) || ((S = e.azureOpenAI) == null ? void 0 : S.apiKey) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -3238,9 +3391,9 @@ class W {
       })
     )).flat();
     return i.sort((r, s) => {
-      var c, u;
-      const a = ((c = r.metadata) == null ? void 0 : c.priority) || 0, d = ((u = s.metadata) == null ? void 0 : u.priority) || 0;
-      return a !== d ? d - a : (s.score || 0) - (r.score || 0);
+      var d, u;
+      const a = ((d = r.metadata) == null ? void 0 : d.priority) || 0, c = ((u = s.metadata) == null ? void 0 : u.priority) || 0;
+      return a !== c ? c - a : (s.score || 0) - (r.score || 0);
     }), i.slice(0, t);
   }
   /**
@@ -3259,12 +3412,12 @@ class G {
     l(this, "enabled", !0);
   }
   async initialize() {
-    const e = A.getAll();
+    const e = C.getAll();
     console.log(`📚 Manual Index Plugin: ${e.length} indexes loaded`);
   }
   async search(e, t = 5) {
     try {
-      return A.search(e, t).map(({ index: o, score: i }) => ({
+      return C.search(e, t).map(({ index: o, score: i }) => ({
         type: "manual-index",
         title: o.name,
         snippet: o.content.substring(0, 200),
@@ -3282,13 +3435,13 @@ class G {
     }
   }
   isAvailable() {
-    return A.getAll().length > 0;
+    return C.getAll().length > 0;
   }
   getConfig() {
     return {
       enabled: this.enabled,
       priority: this.priority,
-      indexCount: A.getAll().length
+      indexCount: C.getAll().length
     };
   }
   updateConfig(e) {
@@ -3318,10 +3471,10 @@ class X {
         return [];
       const o = this.extractor.extractKeywords(e);
       return n.map((r) => {
-        const s = `${r.title} ${r.snippet}`.toLowerCase(), d = o.filter(
-          (c) => s.includes(c.toLowerCase())
+        const s = `${r.title} ${r.snippet}`.toLowerCase(), c = o.filter(
+          (d) => s.includes(d.toLowerCase())
         ).length / o.length;
-        return { page: r, score: d };
+        return { page: r, score: c };
       }).filter((r) => r.score > 0).sort((r, s) => s.score - r.score).slice(0, t).map(({ page: r, score: s }) => ({
         type: "frontend-page",
         title: r.title,
@@ -3415,17 +3568,17 @@ class E {
     try {
       const o = await (await fetch(t.sitemapUrl)).text(), r = new DOMParser().parseFromString(o, "text/xml"), s = Array.from(r.querySelectorAll("url loc")).map((p) => p.textContent || "");
       console.log(`Found ${s.length} URLs in sitemap`);
-      const d = s.slice(0, 50), c = [];
-      for (const p of d)
+      const c = s.slice(0, 50), d = [];
+      for (const p of c)
         try {
           const h = await this.crawlPage(p);
-          h && c.push(h);
+          h && d.push(h);
         } catch (h) {
           console.error(`Failed to crawl ${p}:`, h);
         }
-      t.pages = c, t.lastUpdated = Date.now();
-      const u = this.getAll(), w = u.findIndex((p) => p.id === e);
-      w >= 0 && (u[w] = t, this.saveAll(u)), console.log(`Crawled ${c.length} pages successfully`);
+      t.pages = d, t.lastUpdated = Date.now();
+      const u = this.getAll(), S = u.findIndex((p) => p.id === e);
+      S >= 0 && (u[S] = t, this.saveAll(u)), console.log(`Crawled ${d.length} pages successfully`);
     } catch (n) {
       throw console.error("Failed to crawl sitemap:", n), n;
     }
@@ -3436,13 +3589,13 @@ class E {
   static async crawlPage(e) {
     var t;
     try {
-      const o = await (await fetch(e)).text(), r = new DOMParser().parseFromString(o, "text/html"), s = ((t = r.querySelector("title")) == null ? void 0 : t.textContent) || e, a = new I(), d = a.extractText(r.body), c = a.extractKeywords(d), u = a.generateFingerprint(d);
+      const o = await (await fetch(e)).text(), r = new DOMParser().parseFromString(o, "text/html"), s = ((t = r.querySelector("title")) == null ? void 0 : t.textContent) || e, a = new I(), c = a.extractText(r.body), d = a.extractKeywords(c), u = a.generateFingerprint(c);
       return {
         url: e,
         title: s,
-        content: d.substring(0, 5e3),
+        content: c.substring(0, 5e3),
         // 限制長度
-        keywords: c,
+        keywords: d,
         fingerprint: u,
         lastCrawled: Date.now()
       };
@@ -3454,20 +3607,20 @@ class E {
    * 搜尋 Sitemap 頁面
    */
   static search(e, t, n = 5) {
-    const o = this.getAll().filter((c) => c.enabled), i = t && t.length > 0 ? o.filter((c) => t.includes(c.domain)) : o;
+    const o = this.getAll().filter((d) => d.enabled), i = t && t.length > 0 ? o.filter((d) => t.includes(d.domain)) : o;
     if (i.length === 0) return [];
-    const r = new I(), s = r.extractKeywords(e), a = r.generateFingerprint(e), d = [];
-    for (const c of i)
-      for (const u of c.pages) {
-        const w = this.calculateSimilarity(
+    const r = new I(), s = r.extractKeywords(e), a = r.generateFingerprint(e), c = [];
+    for (const d of i)
+      for (const u of d.pages) {
+        const S = this.calculateSimilarity(
           s,
           a,
           u.keywords,
           u.fingerprint
         );
-        w > 0 && d.push({ page: u, domain: c.domain, score: w });
+        S > 0 && c.push({ page: u, domain: d.domain, score: S });
       }
-    return d.sort((c, u) => u.score - c.score).slice(0, n);
+    return c.sort((d, u) => u.score - d.score).slice(0, n);
   }
   /**
    * 計算相似度
@@ -3551,13 +3704,13 @@ class Z {
       for (const r of n)
         try {
           const s = await E.search(r.id, i, 3);
-          o.push(...s.map(({ page: a, score: d }) => ({
+          o.push(...s.map(({ page: a, score: c }) => ({
             type: "sitemap",
             title: a.title,
             snippet: a.content.substring(0, 200),
             content: a.content.substring(0, 500),
             url: a.url,
-            score: d,
+            score: c,
             metadata: {
               domain: r.domain,
               lastUpdated: r.lastUpdated,
@@ -3619,11 +3772,11 @@ class ee {
       return;
     }
     try {
-      if (!z.getById(this.config.connectionId)) {
+      if (!k.getById(this.config.connectionId)) {
         console.warn(`⚠️ SQL Plugin: Connection ${this.config.connectionId} not found`), this.enabled = !1;
         return;
       }
-      if (!await z.testConnection(
+      if (!await k.testConnection(
         this.config.connectionId,
         this.config.apiEndpoint
       )) {
@@ -3639,7 +3792,7 @@ class ee {
     if (!this.isAvailable())
       return [];
     try {
-      const n = this.extractor.extractKeywords(e, 5), o = this.buildSearchQuery(n, t), i = await z.query(
+      const n = this.extractor.extractKeywords(e, 5), o = this.buildSearchQuery(n, t), i = await k.query(
         this.config.connectionId,
         o,
         this.config.apiEndpoint
@@ -3653,7 +3806,7 @@ class ee {
    * 構建搜尋 SQL 查詢
    */
   buildSearchQuery(e, t) {
-    const { searchTable: n, searchColumns: o, titleColumn: i, contentColumn: r, urlColumn: s } = this.config, a = o.map((d) => e.map((c) => `${d} LIKE '%${c}%'`).join(" OR ")).join(" OR ");
+    const { searchTable: n, searchColumns: o, titleColumn: i, contentColumn: r, urlColumn: s } = this.config, a = o.map((c) => e.map((d) => `${c} LIKE '%${d}%'`).join(" OR ")).join(" OR ");
     return `
       SELECT 
         ${i} as title,
@@ -3699,20 +3852,20 @@ class ee {
   }
 }
 function te() {
-  const g = localStorage.getItem("sm_sql_plugin_config"), e = g ? JSON.parse(g) : {};
+  const m = localStorage.getItem("sm_sql_plugin_config"), e = m ? JSON.parse(m) : {};
   return new ee(e);
 }
 function ne() {
-  const g = new W();
-  return g.register(new G()), g.register(new X()), g.register(new Z()), g.register(te()), g;
+  const m = new W();
+  return m.register(new G()), m.register(new X()), m.register(new Z()), m.register(te()), m;
 }
-function oe(g) {
+function oe(m) {
   const e = localStorage.getItem("sm_plugin_configs");
   if (e)
     try {
       const t = JSON.parse(e);
       Object.keys(t).forEach((n) => {
-        const o = g.getPlugin(n);
+        const o = m.getPlugin(n);
         o && o.updateConfig(t[n]);
       }), console.log("✅ Plugin configs loaded from localStorage");
     } catch (t) {
@@ -3742,11 +3895,11 @@ class ie {
       console.warn("ServiceModuler already initialized");
       return;
     }
-    this.config = e, k.getCurrentUser(), console.log("User ID:", k.getUserId()), this.pluginManager = ne(), oe(this.pluginManager), this.pluginManager.initializeAll().then(() => {
+    this.config = e, T.getCurrentUser(), console.log("User ID:", T.getUserId()), this.pluginManager = ne(), oe(this.pluginManager), this.pluginManager.initializeAll().then(() => {
       console.log("✅ All plugins initialized");
     }).catch((i) => {
       console.error("❌ Plugin initialization error:", i);
-    }), this.openAI = new Q(e.azureOpenAI || e.llmAPI), this.indexing = new B(this.openAI, e.siteConfig), this.agent = new J(this.openAI, this.pluginManager, e.rules || []), this.capture = new V(), this.panel = new H(
+    }), this.openAI = new B(e.azureOpenAI || e.llmAPI), this.indexing = new Y(this.openAI, e.siteConfig), this.agent = new J(this.openAI, this.pluginManager, e.rules || []), this.capture = new j(), this.panel = new H(
       ((t = e.ui) == null ? void 0 : t.width) || "33.33%",
       ((n = e.ui) == null ? void 0 : n.position) || "right"
     ), this.panel.setCallbacks({
@@ -3757,7 +3910,7 @@ class ie {
     }), this.loadConversationState(), this.agent && this.panel.setRules(
       this.agent.getRules(),
       (o = this.agent.getCurrentRule()) == null ? void 0 : o.id
-    ), this.adminPanel = new j(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
+    ), this.adminPanel = new V(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
   }
   /**
    * 打開面板
@@ -3781,7 +3934,7 @@ class ie {
    * 發送訊息
    */
   async sendMessage(e, t) {
-    var o, i, r, s;
+    var o, i, r, s, a;
     if (!this.initialized || !this.agent || !this.panel || !this.openAI) {
       console.error("ServiceModuler not initialized");
       return;
@@ -3793,37 +3946,63 @@ class ie {
     };
     (o = this.conversationState) == null || o.messages.push(n), this.panel.addMessage(n), this.saveConversationState();
     try {
-      let a, d;
+      let c, d, u = !1;
+      const S = ((i = this.conversationState) == null ? void 0 : i.sessionId) || this.generateSessionId(), p = localStorage.getItem("lens_service_user_id") || "default_user";
       if (t)
-        a = await this.openAI.chatCompletionWithImage(
+        c = await this.openAI.chatCompletionWithImage(
           e || "請分析這張圖片並回答問題",
           t,
-          ((i = this.conversationState) == null ? void 0 : i.messages.slice(0, -1)) || []
+          ((r = this.conversationState) == null ? void 0 : r.messages.slice(0, -1)) || []
           // 不包含剛添加的用戶訊息
         );
       else {
-        const u = await this.agent.processMessage(
+        const g = await this.agent.processMessage(
           e,
-          ((r = this.conversationState) == null ? void 0 : r.messages) || []
+          ((s = this.conversationState) == null ? void 0 : s.messages) || [],
+          S,
+          p
         );
-        a = u.response, d = u.sources;
+        c = g.response, d = g.sources, u = g.needsHumanReply;
       }
-      const c = {
+      const h = {
         role: "assistant",
-        content: a,
+        content: c,
         timestamp: Date.now(),
         sources: d
       };
-      (s = this.conversationState) == null || s.messages.push(c), this.panel.addMessage(c), this.saveConversationState();
-    } catch (a) {
-      console.error("Error processing message:", a);
+      (a = this.conversationState) == null || a.messages.push(h), this.panel.addMessage(h), this.saveConversationState(), await this.saveConversationToDatabase(S, p);
+    } catch (c) {
+      console.error("Error processing message:", c);
       const d = {
         role: "assistant",
-        content: `抱歉，發生錯誤：${a instanceof Error ? a.message : "未知錯誤"}`,
+        content: `抱歉，發生錯誤：${c instanceof Error ? c.message : "未知錯誤"}`,
         timestamp: Date.now()
       };
       this.panel.addMessage(d);
     }
+  }
+  /**
+   * 保存對話記錄到資料庫
+   */
+  async saveConversationToDatabase(e, t) {
+    if (this.conversationState)
+      try {
+        if (!(await fetch("/api/conversations", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            userId: t,
+            conversationId: e,
+            messages: this.conversationState.messages
+          })
+        })).ok)
+          throw new Error("Failed to save conversation");
+        console.log("✅ Conversation saved to database");
+      } catch (n) {
+        console.error("Failed to save conversation to database:", n);
+      }
   }
   /**
    * 設置規則

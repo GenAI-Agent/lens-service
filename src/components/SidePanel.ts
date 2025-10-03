@@ -74,19 +74,24 @@ export class SidePanel {
     panel.innerHTML = `
       <div id="sm-view-container" style="${styles.viewContainer}">
         <!-- 右上角工具按鈕 -->
-        <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; z-index: 10;">
+        <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; z-index: 10;">
           <button id="sm-rules-tab" style="${styles.iconButton}" title="規則">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
             </svg>
           </button>
+          <button id="sm-history-btn" style="${styles.iconButton}" title="歷史記錄">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </button>
           <button id="sm-refresh-btn" style="${styles.iconButton}" title="刷新">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0118.8-4.3M22 12.5a10 10 0 01-18.8 4.2"/>
             </svg>
           </button>
           <button id="sm-close-btn" style="${styles.iconButton}" title="關閉">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
           </button>
@@ -166,6 +171,11 @@ export class SidePanel {
     // 刷新按鈕
     panel.querySelector('#sm-refresh-btn')?.addEventListener('click', () => {
       this.clearMessages();
+    });
+
+    // 歷史記錄按鈕
+    panel.querySelector('#sm-history-btn')?.addEventListener('click', () => {
+      this.showHistory();
     });
 
     // 移除圖片按鈕
@@ -287,6 +297,31 @@ export class SidePanel {
     const messagesContainer = this.panel.querySelector('#sm-messages');
     if (messagesContainer) {
       messagesContainer.innerHTML = '';
+    }
+  }
+
+  /**
+   * 顯示歷史記錄
+   */
+  async showHistory(): Promise<void> {
+    try {
+      // 獲取當前用戶的對話記錄
+      const userId = localStorage.getItem('lens_service_user_id') || 'default_user';
+      const response = await fetch(`/api/conversations?userId=${userId}`);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch conversations');
+      }
+
+      const conversations = await response.json();
+
+      // 顯示歷史記錄（簡單實現，可以後續優化）
+      alert(`找到 ${conversations.length} 條對話記錄\n\n${conversations.map((c: any) =>
+        `對話 ID: ${c.conversationId}\n時間: ${new Date(c.createdAt).toLocaleString()}`
+      ).join('\n\n')}`);
+    } catch (error) {
+      console.error('Failed to load history:', error);
+      alert('載入歷史記錄失敗');
     }
   }
   

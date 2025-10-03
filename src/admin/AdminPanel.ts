@@ -159,6 +159,29 @@ export class AdminPanel {
           <p style="color: #6b7280; margin: 0 0 32px 0;">管理後台</p>
 
           <form id="admin-login-form" style="position: relative; z-index: 1;">
+            <div style="margin-bottom: 16px;">
+              <label for="admin-username" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">用戶名</label>
+              <input
+                type="text"
+                id="admin-username"
+                name="username"
+                placeholder="請輸入用戶名"
+                autocomplete="username"
+                style="
+                  width: 100%;
+                  padding: 12px 16px;
+                  border: 1px solid #d1d5db;
+                  border-radius: 8px;
+                  font-size: 14px;
+                  box-sizing: border-box;
+                  background: white;
+                  color: #1f2937;
+                  outline: none;
+                  transition: border-color 0.2s;
+                "
+              />
+            </div>
+
             <div style="margin-bottom: 24px;">
               <label for="admin-password" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">密碼</label>
               <input
@@ -201,7 +224,7 @@ export class AdminPanel {
             </button>
           </form>
 
-          <p style="margin-top: 16px; font-size: 12px; color: #9ca3af; text-align: center;">預設密碼：1234</p>
+          <p style="margin-top: 16px; font-size: 12px; color: #9ca3af; text-align: center;">預設用戶名：lens，密碼：1234</p>
         </div>
       </div>
     `;
@@ -216,32 +239,51 @@ export class AdminPanel {
     // 登入表單
     const loginForm = this.container.querySelector('#admin-login-form') as HTMLFormElement;
     if (loginForm) {
-      loginForm.addEventListener('submit', (e) => {
+      loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         e.stopPropagation();
 
+        const usernameInput = this.container!.querySelector('#admin-username') as HTMLInputElement;
         const passwordInput = this.container!.querySelector('#admin-password') as HTMLInputElement;
+        const username = usernameInput?.value || '';
         const password = passwordInput?.value || '';
 
-        console.log('Login attempt with password:', password); // Debug
+        console.log('Login attempt with username:', username); // Debug
 
-        if (StorageService.verifyAdminPassword(password)) {
-          this.isAuthenticated = true;
-          this.container!.innerHTML = this.renderAdminUI();
-          this.bindEvents(); // 重新綁定事件
-          console.log('Login successful');
-        } else {
-          alert('密碼錯誤');
-          passwordInput.value = '';
-          passwordInput.focus();
+        try {
+          // 調用 API 驗證登入
+          const response = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ username, password })
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Login successful:', data);
+
+            this.isAuthenticated = true;
+            this.container!.innerHTML = this.renderAdminUI();
+            this.bindEvents(); // 重新綁定事件
+          } else {
+            const error = await response.json();
+            alert(error.error || '登入失敗');
+            passwordInput.value = '';
+            passwordInput.focus();
+          }
+        } catch (error) {
+          console.error('Login error:', error);
+          alert('登入失敗，請稍後再試');
         }
       });
 
       // 確保輸入框可以獲得焦點
-      const passwordInput = this.container.querySelector('#admin-password') as HTMLInputElement;
-      if (passwordInput) {
+      const usernameInput = this.container.querySelector('#admin-username') as HTMLInputElement;
+      if (usernameInput) {
         setTimeout(() => {
-          passwordInput.focus();
+          usernameInput.focus();
         }, 100);
       }
     }
