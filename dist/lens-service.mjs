@@ -1,7 +1,7 @@
 var F = Object.defineProperty;
-var Q = (g, e, t) => e in g ? F(g, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : g[e] = t;
-var l = (g, e, t) => Q(g, typeof e != "symbol" ? e + "" : e, t);
-class Y {
+var Y = (g, e, t) => e in g ? F(g, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : g[e] = t;
+var l = (g, e, t) => Y(g, typeof e != "symbol" ? e + "" : e, t);
+class Q {
   constructor(e) {
     l(this, "endpoint");
     l(this, "apiKey");
@@ -101,7 +101,7 @@ class Y {
     return t;
   }
 }
-class y {
+class b {
   /**
    * 保存對話狀態
    */
@@ -260,7 +260,7 @@ class y {
     return e === this.loadAdminPassword();
   }
 }
-l(y, "CONVERSATION_KEY", "sm_conversation"), l(y, "INDEX_KEY", "sm_indexed_pages"), l(y, "CONFIG_KEY", "sm_config"), l(y, "AGENT_TOOL_CONFIG_KEY", "sm_agent_tool_config"), l(y, "ADMIN_PASSWORD_KEY", "sm_admin_password");
+l(b, "CONVERSATION_KEY", "sm_conversation"), l(b, "INDEX_KEY", "sm_indexed_pages"), l(b, "CONFIG_KEY", "sm_config"), l(b, "AGENT_TOOL_CONFIG_KEY", "sm_agent_tool_config"), l(b, "ADMIN_PASSWORD_KEY", "sm_admin_password");
 class B {
   constructor(e, t) {
     l(this, "openAI");
@@ -286,7 +286,7 @@ class B {
       }
       await this.sleep(500);
     }
-    y.saveIndexedPages(i), console.log(`Indexing complete. Indexed ${i.length} pages.`);
+    b.saveIndexedPages(i), console.log(`Indexing complete. Indexed ${i.length} pages.`);
   }
   /**
    * 發現本地專案的所有頁面
@@ -1116,10 +1116,10 @@ class U {
     for (; i = o.nextNode(); ) {
       const r = i.textContent || "", s = r.toLowerCase();
       if (s.includes(n)) {
-        const a = i.parentElement, d = s.indexOf(n), c = Math.max(0, d - 50), u = Math.min(r.length, d + e.length + 50), S = r.substring(c, u);
+        const a = i.parentElement, d = s.indexOf(n), c = Math.max(0, d - 50), u = Math.min(r.length, d + e.length + 50), w = r.substring(c, u);
         t.push({
           text: r.trim(),
-          context: "..." + S + "...",
+          context: "..." + w + "...",
           element: a
         });
       }
@@ -1127,7 +1127,7 @@ class U {
     return t;
   }
 }
-class T {
+class k {
   /**
    * 獲取或創建當前用戶
    */
@@ -1206,7 +1206,7 @@ class T {
     return this.getCurrentUser().sessionId;
   }
 }
-l(T, "USER_KEY", "sm_user"), l(T, "SESSION_KEY", "sm_session");
+l(k, "USER_KEY", "sm_user"), l(k, "SESSION_KEY", "sm_session");
 class O {
   /**
    * 獲取當前對話
@@ -1225,7 +1225,7 @@ class O {
    * 創建新對話
    */
   static createNewConversation() {
-    const e = T.getUserId(), t = this.generateConversationId(), n = {
+    const e = k.getUserId(), t = this.generateConversationId(), n = {
       id: t,
       userId: e,
       messages: [],
@@ -1237,7 +1237,7 @@ class O {
         referrer: document.referrer
       }
     };
-    return this.saveConversation(n), localStorage.setItem(this.CURRENT_CONVERSATION_KEY, t), T.incrementConversationCount(), console.log("Created new conversation:", t), n;
+    return this.saveConversation(n), localStorage.setItem(this.CURRENT_CONVERSATION_KEY, t), k.incrementConversationCount(), console.log("Created new conversation:", t), n;
   }
   /**
    * 添加訊息到當前對話
@@ -1362,7 +1362,7 @@ class O {
   }
 }
 l(O, "CONVERSATIONS_KEY", "sm_conversations"), l(O, "CURRENT_CONVERSATION_KEY", "sm_current_conversation");
-class z {
+class I {
   /**
    * 提取頁面主要內容
    */
@@ -1592,7 +1592,7 @@ class A {
    * 創建新索引
    */
   static create(e) {
-    const t = new z(), n = t.extractKeywords(e.content), o = t.generateFingerprint(e.content), i = {
+    const t = new I(), n = t.extractKeywords(e.content), o = t.generateFingerprint(e.content), i = {
       id: this.generateId(),
       name: e.name,
       description: e.description,
@@ -1613,7 +1613,7 @@ class A {
     if (!o) return null;
     if (t.name !== void 0 && (o.name = t.name), t.description !== void 0 && (o.description = t.description), t.metadata !== void 0 && (o.metadata = t.metadata), t.content !== void 0) {
       o.content = t.content;
-      const i = new z();
+      const i = new I();
       o.keywords = i.extractKeywords(t.content), o.fingerprint = i.generateFingerprint(t.content);
     }
     return o.updatedAt = Date.now(), this.saveAll(n), console.log("Updated manual index:", e), o;
@@ -1631,7 +1631,7 @@ class A {
   static search(e, t = 5) {
     const n = this.getAll();
     if (n.length === 0) return [];
-    const o = new z(), i = o.extractKeywords(e), r = o.generateFingerprint(e);
+    const o = new I(), i = o.extractKeywords(e), r = o.generateFingerprint(e);
     return n.map((a) => {
       const d = this.calculateSimilarity(
         i,
@@ -1708,180 +1708,7 @@ class A {
   }
 }
 l(A, "STORAGE_KEY", "sm_manual_indexes");
-class I {
-  /**
-   * 獲取所有 Sitemap 配置
-   */
-  static getAll() {
-    const e = localStorage.getItem(this.STORAGE_KEY);
-    if (!e) return [];
-    try {
-      return JSON.parse(e);
-    } catch (t) {
-      return console.error("Failed to parse sitemap configs:", t), [];
-    }
-  }
-  /**
-   * 根據 ID 獲取配置
-   */
-  static getById(e) {
-    return this.getAll().find((n) => n.id === e) || null;
-  }
-  /**
-   * 創建新的 Sitemap 配置
-   */
-  static async create(e) {
-    const t = {
-      id: this.generateId(),
-      domain: e.domain,
-      sitemapUrl: e.sitemapUrl,
-      enabled: !0,
-      autoUpdate: e.autoUpdate || !1,
-      updateInterval: e.updateInterval || 60,
-      // 默認 60 分鐘
-      lastUpdated: 0,
-      pages: []
-    }, n = this.getAll();
-    return n.push(t), this.saveAll(n), console.log("Created sitemap config:", t.id), await this.crawl(t.id), t.autoUpdate && this.startAutoUpdate(t.id), t;
-  }
-  /**
-   * 更新配置
-   */
-  static update(e, t) {
-    const n = this.getAll(), o = n.find((i) => i.id === e);
-    return o ? (t.domain !== void 0 && (o.domain = t.domain), t.sitemapUrl !== void 0 && (o.sitemapUrl = t.sitemapUrl), t.enabled !== void 0 && (o.enabled = t.enabled), t.autoUpdate !== void 0 && (o.autoUpdate = t.autoUpdate), t.updateInterval !== void 0 && (o.updateInterval = t.updateInterval), this.saveAll(n), o.autoUpdate ? this.startAutoUpdate(e) : this.stopAutoUpdate(e), console.log("Updated sitemap config:", e), o) : null;
-  }
-  /**
-   * 刪除配置
-   */
-  static delete(e) {
-    const t = this.getAll(), n = t.filter((o) => o.id !== e);
-    return n.length === t.length ? !1 : (this.saveAll(n), this.stopAutoUpdate(e), console.log("Deleted sitemap config:", e), !0);
-  }
-  /**
-   * 爬取 Sitemap
-   */
-  static async crawl(e) {
-    const t = this.getById(e);
-    if (!t)
-      throw new Error("Sitemap config not found");
-    console.log("Crawling sitemap:", t.sitemapUrl);
-    try {
-      const o = await (await fetch(t.sitemapUrl)).text(), r = new DOMParser().parseFromString(o, "text/xml"), s = Array.from(r.querySelectorAll("url loc")).map((p) => p.textContent || "");
-      console.log(`Found ${s.length} URLs in sitemap`);
-      const d = s.slice(0, 50), c = [];
-      for (const p of d)
-        try {
-          const h = await this.crawlPage(p);
-          h && c.push(h);
-        } catch (h) {
-          console.error(`Failed to crawl ${p}:`, h);
-        }
-      t.pages = c, t.lastUpdated = Date.now();
-      const u = this.getAll(), S = u.findIndex((p) => p.id === e);
-      S >= 0 && (u[S] = t, this.saveAll(u)), console.log(`Crawled ${c.length} pages successfully`);
-    } catch (n) {
-      throw console.error("Failed to crawl sitemap:", n), n;
-    }
-  }
-  /**
-   * 爬取單個頁面
-   */
-  static async crawlPage(e) {
-    var t;
-    try {
-      const o = await (await fetch(e)).text(), r = new DOMParser().parseFromString(o, "text/html"), s = ((t = r.querySelector("title")) == null ? void 0 : t.textContent) || e, a = new z(), d = a.extractText(r.body), c = a.extractKeywords(d), u = a.generateFingerprint(d);
-      return {
-        url: e,
-        title: s,
-        content: d.substring(0, 5e3),
-        // 限制長度
-        keywords: c,
-        fingerprint: u,
-        lastCrawled: Date.now()
-      };
-    } catch (n) {
-      return console.error(`Failed to crawl page ${e}:`, n), null;
-    }
-  }
-  /**
-   * 搜尋 Sitemap 頁面
-   */
-  static search(e, t, n = 5) {
-    const o = this.getAll().filter((c) => c.enabled), i = t && t.length > 0 ? o.filter((c) => t.includes(c.domain)) : o;
-    if (i.length === 0) return [];
-    const r = new z(), s = r.extractKeywords(e), a = r.generateFingerprint(e), d = [];
-    for (const c of i)
-      for (const u of c.pages) {
-        const S = this.calculateSimilarity(
-          s,
-          a,
-          u.keywords,
-          u.fingerprint
-        );
-        S > 0 && d.push({ page: u, domain: c.domain, score: S });
-      }
-    return d.sort((c, u) => u.score - c.score).slice(0, n);
-  }
-  /**
-   * 計算相似度
-   */
-  static calculateSimilarity(e, t, n, o) {
-    const i = this.calculateKeywordScore(e, n), r = this.calculateFingerprintScore(t, o);
-    return i * 0.5 + r * 0.5;
-  }
-  static calculateKeywordScore(e, t) {
-    return e.length === 0 || t.length === 0 ? 0 : e.filter((o) => t.includes(o)).length / Math.max(e.length, t.length);
-  }
-  static calculateFingerprintScore(e, t) {
-    if (e.length === 0 || t.length === 0) return 0;
-    let n = 0, o = 0;
-    for (let i = 0; i < Math.max(e.length, t.length); i++) {
-      const r = e[i] || 0, s = t[i] || 0;
-      r === 1 && s === 1 && n++, (r === 1 || s === 1) && o++;
-    }
-    return o > 0 ? n / o : 0;
-  }
-  /**
-   * 啟動自動更新
-   */
-  static startAutoUpdate(e) {
-    this.stopAutoUpdate(e);
-    const t = this.getById(e);
-    if (!t || !t.autoUpdate) return;
-    const n = t.updateInterval * 60 * 1e3, o = window.setInterval(() => {
-      console.log(`Auto-updating sitemap: ${e}`), this.crawl(e).catch((i) => console.error("Auto-update failed:", i));
-    }, n);
-    this.updateTimers.set(e, o);
-  }
-  /**
-   * 停止自動更新
-   */
-  static stopAutoUpdate(e) {
-    const t = this.updateTimers.get(e);
-    t && (clearInterval(t), this.updateTimers.delete(e));
-  }
-  /**
-   * 初始化所有自動更新
-   */
-  static initAutoUpdates() {
-    const e = this.getAll().filter((t) => t.enabled && t.autoUpdate);
-    for (const t of e)
-      this.startAutoUpdate(t.id);
-    console.log(`Initialized ${e.length} auto-update timers`);
-  }
-  static saveAll(e) {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(e));
-  }
-  static generateId() {
-    return "sitemap_" + Date.now().toString(36) + Math.random().toString(36).substring(2);
-  }
-  static clearAll() {
-    this.updateTimers.forEach((e) => clearInterval(e)), this.updateTimers.clear(), localStorage.removeItem(this.STORAGE_KEY);
-  }
-}
-l(I, "STORAGE_KEY", "sm_sitemap_configs"), l(I, "updateTimers", /* @__PURE__ */ new Map());
-class E {
+class z {
   /**
    * 獲取所有 SQL 連接
    */
@@ -2043,7 +1870,7 @@ class E {
     return JSON.stringify(e, null, 2);
   }
 }
-l(E, "STORAGE_KEY", "sm_sql_connections");
+l(z, "STORAGE_KEY", "sm_sql_connections");
 class j {
   constructor() {
     l(this, "container", null);
@@ -2197,7 +2024,7 @@ class j {
       e.addEventListener("submit", (h) => {
         h.preventDefault(), h.stopPropagation();
         const m = this.container.querySelector("#admin-password"), x = (m == null ? void 0 : m.value) || "";
-        console.log("Login attempt with password:", x), y.verifyAdminPassword(x) ? (this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), this.bindEvents(), console.log("Login successful")) : (alert("密碼錯誤"), m.value = "", m.focus());
+        console.log("Login attempt with password:", x), b.verifyAdminPassword(x) ? (this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), this.bindEvents(), console.log("Login successful")) : (alert("密碼錯誤"), m.value = "", m.focus());
       });
       const p = this.container.querySelector("#admin-password");
       p && setTimeout(() => {
@@ -2226,7 +2053,7 @@ class j {
         alert("密碼長度至少 4 個字元");
         return;
       }
-      y.saveAdminPassword(m), alert("密碼已更新");
+      b.saveAdminPassword(m), alert("密碼已更新");
       const x = this.container.querySelector("#admin-content");
       x && (x.innerHTML = this.renderPageContent(), this.bindEvents());
     });
@@ -2234,7 +2061,7 @@ class j {
     i && i.addEventListener("submit", (p) => {
       p.preventDefault(), p.stopPropagation();
       const h = this.container.querySelector("#ip-list"), x = ((h == null ? void 0 : h.value) || "").split(`
-`).map((b) => b.trim()).filter((b) => b.length > 0);
+`).map((y) => y.trim()).filter((y) => y.length > 0);
       this.saveIPWhitelist(x), alert(`已更新 IP 白名單（${x.length} 個 IP）`);
       const v = this.container.querySelector("#admin-content");
       v && (v.innerHTML = this.renderPageContent(), this.bindEvents());
@@ -2242,17 +2069,17 @@ class j {
     const r = this.container.querySelector("#add-manual-index-form");
     r && r.addEventListener("submit", (p) => {
       p.preventDefault(), p.stopPropagation();
-      const h = this.container.querySelector("#index-name"), m = this.container.querySelector("#index-description"), x = this.container.querySelector("#index-content"), v = (h == null ? void 0 : h.value) || "", b = (m == null ? void 0 : m.value) || "", C = (x == null ? void 0 : x.value) || "";
-      if (!v || !C) {
+      const h = this.container.querySelector("#index-name"), m = this.container.querySelector("#index-description"), x = this.container.querySelector("#index-content"), v = (h == null ? void 0 : h.value) || "", y = (m == null ? void 0 : m.value) || "", S = (x == null ? void 0 : x.value) || "";
+      if (!v || !S) {
         alert("請填寫名稱和內容");
         return;
       }
       try {
-        A.create({ name: v, description: b, content: C }), alert("索引已新增");
-        const w = this.container.querySelector("#admin-content");
-        w && (w.innerHTML = this.renderPageContent(), this.bindEvents());
-      } catch (w) {
-        alert(`新增失敗：${w instanceof Error ? w.message : "未知錯誤"}`);
+        A.create({ name: v, description: y, content: S }), alert("索引已新增");
+        const C = this.container.querySelector("#admin-content");
+        C && (C.innerHTML = this.renderPageContent(), this.bindEvents());
+      } catch (C) {
+        alert(`新增失敗：${C instanceof Error ? C.message : "未知錯誤"}`);
       }
     }), this.container.querySelectorAll(".delete-index-btn").forEach((p) => {
       p.addEventListener("click", () => {
@@ -2269,14 +2096,14 @@ class j {
     });
     const a = this.container.querySelector("#api-config-form");
     a && a.addEventListener("submit", (p) => {
-      var k, P, $, q, L, M;
+      var L, M, P, T, $, q;
       p.preventDefault(), p.stopPropagation();
-      const h = ((k = this.container.querySelector("#llm-endpoint")) == null ? void 0 : k.value) || "", m = ((P = this.container.querySelector("#llm-api-key")) == null ? void 0 : P.value) || "", x = (($ = this.container.querySelector("#llm-deployment")) == null ? void 0 : $.value) || "", v = ((q = this.container.querySelector("#embed-endpoint")) == null ? void 0 : q.value) || "", b = ((L = this.container.querySelector("#embed-api-key")) == null ? void 0 : L.value) || "", C = ((M = this.container.querySelector("#embed-deployment")) == null ? void 0 : M.value) || "", w = {
+      const h = ((L = this.container.querySelector("#llm-endpoint")) == null ? void 0 : L.value) || "", m = ((M = this.container.querySelector("#llm-api-key")) == null ? void 0 : M.value) || "", x = ((P = this.container.querySelector("#llm-deployment")) == null ? void 0 : P.value) || "", v = ((T = this.container.querySelector("#embed-endpoint")) == null ? void 0 : T.value) || "", y = (($ = this.container.querySelector("#embed-api-key")) == null ? void 0 : $.value) || "", S = ((q = this.container.querySelector("#embed-deployment")) == null ? void 0 : q.value) || "", C = {
         azureOpenAI: {
           endpoint: h,
           apiKey: m,
           deployment: x,
-          embeddingDeployment: C
+          embeddingDeployment: S
         },
         llmAPI: {
           endpoint: h,
@@ -2285,36 +2112,40 @@ class j {
         },
         embeddingAPI: {
           endpoint: v,
-          apiKey: b,
-          deployment: C
+          apiKey: y,
+          deployment: S
         }
       };
-      y.saveConfig(w), alert("API 設定已儲存");
+      b.saveConfig(C), alert("API 設定已儲存");
     });
     const d = this.container.querySelector("#agent-tool-config-form");
     d && d.addEventListener("submit", (p) => {
-      var C, w, k, P;
+      var v, y;
       p.preventDefault(), p.stopPropagation();
-      const h = ((C = this.container.querySelector('input[name="manualIndex"]')) == null ? void 0 : C.checked) || !1, m = ((w = this.container.querySelector('input[name="frontendPages"]')) == null ? void 0 : w.checked) || !1, x = ((k = this.container.querySelector('input[name="sitemap"]')) == null ? void 0 : k.checked) || !1, v = ((P = this.container.querySelector('input[name="sqlDatabase"]')) == null ? void 0 : P.checked) || !1, b = y.loadAgentToolConfig();
-      b && (b.manualIndex.enabled = h, b.frontendPages.enabled = m, b.sitemap.enabled = x, b.sqlDatabase.enabled = v, y.saveAgentToolConfig(b), alert("Agent 工具設定已儲存"));
+      const h = ((v = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : v.checked) || !1, m = ((y = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : y.checked) || !1, x = b.loadAgentToolConfig();
+      if (x) {
+        x.manualIndex.enabled = h, x.frontendPages.enabled = m, b.saveAgentToolConfig(x), alert("Agent 設定已儲存");
+        const S = this.container.querySelector("#admin-content");
+        S && (S.innerHTML = this.renderPageContent(), this.bindEvents());
+      }
     });
     const c = this.container.querySelector("#sql-plugin-config-form");
     c && c.addEventListener("submit", (p) => {
-      var q, L, M, N, R, _, D, K;
+      var T, $, q, R, N, _, D, K;
       p.preventDefault(), p.stopPropagation();
-      const h = ((q = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : q.checked) || !1, m = parseInt(((L = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : L.value) || "5"), x = ((M = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : M.value) || "", v = ((N = this.container.querySelector("#sql-connection-id")) == null ? void 0 : N.value) || "", b = ((R = this.container.querySelector("#sql-search-table")) == null ? void 0 : R.value) || "knowledge_base", C = ((_ = this.container.querySelector("#sql-title-column")) == null ? void 0 : _.value) || "title", w = ((D = this.container.querySelector("#sql-content-column")) == null ? void 0 : D.value) || "content", k = ((K = this.container.querySelector("#sql-url-column")) == null ? void 0 : K.value) || "url", P = {
+      const h = ((T = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : T.checked) || !1, m = parseInt((($ = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : $.value) || "5"), x = ((q = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : q.value) || "", v = ((R = this.container.querySelector("#sql-connection-id")) == null ? void 0 : R.value) || "", y = ((N = this.container.querySelector("#sql-search-table")) == null ? void 0 : N.value) || "knowledge_base", S = ((_ = this.container.querySelector("#sql-title-column")) == null ? void 0 : _.value) || "title", C = ((D = this.container.querySelector("#sql-content-column")) == null ? void 0 : D.value) || "content", L = ((K = this.container.querySelector("#sql-url-column")) == null ? void 0 : K.value) || "url", M = {
         enabled: h,
         priority: m,
         apiEndpoint: x,
         connectionId: v,
-        searchTable: b,
-        titleColumn: C,
-        contentColumn: w,
-        urlColumn: k
+        searchTable: y,
+        titleColumn: S,
+        contentColumn: C,
+        urlColumn: L
       };
-      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(P)), alert("SQL Plugin 設定已儲存");
-      const $ = this.container.querySelector("#admin-content");
-      $ && ($.innerHTML = this.renderPageContent(), this.bindEvents());
+      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(M)), alert("SQL Plugin 設定已儲存");
+      const P = this.container.querySelector("#admin-content");
+      P && (P.innerHTML = this.renderPageContent(), this.bindEvents());
     });
     const u = this.container.querySelector("#sql-connection-form");
     u && u.addEventListener("submit", (p) => {
@@ -2326,7 +2157,7 @@ class j {
         return;
       }
       try {
-        E.create({
+        z.create({
           name: h,
           type: m,
           host: "localhost",
@@ -2341,17 +2172,17 @@ class j {
             urlField: "url"
           }
         }), alert("SQL 連接已新增");
-        const b = this.container.querySelector("#admin-content");
-        b && (b.innerHTML = this.renderPageContent(), this.bindEvents());
-      } catch (b) {
-        console.error("Error creating SQL connection:", b), alert("新增失敗");
+        const y = this.container.querySelector("#admin-content");
+        y && (y.innerHTML = this.renderPageContent(), this.bindEvents());
+      } catch (y) {
+        console.error("Error creating SQL connection:", y), alert("新增失敗");
       }
     }), this.container.querySelectorAll(".delete-sql-connection").forEach((p) => {
       p.addEventListener("click", () => {
         const h = p.dataset.id;
         if (h && confirm("確定要刪除這個連接嗎？"))
           try {
-            E.delete(h), alert("連接已刪除");
+            z.delete(h), alert("連接已刪除");
             const m = this.container.querySelector("#admin-content");
             m && (m.innerHTML = this.renderPageContent(), this.bindEvents());
           } catch (m) {
@@ -2376,11 +2207,7 @@ class j {
           <nav style="flex: 1; padding: 16px; overflow-y: auto;">
             ${this.renderNavItem("dashboard", "儀表板")}
             ${this.renderNavItem("manual-index", "手動索引")}
-            ${this.renderNavItem("sitemap", "Sitemap 索引")}
-            ${this.renderNavItem("sql", "SQL 資料庫")}
-            ${this.renderNavItem("database", "資料庫管理")}
             ${this.renderNavItem("conversations", "客服記錄")}
-            ${this.renderNavItem("agent-api", "Agent & API 設定")}
             ${this.renderNavItem("system", "系統設定")}
           </nav>
 
@@ -2437,16 +2264,8 @@ class j {
         return this.renderDashboard();
       case "manual-index":
         return this.renderManualIndex();
-      case "sitemap":
-        return this.renderSitemap();
-      case "sql":
-        return this.renderSQL();
-      case "database":
-        return this.renderDatabaseManagement();
       case "conversations":
         return this.renderConversations();
-      case "agent-api":
-        return this.renderAgentAndAPI();
       case "system":
         return this.renderSystemSettings();
       default:
@@ -2457,30 +2276,45 @@ class j {
    * 渲染儀表板
    */
   renderDashboard() {
-    const e = O.getAllConversations(), t = A.getAll(), n = I.getAll(), o = E.getAll();
+    var o, i;
+    const e = O.getAllConversations(), t = A.getAll(), n = b.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">儀表板</h2>
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px;">
         ${this.renderStatCard("💬", "對話總數", e.length.toString())}
         ${this.renderStatCard("📝", "手動索引", t.length.toString())}
-        ${this.renderStatCard("🌐", "Sitemap", n.length.toString())}
-        ${this.renderStatCard("🗄️", "SQL 連接", o.length.toString())}
       </div>
 
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">快速操作</h3>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button class="nav-item" data-page="manual-index" style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">
-            新增手動索引
+      <!-- Agent 設定 -->
+      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">Agent 設定</h3>
+        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">配置 Agent 使用的搜尋工具</p>
+
+        <form id="agent-tool-config-form">
+          <div style="margin-bottom: 16px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" id="manual-index-enabled" ${(o = n == null ? void 0 : n.manualIndex) != null && o.enabled ? "checked" : ""} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;" />
+              <span style="font-size: 14px; color: #374151; font-weight: 500;">啟用手動索引搜尋</span>
+            </label>
+            <p style="margin: 4px 0 0 26px; font-size: 12px; color: #6b7280;">搜尋手動新增的索引內容</p>
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" id="frontend-pages-enabled" ${(i = n == null ? void 0 : n.frontendPages) != null && i.enabled ? "checked" : ""} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;" />
+              <span style="font-size: 14px; color: #374151; font-weight: 500;">啟用前端頁面搜尋</span>
+            </label>
+            <p style="margin: 4px 0 0 26px; font-size: 12px; color: #6b7280;">搜尋當前網站的所有頁面內容</p>
+          </div>
+
+          <button
+            type="submit"
+            style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
+          >
+            儲存設定
           </button>
-          <button class="nav-item" data-page="conversations" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">
-            查看對話
-          </button>
-          <button class="nav-item" data-page="agent-api" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">
-            設定 Agent
-          </button>
-        </div>
+        </form>
       </div>
     `;
   }
@@ -2607,7 +2441,7 @@ class j {
    * 渲染 SQL 資料庫頁面
    */
   renderSQL() {
-    const e = E.getAll(), t = this.loadSQLPluginConfig();
+    const e = z.getAll(), t = this.loadSQLPluginConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">SQL 資料庫</h2>
       <p style="color: #6b7280; margin-bottom: 24px;">連接 SQL 資料庫作為搜尋來源</p>
@@ -2914,8 +2748,8 @@ class j {
    * 渲染 Agent & API 設定頁面（合併）
    */
   renderAgentAndAPI() {
-    var n, o, i, r, s, a, d, c, u, S, p, h;
-    const e = y.loadConfig() || {}, t = y.loadAgentToolConfig();
+    var n, o, i, r, s, a, d, c, u, w, p, h;
+    const e = b.loadConfig() || {}, t = b.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">Agent & API 設定</h2>
 
@@ -2988,7 +2822,7 @@ class j {
                 id="embed-api-key"
                 name="embedApiKey"
                 placeholder="your-api-key"
-                value="${((u = e.embeddingAPI) == null ? void 0 : u.apiKey) || ((S = e.azureOpenAI) == null ? void 0 : S.apiKey) || ""}"
+                value="${((u = e.embeddingAPI) == null ? void 0 : u.apiKey) || ((w = e.azureOpenAI) == null ? void 0 : w.apiKey) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -3069,7 +2903,7 @@ class j {
    * 渲染系統設定頁面（包含密碼和 IP 白名單）
    */
   renderSystemSettings() {
-    const e = y.loadAdminPassword(), t = this.getIPWhitelist();
+    const e = b.loadAdminPassword(), t = this.getIPWhitelist();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
 
@@ -3471,15 +3305,15 @@ class X {
     l(this, "priority", 8);
     l(this, "enabled", !0);
     l(this, "extractor");
-    this.extractor = new z();
+    this.extractor = new I();
   }
   async initialize() {
-    const e = y.loadIndexedPages();
+    const e = b.loadIndexedPages();
     console.log(`📄 Frontend Page Plugin: ${e.length} pages loaded`);
   }
   async search(e, t = 5) {
     try {
-      const n = y.loadIndexedPages();
+      const n = b.loadIndexedPages();
       if (n.length === 0)
         return [];
       const o = this.extractor.extractKeywords(e);
@@ -3505,13 +3339,13 @@ class X {
     }
   }
   isAvailable() {
-    return y.loadIndexedPages().length > 0;
+    return b.loadIndexedPages().length > 0;
   }
   getConfig() {
     return {
       enabled: this.enabled,
       priority: this.priority,
-      pageCount: y.loadIndexedPages().length
+      pageCount: b.loadIndexedPages().length
     };
   }
   updateConfig(e) {
@@ -3520,6 +3354,179 @@ class X {
   dispose() {
   }
 }
+class E {
+  /**
+   * 獲取所有 Sitemap 配置
+   */
+  static getAll() {
+    const e = localStorage.getItem(this.STORAGE_KEY);
+    if (!e) return [];
+    try {
+      return JSON.parse(e);
+    } catch (t) {
+      return console.error("Failed to parse sitemap configs:", t), [];
+    }
+  }
+  /**
+   * 根據 ID 獲取配置
+   */
+  static getById(e) {
+    return this.getAll().find((n) => n.id === e) || null;
+  }
+  /**
+   * 創建新的 Sitemap 配置
+   */
+  static async create(e) {
+    const t = {
+      id: this.generateId(),
+      domain: e.domain,
+      sitemapUrl: e.sitemapUrl,
+      enabled: !0,
+      autoUpdate: e.autoUpdate || !1,
+      updateInterval: e.updateInterval || 60,
+      // 默認 60 分鐘
+      lastUpdated: 0,
+      pages: []
+    }, n = this.getAll();
+    return n.push(t), this.saveAll(n), console.log("Created sitemap config:", t.id), await this.crawl(t.id), t.autoUpdate && this.startAutoUpdate(t.id), t;
+  }
+  /**
+   * 更新配置
+   */
+  static update(e, t) {
+    const n = this.getAll(), o = n.find((i) => i.id === e);
+    return o ? (t.domain !== void 0 && (o.domain = t.domain), t.sitemapUrl !== void 0 && (o.sitemapUrl = t.sitemapUrl), t.enabled !== void 0 && (o.enabled = t.enabled), t.autoUpdate !== void 0 && (o.autoUpdate = t.autoUpdate), t.updateInterval !== void 0 && (o.updateInterval = t.updateInterval), this.saveAll(n), o.autoUpdate ? this.startAutoUpdate(e) : this.stopAutoUpdate(e), console.log("Updated sitemap config:", e), o) : null;
+  }
+  /**
+   * 刪除配置
+   */
+  static delete(e) {
+    const t = this.getAll(), n = t.filter((o) => o.id !== e);
+    return n.length === t.length ? !1 : (this.saveAll(n), this.stopAutoUpdate(e), console.log("Deleted sitemap config:", e), !0);
+  }
+  /**
+   * 爬取 Sitemap
+   */
+  static async crawl(e) {
+    const t = this.getById(e);
+    if (!t)
+      throw new Error("Sitemap config not found");
+    console.log("Crawling sitemap:", t.sitemapUrl);
+    try {
+      const o = await (await fetch(t.sitemapUrl)).text(), r = new DOMParser().parseFromString(o, "text/xml"), s = Array.from(r.querySelectorAll("url loc")).map((p) => p.textContent || "");
+      console.log(`Found ${s.length} URLs in sitemap`);
+      const d = s.slice(0, 50), c = [];
+      for (const p of d)
+        try {
+          const h = await this.crawlPage(p);
+          h && c.push(h);
+        } catch (h) {
+          console.error(`Failed to crawl ${p}:`, h);
+        }
+      t.pages = c, t.lastUpdated = Date.now();
+      const u = this.getAll(), w = u.findIndex((p) => p.id === e);
+      w >= 0 && (u[w] = t, this.saveAll(u)), console.log(`Crawled ${c.length} pages successfully`);
+    } catch (n) {
+      throw console.error("Failed to crawl sitemap:", n), n;
+    }
+  }
+  /**
+   * 爬取單個頁面
+   */
+  static async crawlPage(e) {
+    var t;
+    try {
+      const o = await (await fetch(e)).text(), r = new DOMParser().parseFromString(o, "text/html"), s = ((t = r.querySelector("title")) == null ? void 0 : t.textContent) || e, a = new I(), d = a.extractText(r.body), c = a.extractKeywords(d), u = a.generateFingerprint(d);
+      return {
+        url: e,
+        title: s,
+        content: d.substring(0, 5e3),
+        // 限制長度
+        keywords: c,
+        fingerprint: u,
+        lastCrawled: Date.now()
+      };
+    } catch (n) {
+      return console.error(`Failed to crawl page ${e}:`, n), null;
+    }
+  }
+  /**
+   * 搜尋 Sitemap 頁面
+   */
+  static search(e, t, n = 5) {
+    const o = this.getAll().filter((c) => c.enabled), i = t && t.length > 0 ? o.filter((c) => t.includes(c.domain)) : o;
+    if (i.length === 0) return [];
+    const r = new I(), s = r.extractKeywords(e), a = r.generateFingerprint(e), d = [];
+    for (const c of i)
+      for (const u of c.pages) {
+        const w = this.calculateSimilarity(
+          s,
+          a,
+          u.keywords,
+          u.fingerprint
+        );
+        w > 0 && d.push({ page: u, domain: c.domain, score: w });
+      }
+    return d.sort((c, u) => u.score - c.score).slice(0, n);
+  }
+  /**
+   * 計算相似度
+   */
+  static calculateSimilarity(e, t, n, o) {
+    const i = this.calculateKeywordScore(e, n), r = this.calculateFingerprintScore(t, o);
+    return i * 0.5 + r * 0.5;
+  }
+  static calculateKeywordScore(e, t) {
+    return e.length === 0 || t.length === 0 ? 0 : e.filter((o) => t.includes(o)).length / Math.max(e.length, t.length);
+  }
+  static calculateFingerprintScore(e, t) {
+    if (e.length === 0 || t.length === 0) return 0;
+    let n = 0, o = 0;
+    for (let i = 0; i < Math.max(e.length, t.length); i++) {
+      const r = e[i] || 0, s = t[i] || 0;
+      r === 1 && s === 1 && n++, (r === 1 || s === 1) && o++;
+    }
+    return o > 0 ? n / o : 0;
+  }
+  /**
+   * 啟動自動更新
+   */
+  static startAutoUpdate(e) {
+    this.stopAutoUpdate(e);
+    const t = this.getById(e);
+    if (!t || !t.autoUpdate) return;
+    const n = t.updateInterval * 60 * 1e3, o = window.setInterval(() => {
+      console.log(`Auto-updating sitemap: ${e}`), this.crawl(e).catch((i) => console.error("Auto-update failed:", i));
+    }, n);
+    this.updateTimers.set(e, o);
+  }
+  /**
+   * 停止自動更新
+   */
+  static stopAutoUpdate(e) {
+    const t = this.updateTimers.get(e);
+    t && (clearInterval(t), this.updateTimers.delete(e));
+  }
+  /**
+   * 初始化所有自動更新
+   */
+  static initAutoUpdates() {
+    const e = this.getAll().filter((t) => t.enabled && t.autoUpdate);
+    for (const t of e)
+      this.startAutoUpdate(t.id);
+    console.log(`Initialized ${e.length} auto-update timers`);
+  }
+  static saveAll(e) {
+    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(e));
+  }
+  static generateId() {
+    return "sitemap_" + Date.now().toString(36) + Math.random().toString(36).substring(2);
+  }
+  static clearAll() {
+    this.updateTimers.forEach((e) => clearInterval(e)), this.updateTimers.clear(), localStorage.removeItem(this.STORAGE_KEY);
+  }
+}
+l(E, "STORAGE_KEY", "sm_sitemap_configs"), l(E, "updateTimers", /* @__PURE__ */ new Map());
 class Z {
   constructor() {
     l(this, "id", "sitemap");
@@ -3529,21 +3536,21 @@ class Z {
     l(this, "enabled", !1);
     // 預設關閉，需要配置 Sitemap 後才啟用
     l(this, "extractor");
-    this.extractor = new z();
+    this.extractor = new I();
   }
   async initialize() {
-    const e = I.getAll();
+    const e = E.getAll();
     console.log(`🗺️ Sitemap Plugin: ${e.length} sitemaps loaded`), e.length > 0 && (this.enabled = !0);
   }
   async search(e, t = 5) {
     try {
-      const n = I.getAll();
+      const n = E.getAll();
       if (n.length === 0)
         return [];
       const o = [], i = this.extractor.extractKeywords(e);
       for (const r of n)
         try {
-          const s = await I.search(r.id, i, 3);
+          const s = await E.search(r.id, i, 3);
           o.push(...s.map(({ page: a, score: d }) => ({
             type: "sitemap",
             title: a.title,
@@ -3566,13 +3573,13 @@ class Z {
     }
   }
   isAvailable() {
-    return I.getAll().length > 0;
+    return E.getAll().length > 0;
   }
   getConfig() {
     return {
       enabled: this.enabled,
       priority: this.priority,
-      sitemapCount: I.getAll().length
+      sitemapCount: E.getAll().length
     };
   }
   updateConfig(e) {
@@ -3600,7 +3607,7 @@ class ee {
       contentColumn: "content",
       urlColumn: "url",
       ...e
-    }, this.enabled = this.config.enabled, this.priority = this.config.priority, this.extractor = new z();
+    }, this.enabled = this.config.enabled, this.priority = this.config.priority, this.extractor = new I();
   }
   async initialize() {
     if (!this.config.connectionId) {
@@ -3612,11 +3619,11 @@ class ee {
       return;
     }
     try {
-      if (!E.getById(this.config.connectionId)) {
+      if (!z.getById(this.config.connectionId)) {
         console.warn(`⚠️ SQL Plugin: Connection ${this.config.connectionId} not found`), this.enabled = !1;
         return;
       }
-      if (!await E.testConnection(
+      if (!await z.testConnection(
         this.config.connectionId,
         this.config.apiEndpoint
       )) {
@@ -3632,7 +3639,7 @@ class ee {
     if (!this.isAvailable())
       return [];
     try {
-      const n = this.extractor.extractKeywords(e, 5), o = this.buildSearchQuery(n, t), i = await E.query(
+      const n = this.extractor.extractKeywords(e, 5), o = this.buildSearchQuery(n, t), i = await z.query(
         this.config.connectionId,
         o,
         this.config.apiEndpoint
@@ -3735,11 +3742,11 @@ class ie {
       console.warn("ServiceModuler already initialized");
       return;
     }
-    this.config = e, T.getCurrentUser(), console.log("User ID:", T.getUserId()), this.pluginManager = ne(), oe(this.pluginManager), this.pluginManager.initializeAll().then(() => {
+    this.config = e, k.getCurrentUser(), console.log("User ID:", k.getUserId()), this.pluginManager = ne(), oe(this.pluginManager), this.pluginManager.initializeAll().then(() => {
       console.log("✅ All plugins initialized");
     }).catch((i) => {
       console.error("❌ Plugin initialization error:", i);
-    }), this.openAI = new Y(e.azureOpenAI || e.llmAPI), this.indexing = new B(this.openAI, e.siteConfig), this.agent = new J(this.openAI, this.pluginManager, e.rules || []), this.capture = new V(), this.panel = new H(
+    }), this.openAI = new Q(e.azureOpenAI || e.llmAPI), this.indexing = new B(this.openAI, e.siteConfig), this.agent = new J(this.openAI, this.pluginManager, e.rules || []), this.capture = new V(), this.panel = new H(
       ((t = e.ui) == null ? void 0 : t.width) || "33.33%",
       ((n = e.ui) == null ? void 0 : n.position) || "right"
     ), this.panel.setCallbacks({
@@ -3929,7 +3936,7 @@ class ie {
    * 載入對話狀態
    */
   loadConversationState() {
-    let e = y.loadConversation();
+    let e = b.loadConversation();
     e || (e = {
       sessionId: this.generateSessionId(),
       messages: []
@@ -3941,7 +3948,7 @@ class ie {
    * 保存對話狀態
    */
   saveConversationState() {
-    this.conversationState && y.saveConversation(this.conversationState);
+    this.conversationState && b.saveConversation(this.conversationState);
   }
   /**
    * 生成 Session ID

@@ -433,20 +433,23 @@ export class AdminPanel {
         e.preventDefault();
         e.stopPropagation();
 
-        const manualIndexEnabled = (this.container!.querySelector('input[name="manualIndex"]') as HTMLInputElement)?.checked || false;
-        const frontendPagesEnabled = (this.container!.querySelector('input[name="frontendPages"]') as HTMLInputElement)?.checked || false;
-        const sitemapEnabled = (this.container!.querySelector('input[name="sitemap"]') as HTMLInputElement)?.checked || false;
-        const sqlDatabaseEnabled = (this.container!.querySelector('input[name="sqlDatabase"]') as HTMLInputElement)?.checked || false;
+        const manualIndexEnabled = (this.container!.querySelector('#manual-index-enabled') as HTMLInputElement)?.checked || false;
+        const frontendPagesEnabled = (this.container!.querySelector('#frontend-pages-enabled') as HTMLInputElement)?.checked || false;
 
         const toolConfig = StorageService.loadAgentToolConfig();
         if (toolConfig) {
           toolConfig.manualIndex.enabled = manualIndexEnabled;
           toolConfig.frontendPages.enabled = frontendPagesEnabled;
-          toolConfig.sitemap.enabled = sitemapEnabled;
-          toolConfig.sqlDatabase.enabled = sqlDatabaseEnabled;
 
           StorageService.saveAgentToolConfig(toolConfig);
-          alert('Agent 工具設定已儲存');
+          alert('Agent 設定已儲存');
+
+          // 重新渲染頁面
+          const contentDiv = this.container!.querySelector('#admin-content');
+          if (contentDiv) {
+            contentDiv.innerHTML = this.renderPageContent();
+            this.bindEvents();
+          }
         }
       });
     }
@@ -578,11 +581,7 @@ export class AdminPanel {
           <nav style="flex: 1; padding: 16px; overflow-y: auto;">
             ${this.renderNavItem('dashboard', '儀表板')}
             ${this.renderNavItem('manual-index', '手動索引')}
-            ${this.renderNavItem('sitemap', 'Sitemap 索引')}
-            ${this.renderNavItem('sql', 'SQL 資料庫')}
-            ${this.renderNavItem('database', '資料庫管理')}
             ${this.renderNavItem('conversations', '客服記錄')}
-            ${this.renderNavItem('agent-api', 'Agent & API 設定')}
             ${this.renderNavItem('system', '系統設定')}
           </nav>
 
@@ -641,16 +640,8 @@ export class AdminPanel {
         return this.renderDashboard();
       case 'manual-index':
         return this.renderManualIndex();
-      case 'sitemap':
-        return this.renderSitemap();
-      case 'sql':
-        return this.renderSQL();
-      case 'database':
-        return this.renderDatabaseManagement();
       case 'conversations':
         return this.renderConversations();
-      case 'agent-api':
-        return this.renderAgentAndAPI();
       case 'system':
         return this.renderSystemSettings();
       default:
@@ -664,8 +655,7 @@ export class AdminPanel {
   private renderDashboard(): string {
     const conversations = ConversationService.getAllConversations();
     const manualIndexes = ManualIndexService.getAll();
-    const sitemaps = SitemapService.getAll();
-    const sqlConnections = SQLService.getAll();
+    const toolConfig = StorageService.loadAgentToolConfig();
 
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">儀表板</h2>
@@ -673,23 +663,37 @@ export class AdminPanel {
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px;">
         ${this.renderStatCard('💬', '對話總數', conversations.length.toString())}
         ${this.renderStatCard('📝', '手動索引', manualIndexes.length.toString())}
-        ${this.renderStatCard('🌐', 'Sitemap', sitemaps.length.toString())}
-        ${this.renderStatCard('🗄️', 'SQL 連接', sqlConnections.length.toString())}
       </div>
 
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">快速操作</h3>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button class="nav-item" data-page="manual-index" style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">
-            新增手動索引
+      <!-- Agent 設定 -->
+      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">Agent 設定</h3>
+        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">配置 Agent 使用的搜尋工具</p>
+
+        <form id="agent-tool-config-form">
+          <div style="margin-bottom: 16px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" id="manual-index-enabled" ${toolConfig?.manualIndex?.enabled ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;" />
+              <span style="font-size: 14px; color: #374151; font-weight: 500;">啟用手動索引搜尋</span>
+            </label>
+            <p style="margin: 4px 0 0 26px; font-size: 12px; color: #6b7280;">搜尋手動新增的索引內容</p>
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: flex; align-items: center; cursor: pointer;">
+              <input type="checkbox" id="frontend-pages-enabled" ${toolConfig?.frontendPages?.enabled ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;" />
+              <span style="font-size: 14px; color: #374151; font-weight: 500;">啟用前端頁面搜尋</span>
+            </label>
+            <p style="margin: 4px 0 0 26px; font-size: 12px; color: #6b7280;">搜尋當前網站的所有頁面內容</p>
+          </div>
+
+          <button
+            type="submit"
+            style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
+          >
+            儲存設定
           </button>
-          <button class="nav-item" data-page="conversations" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">
-            查看對話
-          </button>
-          <button class="nav-item" data-page="agent-api" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;">
-            設定 Agent
-          </button>
-        </div>
+        </form>
       </div>
     `;
   }
