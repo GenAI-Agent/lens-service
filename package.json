@@ -1,0 +1,49 @@
+﻿{
+  "name": "lens-service",
+  "version": "1.0.0",
+  "description": "Lens Service - Embeddable AI Customer Service Widget",
+  "main": "dist/lens-service.umd.js",
+  "module": "dist/lens-service.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GenAI-Agent/lens-service.git"
+  },
+  "bugs": {
+    "url": "https://github.com/GenAI-Agent/lens-service/issues"
+  },
+  "homepage": "https://github.com/GenAI-Agent/lens-service#readme",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "lens-service",
+    "customer-service",
+    "ai",
+    "chatbot",
+    "widget",
+    "openai",
+    "azure"
+  ],
+  "author": "GenAI-Agent",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.5",
+    "typescript": "^5.3.3",
+    "vite": "^5.0.11"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "openai": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
