@@ -1071,7 +1071,7 @@ export class AdminPanel {
                   <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
                     <div>
                       <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">
-                        對話 ID: ${conv.conversationId.substring(0, 8)}...
+                        對話 ID: ${(conv.conversationId || conv.id).substring(0, 8)}...
                       </h4>
                       <p style="font-size: 14px; color: #6b7280; margin: 0;">
                         用戶 ID: ${conv.userId.substring(0, 8)}...
@@ -1079,7 +1079,7 @@ export class AdminPanel {
                     </div>
                     <div style="text-align: right;">
                       <div style="font-size: 12px; color: #9ca3af;">
-                        ${new Date(conv.createdAt).toLocaleString('zh-TW')}
+                        ${new Date(conv.createdAt || conv.startedAt).toLocaleString('zh-TW')}
                       </div>
                       <div style="font-size: 12px; color: #9ca3af; margin-top: 4px;">
                         ${messageCount} 則訊息
@@ -1097,7 +1097,7 @@ export class AdminPanel {
                   <div style="display: flex; gap: 16px; font-size: 13px; color: #6b7280;">
                     <span>👤 用戶: ${userMessages}</span>
                     <span>🤖 助手: ${assistantMessages}</span>
-                    <span>📅 ${new Date(conv.updatedAt).toLocaleDateString('zh-TW')}</span>
+                    <span>📅 ${new Date(conv.updatedAt || conv.lastMessageAt).toLocaleDateString('zh-TW')}</span>
                   </div>
 
                   <!-- 對話詳情（預設隱藏） -->

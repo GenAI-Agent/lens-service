@@ -125,10 +125,13 @@ export interface User {
 
 export interface Conversation {
   id: string;
+  conversationId?: string; // 向後兼容
   userId: string;
   messages: Message[];
   startedAt: number; // timestamp
   lastMessageAt: number; // timestamp
+  createdAt?: number; // 向後兼容
+  updatedAt?: number; // 向後兼容
   status: 'active' | 'closed' | 'human-takeover';
   humanAgentId?: string; // 如果有人工接管
   metadata?: {
