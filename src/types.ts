@@ -6,6 +6,7 @@ export interface ServiceModulerConfig {
     deployment: string;
     embeddingDeployment?: string;
     apiVersion?: string;
+    embeddingApiVersion?: string;
   };
 
   // 新版：LLM API 配置（分離）
