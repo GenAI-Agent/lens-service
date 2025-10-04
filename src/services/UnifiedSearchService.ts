@@ -75,13 +75,13 @@ export class UnifiedSearchService {
   }
 
   /**
-   * 搜尋手動索引
+   * 搜尋手動索引（支持BM25 + Vector Search）
    */
   private async searchManualIndex(query: string): Promise<Source[]> {
     try {
-      const results = ManualIndexService.search(query, 5);
+      const results = await ManualIndexService.search(query, 5);
 
-      return results.map(({ index, score }) => ({
+      return results.map(({ index, score, breakdown }) => ({
         type: 'manual-index' as const,
         title: index.name,
         snippet: index.content.substring(0, 200),
@@ -90,7 +90,9 @@ export class UnifiedSearchService {
         score,
         metadata: {
           description: index.description,
-          createdAt: index.createdAt
+          createdAt: index.createdAt,
+          hasEmbedding: !!index.embedding,
+          scoreBreakdown: breakdown
         }
       }));
     } catch (error) {

@@ -149,6 +149,7 @@ export interface ManualIndex {
   content: string;
   keywords: string[];
   fingerprint: number[];
+  embedding?: number[]; // 新增：向量嵌入，用於語義搜索
   metadata: Record<string, any>;
   createdAt: number;
   updatedAt: number;

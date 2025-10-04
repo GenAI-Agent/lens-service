@@ -1,7 +1,7 @@
-var H = Object.defineProperty;
-var Y = (m, e, t) => e in m ? H(m, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : m[e] = t;
-var l = (m, e, t) => Y(m, typeof e != "symbol" ? e + "" : e, t);
-class J {
+var J = Object.defineProperty;
+var j = (m, e, t) => e in m ? J(m, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : m[e] = t;
+var l = (m, e, t) => j(m, typeof e != "symbol" ? e + "" : e, t);
+class V {
   constructor(e) {
     l(this, "endpoint");
     l(this, "apiKey");
@@ -101,7 +101,7 @@ class J {
     return t;
   }
 }
-class b {
+class v {
   /**
    * 保存對話狀態
    */
@@ -260,8 +260,8 @@ class b {
     return e === this.loadAdminPassword();
   }
 }
-l(b, "CONVERSATION_KEY", "sm_conversation"), l(b, "INDEX_KEY", "sm_indexed_pages"), l(b, "CONFIG_KEY", "sm_config"), l(b, "AGENT_TOOL_CONFIG_KEY", "sm_agent_tool_config"), l(b, "ADMIN_PASSWORD_KEY", "sm_admin_password");
-class V {
+l(v, "CONVERSATION_KEY", "sm_conversation"), l(v, "INDEX_KEY", "sm_indexed_pages"), l(v, "CONFIG_KEY", "sm_config"), l(v, "AGENT_TOOL_CONFIG_KEY", "sm_agent_tool_config"), l(v, "ADMIN_PASSWORD_KEY", "sm_admin_password");
+class G {
   constructor(e, t) {
     l(this, "openAI");
     l(this, "siteConfig");
@@ -286,7 +286,7 @@ class V {
       }
       await this.sleep(500);
     }
-    b.saveIndexedPages(i), console.log(`Indexing complete. Indexed ${i.length} pages.`);
+    v.saveIndexedPages(i), console.log(`Indexing complete. Indexed ${i.length} pages.`);
   }
   /**
    * 發現本地專案的所有頁面
@@ -321,8 +321,8 @@ class V {
           const a = await this.fetchPage(s);
           this.extractLinks(a, s).forEach((c) => {
             try {
-              const h = new URL(c);
-              this.isSameDomain(h.hostname, r) && n.push(c);
+              const g = new URL(c);
+              this.isSameDomain(g.hostname, r) && n.push(c);
             } catch {
             }
           });
@@ -430,7 +430,7 @@ class V {
     return new Promise((t) => setTimeout(t, e));
   }
 }
-class j {
+class W {
   constructor(e, t, n = [], o) {
     l(this, "openAI");
     l(this, "pluginManager");
@@ -548,8 +548,8 @@ ${i.join(`
         r,
         ((a = this.currentRule) == null ? void 0 : a.temperature) || 0.7,
         ((d = this.currentRule) == null ? void 0 : d.maxTokens) || 1e3
-      ), h = !c.includes("CANNOT_ANSWER");
-      return { response: c.replace(/CANNOT_ANSWER/g, "").trim() || c, canAnswer: h };
+      ), g = !c.includes("CANNOT_ANSWER");
+      return { response: c.replace(/CANNOT_ANSWER/g, "").trim() || c, canAnswer: g };
     } catch (c) {
       return console.error("Failed to generate response:", c), {
         response: "抱歉，系統暫時無法處理您的請求。",
@@ -646,7 +646,7 @@ User ID: ${t}
     return this.currentRule;
   }
 }
-const x = {
+const b = {
   container: `
     position: fixed;
     top: 0;
@@ -831,7 +831,7 @@ const x = {
     border-color: #6366f1;
   `
 };
-class G {
+class X {
   constructor(e = "33.33%", t = "right") {
     l(this, "container");
     l(this, "overlay");
@@ -853,40 +853,40 @@ class G {
    */
   createContainer() {
     const e = document.createElement("div");
-    return e.id = "sm-container", e.style.cssText = x.container, e;
+    return e.id = "sm-container", e.style.cssText = b.container, e;
   }
   /**
    * 創建遮罩層
    */
   createOverlay() {
     const e = document.createElement("div");
-    return e.style.cssText = x.overlay, e.style.display = "none", e.addEventListener("click", () => this.close()), e;
+    return e.style.cssText = b.overlay, e.style.display = "none", e.addEventListener("click", () => this.close()), e;
   }
   /**
    * 創建面板
    */
   createPanel() {
     const e = document.createElement("div");
-    return e.style.cssText = x.panel, e.style.width = this.width, this.position === "right" ? (e.style.right = `-${this.width}`, e.style.left = "auto") : (e.style.left = `-${this.width}`, e.style.right = "auto"), e.innerHTML = `
-      <div id="sm-view-container" style="${x.viewContainer}">
+    return e.style.cssText = b.panel, e.style.width = this.width, this.position === "right" ? (e.style.right = `-${this.width}`, e.style.left = "auto") : (e.style.left = `-${this.width}`, e.style.right = "auto"), e.innerHTML = `
+      <div id="sm-view-container" style="${b.viewContainer}">
         <!-- 右上角工具按鈕 -->
         <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; z-index: 10;">
-          <button id="sm-rules-tab" style="${x.iconButton}" title="規則">
+          <button id="sm-rules-tab" style="${b.iconButton}" title="規則">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
             </svg>
           </button>
-          <button id="sm-history-btn" style="${x.iconButton}" title="歷史記錄">
+          <button id="sm-history-btn" style="${b.iconButton}" title="歷史記錄">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </button>
-          <button id="sm-refresh-btn" style="${x.iconButton}" title="刷新">
+          <button id="sm-refresh-btn" style="${b.iconButton}" title="刷新">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0118.8-4.3M22 12.5a10 10 0 01-18.8 4.2"/>
             </svg>
           </button>
-          <button id="sm-close-btn" style="${x.iconButton}" title="關閉">
+          <button id="sm-close-btn" style="${b.iconButton}" title="關閉">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
@@ -894,9 +894,9 @@ class G {
         </div>
 
         <!-- 對話視圖 -->
-        <div id="sm-chat-view" style="${x.chatView}">
-          <div id="sm-messages" style="${x.messagesContainer}"></div>
-          <div style="${x.inputContainer}">
+        <div id="sm-chat-view" style="${b.chatView}">
+          <div id="sm-messages" style="${b.messagesContainer}"></div>
+          <div style="${b.inputContainer}">
             <!-- 圖片預覽（預設隱藏） -->
             <div id="sm-image-preview" style="display: none; margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 8px; position: relative;">
               <img id="sm-preview-img" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;" />
@@ -909,9 +909,9 @@ class G {
                 type="text"
                 id="sm-input"
                 placeholder="輸入訊息..."
-                style="${x.input}"
+                style="${b.input}"
               />
-              <button id="sm-send-btn" style="${x.sendIconButton}" title="發送">
+              <button id="sm-send-btn" style="${b.sendIconButton}" title="發送">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                 </svg>
@@ -921,7 +921,7 @@ class G {
         </div>
 
         <!-- 規則視圖 -->
-        <div id="sm-rules-view" style="${x.rulesView}; display: none;">
+        <div id="sm-rules-view" style="${b.rulesView}; display: none;">
           <div id="sm-rules-list"></div>
         </div>
       </div>
@@ -964,7 +964,7 @@ class G {
    */
   showView(e) {
     const t = this.panel.querySelector("#sm-chat-view"), n = this.panel.querySelector("#sm-rules-view"), o = this.panel.querySelector("#sm-chat-tab"), i = this.panel.querySelector("#sm-rules-tab");
-    e === "chat" ? (t.style.display = "flex", n.style.display = "none", o.style.cssText = x.tabButton + "; " + x.tabButtonActive, i.style.cssText = x.tabButton) : (t.style.display = "none", n.style.display = "block", o.style.cssText = x.tabButton, i.style.cssText = x.tabButton + "; " + x.tabButtonActive);
+    e === "chat" ? (t.style.display = "flex", n.style.display = "none", o.style.cssText = b.tabButton + "; " + b.tabButtonActive, i.style.cssText = b.tabButton) : (t.style.display = "none", n.style.display = "block", o.style.cssText = b.tabButton, i.style.cssText = b.tabButton + "; " + b.tabButtonActive);
   }
   /**
    * 添加訊息
@@ -973,11 +973,11 @@ class G {
     const t = this.panel.querySelector("#sm-messages");
     if (!t) return;
     const n = document.createElement("div");
-    if (n.style.cssText = e.role === "user" ? x.userMessage : x.assistantMessage, n.textContent = e.content, e.sources && e.sources.length > 0) {
+    if (n.style.cssText = e.role === "user" ? b.userMessage : b.assistantMessage, n.textContent = e.content, e.sources && e.sources.length > 0) {
       const o = document.createElement("div");
-      o.style.cssText = x.sources, o.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((i, r) => {
+      o.style.cssText = b.sources, o.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((i, r) => {
         const s = document.createElement("a");
-        s.href = i.url, s.target = "_blank", s.textContent = `[${r + 1}] ${i.title}`, s.style.cssText = x.sourceLink, o.appendChild(s), o.appendChild(document.createElement("br"));
+        s.href = i.url, s.target = "_blank", s.textContent = `[${r + 1}] ${i.title}`, s.style.cssText = b.sourceLink, o.appendChild(s), o.appendChild(document.createElement("br"));
       }), n.appendChild(o);
     }
     t.appendChild(n), setTimeout(() => {
@@ -991,9 +991,9 @@ class G {
     const n = this.panel.querySelector("#sm-rules-list");
     n && (n.innerHTML = "", e.forEach((o) => {
       const i = document.createElement("div");
-      i.style.cssText = x.ruleItem, o.id === t && (i.style.cssText += "; " + x.ruleItemActive), i.innerHTML = `
-        <h3 style="${x.ruleTitle}">${o.name}</h3>
-        <p style="${x.ruleDescription}">${o.description || ""}</p>
+      i.style.cssText = b.ruleItem, o.id === t && (i.style.cssText += "; " + b.ruleItemActive), i.innerHTML = `
+        <h3 style="${b.ruleTitle}">${o.name}</h3>
+        <p style="${b.ruleDescription}">${o.description || ""}</p>
       `, i.addEventListener("click", () => {
         this.onSelectRule && this.onSelectRule(o.id), this.showView("chat");
       }), n.appendChild(i);
@@ -1096,7 +1096,7 @@ ${o}`);
     this.close(), this.container.parentElement && document.body.removeChild(this.container);
   }
 }
-class W {
+class Z {
   constructor() {
     l(this, "isEnabled", !1);
     l(this, "onCapture");
@@ -1195,7 +1195,7 @@ class W {
     }, 500);
   }
 }
-class K {
+class Q {
   /**
    * 提取當前頁面的所有文字內容
    */
@@ -1205,14 +1205,14 @@ class K {
     n.querySelectorAll("script, style, nav, footer, header, .sm-container").forEach((a) => a.remove());
     const o = ((s = n.textContent) == null ? void 0 : s.replace(/\s+/g, " ").trim()) || "", i = [];
     document.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach((a) => {
-      var h;
-      const d = parseInt(a.tagName.substring(1)), c = ((h = a.textContent) == null ? void 0 : h.trim()) || "";
+      var g;
+      const d = parseInt(a.tagName.substring(1)), c = ((g = a.textContent) == null ? void 0 : g.trim()) || "";
       c && i.push({ level: d, text: c });
     });
     const r = [];
     return document.querySelectorAll("a[href]").forEach((a) => {
-      var h;
-      const d = ((h = a.textContent) == null ? void 0 : h.trim()) || "", c = a.href;
+      var g;
+      const d = ((g = a.textContent) == null ? void 0 : g.trim()) || "", c = a.href;
       d && c && r.push({ text: d, href: c });
     }), {
       title: e,
@@ -1242,10 +1242,10 @@ class K {
     for (; i = o.nextNode(); ) {
       const r = i.textContent || "", s = r.toLowerCase();
       if (s.includes(n)) {
-        const a = i.parentElement, d = s.indexOf(n), c = Math.max(0, d - 50), h = Math.min(r.length, d + e.length + 50), w = r.substring(c, h);
+        const a = i.parentElement, d = s.indexOf(n), c = Math.max(0, d - 50), g = Math.min(r.length, d + e.length + 50), x = r.substring(c, g);
         t.push({
           text: r.trim(),
-          context: "..." + w + "...",
+          context: "..." + x + "...",
           element: a
         });
       }
@@ -1333,7 +1333,7 @@ class P {
   }
 }
 l(P, "USER_KEY", "sm_user"), l(P, "SESSION_KEY", "sm_session");
-class O {
+class R {
   /**
    * 獲取當前對話
    * 如果沒有活躍對話，創建新對話
@@ -1487,8 +1487,8 @@ class O {
     localStorage.removeItem(this.CONVERSATIONS_KEY), localStorage.removeItem(this.CURRENT_CONVERSATION_KEY);
   }
 }
-l(O, "CONVERSATIONS_KEY", "sm_conversations"), l(O, "CURRENT_CONVERSATION_KEY", "sm_current_conversation");
-class E {
+l(R, "CONVERSATIONS_KEY", "sm_conversations"), l(R, "CURRENT_CONVERSATION_KEY", "sm_current_conversation");
+class T {
   /**
    * 提取頁面主要內容
    */
@@ -1645,8 +1645,8 @@ class E {
       });
       const d = r.content.toLowerCase();
       return o.forEach((c) => {
-        const h = (d.match(new RegExp(c, "g")) || []).length;
-        s += h * 2;
+        const g = (d.match(new RegExp(c, "g")) || []).length;
+        s += g * 2;
       }), {
         heading: r.heading,
         content: r.content,
@@ -1695,7 +1695,13 @@ class E {
     return o;
   }
 }
-class I {
+class A {
+  /**
+   * 設置OpenAI服務實例（用於生成embeddings）
+   */
+  static setOpenAIService(e) {
+    this.openAIService = e;
+  }
   /**
    * 獲取所有手動索引
    */
@@ -1717,30 +1723,46 @@ class I {
   /**
    * 創建新索引
    */
-  static create(e) {
-    const t = new E(), n = t.extractKeywords(e.content), o = t.generateFingerprint(e.content), i = {
+  static async create(e) {
+    const t = new T(), n = t.extractKeywords(e.content), o = t.generateFingerprint(e.content);
+    let i;
+    if (this.openAIService)
+      try {
+        const a = `${e.name} ${e.description} ${e.content}`;
+        i = await this.openAIService.generateEmbedding(a), console.log("Generated embedding for manual index:", e.name);
+      } catch (a) {
+        console.warn("Failed to generate embedding:", a);
+      }
+    const r = {
       id: this.generateId(),
       name: e.name,
       description: e.description,
       content: e.content,
       keywords: n,
       fingerprint: o,
+      embedding: i,
       metadata: e.metadata || {},
       createdAt: Date.now(),
       updatedAt: Date.now()
-    }, r = this.getAll();
-    return r.push(i), this.saveAll(r), console.log("Created manual index:", i.id), i;
+    }, s = this.getAll();
+    return s.push(r), this.saveAll(s), console.log("Created manual index:", r.id), r;
   }
   /**
    * 更新索引
    */
-  static update(e, t) {
+  static async update(e, t) {
     const n = this.getAll(), o = n.find((i) => i.id === e);
     if (!o) return null;
     if (t.name !== void 0 && (o.name = t.name), t.description !== void 0 && (o.description = t.description), t.metadata !== void 0 && (o.metadata = t.metadata), t.content !== void 0) {
       o.content = t.content;
-      const i = new E();
-      o.keywords = i.extractKeywords(t.content), o.fingerprint = i.generateFingerprint(t.content);
+      const i = new T();
+      if (o.keywords = i.extractKeywords(t.content), o.fingerprint = i.generateFingerprint(t.content), this.openAIService)
+        try {
+          const r = `${o.name} ${o.description} ${t.content}`;
+          o.embedding = await this.openAIService.generateEmbedding(r), console.log("Updated embedding for manual index:", o.name);
+        } catch (r) {
+          console.warn("Failed to update embedding:", r);
+        }
     }
     return o.updatedAt = Date.now(), this.saveAll(n), console.log("Updated manual index:", e), o;
   }
@@ -1752,28 +1774,57 @@ class I {
     return n.length === t.length ? !1 : (this.saveAll(n), console.log("Deleted manual index:", e), !0);
   }
   /**
-   * 搜尋索引
+   * 搜尋索引（混合搜索：BM25 + Vector Search）
    */
-  static search(e, t = 5) {
+  static async search(e, t = 5) {
     const n = this.getAll();
     if (n.length === 0) return [];
-    const o = new E(), i = o.extractKeywords(e), r = o.generateFingerprint(e);
-    return n.map((a) => {
-      const d = this.calculateSimilarity(
-        i,
-        r,
-        a.keywords,
-        a.fingerprint
-      );
-      return { index: a, score: d };
-    }).filter((a) => a.score > 0).sort((a, d) => d.score - a.score).slice(0, t);
+    const o = new T(), i = o.extractKeywords(e), r = o.generateFingerprint(e);
+    let s = null;
+    if (this.openAIService)
+      try {
+        s = await this.openAIService.generateEmbedding(e);
+      } catch (d) {
+        console.warn("Failed to generate query embedding:", d);
+      }
+    return n.map((d) => {
+      const c = this.calculateBM25Score(i, d), g = this.calculateFingerprintScore(r, d.fingerprint), x = s && d.embedding ? this.calculateCosineSimilarity(s, d.embedding) : 0;
+      let y;
+      return x > 0 ? y = c * 0.4 + x * 0.4 + g * 0.2 : y = c * 0.6 + g * 0.4, {
+        index: d,
+        score: y,
+        breakdown: {
+          bm25Score: c,
+          vectorScore: x,
+          fingerprintScore: g
+        }
+      };
+    }).filter((d) => d.score > 0).sort((d, c) => c.score - d.score).slice(0, t);
   }
   /**
-   * 計算相似度
+   * 計算BM25分數
    */
-  static calculateSimilarity(e, t, n, o) {
-    const i = this.calculateKeywordScore(e, n), r = this.calculateFingerprintScore(t, o);
-    return i * 0.5 + r * 0.5;
+  static calculateBM25Score(e, t) {
+    if (e.length === 0 || t.keywords.length === 0) return 0;
+    const n = 1.2, o = 0.75, i = t.content.length, r = 1e3;
+    let s = 0;
+    for (const a of e) {
+      const d = t.keywords.filter((y) => y === a).length;
+      if (d === 0) continue;
+      const c = Math.log(10 / 2), g = d * (n + 1), x = d + n * (1 - o + o * (i / r));
+      s += c * (g / x);
+    }
+    return Math.min(s / e.length, 1);
+  }
+  /**
+   * 計算餘弦相似度
+   */
+  static calculateCosineSimilarity(e, t) {
+    if (e.length !== t.length) return 0;
+    let n = 0, o = 0, i = 0;
+    for (let r = 0; r < e.length; r++)
+      n += e[r] * t[r], o += e[r] * e[r], i += t[r] * t[r];
+    return o === 0 || i === 0 ? 0 : n / (Math.sqrt(o) * Math.sqrt(i));
   }
   /**
    * 計算關鍵字分數
@@ -1832,9 +1883,27 @@ class I {
       throw console.error("Failed to import indexes:", t), t;
     }
   }
+  /**
+   * 為現有索引生成embeddings（批量處理）
+   */
+  static async generateEmbeddingsForAll() {
+    if (!this.openAIService)
+      return console.warn("OpenAI service not available for embedding generation"), 0;
+    const e = this.getAll();
+    let t = 0;
+    for (const n of e)
+      if (!n.embedding)
+        try {
+          const o = `${n.name} ${n.description} ${n.content}`;
+          n.embedding = await this.openAIService.generateEmbedding(o), n.updatedAt = Date.now(), t++, console.log(`Generated embedding for: ${n.name}`), await new Promise((i) => setTimeout(i, 100));
+        } catch (o) {
+          console.error(`Failed to generate embedding for ${n.name}:`, o);
+        }
+    return t > 0 && (this.saveAll(e), console.log(`Generated embeddings for ${t} indexes`)), t;
+  }
 }
-l(I, "STORAGE_KEY", "sm_manual_indexes");
-class k {
+l(A, "STORAGE_KEY", "sm_manual_indexes"), l(A, "openAIService", null);
+class z {
   /**
    * 獲取所有 SQL 連接
    */
@@ -1996,9 +2065,9 @@ class k {
     return JSON.stringify(e, null, 2);
   }
 }
-l(k, "STORAGE_KEY", "sm_sql_connections");
-var B = {};
-class X {
+l(z, "STORAGE_KEY", "sm_sql_connections");
+var H = {};
+class ee {
   constructor() {
     l(this, "container", null);
     l(this, "isOpen", !1);
@@ -2171,10 +2240,10 @@ class X {
     if (!this.container) return;
     const e = this.container.querySelector("#admin-login-form");
     if (e) {
-      e.addEventListener("submit", async (g) => {
-        g.preventDefault(), g.stopPropagation();
-        const u = this.container.querySelector("#admin-username"), f = this.container.querySelector("#admin-password"), v = (u == null ? void 0 : u.value) || "", y = (f == null ? void 0 : f.value) || "";
-        console.log("Login attempt with username:", v), v === "lens" && y === "1234" ? (console.log("Login successful (local auth)"), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), this.bindEvents()) : (alert("用戶名或密碼錯誤"), f.value = "", f.focus());
+      e.addEventListener("submit", async (h) => {
+        h.preventDefault(), h.stopPropagation();
+        const u = this.container.querySelector("#admin-username"), f = this.container.querySelector("#admin-password"), S = (u == null ? void 0 : u.value) || "", w = (f == null ? void 0 : f.value) || "";
+        console.log("Login attempt with username:", S), S === "lens" && w === "1234" ? (console.log("Login successful (local auth)"), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), this.bindEvents()) : (alert("用戶名或密碼錯誤"), f.value = "", f.focus());
       });
       const p = this.container.querySelector("#admin-username");
       p && setTimeout(() => {
@@ -2183,9 +2252,9 @@ class X {
     }
     this.container.querySelectorAll(".nav-item").forEach((p) => {
       p.addEventListener("click", () => {
-        const g = p.dataset.page;
-        if (g) {
-          this.currentPage = g;
+        const h = p.dataset.page;
+        if (h) {
+          this.currentPage = h;
           const u = this.container.querySelector("#admin-content");
           u && (u.innerHTML = this.renderPageContent()), this.container.innerHTML = this.renderAdminUI(), this.bindEvents();
         }
@@ -2198,7 +2267,7 @@ class X {
     const o = this.container.querySelector("#telegram-settings-form");
     o && o.addEventListener("submit", (p) => {
       p.preventDefault(), p.stopPropagation();
-      const g = this.container.querySelector("#telegram-enabled"), u = (g == null ? void 0 : g.checked) || !1;
+      const h = this.container.querySelector("#telegram-enabled"), u = (h == null ? void 0 : h.checked) || !1;
       this.setTelegramEnabled(u), alert(`Telegram 通知已${u ? "啟用" : "停用"}`);
       const f = this.container.querySelector("#admin-content");
       f && (f.innerHTML = this.renderPageContent(), this.bindEvents());
@@ -2206,45 +2275,50 @@ class X {
     const i = this.container.querySelector("#change-password-form");
     i && i.addEventListener("submit", (p) => {
       p.preventDefault(), p.stopPropagation();
-      const g = this.container.querySelector("#new-password"), u = (g == null ? void 0 : g.value) || "";
+      const h = this.container.querySelector("#new-password"), u = (h == null ? void 0 : h.value) || "";
       if (u.length < 4) {
         alert("密碼長度至少 4 個字元");
         return;
       }
-      b.saveAdminPassword(u), alert("密碼已更新");
+      v.saveAdminPassword(u), alert("密碼已更新");
       const f = this.container.querySelector("#admin-content");
       f && (f.innerHTML = this.renderPageContent(), this.bindEvents());
     });
     const r = this.container.querySelector("#ip-whitelist-form");
     r && r.addEventListener("submit", (p) => {
       p.preventDefault(), p.stopPropagation();
-      const g = this.container.querySelector("#ip-list"), f = ((g == null ? void 0 : g.value) || "").split(`
-`).map((y) => y.trim()).filter((y) => y.length > 0);
+      const h = this.container.querySelector("#ip-list"), f = ((h == null ? void 0 : h.value) || "").split(`
+`).map((w) => w.trim()).filter((w) => w.length > 0);
       this.saveIPWhitelist(f), alert(`已更新 IP 白名單（${f.length} 個 IP）`);
-      const v = this.container.querySelector("#admin-content");
-      v && (v.innerHTML = this.renderPageContent(), this.bindEvents());
+      const S = this.container.querySelector("#admin-content");
+      S && (S.innerHTML = this.renderPageContent(), this.bindEvents());
     });
     const s = this.container.querySelector("#add-manual-index-form");
-    s && s.addEventListener("submit", (p) => {
+    s && s.addEventListener("submit", async (p) => {
       p.preventDefault(), p.stopPropagation();
-      const g = this.container.querySelector("#index-name"), u = this.container.querySelector("#index-description"), f = this.container.querySelector("#index-content"), v = (g == null ? void 0 : g.value) || "", y = (u == null ? void 0 : u.value) || "", C = (f == null ? void 0 : f.value) || "";
-      if (!v || !C) {
+      const h = this.container.querySelector("#index-name"), u = this.container.querySelector("#index-description"), f = this.container.querySelector("#index-content"), S = (h == null ? void 0 : h.value) || "", w = (u == null ? void 0 : u.value) || "", C = (f == null ? void 0 : f.value) || "";
+      if (!S || !C) {
         alert("請填寫名稱和內容");
         return;
       }
       try {
-        I.create({ name: v, description: y, content: C }), alert("索引已新增");
-        const A = this.container.querySelector("#admin-content");
-        A && (A.innerHTML = this.renderPageContent(), this.bindEvents());
-      } catch (A) {
-        alert(`新增失敗：${A instanceof Error ? A.message : "未知錯誤"}`);
+        await A.create({ name: S, description: w, content: C }), alert("索引已新增");
+        const E = this.container.querySelector("#admin-content");
+        E && (E.innerHTML = this.renderPageContent(), this.bindEvents());
+      } catch (E) {
+        alert(`新增失敗：${E instanceof Error ? E.message : "未知錯誤"}`);
       }
+    }), this.container.querySelectorAll(".edit-index-btn").forEach((p) => {
+      p.addEventListener("click", () => {
+        const h = p.dataset.id;
+        h && this.showEditIndexModal(h);
+      });
     }), this.container.querySelectorAll(".delete-index-btn").forEach((p) => {
       p.addEventListener("click", () => {
-        const g = p.dataset.id;
-        if (g && confirm("確定要刪除這個索引嗎？"))
+        const h = p.dataset.id;
+        if (h && confirm("確定要刪除這個索引嗎？"))
           try {
-            I.delete(g), alert("索引已刪除");
+            A.delete(h), alert("索引已刪除");
             const u = this.container.querySelector("#admin-content");
             u && (u.innerHTML = this.renderPageContent(), this.bindEvents());
           } catch (u) {
@@ -2252,71 +2326,85 @@ class X {
           }
       });
     });
-    const d = this.container.querySelector("#api-config-form");
-    d && d.addEventListener("submit", (p) => {
-      var q, M, z, $, L, _;
+    const c = this.container.querySelector("#generate-embeddings-btn");
+    c && c.addEventListener("click", async () => {
+      if (confirm("確定要為所有索引生成向量嵌入嗎？這可能需要一些時間。"))
+        try {
+          const p = c;
+          p.disabled = !0, p.textContent = "生成中...";
+          const h = await A.generateEmbeddingsForAll();
+          alert(`成功為 ${h} 個索引生成了向量嵌入`);
+          const u = this.container.querySelector("#admin-content");
+          u && (u.innerHTML = this.renderPageContent(), this.bindEvents());
+        } catch (p) {
+          alert(`生成失敗：${p instanceof Error ? p.message : "未知錯誤"}`);
+        }
+    });
+    const g = this.container.querySelector("#api-config-form");
+    g && g.addEventListener("submit", (p) => {
+      var O, N, $, L, q, M;
       p.preventDefault(), p.stopPropagation();
-      const g = ((q = this.container.querySelector("#llm-endpoint")) == null ? void 0 : q.value) || "", u = ((M = this.container.querySelector("#llm-api-key")) == null ? void 0 : M.value) || "", f = ((z = this.container.querySelector("#llm-deployment")) == null ? void 0 : z.value) || "", v = (($ = this.container.querySelector("#embed-endpoint")) == null ? void 0 : $.value) || "", y = ((L = this.container.querySelector("#embed-api-key")) == null ? void 0 : L.value) || "", C = ((_ = this.container.querySelector("#embed-deployment")) == null ? void 0 : _.value) || "", A = {
+      const h = ((O = this.container.querySelector("#llm-endpoint")) == null ? void 0 : O.value) || "", u = ((N = this.container.querySelector("#llm-api-key")) == null ? void 0 : N.value) || "", f = (($ = this.container.querySelector("#llm-deployment")) == null ? void 0 : $.value) || "", S = ((L = this.container.querySelector("#embed-endpoint")) == null ? void 0 : L.value) || "", w = ((q = this.container.querySelector("#embed-api-key")) == null ? void 0 : q.value) || "", C = ((M = this.container.querySelector("#embed-deployment")) == null ? void 0 : M.value) || "", E = {
         azureOpenAI: {
-          endpoint: g,
+          endpoint: h,
           apiKey: u,
           deployment: f,
           embeddingDeployment: C
         },
         llmAPI: {
-          endpoint: g,
+          endpoint: h,
           apiKey: u,
           deployment: f
         },
         embeddingAPI: {
-          endpoint: v,
-          apiKey: y,
+          endpoint: S,
+          apiKey: w,
           deployment: C
         }
       };
-      b.saveConfig(A), alert("API 設定已儲存");
+      v.saveConfig(E), alert("API 設定已儲存");
     });
-    const c = this.container.querySelector("#agent-tool-config-form");
-    c && c.addEventListener("submit", (p) => {
-      var v, y;
+    const x = this.container.querySelector("#agent-tool-config-form");
+    x && x.addEventListener("submit", (p) => {
+      var S, w;
       p.preventDefault(), p.stopPropagation();
-      const g = ((v = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : v.checked) || !1, u = ((y = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : y.checked) || !1, f = b.loadAgentToolConfig();
+      const h = ((S = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : S.checked) || !1, u = ((w = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : w.checked) || !1, f = v.loadAgentToolConfig();
       if (f) {
-        f.manualIndex.enabled = g, f.frontendPages.enabled = u, b.saveAgentToolConfig(f), alert("Agent 設定已儲存");
+        f.manualIndex.enabled = h, f.frontendPages.enabled = u, v.saveAgentToolConfig(f), alert("Agent 設定已儲存");
         const C = this.container.querySelector("#admin-content");
         C && (C.innerHTML = this.renderPageContent(), this.bindEvents());
       }
     });
-    const h = this.container.querySelector("#sql-plugin-config-form");
-    h && h.addEventListener("submit", (p) => {
-      var $, L, _, N, R, D, U, F;
+    const y = this.container.querySelector("#sql-plugin-config-form");
+    y && y.addEventListener("submit", (p) => {
+      var L, q, M, D, F, U, K, B;
       p.preventDefault(), p.stopPropagation();
-      const g = (($ = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : $.checked) || !1, u = parseInt(((L = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : L.value) || "5"), f = ((_ = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : _.value) || "", v = ((N = this.container.querySelector("#sql-connection-id")) == null ? void 0 : N.value) || "", y = ((R = this.container.querySelector("#sql-search-table")) == null ? void 0 : R.value) || "knowledge_base", C = ((D = this.container.querySelector("#sql-title-column")) == null ? void 0 : D.value) || "title", A = ((U = this.container.querySelector("#sql-content-column")) == null ? void 0 : U.value) || "content", q = ((F = this.container.querySelector("#sql-url-column")) == null ? void 0 : F.value) || "url", M = {
-        enabled: g,
+      const h = ((L = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : L.checked) || !1, u = parseInt(((q = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : q.value) || "5"), f = ((M = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : M.value) || "", S = ((D = this.container.querySelector("#sql-connection-id")) == null ? void 0 : D.value) || "", w = ((F = this.container.querySelector("#sql-search-table")) == null ? void 0 : F.value) || "knowledge_base", C = ((U = this.container.querySelector("#sql-title-column")) == null ? void 0 : U.value) || "title", E = ((K = this.container.querySelector("#sql-content-column")) == null ? void 0 : K.value) || "content", O = ((B = this.container.querySelector("#sql-url-column")) == null ? void 0 : B.value) || "url", N = {
+        enabled: h,
         priority: u,
         apiEndpoint: f,
-        connectionId: v,
-        searchTable: y,
+        connectionId: S,
+        searchTable: w,
         titleColumn: C,
-        contentColumn: A,
-        urlColumn: q
+        contentColumn: E,
+        urlColumn: O
       };
-      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(M)), alert("SQL Plugin 設定已儲存");
-      const z = this.container.querySelector("#admin-content");
-      z && (z.innerHTML = this.renderPageContent(), this.bindEvents());
+      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(N)), alert("SQL Plugin 設定已儲存");
+      const $ = this.container.querySelector("#admin-content");
+      $ && ($.innerHTML = this.renderPageContent(), this.bindEvents());
     });
-    const w = this.container.querySelector("#sql-connection-form");
-    w && w.addEventListener("submit", (p) => {
-      var f, v;
+    const I = this.container.querySelector("#sql-connection-form");
+    I && I.addEventListener("submit", (p) => {
+      var f, S;
       p.preventDefault(), p.stopPropagation();
-      const g = ((f = this.container.querySelector("#sql-conn-name")) == null ? void 0 : f.value) || "", u = (v = this.container.querySelector("#sql-conn-type")) == null ? void 0 : v.value;
-      if (!g) {
+      const h = ((f = this.container.querySelector("#sql-conn-name")) == null ? void 0 : f.value) || "", u = (S = this.container.querySelector("#sql-conn-type")) == null ? void 0 : S.value;
+      if (!h) {
         alert("請輸入連接名稱");
         return;
       }
       try {
-        k.create({
-          name: g,
+        z.create({
+          name: h,
           type: u,
           host: "localhost",
           port: 3306,
@@ -2330,17 +2418,17 @@ class X {
             urlField: "url"
           }
         }), alert("SQL 連接已新增");
-        const y = this.container.querySelector("#admin-content");
-        y && (y.innerHTML = this.renderPageContent(), this.bindEvents());
-      } catch (y) {
-        console.error("Error creating SQL connection:", y), alert("新增失敗");
+        const w = this.container.querySelector("#admin-content");
+        w && (w.innerHTML = this.renderPageContent(), this.bindEvents());
+      } catch (w) {
+        console.error("Error creating SQL connection:", w), alert("新增失敗");
       }
     }), this.container.querySelectorAll(".delete-sql-connection").forEach((p) => {
       p.addEventListener("click", () => {
-        const g = p.dataset.id;
-        if (g && confirm("確定要刪除這個連接嗎？"))
+        const h = p.dataset.id;
+        if (h && confirm("確定要刪除這個連接嗎？"))
           try {
-            k.delete(g), alert("連接已刪除");
+            z.delete(h), alert("連接已刪除");
             const u = this.container.querySelector("#admin-content");
             u && (u.innerHTML = this.renderPageContent(), this.bindEvents());
           } catch (u) {
@@ -2435,7 +2523,7 @@ class X {
    */
   renderDashboard() {
     var o, i;
-    const e = O.getAllConversations(), t = I.getAll(), n = b.loadAgentToolConfig();
+    const e = R.getAllConversations(), t = A.getAll(), n = v.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">儀表板</h2>
 
@@ -2492,7 +2580,7 @@ class X {
    * 渲染手動索引頁面
    */
   renderManualIndex() {
-    const e = I.getAll();
+    const e = A.getAll();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">手動索引</h2>
       <p style="color: #6b7280; margin-bottom: 24px;">手動新增索引內容供 Agent 搜尋</p>
@@ -2548,7 +2636,15 @@ class X {
 
       <!-- 索引列表 -->
       <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">已建立的索引（${e.length}）</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="font-size: 18px; font-weight: 600; margin: 0; color: #1f2937;">已建立的索引（${e.length}）</h3>
+          <button
+            id="generate-embeddings-btn"
+            style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+          >
+            生成所有Embeddings
+          </button>
+        </div>
 
         ${e.length === 0 ? `
           <p style="color: #9ca3af; text-align: center; padding: 32px 0;">尚無索引</p>
@@ -2557,23 +2653,34 @@ class X {
             ${e.map((t) => `
               <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                  <div>
+                  <div style="flex: 1;">
                     <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">${t.name}</h4>
                     <p style="font-size: 14px; color: #6b7280; margin: 0;">${t.description || "無描述"}</p>
+                    ${t.embedding ? '<span style="font-size: 11px; background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block;">✓ 已生成向量</span>' : '<span style="font-size: 11px; background: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block;">⚠ 未生成向量</span>'}
                   </div>
-                  <button
-                    class="delete-index-btn"
-                    data-id="${t.id}"
-                    style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
-                  >
-                    刪除
-                  </button>
+                  <div style="display: flex; gap: 8px;">
+                    <button
+                      class="edit-index-btn"
+                      data-id="${t.id}"
+                      style="padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+                    >
+                      編輯
+                    </button>
+                    <button
+                      class="delete-index-btn"
+                      data-id="${t.id}"
+                      style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+                    >
+                      刪除
+                    </button>
+                  </div>
                 </div>
                 <p style="font-size: 13px; color: #9ca3af; margin: 8px 0 0 0;">
                   ${t.content.substring(0, 150)}${t.content.length > 150 ? "..." : ""}
                 </p>
                 <p style="font-size: 12px; color: #9ca3af; margin: 8px 0 0 0;">
                   建立時間：${new Date(t.createdAt).toLocaleString("zh-TW")}
+                  ${t.updatedAt !== t.createdAt ? ` | 更新時間：${new Date(t.updatedAt).toLocaleString("zh-TW")}` : ""}
                 </p>
               </div>
             `).join("")}
@@ -2599,7 +2706,7 @@ class X {
    * 渲染 SQL 資料庫頁面
    */
   renderSQL() {
-    const e = k.getAll(), t = this.loadSQLPluginConfig();
+    const e = z.getAll(), t = this.loadSQLPluginConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">SQL 資料庫</h2>
       <p style="color: #6b7280; margin-bottom: 24px;">連接 SQL 資料庫作為搜尋來源</p>
@@ -2799,7 +2906,7 @@ class X {
    * 渲染客服記錄頁面
    */
   renderConversations() {
-    const e = O.getAllConversations();
+    const e = R.getAllConversations();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">客服記錄</h2>
       <p style="color: #6b7280; margin-bottom: 24px;">查看所有用戶對話記錄</p>
@@ -2906,8 +3013,8 @@ class X {
    * 渲染 Agent & API 設定頁面（合併）
    */
   renderAgentAndAPI() {
-    var n, o, i, r, s, a, d, c, h, w, S, p;
-    const e = b.loadConfig() || {}, t = b.loadAgentToolConfig();
+    var n, o, i, r, s, a, d, c, g, x, y, I;
+    const e = v.loadConfig() || {}, t = v.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">Agent & API 設定</h2>
 
@@ -2980,7 +3087,7 @@ class X {
                 id="embed-api-key"
                 name="embedApiKey"
                 placeholder="your-api-key"
-                value="${((h = e.embeddingAPI) == null ? void 0 : h.apiKey) || ((w = e.azureOpenAI) == null ? void 0 : w.apiKey) || ""}"
+                value="${((g = e.embeddingAPI) == null ? void 0 : g.apiKey) || ((x = e.azureOpenAI) == null ? void 0 : x.apiKey) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -2992,7 +3099,7 @@ class X {
                 id="embed-deployment"
                 name="embedDeployment"
                 placeholder="text-embedding-3-small"
-                value="${((S = e.embeddingAPI) == null ? void 0 : S.deployment) || ((p = e.azureOpenAI) == null ? void 0 : p.embeddingDeployment) || ""}"
+                value="${((y = e.embeddingAPI) == null ? void 0 : y.deployment) || ((I = e.azureOpenAI) == null ? void 0 : I.embeddingDeployment) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -3061,7 +3168,7 @@ class X {
    * 渲染系統設定頁面（包含密碼和 IP 白名單）
    */
   renderSystemSettings() {
-    const e = b.loadAdminPassword(), t = this.getIPWhitelist(), n = this.getTelegramEnabled(), o = this.hasTelegramConfig();
+    const e = v.loadAdminPassword(), t = this.getIPWhitelist(), n = this.getTelegramEnabled(), o = this.hasTelegramConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
 
@@ -3369,7 +3476,7 @@ class X {
    * 檢查是否有 Telegram 配置
    */
   hasTelegramConfig() {
-    const e = window.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || B.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN, t = window.NEXT_PUBLIC_TELEGRAM_CHAT_ID || B.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
+    const e = window.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || H.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN, t = window.NEXT_PUBLIC_TELEGRAM_CHAT_ID || H.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
     return !!(e && t);
   }
   /**
@@ -3384,8 +3491,104 @@ class X {
   setTelegramEnabled(e) {
     localStorage.setItem("telegram_enabled", e.toString());
   }
+  /**
+   * 顯示編輯索引模態框
+   */
+  showEditIndexModal(e) {
+    const t = A.getById(e);
+    if (!t) {
+      alert("找不到該索引");
+      return;
+    }
+    const n = document.createElement("div");
+    n.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `, n.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">編輯索引</h3>
+
+        <form id="edit-index-form">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">名稱</label>
+            <input
+              type="text"
+              id="edit-index-name"
+              value="${t.name}"
+              required
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">描述</label>
+            <input
+              type="text"
+              id="edit-index-description"
+              value="${t.description || ""}"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">內容</label>
+            <textarea
+              id="edit-index-content"
+              rows="8"
+              required
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;"
+            >${t.content}</textarea>
+          </div>
+
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button
+              type="button"
+              id="cancel-edit-btn"
+              style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              保存
+            </button>
+          </div>
+        </form>
+      </div>
+    `, document.body.appendChild(n);
+    const o = n.querySelector("#edit-index-form"), i = n.querySelector("#cancel-edit-btn");
+    o.addEventListener("submit", async (r) => {
+      r.preventDefault();
+      const s = n.querySelector("#edit-index-name").value, a = n.querySelector("#edit-index-description").value, d = n.querySelector("#edit-index-content").value;
+      if (!s || !d) {
+        alert("請填寫名稱和內容");
+        return;
+      }
+      try {
+        await A.update(e, { name: s, description: a, content: d }), alert("索引已更新"), document.body.removeChild(n);
+        const c = this.container.querySelector("#admin-content");
+        c && (c.innerHTML = this.renderPageContent(), this.bindEvents());
+      } catch (c) {
+        alert(`更新失敗：${c instanceof Error ? c.message : "未知錯誤"}`);
+      }
+    }), i.addEventListener("click", () => {
+      document.body.removeChild(n);
+    }), n.addEventListener("click", (r) => {
+      r.target === n && document.body.removeChild(n);
+    });
+  }
 }
-class Z {
+class te {
   constructor() {
     l(this, "plugins", /* @__PURE__ */ new Map());
   }
@@ -3461,8 +3664,8 @@ class Z {
       })
     )).flat();
     return i.sort((r, s) => {
-      var c, h;
-      const a = ((c = r.metadata) == null ? void 0 : c.priority) || 0, d = ((h = s.metadata) == null ? void 0 : h.priority) || 0;
+      var c, g;
+      const a = ((c = r.metadata) == null ? void 0 : c.priority) || 0, d = ((g = s.metadata) == null ? void 0 : g.priority) || 0;
       return a !== d ? d - a : (s.score || 0) - (r.score || 0);
     }), i.slice(0, t);
   }
@@ -3473,7 +3676,7 @@ class Z {
     this.plugins.forEach((e) => e.dispose()), this.plugins.clear(), console.log("🧹 All plugins disposed");
   }
 }
-class ee {
+class ne {
   constructor() {
     l(this, "id", "manual-index");
     l(this, "name", "手動索引");
@@ -3482,12 +3685,12 @@ class ee {
     l(this, "enabled", !0);
   }
   async initialize() {
-    const e = I.getAll();
+    const e = A.getAll();
     console.log(`📚 Manual Index Plugin: ${e.length} indexes loaded`);
   }
   async search(e, t = 5) {
     try {
-      return I.search(e, t).map(({ index: o, score: i }) => ({
+      return (await A.search(e, t)).map(({ index: o, score: i, breakdown: r }) => ({
         type: "manual-index",
         title: o.name,
         snippet: o.content.substring(0, 200),
@@ -3497,7 +3700,9 @@ class ee {
         metadata: {
           description: o.description,
           createdAt: o.createdAt,
-          indexId: o.id
+          indexId: o.id,
+          hasEmbedding: !!o.embedding,
+          scoreBreakdown: r
         }
       }));
     } catch (n) {
@@ -3505,13 +3710,13 @@ class ee {
     }
   }
   isAvailable() {
-    return I.getAll().length > 0;
+    return A.getAll().length > 0;
   }
   getConfig() {
     return {
       enabled: this.enabled,
       priority: this.priority,
-      indexCount: I.getAll().length
+      indexCount: A.getAll().length
     };
   }
   updateConfig(e) {
@@ -3520,7 +3725,7 @@ class ee {
   dispose() {
   }
 }
-class te {
+class oe {
   constructor() {
     l(this, "id", "frontend-pages");
     l(this, "name", "前端頁面");
@@ -3528,15 +3733,15 @@ class te {
     l(this, "priority", 8);
     l(this, "enabled", !0);
     l(this, "extractor");
-    this.extractor = new E();
+    this.extractor = new T();
   }
   async initialize() {
-    const e = b.loadIndexedPages();
+    const e = v.loadIndexedPages();
     console.log(`📄 Frontend Page Plugin: ${e.length} pages loaded`);
   }
   async search(e, t = 5) {
     try {
-      const n = b.loadIndexedPages();
+      const n = v.loadIndexedPages();
       if (n.length === 0)
         return [];
       const o = this.extractor.extractKeywords(e);
@@ -3562,13 +3767,13 @@ class te {
     }
   }
   isAvailable() {
-    return b.loadIndexedPages().length > 0;
+    return v.loadIndexedPages().length > 0;
   }
   getConfig() {
     return {
       enabled: this.enabled,
       priority: this.priority,
-      pageCount: b.loadIndexedPages().length
+      pageCount: v.loadIndexedPages().length
     };
   }
   updateConfig(e) {
@@ -3577,7 +3782,7 @@ class te {
   dispose() {
   }
 }
-class T {
+class k {
   /**
    * 獲取所有 Sitemap 配置
    */
@@ -3636,19 +3841,19 @@ class T {
       throw new Error("Sitemap config not found");
     console.log("Crawling sitemap:", t.sitemapUrl);
     try {
-      const o = await (await fetch(t.sitemapUrl)).text(), r = new DOMParser().parseFromString(o, "text/xml"), s = Array.from(r.querySelectorAll("url loc")).map((S) => S.textContent || "");
+      const o = await (await fetch(t.sitemapUrl)).text(), r = new DOMParser().parseFromString(o, "text/xml"), s = Array.from(r.querySelectorAll("url loc")).map((y) => y.textContent || "");
       console.log(`Found ${s.length} URLs in sitemap`);
       const d = s.slice(0, 50), c = [];
-      for (const S of d)
+      for (const y of d)
         try {
-          const p = await this.crawlPage(S);
-          p && c.push(p);
-        } catch (p) {
-          console.error(`Failed to crawl ${S}:`, p);
+          const I = await this.crawlPage(y);
+          I && c.push(I);
+        } catch (I) {
+          console.error(`Failed to crawl ${y}:`, I);
         }
       t.pages = c, t.lastUpdated = Date.now();
-      const h = this.getAll(), w = h.findIndex((S) => S.id === e);
-      w >= 0 && (h[w] = t, this.saveAll(h)), console.log(`Crawled ${c.length} pages successfully`);
+      const g = this.getAll(), x = g.findIndex((y) => y.id === e);
+      x >= 0 && (g[x] = t, this.saveAll(g)), console.log(`Crawled ${c.length} pages successfully`);
     } catch (n) {
       throw console.error("Failed to crawl sitemap:", n), n;
     }
@@ -3659,14 +3864,14 @@ class T {
   static async crawlPage(e) {
     var t;
     try {
-      const o = await (await fetch(e)).text(), r = new DOMParser().parseFromString(o, "text/html"), s = ((t = r.querySelector("title")) == null ? void 0 : t.textContent) || e, a = new E(), d = a.extractText(r.body), c = a.extractKeywords(d), h = a.generateFingerprint(d);
+      const o = await (await fetch(e)).text(), r = new DOMParser().parseFromString(o, "text/html"), s = ((t = r.querySelector("title")) == null ? void 0 : t.textContent) || e, a = new T(), d = a.extractText(r.body), c = a.extractKeywords(d), g = a.generateFingerprint(d);
       return {
         url: e,
         title: s,
         content: d.substring(0, 5e3),
         // 限制長度
         keywords: c,
-        fingerprint: h,
+        fingerprint: g,
         lastCrawled: Date.now()
       };
     } catch (n) {
@@ -3679,18 +3884,18 @@ class T {
   static search(e, t, n = 5) {
     const o = this.getAll().filter((c) => c.enabled), i = t && t.length > 0 ? o.filter((c) => t.includes(c.domain)) : o;
     if (i.length === 0) return [];
-    const r = new E(), s = r.extractKeywords(e), a = r.generateFingerprint(e), d = [];
+    const r = new T(), s = r.extractKeywords(e), a = r.generateFingerprint(e), d = [];
     for (const c of i)
-      for (const h of c.pages) {
-        const w = this.calculateSimilarity(
+      for (const g of c.pages) {
+        const x = this.calculateSimilarity(
           s,
           a,
-          h.keywords,
-          h.fingerprint
+          g.keywords,
+          g.fingerprint
         );
-        w > 0 && d.push({ page: h, domain: c.domain, score: w });
+        x > 0 && d.push({ page: g, domain: c.domain, score: x });
       }
-    return d.sort((c, h) => h.score - c.score).slice(0, n);
+    return d.sort((c, g) => g.score - c.score).slice(0, n);
   }
   /**
    * 計算相似度
@@ -3749,8 +3954,8 @@ class T {
     this.updateTimers.forEach((e) => clearInterval(e)), this.updateTimers.clear(), localStorage.removeItem(this.STORAGE_KEY);
   }
 }
-l(T, "STORAGE_KEY", "sm_sitemap_configs"), l(T, "updateTimers", /* @__PURE__ */ new Map());
-class ne {
+l(k, "STORAGE_KEY", "sm_sitemap_configs"), l(k, "updateTimers", /* @__PURE__ */ new Map());
+class ie {
   constructor() {
     l(this, "id", "sitemap");
     l(this, "name", "Sitemap 索引");
@@ -3759,21 +3964,21 @@ class ne {
     l(this, "enabled", !1);
     // 預設關閉，需要配置 Sitemap 後才啟用
     l(this, "extractor");
-    this.extractor = new E();
+    this.extractor = new T();
   }
   async initialize() {
-    const e = T.getAll();
+    const e = k.getAll();
     console.log(`🗺️ Sitemap Plugin: ${e.length} sitemaps loaded`), e.length > 0 && (this.enabled = !0);
   }
   async search(e, t = 5) {
     try {
-      const n = T.getAll();
+      const n = k.getAll();
       if (n.length === 0)
         return [];
       const o = [], i = this.extractor.extractKeywords(e);
       for (const r of n)
         try {
-          const s = await T.search(r.id, i, 3);
+          const s = await k.search(r.id, i, 3);
           o.push(...s.map(({ page: a, score: d }) => ({
             type: "sitemap",
             title: a.title,
@@ -3796,13 +4001,13 @@ class ne {
     }
   }
   isAvailable() {
-    return T.getAll().length > 0;
+    return k.getAll().length > 0;
   }
   getConfig() {
     return {
       enabled: this.enabled,
       priority: this.priority,
-      sitemapCount: T.getAll().length
+      sitemapCount: k.getAll().length
     };
   }
   updateConfig(e) {
@@ -3811,7 +4016,7 @@ class ne {
   dispose() {
   }
 }
-class oe {
+class re {
   constructor(e) {
     l(this, "id", "sql-database");
     l(this, "name", "SQL 資料庫");
@@ -3830,7 +4035,7 @@ class oe {
       contentColumn: "content",
       urlColumn: "url",
       ...e
-    }, this.enabled = this.config.enabled, this.priority = this.config.priority, this.extractor = new E();
+    }, this.enabled = this.config.enabled, this.priority = this.config.priority, this.extractor = new T();
   }
   async initialize() {
     if (!this.config.connectionId) {
@@ -3842,11 +4047,11 @@ class oe {
       return;
     }
     try {
-      if (!k.getById(this.config.connectionId)) {
+      if (!z.getById(this.config.connectionId)) {
         console.warn(`⚠️ SQL Plugin: Connection ${this.config.connectionId} not found`), this.enabled = !1;
         return;
       }
-      if (!await k.testConnection(
+      if (!await z.testConnection(
         this.config.connectionId,
         this.config.apiEndpoint
       )) {
@@ -3862,7 +4067,7 @@ class oe {
     if (!this.isAvailable())
       return [];
     try {
-      const n = this.extractor.extractKeywords(e, 5), o = this.buildSearchQuery(n, t), i = await k.query(
+      const n = this.extractor.extractKeywords(e, 5), o = this.buildSearchQuery(n, t), i = await z.query(
         this.config.connectionId,
         o,
         this.config.apiEndpoint
@@ -3921,15 +4126,15 @@ class oe {
     this.enabled = !1;
   }
 }
-function ie() {
+function se() {
   const m = localStorage.getItem("sm_sql_plugin_config"), e = m ? JSON.parse(m) : {};
-  return new oe(e);
+  return new re(e);
 }
-function re() {
-  const m = new Z();
-  return m.register(new ee()), m.register(new te()), m.register(new ne()), m.register(ie()), m;
+function ae() {
+  const m = new te();
+  return m.register(new ne()), m.register(new oe()), m.register(new ie()), m.register(se()), m;
 }
-function se(m) {
+function le(m) {
   const e = localStorage.getItem("sm_plugin_configs");
   if (e)
     try {
@@ -3942,8 +4147,8 @@ function se(m) {
       console.error("Error loading plugin configs:", t);
     }
 }
-var Q = {};
-class ae {
+var Y = {};
+class de {
   constructor() {
     l(this, "config");
     l(this, "openAI");
@@ -3966,18 +4171,18 @@ class ae {
       console.warn("ServiceModuler already initialized");
       return;
     }
-    this.config = e, P.getCurrentUser(), console.log("User ID:", P.getUserId()), this.pluginManager = re(), se(this.pluginManager), this.pluginManager.initializeAll().then(() => {
+    this.config = e, P.getCurrentUser(), console.log("User ID:", P.getUserId()), this.pluginManager = ae(), le(this.pluginManager), this.pluginManager.initializeAll().then(() => {
       console.log("✅ All plugins initialized");
     }).catch((d) => {
       console.error("❌ Plugin initialization error:", d);
-    }), this.openAI = new J(e.azureOpenAI || e.llmAPI), this.indexing = new V(this.openAI, e.siteConfig);
-    const t = localStorage.getItem("telegram_enabled") === "true", n = window.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || Q.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN, o = window.NEXT_PUBLIC_TELEGRAM_CHAT_ID || Q.NEXT_PUBLIC_TELEGRAM_CHAT_ID, i = t && n && o ? { botToken: n, chatId: o } : void 0;
-    this.agent = new j(
+    }), this.openAI = new V(e.azureOpenAI || e.llmAPI), this.indexing = new G(this.openAI, e.siteConfig), A.setOpenAIService(this.openAI);
+    const t = localStorage.getItem("telegram_enabled") === "true", n = window.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || Y.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN, o = window.NEXT_PUBLIC_TELEGRAM_CHAT_ID || Y.NEXT_PUBLIC_TELEGRAM_CHAT_ID, i = t && n && o ? { botToken: n, chatId: o } : void 0;
+    this.agent = new W(
       this.openAI,
       this.pluginManager,
       e.rules || [],
       i
-    ), this.capture = new W(), this.panel = new G(
+    ), this.capture = new Z(), this.panel = new X(
       ((r = e.ui) == null ? void 0 : r.width) || "33.33%",
       ((s = e.ui) == null ? void 0 : s.position) || "right"
     ), this.panel.setCallbacks({
@@ -3988,7 +4193,7 @@ class ae {
     }), this.loadConversationState(), this.agent && this.panel.setRules(
       this.agent.getRules(),
       (a = this.agent.getCurrentRule()) == null ? void 0 : a.id
-    ), this.adminPanel = new X(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
+    ), this.adminPanel = new ee(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
   }
   /**
    * 打開面板
@@ -4024,8 +4229,8 @@ class ae {
     };
     (o = this.conversationState) == null || o.messages.push(n), this.panel.addMessage(n), this.saveConversationState();
     try {
-      let d, c, h = !1;
-      const w = ((i = this.conversationState) == null ? void 0 : i.sessionId) || this.generateSessionId(), S = localStorage.getItem("lens_service_user_id") || "default_user";
+      let d, c, g = !1;
+      const x = ((i = this.conversationState) == null ? void 0 : i.sessionId) || this.generateSessionId(), y = localStorage.getItem("lens_service_user_id") || "default_user";
       if (t)
         d = await this.openAI.chatCompletionWithImage(
           e || "請分析這張圖片並回答問題",
@@ -4034,21 +4239,21 @@ class ae {
           // 不包含剛添加的用戶訊息
         );
       else {
-        const g = await this.agent.processMessage(
+        const _ = await this.agent.processMessage(
           e,
           ((s = this.conversationState) == null ? void 0 : s.messages) || [],
-          w,
-          S
+          x,
+          y
         );
-        d = g.response, c = g.sources, h = g.needsHumanReply;
+        d = _.response, c = _.sources, g = _.needsHumanReply;
       }
-      const p = {
+      const I = {
         role: "assistant",
         content: d,
         timestamp: Date.now(),
         sources: c
       };
-      (a = this.conversationState) == null || a.messages.push(p), this.panel.addMessage(p), this.saveConversationState(), await this.saveConversationToDatabase(w, S);
+      (a = this.conversationState) == null || a.messages.push(I), this.panel.addMessage(I), this.saveConversationState(), await this.saveConversationToDatabase(x, y);
     } catch (d) {
       console.error("Error processing message:", d);
       const c = {
@@ -4126,7 +4331,7 @@ class ae {
    * 搜尋當前頁面內容
    */
   searchCurrentPage(e) {
-    return K.searchInCurrentPage(e).map((n) => ({
+    return Q.searchInCurrentPage(e).map((n) => ({
       text: n.text,
       context: n.context
     }));
@@ -4135,7 +4340,7 @@ class ae {
    * 獲取當前頁面內容
    */
   getCurrentPageContent() {
-    return K.extractCurrentPageContent();
+    return Q.extractCurrentPageContent();
   }
   /**
    * 清除對話
@@ -4193,7 +4398,7 @@ class ae {
    * 載入對話狀態
    */
   loadConversationState() {
-    let e = b.loadConversation();
+    let e = v.loadConversation();
     e || (e = {
       sessionId: this.generateSessionId(),
       messages: []
@@ -4205,7 +4410,7 @@ class ae {
    * 保存對話狀態
    */
   saveConversationState() {
-    this.conversationState && b.saveConversation(this.conversationState);
+    this.conversationState && v.saveConversation(this.conversationState);
   }
   /**
    * 生成 Session ID
@@ -4214,8 +4419,8 @@ class ae {
     return `sm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }
-const le = new ae();
-typeof window < "u" && (window.LensService = le);
+const ce = new de();
+typeof window < "u" && (window.LensService = ce);
 export {
-  le as default
+  ce as default
 };

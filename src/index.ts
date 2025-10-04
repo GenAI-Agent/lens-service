@@ -8,6 +8,7 @@ import { CaptureService, PageContentService } from './services/CaptureService';
 import { AdminPanel } from './admin/AdminPanel';
 import { UserService } from './services/UserService';
 import { ConversationService } from './services/ConversationService';
+import { ManualIndexService } from './services/ManualIndexService';
 import { createDefaultPluginManager, loadPluginConfigs, PluginManager } from './plugins';
 
 /**
@@ -73,6 +74,9 @@ class LensServiceWidget {
     // 初始化服務
     this.openAI = new OpenAIService(config.azureOpenAI || config.llmAPI);
     this.indexing = new IndexingService(this.openAI, config.siteConfig);
+
+    // 設置OpenAI服務到ManualIndexService以支持embedding生成
+    ManualIndexService.setOpenAIService(this.openAI);
 
     // 獲取 Telegram 配置
     const telegramEnabled = localStorage.getItem('telegram_enabled') === 'true';

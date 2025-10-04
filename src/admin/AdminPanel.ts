@@ -380,7 +380,7 @@ export class AdminPanel {
     // 手動索引新增表單
     const addManualIndexForm = this.container.querySelector('#add-manual-index-form') as HTMLFormElement;
     if (addManualIndexForm) {
-      addManualIndexForm.addEventListener('submit', (e) => {
+      addManualIndexForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -398,7 +398,7 @@ export class AdminPanel {
         }
 
         try {
-          ManualIndexService.create({ name, description, content });
+          await ManualIndexService.create({ name, description, content });
           alert('索引已新增');
 
           // 重新渲染頁面
@@ -412,6 +412,17 @@ export class AdminPanel {
         }
       });
     }
+
+    // 編輯索引按鈕
+    const editIndexBtns = this.container.querySelectorAll('.edit-index-btn');
+    editIndexBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const id = (btn as HTMLElement).dataset.id;
+        if (id) {
+          this.showEditIndexModal(id);
+        }
+      });
+    });
 
     // 刪除索引按鈕
     const deleteIndexBtns = this.container.querySelectorAll('.delete-index-btn');
@@ -435,6 +446,32 @@ export class AdminPanel {
         }
       });
     });
+
+    // 生成所有embeddings按鈕
+    const generateEmbeddingsBtn = this.container.querySelector('#generate-embeddings-btn');
+    if (generateEmbeddingsBtn) {
+      generateEmbeddingsBtn.addEventListener('click', async () => {
+        if (confirm('確定要為所有索引生成向量嵌入嗎？這可能需要一些時間。')) {
+          try {
+            const button = generateEmbeddingsBtn as HTMLButtonElement;
+            button.disabled = true;
+            button.textContent = '生成中...';
+
+            const count = await ManualIndexService.generateEmbeddingsForAll();
+            alert(`成功為 ${count} 個索引生成了向量嵌入`);
+
+            // 重新渲染頁面
+            const contentDiv = this.container!.querySelector('#admin-content');
+            if (contentDiv) {
+              contentDiv.innerHTML = this.renderPageContent();
+              this.bindEvents();
+            }
+          } catch (error) {
+            alert(`生成失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+          }
+        }
+      });
+    }
 
     // API 配置表單
     const apiConfigForm = this.container.querySelector('#api-config-form') as HTMLFormElement;
@@ -820,7 +857,15 @@ export class AdminPanel {
 
       <!-- 索引列表 -->
       <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">已建立的索引（${indexes.length}）</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="font-size: 18px; font-weight: 600; margin: 0; color: #1f2937;">已建立的索引（${indexes.length}）</h3>
+          <button
+            id="generate-embeddings-btn"
+            style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+          >
+            生成所有Embeddings
+          </button>
+        </div>
 
         ${indexes.length === 0 ? `
           <p style="color: #9ca3af; text-align: center; padding: 32px 0;">尚無索引</p>
@@ -829,23 +874,37 @@ export class AdminPanel {
             ${indexes.map(index => `
               <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-                  <div>
+                  <div style="flex: 1;">
                     <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">${index.name}</h4>
                     <p style="font-size: 14px; color: #6b7280; margin: 0;">${index.description || '無描述'}</p>
+                    ${index.embedding ?
+                      '<span style="font-size: 11px; background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block;">✓ 已生成向量</span>' :
+                      '<span style="font-size: 11px; background: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block;">⚠ 未生成向量</span>'
+                    }
                   </div>
-                  <button
-                    class="delete-index-btn"
-                    data-id="${index.id}"
-                    style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
-                  >
-                    刪除
-                  </button>
+                  <div style="display: flex; gap: 8px;">
+                    <button
+                      class="edit-index-btn"
+                      data-id="${index.id}"
+                      style="padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+                    >
+                      編輯
+                    </button>
+                    <button
+                      class="delete-index-btn"
+                      data-id="${index.id}"
+                      style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+                    >
+                      刪除
+                    </button>
+                  </div>
                 </div>
                 <p style="font-size: 13px; color: #9ca3af; margin: 8px 0 0 0;">
                   ${index.content.substring(0, 150)}${index.content.length > 150 ? '...' : ''}
                 </p>
                 <p style="font-size: 12px; color: #9ca3af; margin: 8px 0 0 0;">
                   建立時間：${new Date(index.createdAt).toLocaleString('zh-TW')}
+                  ${index.updatedAt !== index.createdAt ? ` | 更新時間：${new Date(index.updatedAt).toLocaleString('zh-TW')}` : ''}
                 </p>
               </div>
             `).join('')}
@@ -1681,6 +1740,134 @@ export class AdminPanel {
    */
   private setTelegramEnabled(enabled: boolean): void {
     localStorage.setItem('telegram_enabled', enabled.toString());
+  }
+
+  /**
+   * 顯示編輯索引模態框
+   */
+  private showEditIndexModal(id: string): void {
+    const index = ManualIndexService.getById(id);
+    if (!index) {
+      alert('找不到該索引');
+      return;
+    }
+
+    // 創建模態框
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `;
+
+    modal.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">編輯索引</h3>
+
+        <form id="edit-index-form">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">名稱</label>
+            <input
+              type="text"
+              id="edit-index-name"
+              value="${index.name}"
+              required
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">描述</label>
+            <input
+              type="text"
+              id="edit-index-description"
+              value="${index.description || ''}"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">內容</label>
+            <textarea
+              id="edit-index-content"
+              rows="8"
+              required
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;"
+            >${index.content}</textarea>
+          </div>
+
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button
+              type="button"
+              id="cancel-edit-btn"
+              style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              保存
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // 綁定事件
+    const form = modal.querySelector('#edit-index-form') as HTMLFormElement;
+    const cancelBtn = modal.querySelector('#cancel-edit-btn') as HTMLButtonElement;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = (modal.querySelector('#edit-index-name') as HTMLInputElement).value;
+      const description = (modal.querySelector('#edit-index-description') as HTMLInputElement).value;
+      const content = (modal.querySelector('#edit-index-content') as HTMLTextAreaElement).value;
+
+      if (!name || !content) {
+        alert('請填寫名稱和內容');
+        return;
+      }
+
+      try {
+        await ManualIndexService.update(id, { name, description, content });
+        alert('索引已更新');
+
+        // 關閉模態框
+        document.body.removeChild(modal);
+
+        // 重新渲染頁面
+        const contentDiv = this.container!.querySelector('#admin-content');
+        if (contentDiv) {
+          contentDiv.innerHTML = this.renderPageContent();
+          this.bindEvents();
+        }
+      } catch (error) {
+        alert(`更新失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+      }
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+
+    // 點擊背景關閉
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
   }
 }
 

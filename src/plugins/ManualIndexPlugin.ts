@@ -21,9 +21,9 @@ export class ManualIndexPlugin implements SearchPlugin {
 
   async search(query: string, limit: number = 5): Promise<Source[]> {
     try {
-      const results = ManualIndexService.search(query, limit);
+      const results = await ManualIndexService.search(query, limit);
 
-      return results.map(({ index, score }) => ({
+      return results.map(({ index, score, breakdown }) => ({
         type: 'manual-index' as const,
         title: index.name,
         snippet: index.content.substring(0, 200),
@@ -33,7 +33,9 @@ export class ManualIndexPlugin implements SearchPlugin {
         metadata: {
           description: index.description,
           createdAt: index.createdAt,
-          indexId: index.id
+          indexId: index.id,
+          hasEmbedding: !!index.embedding,
+          scoreBreakdown: breakdown
         }
       }));
     } catch (error) {
