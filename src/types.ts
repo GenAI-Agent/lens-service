@@ -24,7 +24,13 @@ export interface ServiceModulerConfig {
     deployment: string;
     apiVersion?: string;
   };
-  
+
+  // Telegram 通報配置
+  telegram?: {
+    botToken: string;
+    chatId: string;
+  };
+
   // 網站配置
   siteConfig?: {
     // 本地專案模式（默認啟用）

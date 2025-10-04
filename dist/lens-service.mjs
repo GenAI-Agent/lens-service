@@ -1,7 +1,7 @@
-var J = Object.defineProperty;
-var j = (m, e, t) => e in m ? J(m, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : m[e] = t;
-var l = (m, e, t) => j(m, typeof e != "symbol" ? e + "" : e, t);
-class V {
+var Y = Object.defineProperty;
+var J = (m, e, t) => e in m ? Y(m, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : m[e] = t;
+var l = (m, e, t) => J(m, typeof e != "symbol" ? e + "" : e, t);
+class j {
   constructor(e) {
     l(this, "endpoint");
     l(this, "apiKey");
@@ -261,7 +261,7 @@ class v {
   }
 }
 l(v, "CONVERSATION_KEY", "sm_conversation"), l(v, "INDEX_KEY", "sm_indexed_pages"), l(v, "CONFIG_KEY", "sm_config"), l(v, "AGENT_TOOL_CONFIG_KEY", "sm_agent_tool_config"), l(v, "ADMIN_PASSWORD_KEY", "sm_admin_password");
-class G {
+class V {
   constructor(e, t) {
     l(this, "openAI");
     l(this, "siteConfig");
@@ -430,7 +430,7 @@ class G {
     return new Promise((t) => setTimeout(t, e));
   }
 }
-class W {
+class G {
   constructor(e, t, n = [], o) {
     l(this, "openAI");
     l(this, "pluginManager");
@@ -831,7 +831,7 @@ const b = {
     border-color: #6366f1;
   `
 };
-class X {
+class W {
   constructor(e = "33.33%", t = "right") {
     l(this, "container");
     l(this, "overlay");
@@ -1096,7 +1096,7 @@ ${o}`);
     this.close(), this.container.parentElement && document.body.removeChild(this.container);
   }
 }
-class Z {
+class X {
   constructor() {
     l(this, "isEnabled", !1);
     l(this, "onCapture");
@@ -1333,7 +1333,7 @@ class P {
   }
 }
 l(P, "USER_KEY", "sm_user"), l(P, "SESSION_KEY", "sm_session");
-class R {
+class N {
   /**
    * 獲取當前對話
    * 如果沒有活躍對話，創建新對話
@@ -1487,8 +1487,8 @@ class R {
     localStorage.removeItem(this.CONVERSATIONS_KEY), localStorage.removeItem(this.CURRENT_CONVERSATION_KEY);
   }
 }
-l(R, "CONVERSATIONS_KEY", "sm_conversations"), l(R, "CURRENT_CONVERSATION_KEY", "sm_current_conversation");
-class T {
+l(N, "CONVERSATIONS_KEY", "sm_conversations"), l(N, "CURRENT_CONVERSATION_KEY", "sm_current_conversation");
+class k {
   /**
    * 提取頁面主要內容
    */
@@ -1724,7 +1724,7 @@ class A {
    * 創建新索引
    */
   static async create(e) {
-    const t = new T(), n = t.extractKeywords(e.content), o = t.generateFingerprint(e.content);
+    const t = new k(), n = t.extractKeywords(e.content), o = t.generateFingerprint(e.content);
     let i;
     if (this.openAIService)
       try {
@@ -1755,7 +1755,7 @@ class A {
     if (!o) return null;
     if (t.name !== void 0 && (o.name = t.name), t.description !== void 0 && (o.description = t.description), t.metadata !== void 0 && (o.metadata = t.metadata), t.content !== void 0) {
       o.content = t.content;
-      const i = new T();
+      const i = new k();
       if (o.keywords = i.extractKeywords(t.content), o.fingerprint = i.generateFingerprint(t.content), this.openAIService)
         try {
           const r = `${o.name} ${o.description} ${t.content}`;
@@ -1779,7 +1779,7 @@ class A {
   static async search(e, t = 5) {
     const n = this.getAll();
     if (n.length === 0) return [];
-    const o = new T(), i = o.extractKeywords(e), r = o.generateFingerprint(e);
+    const o = new k(), i = o.extractKeywords(e), r = o.generateFingerprint(e);
     let s = null;
     if (this.openAIService)
       try {
@@ -2067,7 +2067,7 @@ class z {
 }
 l(z, "STORAGE_KEY", "sm_sql_connections");
 var H = {};
-class ee {
+class Z {
   constructor() {
     l(this, "container", null);
     l(this, "isOpen", !1);
@@ -2234,29 +2234,114 @@ class ee {
     `;
   }
   /**
+   * 顯示自定義確認對話框
+   */
+  showConfirmDialog(e) {
+    return new Promise((t) => {
+      var r, s;
+      const n = document.createElement("div");
+      n.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+      const o = document.createElement("div");
+      o.style.cssText = `
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        max-width: 400px;
+        width: 90%;
+      `, o.innerHTML = `
+        <p style="margin: 0 0 20px 0; font-size: 16px;">${e}</p>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button id="confirm-cancel" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;">取消</button>
+          <button id="confirm-ok" style="padding: 8px 16px; border: none; background: #007cff; color: white; border-radius: 4px; cursor: pointer;">確定</button>
+        </div>
+      `, n.appendChild(o), document.body.appendChild(n);
+      const i = (a) => {
+        document.body.removeChild(n), t(a);
+      };
+      (r = o.querySelector("#confirm-ok")) == null || r.addEventListener("click", () => i(!0)), (s = o.querySelector("#confirm-cancel")) == null || s.addEventListener("click", () => i(!1)), n.addEventListener("click", (a) => {
+        a.target === n && i(!1);
+      });
+    });
+  }
+  /**
+   * 顯示自定義提示對話框
+   */
+  showAlertDialog(e) {
+    return new Promise((t) => {
+      var r;
+      const n = document.createElement("div");
+      n.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+      const o = document.createElement("div");
+      o.style.cssText = `
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        max-width: 400px;
+        width: 90%;
+      `, o.innerHTML = `
+        <p style="margin: 0 0 20px 0; font-size: 16px;">${e}</p>
+        <div style="display: flex; justify-content: flex-end;">
+          <button id="alert-ok" style="padding: 8px 16px; border: none; background: #007cff; color: white; border-radius: 4px; cursor: pointer;">確定</button>
+        </div>
+      `, n.appendChild(o), document.body.appendChild(n);
+      const i = () => {
+        document.body.removeChild(n), t();
+      };
+      (r = o.querySelector("#alert-ok")) == null || r.addEventListener("click", i), n.addEventListener("click", (s) => {
+        s.target === n && i();
+      });
+    });
+  }
+  /**
    * 綁定事件
    */
   bindEvents() {
     if (!this.container) return;
     const e = this.container.querySelector("#admin-login-form");
     if (e) {
-      e.addEventListener("submit", async (h) => {
-        h.preventDefault(), h.stopPropagation();
-        const u = this.container.querySelector("#admin-username"), f = this.container.querySelector("#admin-password"), S = (u == null ? void 0 : u.value) || "", w = (f == null ? void 0 : f.value) || "";
-        console.log("Login attempt with username:", S), S === "lens" && w === "1234" ? (console.log("Login successful (local auth)"), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), this.bindEvents()) : (alert("用戶名或密碼錯誤"), f.value = "", f.focus());
+      e.addEventListener("submit", async (p) => {
+        p.preventDefault(), p.stopPropagation();
+        const f = this.container.querySelector("#admin-username"), h = this.container.querySelector("#admin-password"), S = (f == null ? void 0 : f.value) || "", w = (h == null ? void 0 : h.value) || "";
+        console.log("Login attempt with username:", S), S === "lens" && w === "1234" ? (console.log("Login successful (local auth)"), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), this.bindEvents()) : this.showAlertDialog("用戶名或密碼錯誤").then(() => {
+          h.value = "", h.focus();
+        });
       });
-      const p = this.container.querySelector("#admin-username");
-      p && setTimeout(() => {
-        p.focus();
+      const u = this.container.querySelector("#admin-username");
+      u && setTimeout(() => {
+        u.focus();
       }, 100);
     }
-    this.container.querySelectorAll(".nav-item").forEach((p) => {
-      p.addEventListener("click", () => {
-        const h = p.dataset.page;
-        if (h) {
-          this.currentPage = h;
-          const u = this.container.querySelector("#admin-content");
-          u && (u.innerHTML = this.renderPageContent()), this.container.innerHTML = this.renderAdminUI(), this.bindEvents();
+    this.container.querySelectorAll(".nav-item").forEach((u) => {
+      u.addEventListener("click", () => {
+        const p = u.dataset.page;
+        if (p) {
+          this.currentPage = p;
+          const f = this.container.querySelector("#admin-content");
+          f && (f.innerHTML = this.renderPageContent()), this.container.innerHTML = this.renderAdminUI(), this.bindEvents();
         }
       });
     });
@@ -2265,147 +2350,147 @@ class ee {
       this.isAuthenticated = !1, this.container.innerHTML = this.renderLoginUI(), this.bindEvents();
     });
     const o = this.container.querySelector("#telegram-settings-form");
-    o && o.addEventListener("submit", (p) => {
-      p.preventDefault(), p.stopPropagation();
-      const h = this.container.querySelector("#telegram-enabled"), u = (h == null ? void 0 : h.checked) || !1;
-      this.setTelegramEnabled(u), alert(`Telegram 通知已${u ? "啟用" : "停用"}`);
-      const f = this.container.querySelector("#admin-content");
-      f && (f.innerHTML = this.renderPageContent(), this.bindEvents());
+    o && o.addEventListener("submit", (u) => {
+      u.preventDefault(), u.stopPropagation();
+      const p = this.container.querySelector("#telegram-enabled"), f = (p == null ? void 0 : p.checked) || !1;
+      this.setTelegramEnabled(f), alert(`Telegram 通知已${f ? "啟用" : "停用"}`);
+      const h = this.container.querySelector("#admin-content");
+      h && (h.innerHTML = this.renderPageContent(), this.bindEvents());
     });
     const i = this.container.querySelector("#change-password-form");
-    i && i.addEventListener("submit", (p) => {
-      p.preventDefault(), p.stopPropagation();
-      const h = this.container.querySelector("#new-password"), u = (h == null ? void 0 : h.value) || "";
-      if (u.length < 4) {
+    i && i.addEventListener("submit", (u) => {
+      u.preventDefault(), u.stopPropagation();
+      const p = this.container.querySelector("#new-password"), f = (p == null ? void 0 : p.value) || "";
+      if (f.length < 4) {
         alert("密碼長度至少 4 個字元");
         return;
       }
-      v.saveAdminPassword(u), alert("密碼已更新");
-      const f = this.container.querySelector("#admin-content");
-      f && (f.innerHTML = this.renderPageContent(), this.bindEvents());
+      v.saveAdminPassword(f), alert("密碼已更新");
+      const h = this.container.querySelector("#admin-content");
+      h && (h.innerHTML = this.renderPageContent(), this.bindEvents());
     });
     const r = this.container.querySelector("#ip-whitelist-form");
-    r && r.addEventListener("submit", (p) => {
-      p.preventDefault(), p.stopPropagation();
-      const h = this.container.querySelector("#ip-list"), f = ((h == null ? void 0 : h.value) || "").split(`
+    r && r.addEventListener("submit", (u) => {
+      u.preventDefault(), u.stopPropagation();
+      const p = this.container.querySelector("#ip-list"), h = ((p == null ? void 0 : p.value) || "").split(`
 `).map((w) => w.trim()).filter((w) => w.length > 0);
-      this.saveIPWhitelist(f), alert(`已更新 IP 白名單（${f.length} 個 IP）`);
+      this.saveIPWhitelist(h), alert(`已更新 IP 白名單（${h.length} 個 IP）`);
       const S = this.container.querySelector("#admin-content");
       S && (S.innerHTML = this.renderPageContent(), this.bindEvents());
     });
     const s = this.container.querySelector("#add-manual-index-form");
-    s && s.addEventListener("submit", async (p) => {
-      p.preventDefault(), p.stopPropagation();
-      const h = this.container.querySelector("#index-name"), u = this.container.querySelector("#index-description"), f = this.container.querySelector("#index-content"), S = (h == null ? void 0 : h.value) || "", w = (u == null ? void 0 : u.value) || "", C = (f == null ? void 0 : f.value) || "";
-      if (!S || !C) {
-        alert("請填寫名稱和內容");
+    s && s.addEventListener("submit", async (u) => {
+      u.preventDefault(), u.stopPropagation();
+      const p = this.container.querySelector("#index-name"), f = this.container.querySelector("#index-description"), h = this.container.querySelector("#index-content"), S = (p == null ? void 0 : p.value) || "", w = (f == null ? void 0 : f.value) || "", I = (h == null ? void 0 : h.value) || "";
+      if (!S || !I) {
+        await this.showAlertDialog("請填寫名稱和內容");
         return;
       }
       try {
-        await A.create({ name: S, description: w, content: C }), alert("索引已新增");
+        await A.create({ name: S, description: w, content: I }), await this.showAlertDialog("索引已新增");
         const E = this.container.querySelector("#admin-content");
         E && (E.innerHTML = this.renderPageContent(), this.bindEvents());
       } catch (E) {
-        alert(`新增失敗：${E instanceof Error ? E.message : "未知錯誤"}`);
+        await this.showAlertDialog(`新增失敗：${E instanceof Error ? E.message : "未知錯誤"}`);
       }
-    }), this.container.querySelectorAll(".edit-index-btn").forEach((p) => {
-      p.addEventListener("click", () => {
-        const h = p.dataset.id;
-        h && this.showEditIndexModal(h);
+    }), this.container.querySelectorAll(".edit-index-btn").forEach((u) => {
+      u.addEventListener("click", () => {
+        const p = u.dataset.id;
+        p && this.showEditIndexModal(p);
       });
-    }), this.container.querySelectorAll(".delete-index-btn").forEach((p) => {
-      p.addEventListener("click", () => {
-        const h = p.dataset.id;
-        if (h && confirm("確定要刪除這個索引嗎？"))
+    }), this.container.querySelectorAll(".delete-index-btn").forEach((u) => {
+      u.addEventListener("click", async () => {
+        const p = u.dataset.id;
+        if (p && await this.showConfirmDialog("確定要刪除這個索引嗎？"))
           try {
-            A.delete(h), alert("索引已刪除");
-            const u = this.container.querySelector("#admin-content");
-            u && (u.innerHTML = this.renderPageContent(), this.bindEvents());
-          } catch (u) {
-            alert(`刪除失敗：${u instanceof Error ? u.message : "未知錯誤"}`);
+            A.delete(p), await this.showAlertDialog("索引已刪除");
+            const h = this.container.querySelector("#admin-content");
+            h && (h.innerHTML = this.renderPageContent(), this.bindEvents());
+          } catch (h) {
+            await this.showAlertDialog(`刪除失敗：${h instanceof Error ? h.message : "未知錯誤"}`);
           }
       });
     });
     const c = this.container.querySelector("#generate-embeddings-btn");
     c && c.addEventListener("click", async () => {
-      if (confirm("確定要為所有索引生成向量嵌入嗎？這可能需要一些時間。"))
+      if (await this.showConfirmDialog("確定要為所有索引生成向量嵌入嗎？這可能需要一些時間。"))
         try {
           const p = c;
           p.disabled = !0, p.textContent = "生成中...";
-          const h = await A.generateEmbeddingsForAll();
-          alert(`成功為 ${h} 個索引生成了向量嵌入`);
-          const u = this.container.querySelector("#admin-content");
-          u && (u.innerHTML = this.renderPageContent(), this.bindEvents());
+          const f = await A.generateEmbeddingsForAll();
+          await this.showAlertDialog(`成功為 ${f} 個索引生成了向量嵌入`);
+          const h = this.container.querySelector("#admin-content");
+          h && (h.innerHTML = this.renderPageContent(), this.bindEvents());
         } catch (p) {
-          alert(`生成失敗：${p instanceof Error ? p.message : "未知錯誤"}`);
+          await this.showAlertDialog(`生成失敗：${p instanceof Error ? p.message : "未知錯誤"}`);
         }
     });
     const g = this.container.querySelector("#api-config-form");
-    g && g.addEventListener("submit", (p) => {
-      var O, N, $, L, q, M;
-      p.preventDefault(), p.stopPropagation();
-      const h = ((O = this.container.querySelector("#llm-endpoint")) == null ? void 0 : O.value) || "", u = ((N = this.container.querySelector("#llm-api-key")) == null ? void 0 : N.value) || "", f = (($ = this.container.querySelector("#llm-deployment")) == null ? void 0 : $.value) || "", S = ((L = this.container.querySelector("#embed-endpoint")) == null ? void 0 : L.value) || "", w = ((q = this.container.querySelector("#embed-api-key")) == null ? void 0 : q.value) || "", C = ((M = this.container.querySelector("#embed-deployment")) == null ? void 0 : M.value) || "", E = {
+    g && g.addEventListener("submit", (u) => {
+      var _, R, $, L, q, M;
+      u.preventDefault(), u.stopPropagation();
+      const p = ((_ = this.container.querySelector("#llm-endpoint")) == null ? void 0 : _.value) || "", f = ((R = this.container.querySelector("#llm-api-key")) == null ? void 0 : R.value) || "", h = (($ = this.container.querySelector("#llm-deployment")) == null ? void 0 : $.value) || "", S = ((L = this.container.querySelector("#embed-endpoint")) == null ? void 0 : L.value) || "", w = ((q = this.container.querySelector("#embed-api-key")) == null ? void 0 : q.value) || "", I = ((M = this.container.querySelector("#embed-deployment")) == null ? void 0 : M.value) || "", E = {
         azureOpenAI: {
-          endpoint: h,
-          apiKey: u,
-          deployment: f,
-          embeddingDeployment: C
+          endpoint: p,
+          apiKey: f,
+          deployment: h,
+          embeddingDeployment: I
         },
         llmAPI: {
-          endpoint: h,
-          apiKey: u,
-          deployment: f
+          endpoint: p,
+          apiKey: f,
+          deployment: h
         },
         embeddingAPI: {
           endpoint: S,
           apiKey: w,
-          deployment: C
+          deployment: I
         }
       };
       v.saveConfig(E), alert("API 設定已儲存");
     });
     const x = this.container.querySelector("#agent-tool-config-form");
-    x && x.addEventListener("submit", (p) => {
+    x && x.addEventListener("submit", (u) => {
       var S, w;
-      p.preventDefault(), p.stopPropagation();
-      const h = ((S = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : S.checked) || !1, u = ((w = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : w.checked) || !1, f = v.loadAgentToolConfig();
-      if (f) {
-        f.manualIndex.enabled = h, f.frontendPages.enabled = u, v.saveAgentToolConfig(f), alert("Agent 設定已儲存");
-        const C = this.container.querySelector("#admin-content");
-        C && (C.innerHTML = this.renderPageContent(), this.bindEvents());
+      u.preventDefault(), u.stopPropagation();
+      const p = ((S = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : S.checked) || !1, f = ((w = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : w.checked) || !1, h = v.loadAgentToolConfig();
+      if (h) {
+        h.manualIndex.enabled = p, h.frontendPages.enabled = f, v.saveAgentToolConfig(h), alert("Agent 設定已儲存");
+        const I = this.container.querySelector("#admin-content");
+        I && (I.innerHTML = this.renderPageContent(), this.bindEvents());
       }
     });
     const y = this.container.querySelector("#sql-plugin-config-form");
-    y && y.addEventListener("submit", (p) => {
+    y && y.addEventListener("submit", (u) => {
       var L, q, M, D, F, U, K, B;
-      p.preventDefault(), p.stopPropagation();
-      const h = ((L = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : L.checked) || !1, u = parseInt(((q = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : q.value) || "5"), f = ((M = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : M.value) || "", S = ((D = this.container.querySelector("#sql-connection-id")) == null ? void 0 : D.value) || "", w = ((F = this.container.querySelector("#sql-search-table")) == null ? void 0 : F.value) || "knowledge_base", C = ((U = this.container.querySelector("#sql-title-column")) == null ? void 0 : U.value) || "title", E = ((K = this.container.querySelector("#sql-content-column")) == null ? void 0 : K.value) || "content", O = ((B = this.container.querySelector("#sql-url-column")) == null ? void 0 : B.value) || "url", N = {
-        enabled: h,
-        priority: u,
-        apiEndpoint: f,
+      u.preventDefault(), u.stopPropagation();
+      const p = ((L = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : L.checked) || !1, f = parseInt(((q = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : q.value) || "5"), h = ((M = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : M.value) || "", S = ((D = this.container.querySelector("#sql-connection-id")) == null ? void 0 : D.value) || "", w = ((F = this.container.querySelector("#sql-search-table")) == null ? void 0 : F.value) || "knowledge_base", I = ((U = this.container.querySelector("#sql-title-column")) == null ? void 0 : U.value) || "title", E = ((K = this.container.querySelector("#sql-content-column")) == null ? void 0 : K.value) || "content", _ = ((B = this.container.querySelector("#sql-url-column")) == null ? void 0 : B.value) || "url", R = {
+        enabled: p,
+        priority: f,
+        apiEndpoint: h,
         connectionId: S,
         searchTable: w,
-        titleColumn: C,
+        titleColumn: I,
         contentColumn: E,
-        urlColumn: O
+        urlColumn: _
       };
-      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(N)), alert("SQL Plugin 設定已儲存");
+      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(R)), alert("SQL Plugin 設定已儲存");
       const $ = this.container.querySelector("#admin-content");
       $ && ($.innerHTML = this.renderPageContent(), this.bindEvents());
     });
-    const I = this.container.querySelector("#sql-connection-form");
-    I && I.addEventListener("submit", (p) => {
-      var f, S;
-      p.preventDefault(), p.stopPropagation();
-      const h = ((f = this.container.querySelector("#sql-conn-name")) == null ? void 0 : f.value) || "", u = (S = this.container.querySelector("#sql-conn-type")) == null ? void 0 : S.value;
-      if (!h) {
+    const C = this.container.querySelector("#sql-connection-form");
+    C && C.addEventListener("submit", (u) => {
+      var h, S;
+      u.preventDefault(), u.stopPropagation();
+      const p = ((h = this.container.querySelector("#sql-conn-name")) == null ? void 0 : h.value) || "", f = (S = this.container.querySelector("#sql-conn-type")) == null ? void 0 : S.value;
+      if (!p) {
         alert("請輸入連接名稱");
         return;
       }
       try {
         z.create({
-          name: h,
-          type: u,
+          name: p,
+          type: f,
           host: "localhost",
           port: 3306,
           database: "mydb",
@@ -2423,16 +2508,16 @@ class ee {
       } catch (w) {
         console.error("Error creating SQL connection:", w), alert("新增失敗");
       }
-    }), this.container.querySelectorAll(".delete-sql-connection").forEach((p) => {
-      p.addEventListener("click", () => {
-        const h = p.dataset.id;
-        if (h && confirm("確定要刪除這個連接嗎？"))
+    }), this.container.querySelectorAll(".delete-sql-connection").forEach((u) => {
+      u.addEventListener("click", () => {
+        const p = u.dataset.id;
+        if (p && confirm("確定要刪除這個連接嗎？"))
           try {
-            z.delete(h), alert("連接已刪除");
-            const u = this.container.querySelector("#admin-content");
-            u && (u.innerHTML = this.renderPageContent(), this.bindEvents());
-          } catch (u) {
-            console.error("Error deleting SQL connection:", u), alert("刪除失敗");
+            z.delete(p), alert("連接已刪除");
+            const f = this.container.querySelector("#admin-content");
+            f && (f.innerHTML = this.renderPageContent(), this.bindEvents());
+          } catch (f) {
+            console.error("Error deleting SQL connection:", f), alert("刪除失敗");
           }
       });
     });
@@ -2523,7 +2608,7 @@ class ee {
    */
   renderDashboard() {
     var o, i;
-    const e = R.getAllConversations(), t = A.getAll(), n = v.loadAgentToolConfig();
+    const e = N.getAllConversations(), t = A.getAll(), n = v.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">儀表板</h2>
 
@@ -2906,7 +2991,7 @@ class ee {
    * 渲染客服記錄頁面
    */
   renderConversations() {
-    const e = R.getAllConversations();
+    const e = N.getAllConversations();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">客服記錄</h2>
       <p style="color: #6b7280; margin-bottom: 24px;">查看所有用戶對話記錄</p>
@@ -3013,7 +3098,7 @@ class ee {
    * 渲染 Agent & API 設定頁面（合併）
    */
   renderAgentAndAPI() {
-    var n, o, i, r, s, a, d, c, g, x, y, I;
+    var n, o, i, r, s, a, d, c, g, x, y, C;
     const e = v.loadConfig() || {}, t = v.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">Agent & API 設定</h2>
@@ -3099,7 +3184,7 @@ class ee {
                 id="embed-deployment"
                 name="embedDeployment"
                 placeholder="text-embedding-3-small"
-                value="${((y = e.embeddingAPI) == null ? void 0 : y.deployment) || ((I = e.azureOpenAI) == null ? void 0 : I.embeddingDeployment) || ""}"
+                value="${((y = e.embeddingAPI) == null ? void 0 : y.deployment) || ((C = e.azureOpenAI) == null ? void 0 : C.embeddingDeployment) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -3588,7 +3673,7 @@ class ee {
     });
   }
 }
-class te {
+class ee {
   constructor() {
     l(this, "plugins", /* @__PURE__ */ new Map());
   }
@@ -3676,7 +3761,7 @@ class te {
     this.plugins.forEach((e) => e.dispose()), this.plugins.clear(), console.log("🧹 All plugins disposed");
   }
 }
-class ne {
+class te {
   constructor() {
     l(this, "id", "manual-index");
     l(this, "name", "手動索引");
@@ -3725,7 +3810,7 @@ class ne {
   dispose() {
   }
 }
-class oe {
+class ne {
   constructor() {
     l(this, "id", "frontend-pages");
     l(this, "name", "前端頁面");
@@ -3733,7 +3818,7 @@ class oe {
     l(this, "priority", 8);
     l(this, "enabled", !0);
     l(this, "extractor");
-    this.extractor = new T();
+    this.extractor = new k();
   }
   async initialize() {
     const e = v.loadIndexedPages();
@@ -3782,7 +3867,7 @@ class oe {
   dispose() {
   }
 }
-class k {
+class T {
   /**
    * 獲取所有 Sitemap 配置
    */
@@ -3846,10 +3931,10 @@ class k {
       const d = s.slice(0, 50), c = [];
       for (const y of d)
         try {
-          const I = await this.crawlPage(y);
-          I && c.push(I);
-        } catch (I) {
-          console.error(`Failed to crawl ${y}:`, I);
+          const C = await this.crawlPage(y);
+          C && c.push(C);
+        } catch (C) {
+          console.error(`Failed to crawl ${y}:`, C);
         }
       t.pages = c, t.lastUpdated = Date.now();
       const g = this.getAll(), x = g.findIndex((y) => y.id === e);
@@ -3864,7 +3949,7 @@ class k {
   static async crawlPage(e) {
     var t;
     try {
-      const o = await (await fetch(e)).text(), r = new DOMParser().parseFromString(o, "text/html"), s = ((t = r.querySelector("title")) == null ? void 0 : t.textContent) || e, a = new T(), d = a.extractText(r.body), c = a.extractKeywords(d), g = a.generateFingerprint(d);
+      const o = await (await fetch(e)).text(), r = new DOMParser().parseFromString(o, "text/html"), s = ((t = r.querySelector("title")) == null ? void 0 : t.textContent) || e, a = new k(), d = a.extractText(r.body), c = a.extractKeywords(d), g = a.generateFingerprint(d);
       return {
         url: e,
         title: s,
@@ -3884,7 +3969,7 @@ class k {
   static search(e, t, n = 5) {
     const o = this.getAll().filter((c) => c.enabled), i = t && t.length > 0 ? o.filter((c) => t.includes(c.domain)) : o;
     if (i.length === 0) return [];
-    const r = new T(), s = r.extractKeywords(e), a = r.generateFingerprint(e), d = [];
+    const r = new k(), s = r.extractKeywords(e), a = r.generateFingerprint(e), d = [];
     for (const c of i)
       for (const g of c.pages) {
         const x = this.calculateSimilarity(
@@ -3954,8 +4039,8 @@ class k {
     this.updateTimers.forEach((e) => clearInterval(e)), this.updateTimers.clear(), localStorage.removeItem(this.STORAGE_KEY);
   }
 }
-l(k, "STORAGE_KEY", "sm_sitemap_configs"), l(k, "updateTimers", /* @__PURE__ */ new Map());
-class ie {
+l(T, "STORAGE_KEY", "sm_sitemap_configs"), l(T, "updateTimers", /* @__PURE__ */ new Map());
+class oe {
   constructor() {
     l(this, "id", "sitemap");
     l(this, "name", "Sitemap 索引");
@@ -3964,21 +4049,21 @@ class ie {
     l(this, "enabled", !1);
     // 預設關閉，需要配置 Sitemap 後才啟用
     l(this, "extractor");
-    this.extractor = new T();
+    this.extractor = new k();
   }
   async initialize() {
-    const e = k.getAll();
+    const e = T.getAll();
     console.log(`🗺️ Sitemap Plugin: ${e.length} sitemaps loaded`), e.length > 0 && (this.enabled = !0);
   }
   async search(e, t = 5) {
     try {
-      const n = k.getAll();
+      const n = T.getAll();
       if (n.length === 0)
         return [];
       const o = [], i = this.extractor.extractKeywords(e);
       for (const r of n)
         try {
-          const s = await k.search(r.id, i, 3);
+          const s = await T.search(r.id, i, 3);
           o.push(...s.map(({ page: a, score: d }) => ({
             type: "sitemap",
             title: a.title,
@@ -4001,13 +4086,13 @@ class ie {
     }
   }
   isAvailable() {
-    return k.getAll().length > 0;
+    return T.getAll().length > 0;
   }
   getConfig() {
     return {
       enabled: this.enabled,
       priority: this.priority,
-      sitemapCount: k.getAll().length
+      sitemapCount: T.getAll().length
     };
   }
   updateConfig(e) {
@@ -4016,7 +4101,7 @@ class ie {
   dispose() {
   }
 }
-class re {
+class ie {
   constructor(e) {
     l(this, "id", "sql-database");
     l(this, "name", "SQL 資料庫");
@@ -4035,7 +4120,7 @@ class re {
       contentColumn: "content",
       urlColumn: "url",
       ...e
-    }, this.enabled = this.config.enabled, this.priority = this.config.priority, this.extractor = new T();
+    }, this.enabled = this.config.enabled, this.priority = this.config.priority, this.extractor = new k();
   }
   async initialize() {
     if (!this.config.connectionId) {
@@ -4126,15 +4211,15 @@ class re {
     this.enabled = !1;
   }
 }
-function se() {
+function re() {
   const m = localStorage.getItem("sm_sql_plugin_config"), e = m ? JSON.parse(m) : {};
-  return new re(e);
+  return new ie(e);
 }
-function ae() {
-  const m = new te();
-  return m.register(new ne()), m.register(new oe()), m.register(new ie()), m.register(se()), m;
+function se() {
+  const m = new ee();
+  return m.register(new te()), m.register(new ne()), m.register(new oe()), m.register(re()), m;
 }
-function le(m) {
+function ae(m) {
   const e = localStorage.getItem("sm_plugin_configs");
   if (e)
     try {
@@ -4147,8 +4232,7 @@ function le(m) {
       console.error("Error loading plugin configs:", t);
     }
 }
-var Y = {};
-class de {
+class le {
   constructor() {
     l(this, "config");
     l(this, "openAI");
@@ -4166,34 +4250,34 @@ class de {
    * 初始化 Widget
    */
   init(e) {
-    var r, s, a;
+    var n, o, i;
     if (this.initialized) {
       console.warn("ServiceModuler already initialized");
       return;
     }
-    this.config = e, P.getCurrentUser(), console.log("User ID:", P.getUserId()), this.pluginManager = ae(), le(this.pluginManager), this.pluginManager.initializeAll().then(() => {
+    this.config = e, P.getCurrentUser(), console.log("User ID:", P.getUserId()), this.pluginManager = se(), ae(this.pluginManager), this.pluginManager.initializeAll().then(() => {
       console.log("✅ All plugins initialized");
-    }).catch((d) => {
-      console.error("❌ Plugin initialization error:", d);
-    }), this.openAI = new V(e.azureOpenAI || e.llmAPI), this.indexing = new G(this.openAI, e.siteConfig), A.setOpenAIService(this.openAI);
-    const t = localStorage.getItem("telegram_enabled") === "true", n = window.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || Y.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN, o = window.NEXT_PUBLIC_TELEGRAM_CHAT_ID || Y.NEXT_PUBLIC_TELEGRAM_CHAT_ID, i = t && n && o ? { botToken: n, chatId: o } : void 0;
-    this.agent = new W(
+    }).catch((r) => {
+      console.error("❌ Plugin initialization error:", r);
+    }), this.openAI = new j(e.azureOpenAI || e.llmAPI), this.indexing = new V(this.openAI, e.siteConfig), A.setOpenAIService(this.openAI);
+    const t = e.telegram && e.telegram.botToken && e.telegram.chatId ? e.telegram : void 0;
+    this.agent = new G(
       this.openAI,
       this.pluginManager,
       e.rules || [],
-      i
-    ), this.capture = new Z(), this.panel = new X(
-      ((r = e.ui) == null ? void 0 : r.width) || "33.33%",
-      ((s = e.ui) == null ? void 0 : s.position) || "right"
+      t
+    ), this.capture = new X(), this.panel = new W(
+      ((n = e.ui) == null ? void 0 : n.width) || "33.33%",
+      ((o = e.ui) == null ? void 0 : o.position) || "right"
     ), this.panel.setCallbacks({
-      onSendMessage: (d, c) => this.handleSendMessage(d, c),
-      onSelectRule: (d) => this.handleSelectRule(d),
+      onSendMessage: (r, s) => this.handleSendMessage(r, s),
+      onSelectRule: (r) => this.handleSelectRule(r),
       onClose: () => this.handleClose(),
       onOpen: () => this.handleOpen()
     }), this.loadConversationState(), this.agent && this.panel.setRules(
       this.agent.getRules(),
-      (a = this.agent.getCurrentRule()) == null ? void 0 : a.id
-    ), this.adminPanel = new ee(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
+      (i = this.agent.getCurrentRule()) == null ? void 0 : i.id
+    ), this.adminPanel = new Z(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
   }
   /**
    * 打開面板
@@ -4239,21 +4323,21 @@ class de {
           // 不包含剛添加的用戶訊息
         );
       else {
-        const _ = await this.agent.processMessage(
+        const O = await this.agent.processMessage(
           e,
           ((s = this.conversationState) == null ? void 0 : s.messages) || [],
           x,
           y
         );
-        d = _.response, c = _.sources, g = _.needsHumanReply;
+        d = O.response, c = O.sources, g = O.needsHumanReply;
       }
-      const I = {
+      const C = {
         role: "assistant",
         content: d,
         timestamp: Date.now(),
         sources: c
       };
-      (a = this.conversationState) == null || a.messages.push(I), this.panel.addMessage(I), this.saveConversationState(), await this.saveConversationToDatabase(x, y);
+      (a = this.conversationState) == null || a.messages.push(C), this.panel.addMessage(C), this.saveConversationState(), await this.saveConversationToDatabase(x, y);
     } catch (d) {
       console.error("Error processing message:", d);
       const c = {
@@ -4419,8 +4503,8 @@ class de {
     return `sm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }
-const ce = new de();
-typeof window < "u" && (window.LensService = ce);
+const de = new le();
+typeof window < "u" && (window.LensService = de);
 export {
-  ce as default
+  de as default
 };

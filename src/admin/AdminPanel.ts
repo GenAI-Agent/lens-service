@@ -231,6 +231,110 @@ export class AdminPanel {
   }
 
   /**
+   * 顯示自定義確認對話框
+   */
+  private showConfirmDialog(message: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+
+      const dialog = document.createElement('div');
+      dialog.style.cssText = `
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        max-width: 400px;
+        width: 90%;
+      `;
+
+      dialog.innerHTML = `
+        <p style="margin: 0 0 20px 0; font-size: 16px;">${message}</p>
+        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+          <button id="confirm-cancel" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;">取消</button>
+          <button id="confirm-ok" style="padding: 8px 16px; border: none; background: #007cff; color: white; border-radius: 4px; cursor: pointer;">確定</button>
+        </div>
+      `;
+
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+
+      const handleResult = (result: boolean) => {
+        document.body.removeChild(overlay);
+        resolve(result);
+      };
+
+      dialog.querySelector('#confirm-ok')?.addEventListener('click', () => handleResult(true));
+      dialog.querySelector('#confirm-cancel')?.addEventListener('click', () => handleResult(false));
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) handleResult(false);
+      });
+    });
+  }
+
+  /**
+   * 顯示自定義提示對話框
+   */
+  private showAlertDialog(message: string): Promise<void> {
+    return new Promise((resolve) => {
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10001;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      `;
+
+      const dialog = document.createElement('div');
+      dialog.style.cssText = `
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        max-width: 400px;
+        width: 90%;
+      `;
+
+      dialog.innerHTML = `
+        <p style="margin: 0 0 20px 0; font-size: 16px;">${message}</p>
+        <div style="display: flex; justify-content: flex-end;">
+          <button id="alert-ok" style="padding: 8px 16px; border: none; background: #007cff; color: white; border-radius: 4px; cursor: pointer;">確定</button>
+        </div>
+      `;
+
+      overlay.appendChild(dialog);
+      document.body.appendChild(overlay);
+
+      const handleClose = () => {
+        document.body.removeChild(overlay);
+        resolve();
+      };
+
+      dialog.querySelector('#alert-ok')?.addEventListener('click', handleClose);
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) handleClose();
+      });
+    });
+  }
+
+  /**
    * 綁定事件
    */
   private bindEvents(): void {
@@ -257,9 +361,10 @@ export class AdminPanel {
           this.container!.innerHTML = this.renderAdminUI();
           this.bindEvents(); // 重新綁定事件
         } else {
-          alert('用戶名或密碼錯誤');
-          passwordInput.value = '';
-          passwordInput.focus();
+          this.showAlertDialog('用戶名或密碼錯誤').then(() => {
+            passwordInput.value = '';
+            passwordInput.focus();
+          });
         }
       });
 
@@ -393,13 +498,13 @@ export class AdminPanel {
         const content = contentInput?.value || '';
 
         if (!name || !content) {
-          alert('請填寫名稱和內容');
+          await this.showAlertDialog('請填寫名稱和內容');
           return;
         }
 
         try {
           await ManualIndexService.create({ name, description, content });
-          alert('索引已新增');
+          await this.showAlertDialog('索引已新增');
 
           // 重新渲染頁面
           const contentDiv = this.container!.querySelector('#admin-content');
@@ -408,7 +513,7 @@ export class AdminPanel {
             this.bindEvents();
           }
         } catch (error) {
-          alert(`新增失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+          await this.showAlertDialog(`新增失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
         }
       });
     }
@@ -427,21 +532,24 @@ export class AdminPanel {
     // 刪除索引按鈕
     const deleteIndexBtns = this.container.querySelectorAll('.delete-index-btn');
     deleteIndexBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = (btn as HTMLElement).dataset.id;
-        if (id && confirm('確定要刪除這個索引嗎？')) {
-          try {
-            ManualIndexService.delete(id);
-            alert('索引已刪除');
+        if (id) {
+          const confirmed = await this.showConfirmDialog('確定要刪除這個索引嗎？');
+          if (confirmed) {
+            try {
+              ManualIndexService.delete(id);
+              await this.showAlertDialog('索引已刪除');
 
-            // 重新渲染頁面
-            const contentDiv = this.container!.querySelector('#admin-content');
-            if (contentDiv) {
-              contentDiv.innerHTML = this.renderPageContent();
-              this.bindEvents();
+              // 重新渲染頁面
+              const contentDiv = this.container!.querySelector('#admin-content');
+              if (contentDiv) {
+                contentDiv.innerHTML = this.renderPageContent();
+                this.bindEvents();
+              }
+            } catch (error) {
+              await this.showAlertDialog(`刪除失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
             }
-          } catch (error) {
-            alert(`刪除失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
           }
         }
       });
@@ -451,14 +559,15 @@ export class AdminPanel {
     const generateEmbeddingsBtn = this.container.querySelector('#generate-embeddings-btn');
     if (generateEmbeddingsBtn) {
       generateEmbeddingsBtn.addEventListener('click', async () => {
-        if (confirm('確定要為所有索引生成向量嵌入嗎？這可能需要一些時間。')) {
+        const confirmed = await this.showConfirmDialog('確定要為所有索引生成向量嵌入嗎？這可能需要一些時間。');
+        if (confirmed) {
           try {
             const button = generateEmbeddingsBtn as HTMLButtonElement;
             button.disabled = true;
             button.textContent = '生成中...';
 
             const count = await ManualIndexService.generateEmbeddingsForAll();
-            alert(`成功為 ${count} 個索引生成了向量嵌入`);
+            await this.showAlertDialog(`成功為 ${count} 個索引生成了向量嵌入`);
 
             // 重新渲染頁面
             const contentDiv = this.container!.querySelector('#admin-content');
@@ -467,7 +576,7 @@ export class AdminPanel {
               this.bindEvents();
             }
           } catch (error) {
-            alert(`生成失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+            await this.showAlertDialog(`生成失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
           }
         }
       });

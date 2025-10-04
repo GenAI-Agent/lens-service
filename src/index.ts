@@ -79,14 +79,8 @@ class LensServiceWidget {
     ManualIndexService.setOpenAIService(this.openAI);
 
     // 獲取 Telegram 配置
-    const telegramEnabled = localStorage.getItem('telegram_enabled') === 'true';
-    const telegramBotToken = (window as any).NEXT_PUBLIC_TELEGRAM_BOT_TOKEN ||
-                             process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
-    const telegramChatId = (window as any).NEXT_PUBLIC_TELEGRAM_CHAT_ID ||
-                           process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
-
-    const telegramConfig = (telegramEnabled && telegramBotToken && telegramChatId)
-      ? { botToken: telegramBotToken, chatId: telegramChatId }
+    const telegramConfig = config.telegram && config.telegram.botToken && config.telegram.chatId
+      ? config.telegram
       : undefined;
 
     this.agent = new SupervisorAgent(
