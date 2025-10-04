@@ -22,6 +22,7 @@ export const styles = {
     background: rgba(0, 0, 0, 0.3);
     pointer-events: auto;
     z-index: 1;
+    backdrop-filter: blur(2px);
   `,
   
   panel: `
@@ -84,10 +85,13 @@ export const styles = {
   messagesContainer: `
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 80px 20px 20px 20px;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
   `,
   
   userMessage: `

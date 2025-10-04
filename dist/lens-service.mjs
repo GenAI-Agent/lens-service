@@ -665,6 +665,7 @@ const x = {
     background: rgba(0, 0, 0, 0.3);
     pointer-events: auto;
     z-index: 1;
+    backdrop-filter: blur(2px);
   `,
   panel: `
     position: fixed;
@@ -691,10 +692,13 @@ const x = {
   messagesContainer: `
     flex: 1;
     overflow-y: auto;
-    padding: 20px;
+    padding: 80px 20px 20px 20px;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: #d1d5db #f3f4f6;
   `,
   userMessage: `
     align-self: flex-end;
@@ -976,7 +980,9 @@ class G {
         s.href = i.url, s.target = "_blank", s.textContent = `[${r + 1}] ${i.title}`, s.style.cssText = x.sourceLink, o.appendChild(s), o.appendChild(document.createElement("br"));
       }), n.appendChild(o);
     }
-    t.appendChild(n), t.scrollTop = t.scrollHeight;
+    t.appendChild(n), setTimeout(() => {
+      t.scrollTop = t.scrollHeight;
+    }, 10);
   }
   /**
    * 設置規則列表
@@ -1033,31 +1039,31 @@ ${o}`);
    * 打開面板
    */
   open() {
-    if (this.isOpen) return;
-    this.container.parentElement || (document.body.appendChild(this.container), this.container.appendChild(this.overlay), this.container.appendChild(this.panel)), this.overlay.style.display = "block";
-    let e = document.getElementById("sm-body-wrapper");
-    e || (e = document.createElement("div"), e.id = "sm-body-wrapper", e.style.cssText = `
-        transition: transform 0.3s ease;
-        width: 100%;
-        min-height: 100vh;
-      `, Array.from(document.body.children).forEach((o) => {
-      o !== this.container && e.appendChild(o);
-    }), document.body.insertBefore(e, this.container));
-    const t = this.position === "right" ? `-${this.width}` : this.width;
-    e.style.transform = `translateX(${t})`, setTimeout(() => {
+    this.isOpen || (this.container.parentElement || (document.body.appendChild(this.container), this.container.appendChild(this.overlay), this.container.appendChild(this.panel)), this.pushPageContent(), this.overlay.style.display = "block", setTimeout(() => {
       this.position === "right" ? this.panel.style.right = "0" : this.panel.style.left = "0";
-    }, 10), this.isOpen = !0, this.onOpen && this.onOpen();
+    }, 10), this.isOpen = !0, this.onOpen && this.onOpen());
   }
   /**
    * 關閉面板
    */
   close() {
-    if (!this.isOpen) return;
-    this.position === "right" ? this.panel.style.right = `-${this.width}` : this.panel.style.left = `-${this.width}`;
-    const e = document.getElementById("sm-body-wrapper");
-    e && (e.style.transform = "translateX(0)"), setTimeout(() => {
+    this.isOpen && (this.restorePageContent(), this.position === "right" ? this.panel.style.right = `-${this.width}` : this.panel.style.left = `-${this.width}`, setTimeout(() => {
       this.overlay.style.display = "none";
-    }, 300), this.isOpen = !1, this.onClose && this.onClose();
+    }, 300), this.isOpen = !1, this.onClose && this.onClose());
+  }
+  /**
+   * 推動頁面內容
+   */
+  pushPageContent() {
+    const e = document.body, t = parseFloat(this.width.replace("%", "")), n = t * 0.67;
+    this.position === "right" ? (e.style.transform = `translateX(-${n}%)`, e.style.width = `${100 - t}%`) : (e.style.transform = `translateX(${n}%)`, e.style.width = `${100 - t}%`), e.style.transition = "transform 0.3s ease, width 0.3s ease", e.style.overflow = "hidden";
+  }
+  /**
+   * 恢復頁面內容
+   */
+  restorePageContent() {
+    const e = document.body;
+    e.style.transform = "", e.style.width = "", e.style.transition = "", e.style.overflow = "";
   }
   /**
    * 設置捕獲的圖片
@@ -1247,7 +1253,7 @@ class K {
     return t;
   }
 }
-class z {
+class P {
   /**
    * 獲取或創建當前用戶
    */
@@ -1326,7 +1332,7 @@ class z {
     return this.getCurrentUser().sessionId;
   }
 }
-l(z, "USER_KEY", "sm_user"), l(z, "SESSION_KEY", "sm_session");
+l(P, "USER_KEY", "sm_user"), l(P, "SESSION_KEY", "sm_session");
 class O {
   /**
    * 獲取當前對話
@@ -1345,7 +1351,7 @@ class O {
    * 創建新對話
    */
   static createNewConversation() {
-    const e = z.getUserId(), t = this.generateConversationId(), n = {
+    const e = P.getUserId(), t = this.generateConversationId(), n = {
       id: t,
       userId: e,
       messages: [],
@@ -1357,7 +1363,7 @@ class O {
         referrer: document.referrer
       }
     };
-    return this.saveConversation(n), localStorage.setItem(this.CURRENT_CONVERSATION_KEY, t), z.incrementConversationCount(), console.log("Created new conversation:", t), n;
+    return this.saveConversation(n), localStorage.setItem(this.CURRENT_CONVERSATION_KEY, t), P.incrementConversationCount(), console.log("Created new conversation:", t), n;
   }
   /**
    * 添加訊息到當前對話
@@ -1689,7 +1695,7 @@ class E {
     return o;
   }
 }
-class C {
+class I {
   /**
    * 獲取所有手動索引
    */
@@ -1827,7 +1833,7 @@ class C {
     }
   }
 }
-l(C, "STORAGE_KEY", "sm_manual_indexes");
+l(I, "STORAGE_KEY", "sm_manual_indexes");
 class k {
   /**
    * 獲取所有 SQL 連接
@@ -2221,13 +2227,13 @@ class X {
     const s = this.container.querySelector("#add-manual-index-form");
     s && s.addEventListener("submit", (p) => {
       p.preventDefault(), p.stopPropagation();
-      const g = this.container.querySelector("#index-name"), u = this.container.querySelector("#index-description"), f = this.container.querySelector("#index-content"), v = (g == null ? void 0 : g.value) || "", y = (u == null ? void 0 : u.value) || "", I = (f == null ? void 0 : f.value) || "";
-      if (!v || !I) {
+      const g = this.container.querySelector("#index-name"), u = this.container.querySelector("#index-description"), f = this.container.querySelector("#index-content"), v = (g == null ? void 0 : g.value) || "", y = (u == null ? void 0 : u.value) || "", C = (f == null ? void 0 : f.value) || "";
+      if (!v || !C) {
         alert("請填寫名稱和內容");
         return;
       }
       try {
-        C.create({ name: v, description: y, content: I }), alert("索引已新增");
+        I.create({ name: v, description: y, content: C }), alert("索引已新增");
         const A = this.container.querySelector("#admin-content");
         A && (A.innerHTML = this.renderPageContent(), this.bindEvents());
       } catch (A) {
@@ -2238,7 +2244,7 @@ class X {
         const g = p.dataset.id;
         if (g && confirm("確定要刪除這個索引嗎？"))
           try {
-            C.delete(g), alert("索引已刪除");
+            I.delete(g), alert("索引已刪除");
             const u = this.container.querySelector("#admin-content");
             u && (u.innerHTML = this.renderPageContent(), this.bindEvents());
           } catch (u) {
@@ -2248,14 +2254,14 @@ class X {
     });
     const d = this.container.querySelector("#api-config-form");
     d && d.addEventListener("submit", (p) => {
-      var q, M, P, $, L, _;
+      var q, M, z, $, L, _;
       p.preventDefault(), p.stopPropagation();
-      const g = ((q = this.container.querySelector("#llm-endpoint")) == null ? void 0 : q.value) || "", u = ((M = this.container.querySelector("#llm-api-key")) == null ? void 0 : M.value) || "", f = ((P = this.container.querySelector("#llm-deployment")) == null ? void 0 : P.value) || "", v = (($ = this.container.querySelector("#embed-endpoint")) == null ? void 0 : $.value) || "", y = ((L = this.container.querySelector("#embed-api-key")) == null ? void 0 : L.value) || "", I = ((_ = this.container.querySelector("#embed-deployment")) == null ? void 0 : _.value) || "", A = {
+      const g = ((q = this.container.querySelector("#llm-endpoint")) == null ? void 0 : q.value) || "", u = ((M = this.container.querySelector("#llm-api-key")) == null ? void 0 : M.value) || "", f = ((z = this.container.querySelector("#llm-deployment")) == null ? void 0 : z.value) || "", v = (($ = this.container.querySelector("#embed-endpoint")) == null ? void 0 : $.value) || "", y = ((L = this.container.querySelector("#embed-api-key")) == null ? void 0 : L.value) || "", C = ((_ = this.container.querySelector("#embed-deployment")) == null ? void 0 : _.value) || "", A = {
         azureOpenAI: {
           endpoint: g,
           apiKey: u,
           deployment: f,
-          embeddingDeployment: I
+          embeddingDeployment: C
         },
         llmAPI: {
           endpoint: g,
@@ -2265,7 +2271,7 @@ class X {
         embeddingAPI: {
           endpoint: v,
           apiKey: y,
-          deployment: I
+          deployment: C
         }
       };
       b.saveConfig(A), alert("API 設定已儲存");
@@ -2277,27 +2283,27 @@ class X {
       const g = ((v = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : v.checked) || !1, u = ((y = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : y.checked) || !1, f = b.loadAgentToolConfig();
       if (f) {
         f.manualIndex.enabled = g, f.frontendPages.enabled = u, b.saveAgentToolConfig(f), alert("Agent 設定已儲存");
-        const I = this.container.querySelector("#admin-content");
-        I && (I.innerHTML = this.renderPageContent(), this.bindEvents());
+        const C = this.container.querySelector("#admin-content");
+        C && (C.innerHTML = this.renderPageContent(), this.bindEvents());
       }
     });
     const h = this.container.querySelector("#sql-plugin-config-form");
     h && h.addEventListener("submit", (p) => {
       var $, L, _, N, R, D, U, F;
       p.preventDefault(), p.stopPropagation();
-      const g = (($ = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : $.checked) || !1, u = parseInt(((L = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : L.value) || "5"), f = ((_ = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : _.value) || "", v = ((N = this.container.querySelector("#sql-connection-id")) == null ? void 0 : N.value) || "", y = ((R = this.container.querySelector("#sql-search-table")) == null ? void 0 : R.value) || "knowledge_base", I = ((D = this.container.querySelector("#sql-title-column")) == null ? void 0 : D.value) || "title", A = ((U = this.container.querySelector("#sql-content-column")) == null ? void 0 : U.value) || "content", q = ((F = this.container.querySelector("#sql-url-column")) == null ? void 0 : F.value) || "url", M = {
+      const g = (($ = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : $.checked) || !1, u = parseInt(((L = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : L.value) || "5"), f = ((_ = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : _.value) || "", v = ((N = this.container.querySelector("#sql-connection-id")) == null ? void 0 : N.value) || "", y = ((R = this.container.querySelector("#sql-search-table")) == null ? void 0 : R.value) || "knowledge_base", C = ((D = this.container.querySelector("#sql-title-column")) == null ? void 0 : D.value) || "title", A = ((U = this.container.querySelector("#sql-content-column")) == null ? void 0 : U.value) || "content", q = ((F = this.container.querySelector("#sql-url-column")) == null ? void 0 : F.value) || "url", M = {
         enabled: g,
         priority: u,
         apiEndpoint: f,
         connectionId: v,
         searchTable: y,
-        titleColumn: I,
+        titleColumn: C,
         contentColumn: A,
         urlColumn: q
       };
       localStorage.setItem("sm_sql_plugin_config", JSON.stringify(M)), alert("SQL Plugin 設定已儲存");
-      const P = this.container.querySelector("#admin-content");
-      P && (P.innerHTML = this.renderPageContent(), this.bindEvents());
+      const z = this.container.querySelector("#admin-content");
+      z && (z.innerHTML = this.renderPageContent(), this.bindEvents());
     });
     const w = this.container.querySelector("#sql-connection-form");
     w && w.addEventListener("submit", (p) => {
@@ -2429,7 +2435,7 @@ class X {
    */
   renderDashboard() {
     var o, i;
-    const e = O.getAllConversations(), t = C.getAll(), n = b.loadAgentToolConfig();
+    const e = O.getAllConversations(), t = I.getAll(), n = b.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">儀表板</h2>
 
@@ -2486,7 +2492,7 @@ class X {
    * 渲染手動索引頁面
    */
   renderManualIndex() {
-    const e = C.getAll();
+    const e = I.getAll();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">手動索引</h2>
       <p style="color: #6b7280; margin-bottom: 24px;">手動新增索引內容供 Agent 搜尋</p>
@@ -3476,12 +3482,12 @@ class ee {
     l(this, "enabled", !0);
   }
   async initialize() {
-    const e = C.getAll();
+    const e = I.getAll();
     console.log(`📚 Manual Index Plugin: ${e.length} indexes loaded`);
   }
   async search(e, t = 5) {
     try {
-      return C.search(e, t).map(({ index: o, score: i }) => ({
+      return I.search(e, t).map(({ index: o, score: i }) => ({
         type: "manual-index",
         title: o.name,
         snippet: o.content.substring(0, 200),
@@ -3499,13 +3505,13 @@ class ee {
     }
   }
   isAvailable() {
-    return C.getAll().length > 0;
+    return I.getAll().length > 0;
   }
   getConfig() {
     return {
       enabled: this.enabled,
       priority: this.priority,
-      indexCount: C.getAll().length
+      indexCount: I.getAll().length
     };
   }
   updateConfig(e) {
@@ -3960,7 +3966,7 @@ class ae {
       console.warn("ServiceModuler already initialized");
       return;
     }
-    this.config = e, z.getCurrentUser(), console.log("User ID:", z.getUserId()), this.pluginManager = re(), se(this.pluginManager), this.pluginManager.initializeAll().then(() => {
+    this.config = e, P.getCurrentUser(), console.log("User ID:", P.getUserId()), this.pluginManager = re(), se(this.pluginManager), this.pluginManager.initializeAll().then(() => {
       console.log("✅ All plugins initialized");
     }).catch((d) => {
       console.error("❌ Plugin initialization error:", d);

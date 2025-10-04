@@ -254,7 +254,11 @@ export class SidePanel {
     }
     
     messagesContainer.appendChild(messageEl);
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    // 自動滾動到底部，使用 setTimeout 確保 DOM 更新完成
+    setTimeout(() => {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }, 10);
   }
   
   /**
@@ -346,37 +350,11 @@ export class SidePanel {
       this.container.appendChild(this.panel);
     }
 
+    // 推動頁面內容，讓原頁面變成2/3寬度
+    this.pushPageContent();
+
     // 顯示遮罩
     this.overlay.style.display = 'block';
-
-    // 創建或獲取 body wrapper
-    let bodyWrapper = document.getElementById('sm-body-wrapper') as HTMLElement;
-
-    if (!bodyWrapper) {
-      // 創建 wrapper
-      bodyWrapper = document.createElement('div');
-      bodyWrapper.id = 'sm-body-wrapper';
-      bodyWrapper.style.cssText = `
-        transition: transform 0.3s ease;
-        width: 100%;
-        min-height: 100vh;
-      `;
-
-      // 將所有 body 的子元素（除了我們的 container）移到 wrapper 中
-      const children = Array.from(document.body.children);
-      children.forEach((child) => {
-        if (child !== this.container) {
-          bodyWrapper.appendChild(child);
-        }
-      });
-
-      // 將 wrapper 插入到 body 的最前面
-      document.body.insertBefore(bodyWrapper, this.container);
-    }
-
-    // 推動 wrapper
-    const pushDistance = this.position === 'right' ? `-${this.width}` : this.width;
-    bodyWrapper.style.transform = `translateX(${pushDistance})`;
 
     // 滑入面板
     setTimeout(() => {
@@ -401,17 +379,14 @@ export class SidePanel {
   close(): void {
     if (!this.isOpen) return;
 
+    // 恢復頁面內容
+    this.restorePageContent();
+
     // 滑出面板
     if (this.position === 'right') {
       this.panel.style.right = `-${this.width}`;
     } else {
       this.panel.style.left = `-${this.width}`;
-    }
-
-    // 恢復 wrapper 位置
-    const bodyWrapper = document.getElementById('sm-body-wrapper') as HTMLElement;
-    if (bodyWrapper) {
-      bodyWrapper.style.transform = 'translateX(0)';
     }
 
     // 隱藏遮罩
@@ -426,6 +401,41 @@ export class SidePanel {
     }
   }
   
+  /**
+   * 推動頁面內容
+   */
+  private pushPageContent(): void {
+    const body = document.body;
+    const html = document.documentElement;
+
+    // 計算推動距離（面板寬度的2/3，讓原頁面變成2/3寬度）
+    const panelWidthPercent = parseFloat(this.width.replace('%', ''));
+    const pushDistance = panelWidthPercent * 0.67; // 推動2/3的面板寬度
+
+    if (this.position === 'right') {
+      body.style.transform = `translateX(-${pushDistance}%)`;
+      body.style.width = `${100 - panelWidthPercent}%`;
+    } else {
+      body.style.transform = `translateX(${pushDistance}%)`;
+      body.style.width = `${100 - panelWidthPercent}%`;
+    }
+
+    body.style.transition = 'transform 0.3s ease, width 0.3s ease';
+    body.style.overflow = 'hidden';
+  }
+
+  /**
+   * 恢復頁面內容
+   */
+  private restorePageContent(): void {
+    const body = document.body;
+
+    body.style.transform = '';
+    body.style.width = '';
+    body.style.transition = '';
+    body.style.overflow = '';
+  }
+
   /**
    * 設置捕獲的圖片
    */
