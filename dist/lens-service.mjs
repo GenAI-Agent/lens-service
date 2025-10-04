@@ -1,7 +1,7 @@
-var B = Object.defineProperty;
-var Q = (m, e, t) => e in m ? B(m, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : m[e] = t;
-var l = (m, e, t) => Q(m, typeof e != "symbol" ? e + "" : e, t);
-class H {
+var H = Object.defineProperty;
+var Y = (m, e, t) => e in m ? H(m, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : m[e] = t;
+var l = (m, e, t) => Y(m, typeof e != "symbol" ? e + "" : e, t);
+class J {
   constructor(e) {
     l(this, "endpoint");
     l(this, "apiKey");
@@ -261,7 +261,7 @@ class b {
   }
 }
 l(b, "CONVERSATION_KEY", "sm_conversation"), l(b, "INDEX_KEY", "sm_indexed_pages"), l(b, "CONFIG_KEY", "sm_config"), l(b, "AGENT_TOOL_CONFIG_KEY", "sm_agent_tool_config"), l(b, "ADMIN_PASSWORD_KEY", "sm_admin_password");
-class Y {
+class V {
   constructor(e, t) {
     l(this, "openAI");
     l(this, "siteConfig");
@@ -430,7 +430,7 @@ class Y {
     return new Promise((t) => setTimeout(t, e));
   }
 }
-class J {
+class j {
   constructor(e, t, n = [], o) {
     l(this, "openAI");
     l(this, "pluginManager");
@@ -827,7 +827,7 @@ const x = {
     border-color: #6366f1;
   `
 };
-class j {
+class G {
   constructor(e = "33.33%", t = "right") {
     l(this, "container");
     l(this, "overlay");
@@ -1090,7 +1090,7 @@ ${o}`);
     this.close(), this.container.parentElement && document.body.removeChild(this.container);
   }
 }
-class V {
+class W {
   constructor() {
     l(this, "isEnabled", !1);
     l(this, "onCapture");
@@ -1689,7 +1689,7 @@ class E {
     return o;
   }
 }
-class A {
+class C {
   /**
    * 獲取所有手動索引
    */
@@ -1827,7 +1827,7 @@ class A {
     }
   }
 }
-l(A, "STORAGE_KEY", "sm_manual_indexes");
+l(C, "STORAGE_KEY", "sm_manual_indexes");
 class k {
   /**
    * 獲取所有 SQL 連接
@@ -1991,7 +1991,8 @@ class k {
   }
 }
 l(k, "STORAGE_KEY", "sm_sql_connections");
-class G {
+var B = {};
+class X {
   constructor() {
     l(this, "container", null);
     l(this, "isOpen", !1);
@@ -2167,25 +2168,7 @@ class G {
       e.addEventListener("submit", async (g) => {
         g.preventDefault(), g.stopPropagation();
         const u = this.container.querySelector("#admin-username"), f = this.container.querySelector("#admin-password"), v = (u == null ? void 0 : u.value) || "", y = (f == null ? void 0 : f.value) || "";
-        console.log("Login attempt with username:", v);
-        try {
-          const S = await fetch("/api/admin/login", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ username: v, password: y })
-          });
-          if (S.ok) {
-            const I = await S.json();
-            console.log("Login successful:", I), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), this.bindEvents();
-          } else {
-            const I = await S.json();
-            alert(I.error || "登入失敗"), f.value = "", f.focus();
-          }
-        } catch (S) {
-          console.error("Login error:", S), alert("登入失敗，請稍後再試");
-        }
+        console.log("Login attempt with username:", v), v === "lens" && y === "1234" ? (console.log("Login successful (local auth)"), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), this.bindEvents()) : (alert("用戶名或密碼錯誤"), f.value = "", f.focus());
       });
       const p = this.container.querySelector("#admin-username");
       p && setTimeout(() => {
@@ -2238,24 +2221,24 @@ class G {
     const s = this.container.querySelector("#add-manual-index-form");
     s && s.addEventListener("submit", (p) => {
       p.preventDefault(), p.stopPropagation();
-      const g = this.container.querySelector("#index-name"), u = this.container.querySelector("#index-description"), f = this.container.querySelector("#index-content"), v = (g == null ? void 0 : g.value) || "", y = (u == null ? void 0 : u.value) || "", S = (f == null ? void 0 : f.value) || "";
-      if (!v || !S) {
+      const g = this.container.querySelector("#index-name"), u = this.container.querySelector("#index-description"), f = this.container.querySelector("#index-content"), v = (g == null ? void 0 : g.value) || "", y = (u == null ? void 0 : u.value) || "", I = (f == null ? void 0 : f.value) || "";
+      if (!v || !I) {
         alert("請填寫名稱和內容");
         return;
       }
       try {
-        A.create({ name: v, description: y, content: S }), alert("索引已新增");
-        const I = this.container.querySelector("#admin-content");
-        I && (I.innerHTML = this.renderPageContent(), this.bindEvents());
-      } catch (I) {
-        alert(`新增失敗：${I instanceof Error ? I.message : "未知錯誤"}`);
+        C.create({ name: v, description: y, content: I }), alert("索引已新增");
+        const A = this.container.querySelector("#admin-content");
+        A && (A.innerHTML = this.renderPageContent(), this.bindEvents());
+      } catch (A) {
+        alert(`新增失敗：${A instanceof Error ? A.message : "未知錯誤"}`);
       }
     }), this.container.querySelectorAll(".delete-index-btn").forEach((p) => {
       p.addEventListener("click", () => {
         const g = p.dataset.id;
         if (g && confirm("確定要刪除這個索引嗎？"))
           try {
-            A.delete(g), alert("索引已刪除");
+            C.delete(g), alert("索引已刪除");
             const u = this.container.querySelector("#admin-content");
             u && (u.innerHTML = this.renderPageContent(), this.bindEvents());
           } catch (u) {
@@ -2265,14 +2248,14 @@ class G {
     });
     const d = this.container.querySelector("#api-config-form");
     d && d.addEventListener("submit", (p) => {
-      var _, M, P, $, L, q;
+      var q, M, P, $, L, _;
       p.preventDefault(), p.stopPropagation();
-      const g = ((_ = this.container.querySelector("#llm-endpoint")) == null ? void 0 : _.value) || "", u = ((M = this.container.querySelector("#llm-api-key")) == null ? void 0 : M.value) || "", f = ((P = this.container.querySelector("#llm-deployment")) == null ? void 0 : P.value) || "", v = (($ = this.container.querySelector("#embed-endpoint")) == null ? void 0 : $.value) || "", y = ((L = this.container.querySelector("#embed-api-key")) == null ? void 0 : L.value) || "", S = ((q = this.container.querySelector("#embed-deployment")) == null ? void 0 : q.value) || "", I = {
+      const g = ((q = this.container.querySelector("#llm-endpoint")) == null ? void 0 : q.value) || "", u = ((M = this.container.querySelector("#llm-api-key")) == null ? void 0 : M.value) || "", f = ((P = this.container.querySelector("#llm-deployment")) == null ? void 0 : P.value) || "", v = (($ = this.container.querySelector("#embed-endpoint")) == null ? void 0 : $.value) || "", y = ((L = this.container.querySelector("#embed-api-key")) == null ? void 0 : L.value) || "", I = ((_ = this.container.querySelector("#embed-deployment")) == null ? void 0 : _.value) || "", A = {
         azureOpenAI: {
           endpoint: g,
           apiKey: u,
           deployment: f,
-          embeddingDeployment: S
+          embeddingDeployment: I
         },
         llmAPI: {
           endpoint: g,
@@ -2282,10 +2265,10 @@ class G {
         embeddingAPI: {
           endpoint: v,
           apiKey: y,
-          deployment: S
+          deployment: I
         }
       };
-      b.saveConfig(I), alert("API 設定已儲存");
+      b.saveConfig(A), alert("API 設定已儲存");
     });
     const c = this.container.querySelector("#agent-tool-config-form");
     c && c.addEventListener("submit", (p) => {
@@ -2294,23 +2277,23 @@ class G {
       const g = ((v = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : v.checked) || !1, u = ((y = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : y.checked) || !1, f = b.loadAgentToolConfig();
       if (f) {
         f.manualIndex.enabled = g, f.frontendPages.enabled = u, b.saveAgentToolConfig(f), alert("Agent 設定已儲存");
-        const S = this.container.querySelector("#admin-content");
-        S && (S.innerHTML = this.renderPageContent(), this.bindEvents());
+        const I = this.container.querySelector("#admin-content");
+        I && (I.innerHTML = this.renderPageContent(), this.bindEvents());
       }
     });
     const h = this.container.querySelector("#sql-plugin-config-form");
     h && h.addEventListener("submit", (p) => {
-      var $, L, q, N, R, D, U, F;
+      var $, L, _, N, R, D, U, F;
       p.preventDefault(), p.stopPropagation();
-      const g = (($ = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : $.checked) || !1, u = parseInt(((L = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : L.value) || "5"), f = ((q = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : q.value) || "", v = ((N = this.container.querySelector("#sql-connection-id")) == null ? void 0 : N.value) || "", y = ((R = this.container.querySelector("#sql-search-table")) == null ? void 0 : R.value) || "knowledge_base", S = ((D = this.container.querySelector("#sql-title-column")) == null ? void 0 : D.value) || "title", I = ((U = this.container.querySelector("#sql-content-column")) == null ? void 0 : U.value) || "content", _ = ((F = this.container.querySelector("#sql-url-column")) == null ? void 0 : F.value) || "url", M = {
+      const g = (($ = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : $.checked) || !1, u = parseInt(((L = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : L.value) || "5"), f = ((_ = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : _.value) || "", v = ((N = this.container.querySelector("#sql-connection-id")) == null ? void 0 : N.value) || "", y = ((R = this.container.querySelector("#sql-search-table")) == null ? void 0 : R.value) || "knowledge_base", I = ((D = this.container.querySelector("#sql-title-column")) == null ? void 0 : D.value) || "title", A = ((U = this.container.querySelector("#sql-content-column")) == null ? void 0 : U.value) || "content", q = ((F = this.container.querySelector("#sql-url-column")) == null ? void 0 : F.value) || "url", M = {
         enabled: g,
         priority: u,
         apiEndpoint: f,
         connectionId: v,
         searchTable: y,
-        titleColumn: S,
-        contentColumn: I,
-        urlColumn: _
+        titleColumn: I,
+        contentColumn: A,
+        urlColumn: q
       };
       localStorage.setItem("sm_sql_plugin_config", JSON.stringify(M)), alert("SQL Plugin 設定已儲存");
       const P = this.container.querySelector("#admin-content");
@@ -2446,7 +2429,7 @@ class G {
    */
   renderDashboard() {
     var o, i;
-    const e = O.getAllConversations(), t = A.getAll(), n = b.loadAgentToolConfig();
+    const e = O.getAllConversations(), t = C.getAll(), n = b.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">儀表板</h2>
 
@@ -2503,7 +2486,7 @@ class G {
    * 渲染手動索引頁面
    */
   renderManualIndex() {
-    const e = A.getAll();
+    const e = C.getAll();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">手動索引</h2>
       <p style="color: #6b7280; margin-bottom: 24px;">手動新增索引內容供 Agent 搜尋</p>
@@ -2917,7 +2900,7 @@ class G {
    * 渲染 Agent & API 設定頁面（合併）
    */
   renderAgentAndAPI() {
-    var n, o, i, r, s, a, d, c, h, w, C, p;
+    var n, o, i, r, s, a, d, c, h, w, S, p;
     const e = b.loadConfig() || {}, t = b.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">Agent & API 設定</h2>
@@ -3003,7 +2986,7 @@ class G {
                 id="embed-deployment"
                 name="embedDeployment"
                 placeholder="text-embedding-3-small"
-                value="${((C = e.embeddingAPI) == null ? void 0 : C.deployment) || ((p = e.azureOpenAI) == null ? void 0 : p.embeddingDeployment) || ""}"
+                value="${((S = e.embeddingAPI) == null ? void 0 : S.deployment) || ((p = e.azureOpenAI) == null ? void 0 : p.embeddingDeployment) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -3380,7 +3363,7 @@ class G {
    * 檢查是否有 Telegram 配置
    */
   hasTelegramConfig() {
-    const e = window.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN, t = window.NEXT_PUBLIC_TELEGRAM_CHAT_ID || process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
+    const e = window.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || B.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN, t = window.NEXT_PUBLIC_TELEGRAM_CHAT_ID || B.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
     return !!(e && t);
   }
   /**
@@ -3396,7 +3379,7 @@ class G {
     localStorage.setItem("telegram_enabled", e.toString());
   }
 }
-class W {
+class Z {
   constructor() {
     l(this, "plugins", /* @__PURE__ */ new Map());
   }
@@ -3484,7 +3467,7 @@ class W {
     this.plugins.forEach((e) => e.dispose()), this.plugins.clear(), console.log("🧹 All plugins disposed");
   }
 }
-class X {
+class ee {
   constructor() {
     l(this, "id", "manual-index");
     l(this, "name", "手動索引");
@@ -3493,12 +3476,12 @@ class X {
     l(this, "enabled", !0);
   }
   async initialize() {
-    const e = A.getAll();
+    const e = C.getAll();
     console.log(`📚 Manual Index Plugin: ${e.length} indexes loaded`);
   }
   async search(e, t = 5) {
     try {
-      return A.search(e, t).map(({ index: o, score: i }) => ({
+      return C.search(e, t).map(({ index: o, score: i }) => ({
         type: "manual-index",
         title: o.name,
         snippet: o.content.substring(0, 200),
@@ -3516,13 +3499,13 @@ class X {
     }
   }
   isAvailable() {
-    return A.getAll().length > 0;
+    return C.getAll().length > 0;
   }
   getConfig() {
     return {
       enabled: this.enabled,
       priority: this.priority,
-      indexCount: A.getAll().length
+      indexCount: C.getAll().length
     };
   }
   updateConfig(e) {
@@ -3531,7 +3514,7 @@ class X {
   dispose() {
   }
 }
-class Z {
+class te {
   constructor() {
     l(this, "id", "frontend-pages");
     l(this, "name", "前端頁面");
@@ -3647,18 +3630,18 @@ class T {
       throw new Error("Sitemap config not found");
     console.log("Crawling sitemap:", t.sitemapUrl);
     try {
-      const o = await (await fetch(t.sitemapUrl)).text(), r = new DOMParser().parseFromString(o, "text/xml"), s = Array.from(r.querySelectorAll("url loc")).map((C) => C.textContent || "");
+      const o = await (await fetch(t.sitemapUrl)).text(), r = new DOMParser().parseFromString(o, "text/xml"), s = Array.from(r.querySelectorAll("url loc")).map((S) => S.textContent || "");
       console.log(`Found ${s.length} URLs in sitemap`);
       const d = s.slice(0, 50), c = [];
-      for (const C of d)
+      for (const S of d)
         try {
-          const p = await this.crawlPage(C);
+          const p = await this.crawlPage(S);
           p && c.push(p);
         } catch (p) {
-          console.error(`Failed to crawl ${C}:`, p);
+          console.error(`Failed to crawl ${S}:`, p);
         }
       t.pages = c, t.lastUpdated = Date.now();
-      const h = this.getAll(), w = h.findIndex((C) => C.id === e);
+      const h = this.getAll(), w = h.findIndex((S) => S.id === e);
       w >= 0 && (h[w] = t, this.saveAll(h)), console.log(`Crawled ${c.length} pages successfully`);
     } catch (n) {
       throw console.error("Failed to crawl sitemap:", n), n;
@@ -3761,7 +3744,7 @@ class T {
   }
 }
 l(T, "STORAGE_KEY", "sm_sitemap_configs"), l(T, "updateTimers", /* @__PURE__ */ new Map());
-class ee {
+class ne {
   constructor() {
     l(this, "id", "sitemap");
     l(this, "name", "Sitemap 索引");
@@ -3822,7 +3805,7 @@ class ee {
   dispose() {
   }
 }
-class te {
+class oe {
   constructor(e) {
     l(this, "id", "sql-database");
     l(this, "name", "SQL 資料庫");
@@ -3932,15 +3915,15 @@ class te {
     this.enabled = !1;
   }
 }
-function ne() {
+function ie() {
   const m = localStorage.getItem("sm_sql_plugin_config"), e = m ? JSON.parse(m) : {};
-  return new te(e);
+  return new oe(e);
 }
-function oe() {
-  const m = new W();
-  return m.register(new X()), m.register(new Z()), m.register(new ee()), m.register(ne()), m;
+function re() {
+  const m = new Z();
+  return m.register(new ee()), m.register(new te()), m.register(new ne()), m.register(ie()), m;
 }
-function ie(m) {
+function se(m) {
   const e = localStorage.getItem("sm_plugin_configs");
   if (e)
     try {
@@ -3953,7 +3936,8 @@ function ie(m) {
       console.error("Error loading plugin configs:", t);
     }
 }
-class re {
+var Q = {};
+class ae {
   constructor() {
     l(this, "config");
     l(this, "openAI");
@@ -3976,18 +3960,18 @@ class re {
       console.warn("ServiceModuler already initialized");
       return;
     }
-    this.config = e, z.getCurrentUser(), console.log("User ID:", z.getUserId()), this.pluginManager = oe(), ie(this.pluginManager), this.pluginManager.initializeAll().then(() => {
+    this.config = e, z.getCurrentUser(), console.log("User ID:", z.getUserId()), this.pluginManager = re(), se(this.pluginManager), this.pluginManager.initializeAll().then(() => {
       console.log("✅ All plugins initialized");
     }).catch((d) => {
       console.error("❌ Plugin initialization error:", d);
-    }), this.openAI = new H(e.azureOpenAI || e.llmAPI), this.indexing = new Y(this.openAI, e.siteConfig);
-    const t = localStorage.getItem("telegram_enabled") === "true", n = window.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN, o = window.NEXT_PUBLIC_TELEGRAM_CHAT_ID || process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID, i = t && n && o ? { botToken: n, chatId: o } : void 0;
-    this.agent = new J(
+    }), this.openAI = new J(e.azureOpenAI || e.llmAPI), this.indexing = new V(this.openAI, e.siteConfig);
+    const t = localStorage.getItem("telegram_enabled") === "true", n = window.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || Q.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN, o = window.NEXT_PUBLIC_TELEGRAM_CHAT_ID || Q.NEXT_PUBLIC_TELEGRAM_CHAT_ID, i = t && n && o ? { botToken: n, chatId: o } : void 0;
+    this.agent = new j(
       this.openAI,
       this.pluginManager,
       e.rules || [],
       i
-    ), this.capture = new V(), this.panel = new j(
+    ), this.capture = new W(), this.panel = new G(
       ((r = e.ui) == null ? void 0 : r.width) || "33.33%",
       ((s = e.ui) == null ? void 0 : s.position) || "right"
     ), this.panel.setCallbacks({
@@ -3998,7 +3982,7 @@ class re {
     }), this.loadConversationState(), this.agent && this.panel.setRules(
       this.agent.getRules(),
       (a = this.agent.getCurrentRule()) == null ? void 0 : a.id
-    ), this.adminPanel = new G(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
+    ), this.adminPanel = new X(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
   }
   /**
    * 打開面板
@@ -4035,7 +4019,7 @@ class re {
     (o = this.conversationState) == null || o.messages.push(n), this.panel.addMessage(n), this.saveConversationState();
     try {
       let d, c, h = !1;
-      const w = ((i = this.conversationState) == null ? void 0 : i.sessionId) || this.generateSessionId(), C = localStorage.getItem("lens_service_user_id") || "default_user";
+      const w = ((i = this.conversationState) == null ? void 0 : i.sessionId) || this.generateSessionId(), S = localStorage.getItem("lens_service_user_id") || "default_user";
       if (t)
         d = await this.openAI.chatCompletionWithImage(
           e || "請分析這張圖片並回答問題",
@@ -4048,7 +4032,7 @@ class re {
           e,
           ((s = this.conversationState) == null ? void 0 : s.messages) || [],
           w,
-          C
+          S
         );
         d = g.response, c = g.sources, h = g.needsHumanReply;
       }
@@ -4058,7 +4042,7 @@ class re {
         timestamp: Date.now(),
         sources: c
       };
-      (a = this.conversationState) == null || a.messages.push(p), this.panel.addMessage(p), this.saveConversationState(), await this.saveConversationToDatabase(w, C);
+      (a = this.conversationState) == null || a.messages.push(p), this.panel.addMessage(p), this.saveConversationState(), await this.saveConversationToDatabase(w, S);
     } catch (d) {
       console.error("Error processing message:", d);
       const c = {
@@ -4224,8 +4208,8 @@ class re {
     return `sm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }
-const se = new re();
-typeof window < "u" && (window.LensService = se);
+const le = new ae();
+typeof window < "u" && (window.LensService = le);
 export {
-  se as default
+  le as default
 };
