@@ -104,6 +104,8 @@ const y = {
     border: 1px solid #d1d5db;
     border-radius: 12px;
     font-size: 15px;
+    color: #1f2937;
+    background: #ffffff;
     outline: none;
     transition: border-color 0.2s;
     min-height: 50px;
@@ -1285,7 +1287,7 @@ class H {
         const r = n.target.getAttribute("data-id");
         if (r && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
           try {
-            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-_siimfxp.mjs");
+            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-DmYed9vf.mjs");
             await a.deleteConversation(r), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
           } catch (a) {
             await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
@@ -2070,7 +2072,7 @@ class H {
    */
   async renderConversations() {
     try {
-      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-_siimfxp.mjs"), t = await e.getAllConversations();
+      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-DmYed9vf.mjs"), t = await e.getAllConversations();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">客服對話管理</h2>
@@ -2168,7 +2170,7 @@ class H {
    */
   async renderAdminUsers() {
     try {
-      const { AdminUserManager: e } = await import("./AdminUserManager-AKtmYHqw.mjs"), t = await e.getAllAdminUsers();
+      const { AdminUserManager: e } = await import("./AdminUserManager-V1vdjFgG.mjs"), t = await e.getAllAdminUsers();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">管理員帳號管理</h2>
@@ -2459,7 +2461,7 @@ class H {
    */
   async showConversationModal(e) {
     try {
-      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-_siimfxp.mjs"), i = await t.getConversationById(e);
+      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-DmYed9vf.mjs"), i = await t.getConversationById(e);
       if (!i) {
         await this.showAlertDialog("找不到該對話記錄");
         return;
@@ -2576,7 +2578,7 @@ class H {
           return;
         }
         try {
-          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-_siimfxp.mjs");
+          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-DmYed9vf.mjs");
           await x.addCustomerServiceReply(
             e,
             m,

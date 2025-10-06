@@ -191,6 +191,8 @@ export const styles = {
     border: 1px solid #d1d5db;
     border-radius: 12px;
     font-size: 15px;
+    color: #1f2937;
+    background: #ffffff;
     outline: none;
     transition: border-color 0.2s;
     min-height: 50px;
