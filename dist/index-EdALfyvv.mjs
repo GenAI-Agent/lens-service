@@ -253,26 +253,26 @@ class O {
    * 綁定事件
    */
   bindEvents(e) {
-    var o, n, r, s, a;
-    (o = e.querySelector("#sm-close-btn")) == null || o.addEventListener("click", () => {
+    var i, n, r, s, a;
+    (i = e.querySelector("#sm-close-btn")) == null || i.addEventListener("click", () => {
       this.close();
     });
     const t = e.querySelector("#sm-send-btn");
-    t ? (console.log("✅ Send button found, binding click event"), t.addEventListener("click", (d) => {
-      console.log("🔥 Send button clicked via addEventListener!"), d.preventDefault(), d.stopPropagation(), this.handleSend();
-    }), t.onclick = (d) => {
-      console.log("🔥 Send button clicked via onclick!"), d.preventDefault(), d.stopPropagation(), this.handleSend();
-    }, e.addEventListener("click", (d) => {
-      (d.target.id === "sm-send-btn" || d.target.closest("#sm-send-btn")) && (console.log("🔥 Send button clicked via delegation!"), d.preventDefault(), d.stopPropagation(), this.handleSend());
+    t ? (console.log("✅ Send button found, binding click event"), t.addEventListener("click", (c) => {
+      console.log("🔥 Send button clicked via addEventListener!"), c.preventDefault(), c.stopPropagation(), this.handleSend();
+    }), t.onclick = (c) => {
+      console.log("🔥 Send button clicked via onclick!"), c.preventDefault(), c.stopPropagation(), this.handleSend();
+    }, e.addEventListener("click", (c) => {
+      (c.target.id === "sm-send-btn" || c.target.closest("#sm-send-btn")) && (console.log("🔥 Send button clicked via delegation!"), c.preventDefault(), c.stopPropagation(), this.handleSend());
     })) : console.error("❌ Send button not found!");
-    const i = e.querySelector("#sm-input");
-    i ? (console.log("✅ Input field found, binding events"), i.addEventListener("keypress", (d) => {
-      d.key === "Enter" && (console.log("🔥 Enter key pressed in input"), this.handleSend());
-    }), i.addEventListener("input", (d) => {
-      console.log("🔥 Input event:", d.target.value);
-    }), i.addEventListener("focus", () => {
+    const o = e.querySelector("#sm-input");
+    o ? (console.log("✅ Input field found, binding events"), o.addEventListener("keypress", (c) => {
+      c.key === "Enter" && (console.log("🔥 Enter key pressed in input"), this.handleSend());
+    }), o.addEventListener("input", (c) => {
+      console.log("🔥 Input event:", c.target.value);
+    }), o.addEventListener("focus", () => {
       console.log("🔥 Input focused");
-    }), i.addEventListener("blur", () => {
+    }), o.addEventListener("blur", () => {
       console.log("🔥 Input blurred");
     })) : console.error("❌ Input field not found!"), (n = e.querySelector("#sm-chat-tab")) == null || n.addEventListener("click", () => {
       this.showView("chat");
@@ -295,8 +295,8 @@ class O {
    * 顯示視圖
    */
   showView(e) {
-    const t = this.panel.querySelector("#sm-chat-view"), i = this.panel.querySelector("#sm-chat-tab");
-    e === "chat" && (t.style.display = "flex", i.style.cssText = y.tabButton + "; " + y.tabButtonActive);
+    const t = this.panel.querySelector("#sm-chat-view"), o = this.panel.querySelector("#sm-chat-tab");
+    e === "chat" && (t.style.display = "flex", o.style.cssText = y.tabButton + "; " + y.tabButtonActive);
   }
   /**
    * 添加訊息
@@ -304,15 +304,15 @@ class O {
   addMessage(e) {
     const t = this.panel.querySelector("#sm-messages");
     if (!t) return;
-    const i = document.createElement("div");
-    if (i.style.cssText = e.role === "user" ? y.userMessage : y.assistantMessage, e.role === "assistant" ? i.innerHTML = e.content : i.textContent = e.content, e.sources && e.sources.length > 0) {
-      const o = document.createElement("div");
-      o.style.cssText = y.sources, o.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((n, r) => {
+    const o = document.createElement("div");
+    if (o.style.cssText = e.role === "user" ? y.userMessage : y.assistantMessage, e.role === "assistant" ? o.innerHTML = e.content : o.textContent = e.content, e.sources && e.sources.length > 0) {
+      const i = document.createElement("div");
+      i.style.cssText = y.sources, i.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((n, r) => {
         const s = document.createElement("a");
-        s.href = n.url, s.target = "_blank", s.textContent = `[${r + 1}] ${n.title}`, s.style.cssText = y.sourceLink, o.appendChild(s), o.appendChild(document.createElement("br"));
-      }), i.appendChild(o);
+        s.href = n.url, s.target = "_blank", s.textContent = `[${r + 1}] ${n.title}`, s.style.cssText = y.sourceLink, i.appendChild(s), i.appendChild(document.createElement("br"));
+      }), o.appendChild(i);
     }
-    t.appendChild(i), setTimeout(() => {
+    t.appendChild(o), setTimeout(() => {
       t.scrollTop = t.scrollHeight;
     }, 10);
   }
@@ -343,13 +343,25 @@ class O {
    * 顯示歷史記錄視圖
    */
   showHistoryView(e) {
-    var s;
-    const t = this.panel.querySelector("#sm-chat-view"), i = this.panel.querySelector("#sm-chat-tab");
-    if (!t || !i) return;
-    t.style.display = "none", i.style.cssText = y.tabButton;
-    let o = this.panel.querySelector("#sm-history-view");
-    if (o || (o = document.createElement("div"), o.id = "sm-history-view", o.style.cssText = y.chatView, (s = t.parentElement) == null || s.appendChild(o)), o.style.display = "flex", !Array.isArray(e) || e.length === 0)
-      o.innerHTML = `
+    const t = this.panel.querySelector("#sm-chat-view"), o = this.panel.querySelector("#sm-chat-tab");
+    if (console.log("📋 showHistoryView called with", e.length, "conversations"), console.log("📋 chatView:", t), console.log("📋 chatTab:", o), !t || !o) {
+      console.error("❌ chatView or chatTab not found");
+      return;
+    }
+    t.style.display = "none", o.style.cssText = y.tabButton;
+    let i = this.panel.querySelector("#sm-history-view");
+    if (!i) {
+      i = document.createElement("div"), i.id = "sm-history-view", i.style.cssText = y.chatView;
+      const s = t.parentElement;
+      if (console.log("📋 parent element:", s), s)
+        s.appendChild(i), console.log("✅ History view created and appended");
+      else {
+        console.error("❌ Parent element not found");
+        return;
+      }
+    }
+    if (i.style.display = "flex", i.style.flexDirection = "column", console.log("✅ History view display set to flex"), !Array.isArray(e) || e.length === 0)
+      i.innerHTML = `
         <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: #6b7280;">
           <p style="font-size: 14px;">目前沒有對話記錄</p>
         </div>
@@ -367,14 +379,14 @@ class O {
         </div>
       `;
     else {
-      const a = e.map((d) => {
-        let h = [];
+      const s = e.map((a) => {
+        let c = [];
         try {
-          h = typeof d.messages == "string" ? JSON.parse(d.messages) : d.messages;
+          c = typeof a.messages == "string" ? JSON.parse(a.messages) : a.messages;
         } catch {
-          h = [];
+          c = [];
         }
-        const c = Array.isArray(h) ? h.length : 0, l = new Date(d.created_at).toLocaleString("zh-TW", {
+        const h = Array.isArray(c) ? c.length : 0, l = new Date(a.created_at).toLocaleString("zh-TW", {
           year: "numeric",
           month: "2-digit",
           day: "2-digit",
@@ -382,29 +394,29 @@ class O {
           minute: "2-digit"
         });
         return `
-          <div class="history-item" data-conversation-id="${d.conversation_id}" style="
+          <div class="history-item" data-conversation-id="${a.conversation_id}" style="
             padding: 16px;
             border-bottom: 1px solid #e5e7eb;
             cursor: pointer;
             transition: background-color 0.2s;
           " onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='white'">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-              <div style="font-weight: 600; color: #1f2937; font-size: 14px;">對話 #${d.conversation_id.slice(-8)}</div>
+              <div style="font-weight: 600; color: #1f2937; font-size: 14px;">對話 #${a.conversation_id.slice(-8)}</div>
               <div style="font-size: 12px; color: #6b7280;">${l}</div>
             </div>
             <div style="font-size: 12px; color: #6b7280;">
-              訊息數: ${c} | 用戶: ${d.user_id || "unknown"}
+              訊息數: ${h} | 用戶: ${a.user_id || "unknown"}
             </div>
           </div>
         `;
       }).join("");
-      o.innerHTML = `
+      i.innerHTML = `
         <div style="flex: 1; overflow-y: auto;">
           <div style="padding: 16px; border-bottom: 2px solid #e5e7eb; background: #f9fafb;">
             <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;">對話歷史記錄</h3>
             <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">點擊對話以查看詳情</p>
           </div>
-          ${a}
+          ${s}
         </div>
         <div style="padding: 16px; border-top: 1px solid #e5e7eb;">
           <button id="sm-back-to-chat" style="
@@ -420,13 +432,13 @@ class O {
         </div>
       `;
     }
-    const n = o.querySelector("#sm-back-to-chat");
+    const n = i.querySelector("#sm-back-to-chat");
     n == null || n.addEventListener("click", () => {
-      this.showView("chat"), o.style.display = "none";
-    }), o.querySelectorAll(".history-item").forEach((a) => {
-      a.addEventListener("click", async () => {
-        const d = a.getAttribute("data-conversation-id");
-        d && await this.loadConversation(d);
+      this.showView("chat"), i.style.display = "none";
+    }), i.querySelectorAll(".history-item").forEach((s) => {
+      s.addEventListener("click", async () => {
+        const a = s.getAttribute("data-conversation-id");
+        a && await this.loadConversation(a);
       });
     });
   }
@@ -435,12 +447,12 @@ class O {
    */
   async loadConversation(e) {
     try {
-      const { DatabaseService: t } = await Promise.resolve().then(() => v), i = await t.getConversation(e);
-      if (!i) {
+      const { DatabaseService: t } = await Promise.resolve().then(() => v), o = await t.getConversation(e);
+      if (!o) {
         alert("無法載入對話");
         return;
       }
-      this.clearMessages(), (Array.isArray(i.messages) ? i.messages : []).forEach((r) => {
+      this.clearMessages(), (Array.isArray(o.messages) ? o.messages : []).forEach((r) => {
         this.addMessage(r);
       });
       const n = this.panel.querySelector("#sm-history-view");
@@ -475,8 +487,8 @@ class O {
    * 推動頁面內容
    */
   pushPageContent() {
-    const e = document.body, t = parseFloat(this.width.replace("%", "")), i = 100 - t;
-    this.position === "right" ? (e.style.transform = "translateX(0)", e.style.width = `${i}%`, e.style.marginLeft = "0", e.style.marginRight = "0") : (e.style.transform = `translateX(${t}%)`, e.style.width = `${i}%`, e.style.marginLeft = "0", e.style.marginRight = "0"), e.style.transition = "transform 0.3s ease, width 0.3s ease", e.style.boxSizing = "border-box";
+    const e = document.body, t = parseFloat(this.width.replace("%", "")), o = 100 - t;
+    this.position === "right" ? (e.style.transform = "translateX(0)", e.style.width = `${o}%`, e.style.marginLeft = "0", e.style.marginRight = "0") : (e.style.transform = `translateX(${t}%)`, e.style.width = `${o}%`, e.style.marginLeft = "0", e.style.marginRight = "0"), e.style.transition = "transform 0.3s ease, width 0.3s ease", e.style.boxSizing = "border-box";
   }
   /**
    * 恢復頁面內容
@@ -490,8 +502,8 @@ class O {
    */
   setCapturedImage(e, t) {
     this.capturedImage = e, this.capturedText = t;
-    const i = this.panel.querySelector("#sm-image-preview"), o = this.panel.querySelector("#sm-preview-img"), n = this.panel.querySelector("#sm-image-context");
-    i && o && n && (i.style.display = "flex", o.src = e, n.textContent = t.substring(0, 100) + (t.length > 100 ? "..." : ""));
+    const o = this.panel.querySelector("#sm-image-preview"), i = this.panel.querySelector("#sm-preview-img"), n = this.panel.querySelector("#sm-image-context");
+    o && i && n && (o.style.display = "flex", i.src = e, n.textContent = t.substring(0, 100) + (t.length > 100 ? "..." : ""));
     const r = this.panel.querySelector("#sm-input");
     r && r.focus();
   }
@@ -508,10 +520,10 @@ class O {
    */
   setScreenshotInInput(e) {
     this.capturedImage = e;
-    const t = this.panel.querySelector("#sm-image-preview"), i = this.panel.querySelector("#sm-preview-img");
-    t && i && (i.src = e, t.style.display = "block"), this.isOpen || this.open();
-    const o = this.panel.querySelector("#sm-input");
-    o && o.focus();
+    const t = this.panel.querySelector("#sm-image-preview"), o = this.panel.querySelector("#sm-preview-img");
+    t && o && (o.src = e, t.style.display = "block"), this.isOpen || this.open();
+    const i = this.panel.querySelector("#sm-input");
+    i && i.focus();
   }
   /**
    * 設置回調函數
@@ -534,8 +546,8 @@ class z {
   static async query(e, t = []) {
     try {
       return console.log("🔍 Mock query:", e, t), [];
-    } catch (i) {
-      throw console.error("❌ Database query error:", i), i;
+    } catch (o) {
+      throw console.error("❌ Database query error:", o), o;
     }
   }
   static async initializeTables() {
@@ -544,18 +556,18 @@ class z {
   // Helper method for API calls
   static async apiCall(e, t = {}) {
     try {
-      const i = await fetch(`${_}${e}`, {
+      const o = await fetch(`${_}${e}`, {
         ...t,
         headers: {
           "Content-Type": "application/json",
           ...t.headers
         }
       });
-      if (!i.ok)
-        throw new Error(`API call failed: ${i.statusText}`);
-      return await i.json();
-    } catch (i) {
-      throw console.error(`❌ API call failed for ${e}:`, i), i;
+      if (!o.ok)
+        throw new Error(`API call failed: ${o.statusText}`);
+      return await o.json();
+    } catch (o) {
+      throw console.error(`❌ API call failed for ${e}:`, o), o;
     }
   }
   // ==================== Settings API ====================
@@ -585,14 +597,14 @@ class z {
         method: "POST",
         body: JSON.stringify({ username: e, password: t })
       });
-    } catch (i) {
-      return console.error("Admin validation failed:", i), null;
+    } catch (o) {
+      return console.error("Admin validation failed:", o), null;
     }
   }
-  static async createAdminUser(e, t, i) {
+  static async createAdminUser(e, t, o) {
     await this.apiCall("/admin-users", {
       method: "POST",
-      body: JSON.stringify({ username: e, password: t, email: i })
+      body: JSON.stringify({ username: e, password: t, email: o })
     });
   }
   static async deleteAdminUser(e) {
@@ -604,7 +616,7 @@ class z {
   static async getManualIndexes() {
     return await this.apiCall("/manual-indexes");
   }
-  static async createManualIndex(e, t, i, o, n) {
+  static async createManualIndex(e, t, o, i, n) {
     const r = `fp-${Date.now()}`;
     await this.apiCall("/manual-indexes", {
       method: "POST",
@@ -612,8 +624,8 @@ class z {
         id: crypto.randomUUID(),
         name: e,
         description: t,
-        content: i,
-        url: o || "",
+        content: o,
+        url: i || "",
         keywords: n || [],
         fingerprint: r,
         embedding: null,
@@ -621,13 +633,13 @@ class z {
       })
     });
   }
-  static async updateManualIndex(e, t, i, o, n, r) {
+  static async updateManualIndex(e, t, o, i, n, r) {
     await this.apiCall(`/manual-indexes/${e}`, {
       method: "PUT",
       body: JSON.stringify({
         name: t,
-        description: i,
-        content: o,
+        description: o,
+        content: i,
         url: n || "",
         keywords: r || []
       })
@@ -639,13 +651,13 @@ class z {
     });
   }
   // ==================== Conversations API ====================
-  static async saveConversation(e, t, i) {
+  static async saveConversation(e, t, o) {
     await this.apiCall("/conversations", {
       method: "POST",
       body: JSON.stringify({
         user_id: t,
         conversation_id: e,
-        messages: i
+        messages: o
       })
     }), console.log("✅ Conversation saved to database:", e);
   }
@@ -682,7 +694,7 @@ class S {
     }
   }
   static async getById(e) {
-    return (await this.getAll()).find((i) => i.id.toString() === e) || null;
+    return (await this.getAll()).find((o) => o.id.toString() === e) || null;
   }
   static async create(e) {
     try {
@@ -693,10 +705,10 @@ class S {
   }
   static async update(e, t) {
     try {
-      const i = await this.getById(e);
-      return i ? (await z.updateManualIndex(e, t.title || i.name, "", t.content || i.content, t.url !== void 0 ? t.url : i.url, []), console.log("Updated manual index:", e), { success: !0 }) : null;
-    } catch (i) {
-      return console.error("Failed to update manual index:", i), null;
+      const o = await this.getById(e);
+      return o ? (await z.updateManualIndex(e, t.title || o.name, "", t.content || o.content, t.url !== void 0 ? t.url : o.url, []), console.log("Updated manual index:", e), { success: !0 }) : null;
+    } catch (o) {
+      return console.error("Failed to update manual index:", o), null;
     }
   }
   static async delete(e) {
@@ -710,18 +722,18 @@ class S {
     try {
       const t = await this.getAll();
       if (!e.trim()) return t;
-      const i = e.toLowerCase();
-      return t.filter((o) => o.title.toLowerCase().includes(i) || o.content.toLowerCase().includes(i));
+      const o = e.toLowerCase();
+      return t.filter((i) => i.title.toLowerCase().includes(o) || i.content.toLowerCase().includes(o));
     } catch (t) {
       return console.error("Failed to search manual indexes:", t), [];
     }
   }
 }
-const j = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const H = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   ManualIndexService: S
 }, Symbol.toStringTag, { value: "Module" }));
-class H {
+class j {
   constructor() {
     b(this, "container", null);
     b(this, "isOpen", !1);
@@ -740,10 +752,10 @@ class H {
    */
   interceptHistory() {
     const e = history.pushState, t = history.replaceState;
-    history.pushState = (...i) => {
-      e.apply(history, i), this.handleRouteChange();
-    }, history.replaceState = (...i) => {
-      t.apply(history, i), this.handleRouteChange();
+    history.pushState = (...o) => {
+      e.apply(history, o), this.handleRouteChange();
+    }, history.replaceState = (...o) => {
+      t.apply(history, o), this.handleRouteChange();
     };
   }
   /**
@@ -890,8 +902,8 @@ class H {
   /**
    * 顯示編輯對話框
    */
-  showEditDialog(e, t, i = !1) {
-    return new Promise((o) => {
+  showEditDialog(e, t, o = !1) {
+    return new Promise((i) => {
       const n = document.createElement("div");
       n.style.cssText = `
         position: fixed;
@@ -905,7 +917,7 @@ class H {
         align-items: center;
         z-index: 10000;
       `;
-      const r = i ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit;">${t}</textarea>` : `<input type="text" id="edit-input" value="${t}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;">`;
+      const r = o ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit;">${t}</textarea>` : `<input type="text" id="edit-input" value="${t}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;">`;
       n.innerHTML = `
         <div style="background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%;">
           <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1f2937;">${e}</h3>
@@ -916,19 +928,19 @@ class H {
           </div>
         </div>
       `, document.body.appendChild(n);
-      const s = n.querySelector("#edit-input"), a = n.querySelector("#cancel-btn"), d = n.querySelector("#save-btn");
+      const s = n.querySelector("#edit-input"), a = n.querySelector("#cancel-btn"), c = n.querySelector("#save-btn");
       s.focus(), s instanceof HTMLInputElement ? s.select() : s.setSelectionRange(0, s.value.length), a == null || a.addEventListener("click", () => {
-        document.body.removeChild(n), o(null);
-      }), d == null || d.addEventListener("click", () => {
+        document.body.removeChild(n), i(null);
+      }), c == null || c.addEventListener("click", () => {
         const h = s.value.trim();
-        document.body.removeChild(n), o(h);
+        document.body.removeChild(n), i(h);
       }), s instanceof HTMLInputElement && s.addEventListener("keydown", (h) => {
         if (h.key === "Enter") {
-          const c = s.value.trim();
-          document.body.removeChild(n), o(c);
+          const l = s.value.trim();
+          document.body.removeChild(n), i(l);
         }
       }), n.addEventListener("click", (h) => {
-        h.target === n && (document.body.removeChild(n), o(null));
+        h.target === n && (document.body.removeChild(n), i(null));
       });
     });
   }
@@ -938,8 +950,8 @@ class H {
   showConfirmDialog(e) {
     return new Promise((t) => {
       var r, s;
-      const i = document.createElement("div");
-      i.style.cssText = `
+      const o = document.createElement("div");
+      o.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
@@ -951,26 +963,26 @@ class H {
         align-items: center;
         justify-content: center;
       `;
-      const o = document.createElement("div");
-      o.style.cssText = `
+      const i = document.createElement("div");
+      i.style.cssText = `
         background: white;
         padding: 20px;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         max-width: 400px;
         width: 90%;
-      `, o.innerHTML = `
+      `, i.innerHTML = `
         <p style="margin: 0 0 20px 0; font-size: 16px;">${e}</p>
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
           <button id="confirm-cancel" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;">取消</button>
           <button id="confirm-ok" style="padding: 8px 16px; border: none; background: #007cff; color: white; border-radius: 4px; cursor: pointer;">確定</button>
         </div>
-      `, i.appendChild(o), document.body.appendChild(i);
+      `, o.appendChild(i), document.body.appendChild(o);
       const n = (a) => {
-        document.body.removeChild(i), t(a);
+        document.body.removeChild(o), t(a);
       };
-      (r = o.querySelector("#confirm-ok")) == null || r.addEventListener("click", () => n(!0)), (s = o.querySelector("#confirm-cancel")) == null || s.addEventListener("click", () => n(!1)), i.addEventListener("click", (a) => {
-        a.target === i && n(!1);
+      (r = i.querySelector("#confirm-ok")) == null || r.addEventListener("click", () => n(!0)), (s = i.querySelector("#confirm-cancel")) == null || s.addEventListener("click", () => n(!1)), o.addEventListener("click", (a) => {
+        a.target === o && n(!1);
       });
     });
   }
@@ -980,8 +992,8 @@ class H {
   showAlertDialog(e) {
     return new Promise((t) => {
       var r;
-      const i = document.createElement("div");
-      i.style.cssText = `
+      const o = document.createElement("div");
+      o.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
@@ -993,25 +1005,25 @@ class H {
         align-items: center;
         justify-content: center;
       `;
-      const o = document.createElement("div");
-      o.style.cssText = `
+      const i = document.createElement("div");
+      i.style.cssText = `
         background: white;
         padding: 20px;
         border-radius: 8px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         max-width: 400px;
         width: 90%;
-      `, o.innerHTML = `
+      `, i.innerHTML = `
         <p style="margin: 0 0 20px 0; font-size: 16px;">${e}</p>
         <div style="display: flex; justify-content: flex-end;">
           <button id="alert-ok" style="padding: 8px 16px; border: none; background: #007cff; color: white; border-radius: 4px; cursor: pointer;">確定</button>
         </div>
-      `, i.appendChild(o), document.body.appendChild(i);
+      `, o.appendChild(i), document.body.appendChild(o);
       const n = () => {
-        document.body.removeChild(i), t();
+        document.body.removeChild(o), t();
       };
-      (r = o.querySelector("#alert-ok")) == null || r.addEventListener("click", n), i.addEventListener("click", (s) => {
-        s.target === i && n();
+      (r = i.querySelector("#alert-ok")) == null || r.addEventListener("click", n), o.addEventListener("click", (s) => {
+        s.target === o && n();
       });
     });
   }
@@ -1021,8 +1033,8 @@ class H {
   updateNavHighlight() {
     if (!this.container) return;
     this.container.querySelectorAll(".nav-item").forEach((t) => {
-      const i = t, o = i.dataset.page === this.currentPage;
-      i.style.background = o ? "#ede9fe" : "transparent", i.style.color = o ? "#7c3aed" : "#4b5563", i.style.fontWeight = o ? "600" : "500", o ? i.classList.add("active") : i.classList.remove("active");
+      const o = t, i = o.dataset.page === this.currentPage;
+      o.style.background = i ? "#ede9fe" : "transparent", o.style.color = i ? "#7c3aed" : "#4b5563", o.style.fontWeight = i ? "600" : "500", i ? o.classList.add("active") : o.classList.remove("active");
     });
   }
   /**
@@ -1032,8 +1044,8 @@ class H {
     if (!this.container) return;
     const e = this.container.querySelector("#admin-login-form");
     if (e) {
-      e.addEventListener("submit", async (l) => {
-        l.preventDefault(), l.stopPropagation();
+      e.addEventListener("submit", async (d) => {
+        d.preventDefault(), d.stopPropagation();
         const p = this.container.querySelector("#admin-username"), u = this.container.querySelector("#admin-password"), g = (p == null ? void 0 : p.value) || "", m = (u == null ? void 0 : u.value) || "";
         console.log("Login attempt with username:", g);
         try {
@@ -1045,21 +1057,21 @@ class H {
           });
         }
       });
-      const c = this.container.querySelector("#admin-username");
-      c && setTimeout(() => {
-        c.focus();
+      const l = this.container.querySelector("#admin-username");
+      l && setTimeout(() => {
+        l.focus();
       }, 100);
     }
     setTimeout(() => {
-      const c = this.container.querySelectorAll(".nav-item");
-      if (console.log("Binding nav items, found:", c.length), c.length === 0 && this.isAuthenticated) {
+      const l = this.container.querySelectorAll(".nav-item");
+      if (console.log("Binding nav items, found:", l.length), l.length === 0 && this.isAuthenticated) {
         console.warn("Nav items not found, retrying..."), setTimeout(() => this.bindEvents(), 100);
         return;
       }
-      c.forEach((l, p) => {
-        console.log(`Binding nav item ${p}:`, l.dataset.page);
-        const u = l.cloneNode(!0);
-        l.parentNode.replaceChild(u, l), u.addEventListener("click", async () => {
+      l.forEach((d, p) => {
+        console.log(`Binding nav item ${p}:`, d.dataset.page);
+        const u = d.cloneNode(!0);
+        d.parentNode.replaceChild(u, d), u.addEventListener("click", async () => {
           const g = u.dataset.page;
           console.log("Nav item clicked:", g), g && g !== this.currentPage && (this.currentPage = g, await this.updatePageContent(), this.updateNavHighlight());
         });
@@ -1069,45 +1081,45 @@ class H {
     t && t.addEventListener("click", () => {
       this.isAuthenticated = !1, this.container.innerHTML = this.renderLoginUI(), this.bindEvents();
     });
-    const i = this.container.querySelector("#telegram-settings-form");
-    i && i.addEventListener("submit", async (c) => {
-      c.preventDefault(), c.stopPropagation();
-      const l = this.container.querySelector("#telegram-enabled"), p = (l == null ? void 0 : l.checked) || !1;
+    const o = this.container.querySelector("#telegram-settings-form");
+    o && o.addEventListener("submit", async (l) => {
+      l.preventDefault(), l.stopPropagation();
+      const d = this.container.querySelector("#telegram-enabled"), p = (d == null ? void 0 : d.checked) || !1;
       this.setTelegramEnabled(p), alert(`Telegram 通知已${p ? "啟用" : "停用"}`), await this.updatePageContent();
     });
-    const o = this.container.querySelector("#change-password-form");
-    o && o.addEventListener("submit", async (c) => {
-      c.preventDefault(), c.stopPropagation();
-      const l = this.container.querySelector("#new-password");
-      if (((l == null ? void 0 : l.value) || "").length < 4) {
+    const i = this.container.querySelector("#change-password-form");
+    i && i.addEventListener("submit", async (l) => {
+      l.preventDefault(), l.stopPropagation();
+      const d = this.container.querySelector("#new-password");
+      if (((d == null ? void 0 : d.value) || "").length < 4) {
         alert("密碼長度至少 4 個字元");
         return;
       }
       alert("密碼已更新"), await this.updatePageContent();
     });
     const n = this.container.querySelector("#ip-whitelist-form");
-    n && n.addEventListener("submit", async (c) => {
-      c.preventDefault(), c.stopPropagation();
-      const l = this.container.querySelector("#ip-list"), u = ((l == null ? void 0 : l.value) || "").split(`
+    n && n.addEventListener("submit", async (l) => {
+      l.preventDefault(), l.stopPropagation();
+      const d = this.container.querySelector("#ip-list"), u = ((d == null ? void 0 : d.value) || "").split(`
 `).map((g) => g.trim()).filter((g) => g.length > 0);
       this.saveIPWhitelist(u), alert(`已更新 IP 白名單（${u.length} 個 IP）`), await this.updatePageContent();
     });
     const r = this.container.querySelector("#api-config-form");
-    r && r.addEventListener("submit", (c) => {
-      var l, p, u, g, m, x;
-      c.preventDefault(), c.stopPropagation(), (l = this.container.querySelector("#llm-endpoint")) != null && l.value, (p = this.container.querySelector("#llm-api-key")) != null && p.value, (u = this.container.querySelector("#llm-deployment")) != null && u.value, (g = this.container.querySelector("#embed-endpoint")) != null && g.value, (m = this.container.querySelector("#embed-api-key")) != null && m.value, (x = this.container.querySelector("#embed-deployment")) != null && x.value, alert("API 設定已儲存");
+    r && r.addEventListener("submit", (l) => {
+      var d, p, u, g, m, x;
+      l.preventDefault(), l.stopPropagation(), (d = this.container.querySelector("#llm-endpoint")) != null && d.value, (p = this.container.querySelector("#llm-api-key")) != null && p.value, (u = this.container.querySelector("#llm-deployment")) != null && u.value, (g = this.container.querySelector("#embed-endpoint")) != null && g.value, (m = this.container.querySelector("#embed-api-key")) != null && m.value, (x = this.container.querySelector("#embed-deployment")) != null && x.value, alert("API 設定已儲存");
     });
     const s = this.container.querySelector("#agent-tool-config-form");
-    s && s.addEventListener("submit", async (c) => {
-      var l, p;
-      c.preventDefault(), c.stopPropagation(), (l = this.container.querySelector("#manual-index-enabled")) != null && l.checked, (p = this.container.querySelector("#frontend-pages-enabled")) != null && p.checked, alert("Agent 設定已儲存"), await this.updatePageContent();
+    s && s.addEventListener("submit", async (l) => {
+      var d, p;
+      l.preventDefault(), l.stopPropagation(), (d = this.container.querySelector("#manual-index-enabled")) != null && d.checked, (p = this.container.querySelector("#frontend-pages-enabled")) != null && p.checked, alert("Agent 設定已儲存"), await this.updatePageContent();
     });
     const a = this.container.querySelector("#sql-plugin-config-form");
-    a && a.addEventListener("submit", async (c) => {
+    a && a.addEventListener("submit", async (l) => {
       var C, I, $, A, E, L, P, q;
-      c.preventDefault(), c.stopPropagation();
-      const l = ((C = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : C.checked) || !1, p = parseInt(((I = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : I.value) || "5"), u = (($ = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : $.value) || "", g = ((A = this.container.querySelector("#sql-connection-id")) == null ? void 0 : A.value) || "", m = ((E = this.container.querySelector("#sql-search-table")) == null ? void 0 : E.value) || "knowledge_base", x = ((L = this.container.querySelector("#sql-title-column")) == null ? void 0 : L.value) || "title", f = ((P = this.container.querySelector("#sql-content-column")) == null ? void 0 : P.value) || "content", k = ((q = this.container.querySelector("#sql-url-column")) == null ? void 0 : q.value) || "url", M = {
-        enabled: l,
+      l.preventDefault(), l.stopPropagation();
+      const d = ((C = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : C.checked) || !1, p = parseInt(((I = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : I.value) || "5"), u = (($ = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : $.value) || "", g = ((A = this.container.querySelector("#sql-connection-id")) == null ? void 0 : A.value) || "", m = ((E = this.container.querySelector("#sql-search-table")) == null ? void 0 : E.value) || "knowledge_base", x = ((L = this.container.querySelector("#sql-title-column")) == null ? void 0 : L.value) || "title", f = ((P = this.container.querySelector("#sql-content-column")) == null ? void 0 : P.value) || "content", k = ((q = this.container.querySelector("#sql-url-column")) == null ? void 0 : q.value) || "url", M = {
+        enabled: d,
         priority: p,
         apiEndpoint: u,
         connectionId: g,
@@ -1118,12 +1130,12 @@ class H {
       };
       localStorage.setItem("sm_sql_plugin_config", JSON.stringify(M)), alert("SQL Plugin 設定已儲存"), await this.updatePageContent();
     });
-    const d = this.container.querySelector("#sql-connection-form");
-    d && d.addEventListener("submit", async (c) => {
+    const c = this.container.querySelector("#sql-connection-form");
+    c && c.addEventListener("submit", async (l) => {
       var p, u;
-      c.preventDefault(), c.stopPropagation();
-      const l = ((p = this.container.querySelector("#sql-conn-name")) == null ? void 0 : p.value) || "";
-      if ((u = this.container.querySelector("#sql-conn-type")) == null || u.value, !l) {
+      l.preventDefault(), l.stopPropagation();
+      const d = ((p = this.container.querySelector("#sql-conn-name")) == null ? void 0 : p.value) || "";
+      if ((u = this.container.querySelector("#sql-conn-type")) == null || u.value, !d) {
         alert("請輸入連接名稱");
         return;
       }
@@ -1132,9 +1144,9 @@ class H {
       } catch (g) {
         console.error("Error creating SQL connection:", g), alert("新增失敗");
       }
-    }), this.container.querySelectorAll(".delete-sql-connection").forEach((c) => {
-      c.addEventListener("click", async () => {
-        if (c.dataset.id && confirm("確定要刪除這個連接嗎？"))
+    }), this.container.querySelectorAll(".delete-sql-connection").forEach((l) => {
+      l.addEventListener("click", async () => {
+        if (l.dataset.id && confirm("確定要刪除這個連接嗎？"))
           try {
             alert("連接已刪除"), await this.updatePageContent();
           } catch (p) {
@@ -1183,7 +1195,7 @@ class H {
    * 渲染導航項目（無 icon）
    */
   renderNavItem(e, t) {
-    const i = this.currentPage === e;
+    const o = this.currentPage === e;
     return `
       <button
         class="nav-item"
@@ -1192,12 +1204,12 @@ class H {
           width: 100%;
           padding: 12px 16px;
           margin-bottom: 4px;
-          background: ${i ? "#ede9fe" : "transparent"};
+          background: ${o ? "#ede9fe" : "transparent"};
           border: none;
           border-radius: 8px;
-          color: ${i ? "#7c3aed" : "#6b7280"};
+          color: ${o ? "#7c3aed" : "#6b7280"};
           font-size: 14px;
-          font-weight: ${i ? "600" : "500"};
+          font-weight: ${o ? "600" : "500"};
           text-align: left;
           cursor: pointer;
           transition: all 0.2s;
@@ -1277,17 +1289,17 @@ class H {
     const e = this.container.querySelector("#refresh-conversations");
     e && e.addEventListener("click", async () => {
       await this.updatePageContent();
-    }), this.container.querySelectorAll(".view-conversation-btn").forEach((o) => {
-      o.addEventListener("click", async (n) => {
+    }), this.container.querySelectorAll(".view-conversation-btn").forEach((i) => {
+      i.addEventListener("click", async (n) => {
         const r = n.target.getAttribute("data-id");
         r && await this.showConversationModal(r);
       });
-    }), this.container.querySelectorAll(".delete-conversation-btn").forEach((o) => {
-      o.addEventListener("click", async (n) => {
+    }), this.container.querySelectorAll(".delete-conversation-btn").forEach((i) => {
+      i.addEventListener("click", async (n) => {
         const r = n.target.getAttribute("data-id");
         if (r && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
           try {
-            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-DmYed9vf.mjs");
+            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-DsZk6m-y.mjs");
             await a.deleteConversation(r), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
           } catch (a) {
             await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
@@ -1326,8 +1338,8 @@ class H {
           console.error("Failed to save system prompt:", a), await this.showAlertDialog("儲存失敗，請稍後再試");
         }
     });
-    const i = this.container.querySelector("#add-admin-user-btn");
-    i && i.addEventListener("click", async () => {
+    const o = this.container.querySelector("#add-admin-user-btn");
+    o && o.addEventListener("click", async () => {
       await this.showAddAdminUserModal();
     }), this.container.querySelectorAll(".delete-admin-user-btn").forEach((n) => {
       n.addEventListener("click", async () => {
@@ -1346,15 +1358,15 @@ class H {
    * 渲染儀表板
    */
   async renderDashboard() {
-    let e = [], t = [], i = "連接失敗";
+    let e = [], t = [], o = "連接失敗";
     try {
-      const [o, n] = await Promise.all([
+      const [i, n] = await Promise.all([
         fetch("http://localhost:3002/conversations").catch(() => null),
         fetch("http://localhost:3002/manual-indexes").catch(() => null)
       ]);
-      o != null && o.ok && (e = await o.json(), i = "正常連接"), n != null && n.ok && (t = await n.json());
-    } catch (o) {
-      console.error("Failed to load dashboard data:", o);
+      i != null && i.ok && (e = await i.json(), o = "正常連接"), n != null && n.ok && (t = await n.json());
+    } catch (i) {
+      console.error("Failed to load dashboard data:", i);
     }
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">儀表板</h2>
@@ -1374,8 +1386,8 @@ class H {
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px;">
             <span style="font-size: 14px; color: #374151;">數據庫連接:</span>
-            <span style="font-size: 14px; color: ${i === "正常連接" ? "#059669" : "#dc2626"}; font-weight: 500;">
-              ${i === "正常連接" ? "✅" : "❌"} ${i}
+            <span style="font-size: 14px; color: ${o === "正常連接" ? "#059669" : "#dc2626"}; font-weight: 500;">
+              ${o === "正常連接" ? "✅" : "❌"} ${o}
             </span>
           </div>
         </div>
@@ -1385,12 +1397,12 @@ class H {
   /**
    * 渲染統計卡片
    */
-  renderStatCard(e, t, i) {
+  renderStatCard(e, t, o) {
     return `
       <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
         <div style="font-size: 32px; margin-bottom: 8px;">${e}</div>
         <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">${t}</div>
-        <div style="font-size: 28px; font-weight: 700; color: #1f2937;">${i}</div>
+        <div style="font-size: 28px; font-weight: 700; color: #1f2937;">${o}</div>
       </div>
     `;
   }
@@ -1532,9 +1544,9 @@ class H {
               style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
             >
               <option value="">選擇連接...</option>
-              ${e.map((i) => `
-                <option value="${i.id}" ${t.connectionId === i.id ? "selected" : ""}>
-                  ${i.name} (${i.type})
+              ${e.map((o) => `
+                <option value="${o.id}" ${t.connectionId === o.id ? "selected" : ""}>
+                  ${o.name} (${o.type})
                 </option>
               `).join("")}
             </select>
@@ -1636,17 +1648,17 @@ class H {
         <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
           <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">已建立的連接</h3>
           <div style="display: grid; gap: 16px;">
-            ${e.map((i) => `
+            ${e.map((o) => `
               <div style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: start;">
                   <div>
-                    <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 8px 0; color: #1f2937;">${i.name}</h4>
-                    <p style="color: #6b7280; font-size: 14px; margin: 0;">類型：${i.type}</p>
-                    <p style="color: #6b7280; font-size: 12px; margin: 4px 0 0 0;">建立時間：${new Date(i.createdAt).toLocaleString("zh-TW")}</p>
+                    <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 8px 0; color: #1f2937;">${o.name}</h4>
+                    <p style="color: #6b7280; font-size: 14px; margin: 0;">類型：${o.type}</p>
+                    <p style="color: #6b7280; font-size: 12px; margin: 4px 0 0 0;">建立時間：${new Date(o.createdAt).toLocaleString("zh-TW")}</p>
                   </div>
                   <button
                     class="delete-sql-connection"
-                    data-id="${i.id}"
+                    data-id="${o.id}"
                     style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer;"
                   >
                     刪除
@@ -1683,7 +1695,7 @@ class H {
    * 渲染 Agent & API 設定頁面（合併）
    */
   renderAgentAndAPI() {
-    var i, o, n, r, s, a, d, h, c, l, p, u;
+    var o, i, n, r, s, a, c, h, l, d, p, u;
     const e = {}, t = {};
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">Agent & API 設定</h2>
@@ -1704,7 +1716,7 @@ class H {
                 id="llm-endpoint"
                 name="llmEndpoint"
                 placeholder="https://your-resource.openai.azure.com/"
-                value="${((i = e.azureOpenAI) == null ? void 0 : i.endpoint) || ((o = e.llmAPI) == null ? void 0 : o.endpoint) || ""}"
+                value="${((o = e.azureOpenAI) == null ? void 0 : o.endpoint) || ((i = e.llmAPI) == null ? void 0 : i.endpoint) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -1745,7 +1757,7 @@ class H {
                 id="embed-endpoint"
                 name="embedEndpoint"
                 placeholder="https://your-resource.openai.azure.com/"
-                value="${((d = e.embeddingAPI) == null ? void 0 : d.endpoint) || ((h = e.azureOpenAI) == null ? void 0 : h.endpoint) || ""}"
+                value="${((c = e.embeddingAPI) == null ? void 0 : c.endpoint) || ((h = e.azureOpenAI) == null ? void 0 : h.endpoint) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -1757,7 +1769,7 @@ class H {
                 id="embed-api-key"
                 name="embedApiKey"
                 placeholder="your-api-key"
-                value="${((c = e.embeddingAPI) == null ? void 0 : c.apiKey) || ((l = e.azureOpenAI) == null ? void 0 : l.apiKey) || ""}"
+                value="${((l = e.embeddingAPI) == null ? void 0 : l.apiKey) || ((d = e.azureOpenAI) == null ? void 0 : d.apiKey) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -1862,8 +1874,8 @@ class H {
       await this.showAlertDialog("找不到該索引");
       return;
     }
-    const i = document.createElement("div");
-    i.style.cssText = `
+    const o = document.createElement("div");
+    o.style.cssText = `
       position: fixed;
       top: 0;
       left: 0;
@@ -1874,7 +1886,7 @@ class H {
       align-items: center;
       justify-content: center;
       z-index: 10000;
-    `, i.innerHTML = `
+    `, o.innerHTML = `
       <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
         <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">編輯索引</h3>
 
@@ -1927,26 +1939,26 @@ class H {
           </div>
         </form>
       </div>
-    `, document.body.appendChild(i);
-    const o = i.querySelector("#edit-index-form"), n = i.querySelector("#cancel-edit-btn");
-    o.addEventListener("submit", async (r) => {
+    `, document.body.appendChild(o);
+    const i = o.querySelector("#edit-index-form"), n = o.querySelector("#cancel-edit-btn");
+    i.addEventListener("submit", async (r) => {
       r.preventDefault();
-      const s = i.querySelector("#edit-index-name").value;
-      i.querySelector("#edit-index-description").value;
-      const a = i.querySelector("#edit-index-content").value;
+      const s = o.querySelector("#edit-index-name").value;
+      o.querySelector("#edit-index-description").value;
+      const a = o.querySelector("#edit-index-content").value;
       if (!s || !a) {
         await this.showAlertDialog("請填寫名稱和內容");
         return;
       }
       try {
-        await S.update(e, { title: s, content: a, url: "" }), await this.showAlertDialog("索引已更新"), document.body.removeChild(i), await this.updatePageContent();
-      } catch (d) {
-        await this.showAlertDialog(`更新失敗：${d instanceof Error ? d.message : "未知錯誤"}`);
+        await S.update(e, { title: s, content: a, url: "" }), await this.showAlertDialog("索引已更新"), document.body.removeChild(o), await this.updatePageContent();
+      } catch (c) {
+        await this.showAlertDialog(`更新失敗：${c instanceof Error ? c.message : "未知錯誤"}`);
       }
     }), n.addEventListener("click", () => {
-      document.body.removeChild(i);
-    }), i.addEventListener("click", (r) => {
-      r.target === i && document.body.removeChild(i);
+      document.body.removeChild(o);
+    }), o.addEventListener("click", (r) => {
+      r.target === o && document.body.removeChild(o);
     });
   }
   /**
@@ -2030,9 +2042,9 @@ class H {
         </form>
       </div>
     `, document.body.appendChild(e);
-    const t = e.querySelector("#add-index-form"), i = e.querySelector("#cancel-add-btn");
-    t.addEventListener("submit", async (o) => {
-      o.preventDefault();
+    const t = e.querySelector("#add-index-form"), o = e.querySelector("#cancel-add-btn");
+    t.addEventListener("submit", async (i) => {
+      i.preventDefault();
       const n = e.querySelector("#add-index-name").value;
       e.querySelector("#add-index-description").value;
       const r = e.querySelector("#add-index-url").value, s = e.querySelector("#add-index-content").value;
@@ -2045,10 +2057,10 @@ class H {
       } catch (a) {
         await this.showAlertDialog(`新增失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
       }
-    }), i.addEventListener("click", () => {
+    }), o.addEventListener("click", () => {
       document.body.removeChild(e);
-    }), e.addEventListener("click", (o) => {
-      o.target === e && document.body.removeChild(e);
+    }), e.addEventListener("click", (i) => {
+      i.target === e && document.body.removeChild(e);
     });
   }
   /**
@@ -2063,8 +2075,8 @@ class H {
     if (await this.showConfirmDialog(`確定要刪除索引「${t.title || t.name || "未命名"}」嗎？此操作無法復原。`))
       try {
         await S.delete(e), await this.showAlertDialog("索引已刪除"), await this.updatePageContent();
-      } catch (o) {
-        await this.showAlertDialog(`刪除失敗：${o instanceof Error ? o.message : "未知錯誤"}`);
+      } catch (i) {
+        await this.showAlertDialog(`刪除失敗：${i instanceof Error ? i.message : "未知錯誤"}`);
       }
   }
   /**
@@ -2072,7 +2084,7 @@ class H {
    */
   async renderConversations() {
     try {
-      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-DmYed9vf.mjs"), t = await e.getAllConversations();
+      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-DsZk6m-y.mjs"), t = await e.getAllConversations();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">客服對話管理</h2>
@@ -2108,11 +2120,11 @@ class H {
                   </tr>
                 </thead>
                 <tbody>
-                  ${t.slice().reverse().map((i) => {
-        const o = i.conversation_id || i.conversationId || i.id, n = i.user_id || i.userId || "undefined", r = Array.isArray(i.messages) ? i.messages : [], s = i.status || "active", a = i.created_at || i.createdAt || i.startedAt;
+                  ${t.slice().reverse().map((o) => {
+        const i = o.conversation_id || o.conversationId || o.id, n = o.user_id || o.userId || "undefined", r = Array.isArray(o.messages) ? o.messages : [], s = o.status || "active", a = o.created_at || o.createdAt || o.startedAt;
         return `
                     <tr style="border-bottom: 1px solid #f1f5f9;">
-                      <td style="padding: 16px; color: #1f2937; font-family: monospace; font-size: 12px;">${o.substring(0, 8)}...</td>
+                      <td style="padding: 16px; color: #1f2937; font-family: monospace; font-size: 12px;">${i.substring(0, 8)}...</td>
                       <td style="padding: 16px; color: #1f2937;">${n}</td>
                       <td style="padding: 16px; color: #1f2937;">${r.length}</td>
                       <td style="padding: 16px;">
@@ -2128,7 +2140,7 @@ class H {
                       <td style="padding: 16px; color: #6b7280; font-size: 14px;">${new Date(a).toLocaleString()}</td>
                       <td style="padding: 16px;">
                         <div style="display: flex; gap: 8px;">
-                          <button class="view-conversation-btn" data-id="${o}" style="
+                          <button class="view-conversation-btn" data-id="${i}" style="
                             padding: 6px 12px;
                             background: #3b82f6;
                             color: white;
@@ -2137,7 +2149,7 @@ class H {
                             font-size: 12px;
                             cursor: pointer;
                           ">查看</button>
-                          <button class="delete-conversation-btn" data-id="${o}" style="
+                          <button class="delete-conversation-btn" data-id="${i}" style="
                             padding: 6px 12px;
                             background: #ef4444;
                             color: white;
@@ -2170,7 +2182,7 @@ class H {
    */
   async renderAdminUsers() {
     try {
-      const { AdminUserManager: e } = await import("./AdminUserManager-V1vdjFgG.mjs"), t = await e.getAllAdminUsers();
+      const { AdminUserManager: e } = await import("./AdminUserManager-Dnmk4T_6.mjs"), t = await e.getAllAdminUsers();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">管理員帳號管理</h2>
@@ -2205,18 +2217,18 @@ class H {
                   </tr>
                 </thead>
                 <tbody>
-                  ${t.map((i) => `
+                  ${t.map((o) => `
                     <tr style="border-bottom: 1px solid #f1f5f9;">
-                      <td style="padding: 16px; color: #1f2937; font-weight: 500;">${i.username}</td>
+                      <td style="padding: 16px; color: #1f2937; font-weight: 500;">${o.username}</td>
                       <td style="padding: 16px;">
                         <span style="
                           padding: 4px 8px;
                           border-radius: 4px;
                           font-size: 12px;
                           font-weight: 500;
-                          background: ${i.username === "admin" ? "#fef3c7" : "#dbeafe"};
-                          color: ${i.username === "admin" ? "#92400e" : "#1e40af"};
-                        ">${i.username === "admin" ? "超級管理員" : "管理員"}</span>
+                          background: ${o.username === "admin" ? "#fef3c7" : "#dbeafe"};
+                          color: ${o.username === "admin" ? "#92400e" : "#1e40af"};
+                        ">${o.username === "admin" ? "超級管理員" : "管理員"}</span>
                       </td>
                       <td style="padding: 16px;">
                         <span style="
@@ -2224,15 +2236,15 @@ class H {
                           border-radius: 4px;
                           font-size: 12px;
                           font-weight: 500;
-                          background: ${i.is_active ? "#dcfce7" : "#fee2e2"};
-                          color: ${i.is_active ? "#166534" : "#dc2626"};
-                        ">${i.is_active ? "啟用" : "停用"}</span>
+                          background: ${o.is_active ? "#dcfce7" : "#fee2e2"};
+                          color: ${o.is_active ? "#166534" : "#dc2626"};
+                        ">${o.is_active ? "啟用" : "停用"}</span>
                       </td>
-                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${new Date(i.created_at).toLocaleString()}</td>
-                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${i.last_login ? new Date(i.last_login).toLocaleString() : "從未登錄"}</td>
+                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${new Date(o.created_at).toLocaleString()}</td>
+                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${o.last_login ? new Date(o.last_login).toLocaleString() : "從未登錄"}</td>
                       <td style="padding: 16px;">
                         <div style="display: flex; gap: 8px;">
-                          <button class="edit-admin-user-btn" data-id="${i.id}" style="
+                          <button class="edit-admin-user-btn" data-id="${o.id}" style="
                             padding: 6px 12px;
                             background: #3b82f6;
                             color: white;
@@ -2241,8 +2253,8 @@ class H {
                             font-size: 12px;
                             cursor: pointer;
                           ">編輯</button>
-                          ${i.username !== "lens" ? `
-                            <button class="delete-admin-user-btn" data-id="${i.id}" style="
+                          ${o.username !== "lens" ? `
+                            <button class="delete-admin-user-btn" data-id="${o.id}" style="
                               padding: 6px 12px;
                               background: #ef4444;
                               color: white;
@@ -2277,15 +2289,15 @@ class H {
     var n, r;
     let e = [], t = [];
     try {
-      const { DatabaseService: s } = await Promise.resolve().then(() => v), [a, d] = await Promise.all([
+      const { DatabaseService: s } = await Promise.resolve().then(() => v), [a, c] = await Promise.all([
         s.getSettings().catch(() => []),
         s.getAdminUsers().catch(() => [])
       ]);
-      e = a, t = d;
+      e = a, t = c;
     } catch (s) {
       console.error("Failed to load system settings:", s);
     }
-    const i = ((n = e.find((s) => s.key === "default_reply")) == null ? void 0 : n.value) || "", o = ((r = e.find((s) => s.key === "system_prompt")) == null ? void 0 : r.value) || "";
+    const o = ((n = e.find((s) => s.key === "default_reply")) == null ? void 0 : n.value) || "", i = ((r = e.find((s) => s.key === "system_prompt")) == null ? void 0 : r.value) || "";
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
 
@@ -2310,7 +2322,7 @@ class H {
             <div
               id="default-reply-display"
               style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 60px; white-space: pre-wrap;"
-            >${i}</div>
+            >${o}</div>
           </div>
 
           <div style="margin-bottom: 24px;">
@@ -2329,7 +2341,7 @@ class H {
             <div
               id="system-prompt-display"
               style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 80px; white-space: pre-wrap;"
-            >${o}</div>
+            >${i}</div>
           </div>
         </form>
       </div>
@@ -2440,9 +2452,9 @@ class H {
         </form>
       </div>
     `, document.body.appendChild(e);
-    const t = e.querySelector("#add-admin-user-form"), i = e.querySelector("#cancel-add-admin-btn");
-    t.addEventListener("submit", async (o) => {
-      o.preventDefault();
+    const t = e.querySelector("#add-admin-user-form"), o = e.querySelector("#cancel-add-admin-btn");
+    t.addEventListener("submit", async (i) => {
+      i.preventDefault();
       const n = e.querySelector("#add-admin-username").value, r = e.querySelector("#add-admin-password").value, s = e.querySelector("#add-admin-email").value;
       try {
         const { DatabaseService: a } = await Promise.resolve().then(() => v);
@@ -2450,10 +2462,10 @@ class H {
       } catch (a) {
         await this.showAlertDialog(`新增失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
       }
-    }), i.addEventListener("click", () => {
+    }), o.addEventListener("click", () => {
       document.body.removeChild(e);
-    }), e.addEventListener("click", (o) => {
-      o.target === e && document.body.removeChild(e);
+    }), e.addEventListener("click", (i) => {
+      i.target === e && document.body.removeChild(e);
     });
   }
   /**
@@ -2461,12 +2473,12 @@ class H {
    */
   async showConversationModal(e) {
     try {
-      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-DmYed9vf.mjs"), i = await t.getConversationById(e);
-      if (!i) {
+      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-DsZk6m-y.mjs"), o = await t.getConversationById(e);
+      if (!o) {
         await this.showAlertDialog("找不到該對話記錄");
         return;
       }
-      const o = i.conversation_id || i.conversationId || i.id, n = i.user_id || i.userId || "undefined", r = Array.isArray(i.messages) ? i.messages : [], s = i.status || "active", a = i.created_at || i.createdAt, d = i.updated_at || i.updatedAt, h = document.createElement("div");
+      const i = o.conversation_id || o.conversationId || o.id, n = o.user_id || o.userId || "undefined", r = Array.isArray(o.messages) ? o.messages : [], s = o.status || "active", a = o.created_at || o.createdAt, c = o.updated_at || o.updatedAt, h = document.createElement("div");
       h.style.cssText = `
         position: fixed;
         top: 0;
@@ -2507,12 +2519,12 @@ class H {
 
           <div style="margin-bottom: 16px; padding: 16px; background: #f9fafb; border-radius: 8px;">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 14px;">
-              <div><strong>對話ID:</strong> ${o}</div>
+              <div><strong>對話ID:</strong> ${i}</div>
               <div><strong>用戶ID:</strong> ${n}</div>
               <div><strong>訊息數:</strong> ${r.length}</div>
               <div><strong>狀態:</strong> ${s === "active" ? "進行中" : "已結束"}</div>
               <div><strong>建立時間:</strong> ${a ? new Date(a).toLocaleString("zh-TW") : "未知"}</div>
-              <div><strong>更新時間:</strong> ${d ? new Date(d).toLocaleString("zh-TW") : "未知"}</div>
+              <div><strong>更新時間:</strong> ${c ? new Date(c).toLocaleString("zh-TW") : "未知"}</div>
             </div>
           </div>
 
@@ -2568,17 +2580,17 @@ class H {
           </div>
         </div>
       `, document.body.appendChild(h);
-      const c = h.querySelector("#close-conversation-modal"), l = h.querySelector("#close-conversation-modal-btn"), p = h.querySelector("#send-customer-service-reply"), u = h.querySelector("#customer-service-reply"), g = () => {
+      const l = h.querySelector("#close-conversation-modal"), d = h.querySelector("#close-conversation-modal-btn"), p = h.querySelector("#send-customer-service-reply"), u = h.querySelector("#customer-service-reply"), g = () => {
         document.body.removeChild(h);
       };
-      c == null || c.addEventListener("click", g), l == null || l.addEventListener("click", g), p == null || p.addEventListener("click", async () => {
+      l == null || l.addEventListener("click", g), d == null || d.addEventListener("click", g), p == null || p.addEventListener("click", async () => {
         const m = u == null ? void 0 : u.value.trim();
         if (!m) {
           await this.showAlertDialog("請輸入回覆內容");
           return;
         }
         try {
-          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-DmYed9vf.mjs");
+          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-DsZk6m-y.mjs");
           await x.addCustomerServiceReply(
             e,
             m,
@@ -2626,7 +2638,7 @@ class B {
    * 初始化 Widget
    */
   async init(e) {
-    var i, o, n;
+    var o, i, n;
     if (this.initialized) {
       console.warn("ServiceModuler already initialized");
       return;
@@ -2634,22 +2646,22 @@ class B {
     this.config = e, console.log("✅ Widget initializing");
     const t = e.telegram && e.telegram.botToken && e.telegram.chatId ? e.telegram : void 0;
     window.SM_TELEGRAM_CONFIG = t, await this.loadRulesFromSQL(), this.panel = new O(
-      ((i = e.ui) == null ? void 0 : i.width) || "33.33%",
-      ((o = e.ui) == null ? void 0 : o.position) || "right"
+      ((o = e.ui) == null ? void 0 : o.width) || "33.33%",
+      ((i = e.ui) == null ? void 0 : i.position) || "right"
     ), this.panel.setCallbacks({
       onSendMessage: (r, s) => this.handleSendMessage(r, s),
       onSelectRule: (r) => this.handleSelectRule(r),
       onClose: () => this.handleClose(),
       onOpen: () => this.handleOpen()
-    }), await this.loadConversationState(), this.adminPanel || (this.adminPanel = new H()), window.location.pathname === "/lens-service" && this.openAdminPanel(), this.bindGlobalKeyboardShortcuts(), ((n = e.ui) == null ? void 0 : n.iconPosition) !== !1 && !this.isAdminPage() && this.createFloatingIcon(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
+    }), await this.loadConversationState(), this.adminPanel || (this.adminPanel = new j()), window.location.pathname === "/lens-service" && this.openAdminPanel(), this.bindGlobalKeyboardShortcuts(), ((n = e.ui) == null ? void 0 : n.iconPosition) !== !1 && !this.isAdminPage() && this.createFloatingIcon(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
   }
   /**
    * 綁定全局快捷鍵
    */
   bindGlobalKeyboardShortcuts() {
     document.addEventListener("keydown", (e) => {
-      var t, i;
-      e.key && e.key.toLowerCase() === "q" && ((t = this.panel) != null && t.isPanelOpen()) ? (console.log("🎯 Q key pressed, panel is open, enabling screenshot mode"), this.enableScreenshotMode()) : e.key && e.key.toLowerCase() === "q" && console.log("🎯 Q key pressed, but panel is not open:", (i = this.panel) == null ? void 0 : i.isPanelOpen());
+      var t, o;
+      e.key && e.key.toLowerCase() === "q" && ((t = this.panel) != null && t.isPanelOpen()) ? (console.log("🎯 Q key pressed, panel is open, enabling screenshot mode"), this.enableScreenshotMode()) : e.key && e.key.toLowerCase() === "q" && console.log("🎯 Q key pressed, but panel is not open:", (o = this.panel) == null ? void 0 : o.isPanelOpen());
     }), document.addEventListener("keyup", (e) => {
       e.key && e.key.toLowerCase() === "q" && this.disableScreenshotMode();
     }), document.addEventListener("click", (e) => {
@@ -2679,33 +2691,33 @@ class B {
    * 發送訊息
    */
   async sendMessage(e, t) {
-    var o, n, r;
+    var i, n, r;
     if (!this.initialized || !this.panel) {
       console.error("ServiceModuler not initialized");
       return;
     }
-    const i = {
+    const o = {
       role: "user",
       content: e || "請分析這張圖片",
       timestamp: Date.now()
     };
-    (o = this.conversationState) == null || o.messages.push(i), this.panel.addMessage(i), this.saveConversationState();
+    (i = this.conversationState) == null || i.messages.push(o), this.panel.addMessage(o), this.saveConversationState();
     try {
-      let s, a, d = !1;
-      const h = ((n = this.conversationState) == null ? void 0 : n.sessionId) || this.generateSessionId(), c = localStorage.getItem("lens_service_user_id") || "default_user";
+      let s, a, c = !1;
+      const h = ((n = this.conversationState) == null ? void 0 : n.sessionId) || this.generateSessionId(), l = localStorage.getItem("lens_service_user_id") || "default_user";
       if (t)
         s = await this.processImageMessage(e, t);
       else {
-        const p = await this.processTextMessage(e, h, c);
-        s = p.response, a = p.sources, d = p.needsHumanReply, d && await this.sendTelegramNotification(e, h);
+        const p = await this.processTextMessage(e, h, l);
+        s = p.response, a = p.sources, c = p.needsHumanReply, c && await this.sendTelegramNotification(e, h);
       }
-      const l = {
+      const d = {
         role: "assistant",
         content: s,
         timestamp: Date.now(),
         sources: a
       };
-      (r = this.conversationState) == null || r.messages.push(l), this.panel.addMessage(l), this.saveConversationState(), await this.saveConversationToDatabase(h, c);
+      (r = this.conversationState) == null || r.messages.push(d), this.panel.addMessage(d), this.saveConversationState(), await this.saveConversationToDatabase(h, l);
     } catch (s) {
       console.error("Error processing message:", s);
       const a = {
@@ -2719,30 +2731,30 @@ class B {
   /**
    * 處理文字訊息
    */
-  async processTextMessage(e, t, i) {
-    var o, n, r, s;
+  async processTextMessage(e, t, o) {
+    var i, n, r, s;
     try {
       const { DatabaseService: a } = await Promise.resolve().then(() => v);
       await a.initializePool();
-      const d = await a.getSetting("system_prompt") || "你是一個專業的客服助手，請用繁體中文回答問題。", h = await a.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。", { ManualIndexService: c } = await Promise.resolve().then(() => j), l = await c.search(e);
-      if (console.log("🔍 Search results:", l), !l || l.length === 0)
+      const c = await a.getSetting("system_prompt") || "你是一個專業的客服助手，請用繁體中文回答問題。", h = await a.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。", { ManualIndexService: l } = await Promise.resolve().then(() => H), d = await l.search(e);
+      if (console.log("🔍 Search results:", d), !d || d.length === 0)
         return console.log("❌ No relevant content found, using default reply"), {
           response: h,
           sources: [],
           needsHumanReply: !0
         };
-      if (!((n = (o = this.config) == null ? void 0 : o.azureOpenAI) != null && n.endpoint) || !((s = (r = this.config) == null ? void 0 : r.azureOpenAI) != null && s.apiKey))
+      if (!((n = (i = this.config) == null ? void 0 : i.azureOpenAI) != null && n.endpoint) || !((s = (r = this.config) == null ? void 0 : r.azureOpenAI) != null && s.apiKey))
         return console.warn("Azure OpenAI not configured, using default reply"), {
           response: h,
           sources: [],
           needsHumanReply: !0
         };
-      const p = l.map(
+      const p = d.map(
         (f) => `標題：${f.title || f.name}
 內容：${f.content}`
       ).join(`
 
-`), u = `${d}
+`), u = `${c}
 
 以下是相關的知識庫內容：
 ${p}
@@ -2750,19 +2762,19 @@ ${p}
 請根據以上內容回答用戶的問題。如果內容不足以回答問題，請誠實告知。`, g = await this.callAzureOpenAI(e, u);
       return ["無法回答", "不清楚", "不確定", "沒有相關", "無法提供"].some((f) => g.includes(f)) ? (console.log("❌ LLM cannot answer, using default reply"), {
         response: h,
-        sources: l,
+        sources: d,
         needsHumanReply: !0
       }) : {
         response: g,
-        sources: l,
+        sources: d,
         needsHumanReply: !1
       };
     } catch (a) {
       console.error("Error processing text message:", a);
       try {
-        const { DatabaseService: d } = await Promise.resolve().then(() => v);
+        const { DatabaseService: c } = await Promise.resolve().then(() => v);
         return {
-          response: await d.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。",
+          response: await c.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。",
           sources: [],
           needsHumanReply: !0
         };
@@ -2779,9 +2791,9 @@ ${p}
    * 處理圖片訊息
    */
   async processImageMessage(e, t) {
-    var i, o, n, r;
+    var o, i, n, r;
     try {
-      return !((o = (i = this.config) == null ? void 0 : i.azureOpenAI) != null && o.endpoint) || !((r = (n = this.config) == null ? void 0 : n.azureOpenAI) != null && r.apiKey) ? "圖片分析功能需要配置 Azure OpenAI 服務。" : await this.callAzureOpenAIVision(e, t);
+      return !((i = (o = this.config) == null ? void 0 : o.azureOpenAI) != null && i.endpoint) || !((r = (n = this.config) == null ? void 0 : n.azureOpenAI) != null && r.apiKey) ? "圖片分析功能需要配置 Azure OpenAI 服務。" : await this.callAzureOpenAIVision(e, t);
     } catch (s) {
       return console.error("Error processing image message:", s), "圖片分析失敗，請重試或聯繫客服。";
     }
@@ -2790,12 +2802,12 @@ ${p}
    * 調用 Azure OpenAI API
    */
   async callAzureOpenAI(e, t) {
-    var h, c, l, p, u, g, m, x, f, k;
-    const i = (c = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : c.endpoint, o = (p = (l = this.config) == null ? void 0 : l.azureOpenAI) == null ? void 0 : p.apiKey, n = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, r = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, s = `${i}openai/deployments/${n}/chat/completions?api-version=${r}`, a = await fetch(s, {
+    var h, l, d, p, u, g, m, x, f, k;
+    const o = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, i = (p = (d = this.config) == null ? void 0 : d.azureOpenAI) == null ? void 0 : p.apiKey, n = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, r = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, s = `${o}openai/deployments/${n}/chat/completions?api-version=${r}`, a = await fetch(s, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "api-key": o
+        "api-key": i
       },
       body: JSON.stringify({
         messages: [
@@ -2814,12 +2826,12 @@ ${p}
    * 調用 Azure OpenAI Vision API
    */
   async callAzureOpenAIVision(e, t) {
-    var h, c, l, p, u, g, m, x, f, k;
-    const i = (c = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : c.endpoint, o = (p = (l = this.config) == null ? void 0 : l.azureOpenAI) == null ? void 0 : p.apiKey, n = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, r = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, s = `${i}openai/deployments/${n}/chat/completions?api-version=${r}`, a = await fetch(s, {
+    var h, l, d, p, u, g, m, x, f, k;
+    const o = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, i = (p = (d = this.config) == null ? void 0 : d.azureOpenAI) == null ? void 0 : p.apiKey, n = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, r = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, s = `${o}openai/deployments/${n}/chat/completions?api-version=${r}`, a = await fetch(s, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "api-key": o
+        "api-key": i
       },
       body: JSON.stringify({
         messages: [
@@ -2843,14 +2855,14 @@ ${p}
    * 發送 Telegram 通知
    */
   async sendTelegramNotification(e, t) {
-    var i, o, n, r;
+    var o, i, n, r;
     try {
-      const s = (o = (i = this.config) == null ? void 0 : i.telegram) == null ? void 0 : o.botToken, a = (r = (n = this.config) == null ? void 0 : n.telegram) == null ? void 0 : r.chatId;
+      const s = (i = (o = this.config) == null ? void 0 : o.telegram) == null ? void 0 : i.botToken, a = (r = (n = this.config) == null ? void 0 : n.telegram) == null ? void 0 : r.chatId;
       if (!s || !a) {
         console.warn("Telegram not configured, skipping notification");
         return;
       }
-      const d = `🔔 新的客服訊息需要人工回覆
+      const c = `🔔 新的客服訊息需要人工回覆
 
 會話ID: ${t}
 用戶訊息: ${e}
@@ -2862,7 +2874,7 @@ ${p}
         },
         body: JSON.stringify({
           chat_id: a,
-          text: d,
+          text: c,
           parse_mode: "HTML"
         })
       }), console.log("✅ Telegram notification sent");
@@ -2876,10 +2888,10 @@ ${p}
   async saveConversationToDatabase(e, t) {
     if (this.conversationState)
       try {
-        const { DatabaseService: i } = await Promise.resolve().then(() => v);
-        await i.saveConversation(e, t, this.conversationState.messages), console.log("✅ Conversation saved to database");
-      } catch (i) {
-        console.error("Failed to save conversation to database:", i);
+        const { DatabaseService: o } = await Promise.resolve().then(() => v);
+        await o.saveConversation(e, t, this.conversationState.messages), console.log("✅ Conversation saved to database");
+      } catch (o) {
+        console.error("Failed to save conversation to database:", o);
       }
   }
   /**
@@ -2897,7 +2909,7 @@ ${p}
    * 開始索引網站
    * @param mode 'local' = 索引本地專案, 'domain' = 爬取域名（默認）
    */
-  async indexSite(e, t = "domain", i) {
+  async indexSite(e, t = "domain", o) {
     console.log("Site indexing disabled");
   }
   /**
@@ -2988,22 +3000,22 @@ ${p}
       const { DatabaseService: e } = await Promise.resolve().then(() => v);
       await e.initializePool();
       const t = await e.getConversations();
-      let i = null;
+      let o = null;
       if (t.length > 0) {
-        const o = t.sort(
+        const i = t.sort(
           (n, r) => new Date(r.created_at || 0).getTime() - new Date(n.created_at || 0).getTime()
         )[0];
-        i = {
-          sessionId: o.session_id,
-          messages: o.messages || []
-        }, console.log(`✅ Loaded conversation with ${i.messages.length} messages`);
+        o = {
+          sessionId: i.session_id,
+          messages: i.messages || []
+        }, console.log(`✅ Loaded conversation with ${o.messages.length} messages`);
       } else
-        i = {
+        o = {
           sessionId: this.generateSessionId(),
           messages: []
         }, console.log("✅ Created new conversation session");
-      this.conversationState = i, this.panel && i.messages.length > 0 && (this.panel.clearMessages(), i.messages.forEach((o) => {
-        this.panel.addMessage(o);
+      this.conversationState = o, this.panel && o.messages.length > 0 && (this.panel.clearMessages(), o.messages.forEach((i) => {
+        this.panel.addMessage(i);
       }));
     } catch (e) {
       console.error("Failed to load conversation state:", e), this.conversationState = {
@@ -3028,9 +3040,9 @@ ${p}
    * 創建浮動圖標
    */
   createFloatingIcon() {
-    var o, n;
+    var i, n;
     this.floatingIcon && this.floatingIcon.remove();
-    const e = (n = (o = this.config) == null ? void 0 : o.ui) == null ? void 0 : n.iconPosition;
+    const e = (n = (i = this.config) == null ? void 0 : i.ui) == null ? void 0 : n.iconPosition;
     let t = { bottom: "20px", right: "20px" };
     if (typeof e == "string")
       switch (e) {
@@ -3052,7 +3064,7 @@ ${p}
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
       </svg>
     `;
-    const i = `
+    const o = `
       position: fixed;
       z-index: 999999;
       width: 56px;
@@ -3070,7 +3082,7 @@ ${p}
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       ${Object.entries(t).map(([r, s]) => `${r}: ${s}`).join("; ")};
     `;
-    this.floatingIcon.style.cssText = i, this.floatingIcon.addEventListener("mouseenter", () => {
+    this.floatingIcon.style.cssText = o, this.floatingIcon.addEventListener("mouseenter", () => {
       this.floatingIcon.style.transform = "scale(1.1)", this.floatingIcon.style.boxShadow = "0 6px 25px rgba(0, 0, 0, 0.2)";
     }), this.floatingIcon.addEventListener("mouseleave", () => {
       this.floatingIcon.style.transform = "scale(1)", this.floatingIcon.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.15)";
@@ -3121,8 +3133,8 @@ ${p}
       const t = e.target;
       if (!t || t.closest("#lens-service-panel") || t.closest("#lens-service-admin"))
         return;
-      const i = document.querySelector(".lens-hover-highlight");
-      i && i.classList.remove("lens-hover-highlight"), t.classList.add("lens-hover-highlight");
+      const o = document.querySelector(".lens-hover-highlight");
+      o && o.classList.remove("lens-hover-highlight"), t.classList.add("lens-hover-highlight");
     }, this.mouseLeaveHandler = (e) => {
       if (!this.screenshotMode) return;
       const t = e.target;
@@ -3143,7 +3155,7 @@ ${p}
    * 移除hover高亮效果
    */
   removeHoverHighlight() {
-    this.hoverHandler && (document.removeEventListener("mouseover", this.hoverHandler), this.hoverHandler = null), this.mouseLeaveHandler && (document.removeEventListener("mouseleave", this.mouseLeaveHandler), this.mouseLeaveHandler = null), document.querySelectorAll(".lens-hover-highlight").forEach((i) => i.classList.remove("lens-hover-highlight"));
+    this.hoverHandler && (document.removeEventListener("mouseover", this.hoverHandler), this.hoverHandler = null), this.mouseLeaveHandler && (document.removeEventListener("mouseleave", this.mouseLeaveHandler), this.mouseLeaveHandler = null), document.querySelectorAll(".lens-hover-highlight").forEach((o) => o.classList.remove("lens-hover-highlight"));
     const t = document.getElementById("lens-hover-styles");
     t && t.remove();
   }
@@ -3154,20 +3166,20 @@ ${p}
     var t;
     try {
       console.log("📸 Capturing screenshot of element:", e), window.html2canvas || await this.loadHtml2Canvas();
-      const i = window.html2canvas, o = e.style.cssText;
+      const o = window.html2canvas, i = e.style.cssText;
       e.style.cssText += "; outline: 3px solid #007bff; outline-offset: 2px;", await new Promise((s) => setTimeout(s, 100));
-      const n = await i(e, {
+      const n = await o(e, {
         backgroundColor: "#ffffff",
         scale: 1,
         logging: !1,
         useCORS: !0,
         allowTaint: !0
       });
-      e.style.cssText = o;
+      e.style.cssText = i;
       const r = n.toDataURL("image/png");
       this.panel && this.panel.setScreenshotInInput(r), console.log("✅ Screenshot captured and added to input");
-    } catch (i) {
-      console.error("❌ Failed to capture screenshot:", i), (t = this.panel) == null || t.addMessage({
+    } catch (o) {
+      console.error("❌ Failed to capture screenshot:", o), (t = this.panel) == null || t.addMessage({
         id: Date.now().toString(),
         content: "截圖失敗，請重試。",
         role: "assistant",
@@ -3182,23 +3194,23 @@ ${p}
    */
   async loadHtml2Canvas() {
     return new Promise((e, t) => {
-      const i = document.createElement("script");
-      i.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", i.onload = () => e(), i.onerror = () => t(new Error("Failed to load html2canvas")), document.head.appendChild(i);
+      const o = document.createElement("script");
+      o.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", o.onload = () => e(), o.onerror = () => t(new Error("Failed to load html2canvas")), document.head.appendChild(o);
     });
   }
   /**
    * 發送截圖到 AI 進行分析
    */
   async sendScreenshotToAI(e, t) {
-    var i, o, n;
+    var o, i, n;
     try {
       console.log("Screenshot analysis disabled");
       const r = {
         tagName: t.tagName,
         className: t.className,
         id: t.id,
-        textContent: ((i = t.textContent) == null ? void 0 : i.substring(0, 200)) || "",
-        attributes: Array.from(t.attributes).map((d) => `${d.name}="${d.value}"`).join(" ")
+        textContent: ((o = t.textContent) == null ? void 0 : o.substring(0, 200)) || "",
+        attributes: Array.from(t.attributes).map((c) => `${c.name}="${c.value}"`).join(" ")
       }, s = `
 用戶截取了網頁上的一個元素，請分析這個截圖並提供相關說明。
 
@@ -3211,7 +3223,7 @@ ${p}
 
 請分析截圖內容並提供有用的信息或建議。
       `.trim();
-      (o = this.panel) == null || o.addMessage({
+      (i = this.panel) == null || i.addMessage({
         id: Date.now().toString(),
         content: `📸 **截圖分析結果：**
 

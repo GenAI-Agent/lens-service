@@ -343,7 +343,14 @@ export class SidePanel {
     const chatView = this.panel.querySelector('#sm-chat-view') as HTMLElement;
     const chatTab = this.panel.querySelector('#sm-chat-tab') as HTMLElement;
 
-    if (!chatView || !chatTab) return;
+    console.log('📋 showHistoryView called with', conversations.length, 'conversations');
+    console.log('📋 chatView:', chatView);
+    console.log('📋 chatTab:', chatTab);
+
+    if (!chatView || !chatTab) {
+      console.error('❌ chatView or chatTab not found');
+      return;
+    }
 
     // 隱藏聊天視圖
     chatView.style.display = 'none';
@@ -355,11 +362,21 @@ export class SidePanel {
       historyView = document.createElement('div');
       historyView.id = 'sm-history-view';
       historyView.style.cssText = styles.chatView;
-      chatView.parentElement?.appendChild(historyView);
+      const parent = chatView.parentElement;
+      console.log('📋 parent element:', parent);
+      if (parent) {
+        parent.appendChild(historyView);
+        console.log('✅ History view created and appended');
+      } else {
+        console.error('❌ Parent element not found');
+        return;
+      }
     }
 
     // 顯示歷史記錄視圖
     historyView.style.display = 'flex';
+    historyView.style.flexDirection = 'column';
+    console.log('✅ History view display set to flex');
 
     // 渲染歷史記錄列表
     if (!Array.isArray(conversations) || conversations.length === 0) {
