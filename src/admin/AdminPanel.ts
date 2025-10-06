@@ -264,8 +264,8 @@ export class AdminPanel {
       `;
 
       const inputElement = isTextarea
-        ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit;">${currentValue}</textarea>`
-        : `<input type="text" id="edit-input" value="${currentValue}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;">`;
+        ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit; color: #1f2937; background: #ffffff;">${currentValue}</textarea>`
+        : `<input type="text" id="edit-input" value="${currentValue}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #1f2937; background: #ffffff;">`;
 
       modal.innerHTML = `
         <div style="background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%;">
@@ -337,7 +337,7 @@ export class AdminPanel {
         width: 100%;
         height: 100%;
         background: rgba(0, 0, 0, 0.5);
-        z-index: 10001;
+        z-index: 1000001;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -390,7 +390,7 @@ export class AdminPanel {
         width: 100%;
         height: 100%;
         background: rgba(0, 0, 0, 0.5);
-        z-index: 10001;
+        z-index: 1000001;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1652,7 +1652,7 @@ export class AdminPanel {
               id="edit-index-name"
               value="${index.title || index.name || ''}"
               required
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
           </div>
 
@@ -1662,7 +1662,7 @@ export class AdminPanel {
               type="text"
               id="edit-index-description"
               value="${index.description || ''}"
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
           </div>
 
@@ -1672,7 +1672,7 @@ export class AdminPanel {
               id="edit-index-content"
               rows="8"
               required
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical; color: #1f2937; background: #ffffff;"
             >${index.content}</textarea>
           </div>
 
@@ -1770,7 +1770,7 @@ export class AdminPanel {
               id="add-index-name"
               placeholder="例如：產品介紹"
               required
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
           </div>
 
@@ -1780,7 +1780,7 @@ export class AdminPanel {
               type="text"
               id="add-index-description"
               placeholder="簡短描述這個索引的內容"
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
           </div>
 
@@ -1790,7 +1790,7 @@ export class AdminPanel {
               type="url"
               id="add-index-url"
               placeholder="https://example.com/page"
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
           </div>
 
@@ -1801,7 +1801,7 @@ export class AdminPanel {
               placeholder="輸入索引內容..."
               rows="8"
               required
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical; color: #1f2937; background: #ffffff;"
             ></textarea>
           </div>
 
@@ -2436,6 +2436,8 @@ export class AdminPanel {
               font-size: 14px;
               font-family: inherit;
               resize: vertical;
+              color: #1f2937;
+              background: #ffffff;
             " placeholder="輸入客服回覆..."></textarea>
           </div>
 

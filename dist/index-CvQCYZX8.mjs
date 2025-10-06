@@ -1,7 +1,7 @@
 var D = Object.defineProperty;
 var T = (w, e, t) => e in w ? D(w, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : w[e] = t;
 var b = (w, e, t) => T(w, typeof e != "symbol" ? e + "" : e, t);
-const y = {
+const x = {
   container: `
     position: fixed;
     top: 0;
@@ -182,36 +182,36 @@ class O {
    */
   createContainer() {
     const e = document.createElement("div");
-    return e.id = "sm-container", e.style.cssText = y.container, e;
+    return e.id = "sm-container", e.style.cssText = x.container, e;
   }
   /**
    * 創建遮罩層
    */
   createOverlay() {
     const e = document.createElement("div");
-    return e.style.cssText = y.overlay, e.style.display = "none", e.addEventListener("click", () => this.close()), e;
+    return e.style.cssText = x.overlay, e.style.display = "none", e.addEventListener("click", () => this.close()), e;
   }
   /**
    * 創建面板
    */
   createPanel() {
     const e = document.createElement("div");
-    return e.style.cssText = y.panel, e.style.width = this.width, this.position === "right" ? (e.style.right = `-${this.width}`, e.style.left = "auto") : (e.style.left = `-${this.width}`, e.style.right = "auto"), e.innerHTML = `
-      <div id="sm-view-container" style="${y.viewContainer}">
+    return e.style.cssText = x.panel, e.style.width = this.width, this.position === "right" ? (e.style.right = `-${this.width}`, e.style.left = "auto") : (e.style.left = `-${this.width}`, e.style.right = "auto"), e.innerHTML = `
+      <div id="sm-view-container" style="${x.viewContainer}">
         <!-- 右上角工具按鈕 -->
         <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; z-index: 10;">
 
-          <button id="sm-history-btn" style="${y.iconButton}" title="歷史記錄">
+          <button id="sm-history-btn" style="${x.iconButton}" title="歷史記錄">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </button>
-          <button id="sm-refresh-btn" style="${y.iconButton}" title="刷新">
+          <button id="sm-refresh-btn" style="${x.iconButton}" title="刷新">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0118.8-4.3M22 12.5a10 10 0 01-18.8 4.2"/>
             </svg>
           </button>
-          <button id="sm-close-btn" style="${y.iconButton}" title="關閉">
+          <button id="sm-close-btn" style="${x.iconButton}" title="關閉">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
@@ -219,9 +219,9 @@ class O {
         </div>
 
         <!-- 對話視圖 -->
-        <div id="sm-chat-view" style="${y.chatView}">
-          <div id="sm-messages" style="${y.messagesContainer}"></div>
-          <div style="${y.inputContainer}">
+        <div id="sm-chat-view" style="${x.chatView}">
+          <div id="sm-messages" style="${x.messagesContainer}"></div>
+          <div style="${x.inputContainer}">
             <!-- 圖片預覽（預設隱藏） -->
             <div id="sm-image-preview" style="display: none; margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 8px; position: relative;">
               <img id="sm-preview-img" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;" />
@@ -234,9 +234,9 @@ class O {
                 type="text"
                 id="sm-input"
                 placeholder="輸入訊息..."
-                style="${y.input}"
+                style="${x.input}"
               />
-              <button id="sm-send-btn" style="${y.sendIconButton}" title="發送">
+              <button id="sm-send-btn" style="${x.sendIconButton}" title="發送">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                 </svg>
@@ -296,7 +296,7 @@ class O {
    */
   showView(e) {
     const t = this.panel.querySelector("#sm-chat-view"), o = this.panel.querySelector("#sm-chat-tab");
-    e === "chat" && (t.style.display = "flex", o.style.cssText = y.tabButton + "; " + y.tabButtonActive);
+    e === "chat" && (t.style.display = "flex", o.style.cssText = x.tabButton + "; " + x.tabButtonActive);
   }
   /**
    * 添加訊息
@@ -305,11 +305,11 @@ class O {
     const t = this.panel.querySelector("#sm-messages");
     if (!t) return;
     const o = document.createElement("div");
-    if (o.style.cssText = e.role === "user" ? y.userMessage : y.assistantMessage, e.role === "assistant" ? o.innerHTML = e.content : o.textContent = e.content, e.sources && e.sources.length > 0) {
+    if (o.style.cssText = e.role === "user" ? x.userMessage : x.assistantMessage, e.role === "assistant" ? o.innerHTML = e.content : o.textContent = e.content, e.sources && e.sources.length > 0) {
       const n = document.createElement("div");
-      n.style.cssText = y.sources, n.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((i, s) => {
+      n.style.cssText = x.sources, n.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((i, s) => {
         const r = document.createElement("a");
-        r.href = i.url, r.target = "_blank", r.textContent = `[${s + 1}] ${i.title}`, r.style.cssText = y.sourceLink, n.appendChild(r), n.appendChild(document.createElement("br"));
+        r.href = i.url, r.target = "_blank", r.textContent = `[${s + 1}] ${i.title}`, r.style.cssText = x.sourceLink, n.appendChild(r), n.appendChild(document.createElement("br"));
       }), o.appendChild(n);
     }
     t.appendChild(o), setTimeout(() => {
@@ -351,7 +351,7 @@ class O {
     t.style.display = "none";
     let o = this.panel.querySelector("#sm-history-view");
     if (!o) {
-      o = document.createElement("div"), o.id = "sm-history-view", o.style.cssText = y.chatView;
+      o = document.createElement("div"), o.id = "sm-history-view", o.style.cssText = x.chatView;
       const s = t.parentElement;
       if (console.log("📋 parent element:", s), s)
         s.appendChild(o), console.log("✅ History view created and appended");
@@ -917,7 +917,7 @@ class j {
         align-items: center;
         z-index: 1000000;
       `;
-      const s = o ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit;">${t}</textarea>` : `<input type="text" id="edit-input" value="${t}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;">`;
+      const s = o ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit; color: #1f2937; background: #ffffff;">${t}</textarea>` : `<input type="text" id="edit-input" value="${t}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #1f2937; background: #ffffff;">`;
       i.innerHTML = `
         <div style="background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%;">
           <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1f2937;">${e}</h3>
@@ -958,7 +958,7 @@ class j {
         width: 100%;
         height: 100%;
         background: rgba(0, 0, 0, 0.5);
-        z-index: 10001;
+        z-index: 1000001;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1000,7 +1000,7 @@ class j {
         width: 100%;
         height: 100%;
         background: rgba(0, 0, 0, 0.5);
-        z-index: 10001;
+        z-index: 1000001;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1049,10 +1049,10 @@ class j {
         const p = this.container.querySelector("#admin-username"), u = this.container.querySelector("#admin-password"), g = (p == null ? void 0 : p.value) || "", m = (u == null ? void 0 : u.value) || "";
         console.log("Login attempt with username:", g);
         try {
-          const { DatabaseService: x } = await Promise.resolve().then(() => v), f = await x.validateAdmin(g, m);
+          const { DatabaseService: f } = await Promise.resolve().then(() => v), y = await f.validateAdmin(g, m);
           console.log("Login successful (database auth)"), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), await this.updatePageContent(), this.bindEvents();
-        } catch (x) {
-          console.error("Login error:", x), this.showAlertDialog("登入時發生錯誤，請稍後再試").then(() => {
+        } catch (f) {
+          console.error("Login error:", f), this.showAlertDialog("登入時發生錯誤，請稍後再試").then(() => {
             u.value = "", u.focus();
           });
         }
@@ -1106,8 +1106,8 @@ class j {
     });
     const s = this.container.querySelector("#api-config-form");
     s && s.addEventListener("submit", (l) => {
-      var d, p, u, g, m, x;
-      l.preventDefault(), l.stopPropagation(), (d = this.container.querySelector("#llm-endpoint")) != null && d.value, (p = this.container.querySelector("#llm-api-key")) != null && p.value, (u = this.container.querySelector("#llm-deployment")) != null && u.value, (g = this.container.querySelector("#embed-endpoint")) != null && g.value, (m = this.container.querySelector("#embed-api-key")) != null && m.value, (x = this.container.querySelector("#embed-deployment")) != null && x.value, alert("API 設定已儲存");
+      var d, p, u, g, m, f;
+      l.preventDefault(), l.stopPropagation(), (d = this.container.querySelector("#llm-endpoint")) != null && d.value, (p = this.container.querySelector("#llm-api-key")) != null && p.value, (u = this.container.querySelector("#llm-deployment")) != null && u.value, (g = this.container.querySelector("#embed-endpoint")) != null && g.value, (m = this.container.querySelector("#embed-api-key")) != null && m.value, (f = this.container.querySelector("#embed-deployment")) != null && f.value, alert("API 設定已儲存");
     });
     const r = this.container.querySelector("#agent-tool-config-form");
     r && r.addEventListener("submit", async (l) => {
@@ -1118,14 +1118,14 @@ class j {
     a && a.addEventListener("submit", async (l) => {
       var C, I, $, A, E, L, P, q;
       l.preventDefault(), l.stopPropagation();
-      const d = ((C = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : C.checked) || !1, p = parseInt(((I = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : I.value) || "5"), u = (($ = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : $.value) || "", g = ((A = this.container.querySelector("#sql-connection-id")) == null ? void 0 : A.value) || "", m = ((E = this.container.querySelector("#sql-search-table")) == null ? void 0 : E.value) || "knowledge_base", x = ((L = this.container.querySelector("#sql-title-column")) == null ? void 0 : L.value) || "title", f = ((P = this.container.querySelector("#sql-content-column")) == null ? void 0 : P.value) || "content", k = ((q = this.container.querySelector("#sql-url-column")) == null ? void 0 : q.value) || "url", M = {
+      const d = ((C = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : C.checked) || !1, p = parseInt(((I = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : I.value) || "5"), u = (($ = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : $.value) || "", g = ((A = this.container.querySelector("#sql-connection-id")) == null ? void 0 : A.value) || "", m = ((E = this.container.querySelector("#sql-search-table")) == null ? void 0 : E.value) || "knowledge_base", f = ((L = this.container.querySelector("#sql-title-column")) == null ? void 0 : L.value) || "title", y = ((P = this.container.querySelector("#sql-content-column")) == null ? void 0 : P.value) || "content", k = ((q = this.container.querySelector("#sql-url-column")) == null ? void 0 : q.value) || "url", M = {
         enabled: d,
         priority: p,
         apiEndpoint: u,
         connectionId: g,
         searchTable: m,
-        titleColumn: x,
-        contentColumn: f,
+        titleColumn: f,
+        contentColumn: y,
         urlColumn: k
       };
       localStorage.setItem("sm_sql_plugin_config", JSON.stringify(M)), alert("SQL Plugin 設定已儲存"), await this.updatePageContent();
@@ -1299,7 +1299,7 @@ class j {
         const s = i.target.getAttribute("data-id");
         if (s && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
           try {
-            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-DJm8WnJD.mjs");
+            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-WkGZs3qG.mjs");
             await a.deleteConversation(s), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
           } catch (a) {
             await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
@@ -1898,7 +1898,7 @@ class j {
               id="edit-index-name"
               value="${t.title || t.name || ""}"
               required
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
           </div>
 
@@ -1908,7 +1908,7 @@ class j {
               type="text"
               id="edit-index-description"
               value="${t.description || ""}"
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
           </div>
 
@@ -1918,7 +1918,7 @@ class j {
               id="edit-index-content"
               rows="8"
               required
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical; color: #1f2937; background: #ffffff;"
             >${t.content}</textarea>
           </div>
 
@@ -1989,7 +1989,7 @@ class j {
               id="add-index-name"
               placeholder="例如：產品介紹"
               required
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
           </div>
 
@@ -1999,7 +1999,7 @@ class j {
               type="text"
               id="add-index-description"
               placeholder="簡短描述這個索引的內容"
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
           </div>
 
@@ -2009,7 +2009,7 @@ class j {
               type="url"
               id="add-index-url"
               placeholder="https://example.com/page"
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
           </div>
 
@@ -2020,7 +2020,7 @@ class j {
               placeholder="輸入索引內容..."
               rows="8"
               required
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical; color: #1f2937; background: #ffffff;"
             ></textarea>
           </div>
 
@@ -2084,7 +2084,7 @@ class j {
    */
   async renderConversations() {
     try {
-      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-DJm8WnJD.mjs"), t = await e.getAllConversations();
+      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-WkGZs3qG.mjs"), t = await e.getAllConversations();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">客服對話管理</h2>
@@ -2182,7 +2182,7 @@ class j {
    */
   async renderAdminUsers() {
     try {
-      const { AdminUserManager: e } = await import("./AdminUserManager-CBdXCIeW.mjs"), t = await e.getAllAdminUsers();
+      const { AdminUserManager: e } = await import("./AdminUserManager-AEkrOUWG.mjs"), t = await e.getAllAdminUsers();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">管理員帳號管理</h2>
@@ -2472,7 +2472,7 @@ class j {
    */
   async showConversationModal(e) {
     try {
-      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-DJm8WnJD.mjs"), o = await t.getConversationById(e);
+      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-WkGZs3qG.mjs"), o = await t.getConversationById(e);
       if (!o) {
         await this.showAlertDialog("找不到該對話記錄");
         return;
@@ -2553,6 +2553,8 @@ class j {
               font-size: 14px;
               font-family: inherit;
               resize: vertical;
+              color: #1f2937;
+              background: #ffffff;
             " placeholder="輸入客服回覆..."></textarea>
           </div>
 
@@ -2589,14 +2591,14 @@ class j {
           return;
         }
         try {
-          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-DJm8WnJD.mjs");
-          await x.addCustomerServiceReply(
+          const { CustomerServiceManager: f } = await import("./CustomerServiceManager-WkGZs3qG.mjs");
+          await f.addCustomerServiceReply(
             e,
             m,
             "客服"
           ) ? (await this.showAlertDialog("回覆已發送"), g(), await this.updatePageContent()) : await this.showAlertDialog("發送失敗，請稍後再試");
-        } catch (x) {
-          console.error("Failed to send reply:", x), await this.showAlertDialog(`發送失敗：${x instanceof Error ? x.message : "未知錯誤"}`);
+        } catch (f) {
+          console.error("Failed to send reply:", f), await this.showAlertDialog(`發送失敗：${f instanceof Error ? f.message : "未知錯誤"}`);
         }
       }), h.addEventListener("click", (m) => {
         m.target === h && g();
@@ -2749,8 +2751,8 @@ class R {
           needsHumanReply: !0
         };
       const p = d.map(
-        (f) => `標題：${f.title || f.name}
-內容：${f.content}`
+        (y) => `標題：${y.title || y.name}
+內容：${y.content}`
       ).join(`
 
 `), u = `${c}
@@ -2759,7 +2761,7 @@ class R {
 ${p}
 
 請根據以上內容回答用戶的問題。如果內容不足以回答問題，請誠實告知。`, g = await this.callAzureOpenAI(e, u);
-      return ["無法回答", "不清楚", "不確定", "沒有相關", "無法提供"].some((f) => g.includes(f)) ? (console.log("❌ LLM cannot answer, using default reply"), {
+      return ["無法回答", "不清楚", "不確定", "沒有相關", "無法提供"].some((y) => g.includes(y)) ? (console.log("❌ LLM cannot answer, using default reply"), {
         response: h,
         sources: d,
         needsHumanReply: !0
@@ -2801,8 +2803,8 @@ ${p}
    * 調用 Azure OpenAI API
    */
   async callAzureOpenAI(e, t) {
-    var h, l, d, p, u, g, m, x, f, k;
-    const o = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, n = (p = (d = this.config) == null ? void 0 : d.azureOpenAI) == null ? void 0 : p.apiKey, i = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, s = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, r = `${o}openai/deployments/${i}/chat/completions?api-version=${s}`, a = await fetch(r, {
+    var h, l, d, p, u, g, m, f, y, k;
+    const o = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, n = (p = (d = this.config) == null ? void 0 : d.azureOpenAI) == null ? void 0 : p.apiKey, i = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, s = (f = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : f.apiVersion, r = `${o}openai/deployments/${i}/chat/completions?api-version=${s}`, a = await fetch(r, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2819,14 +2821,14 @@ ${p}
     });
     if (!a.ok)
       throw new Error(`Azure OpenAI API error: ${a.status} ${a.statusText}`);
-    return ((k = (f = (await a.json()).choices[0]) == null ? void 0 : f.message) == null ? void 0 : k.content) || "抱歉，我無法生成回應。";
+    return ((k = (y = (await a.json()).choices[0]) == null ? void 0 : y.message) == null ? void 0 : k.content) || "抱歉，我無法生成回應。";
   }
   /**
    * 調用 Azure OpenAI Vision API
    */
   async callAzureOpenAIVision(e, t) {
-    var h, l, d, p, u, g, m, x, f, k;
-    const o = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, n = (p = (d = this.config) == null ? void 0 : d.azureOpenAI) == null ? void 0 : p.apiKey, i = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, s = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, r = `${o}openai/deployments/${i}/chat/completions?api-version=${s}`, a = await fetch(r, {
+    var h, l, d, p, u, g, m, f, y, k;
+    const o = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, n = (p = (d = this.config) == null ? void 0 : d.azureOpenAI) == null ? void 0 : p.apiKey, i = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, s = (f = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : f.apiVersion, r = `${o}openai/deployments/${i}/chat/completions?api-version=${s}`, a = await fetch(r, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2848,7 +2850,7 @@ ${p}
     });
     if (!a.ok)
       throw new Error(`Azure OpenAI Vision API error: ${a.status} ${a.statusText}`);
-    return ((k = (f = (await a.json()).choices[0]) == null ? void 0 : f.message) == null ? void 0 : k.content) || "抱歉，我無法分析這張圖片。";
+    return ((k = (y = (await a.json()).choices[0]) == null ? void 0 : y.message) == null ? void 0 : k.content) || "抱歉，我無法分析這張圖片。";
   }
   /**
    * 發送 Telegram 通知
