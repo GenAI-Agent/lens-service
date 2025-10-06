@@ -1,4 +1,5 @@
 import { Conversation, Message } from '../types';
+
 import { UserService } from './UserService';
 
 /**
@@ -13,27 +14,27 @@ export class ConversationService {
    * 獲取當前對話
    * 如果沒有活躍對話，創建新對話
    */
-  static getCurrentConversation(): Conversation {
+  static async getCurrentConversation(): Promise<Conversation> {
     const currentId = localStorage.getItem(this.CURRENT_CONVERSATION_KEY);
-    
+
     if (currentId) {
-      const conversation = this.getConversationById(currentId);
+      const conversation = await this.getConversationById(currentId);
       if (conversation && conversation.status === 'active') {
         return conversation;
       }
     }
-    
+
     // 創建新對話
-    return this.createNewConversation();
+    return await this.createNewConversation();
   }
   
   /**
    * 創建新對話
    */
-  static createNewConversation(): Conversation {
+  static async createNewConversation(): Promise<Conversation> {
     const userId = UserService.getUserId();
     const conversationId = this.generateConversationId();
-    
+
     const conversation: Conversation = {
       id: conversationId,
       userId: userId,
@@ -46,32 +47,32 @@ export class ConversationService {
         referrer: document.referrer
       }
     };
-    
+
     // 保存對話
-    this.saveConversation(conversation);
-    
+    await this.saveConversation(conversation);
+
     // 設置為當前對話
     localStorage.setItem(this.CURRENT_CONVERSATION_KEY, conversationId);
-    
+
     // 增加用戶的對話計數
     UserService.incrementConversationCount();
-    
+
     console.log('Created new conversation:', conversationId);
-    
+
     return conversation;
   }
   
   /**
    * 添加訊息到當前對話
    */
-  static addMessage(
+  static async addMessage(
     role: 'user' | 'assistant' | 'human-agent',
     content: string,
     imageBase64?: string,
     metadata?: any
-  ): Message {
-    const conversation = this.getCurrentConversation();
-    
+  ): Promise<Message> {
+    const conversation = await this.getCurrentConversation();
+
     const message: Message = {
       id: this.generateMessageId(),
       conversationId: conversation.id,
@@ -81,44 +82,46 @@ export class ConversationService {
       timestamp: Date.now(),
       metadata: metadata
     };
-    
+
     conversation.messages.push(message);
     conversation.lastMessageAt = Date.now();
-    
-    this.saveConversation(conversation);
-    
+
+    await this.saveConversation(conversation);
+
     return message;
   }
   
   /**
    * 獲取當前對話的所有訊息
    */
-  static getMessages(): Message[] {
-    const conversation = this.getCurrentConversation();
+  static async getMessages(): Promise<Message[]> {
+    const conversation = await this.getCurrentConversation();
     return conversation.messages;
   }
   
   /**
    * 關閉當前對話
    */
-  static closeCurrentConversation(): void {
-    const conversation = this.getCurrentConversation();
+  static async closeCurrentConversation(): Promise<void> {
+    const conversation = await this.getCurrentConversation();
     conversation.status = 'closed';
-    this.saveConversation(conversation);
+    await this.saveConversation(conversation);
     localStorage.removeItem(this.CURRENT_CONVERSATION_KEY);
   }
   
   /**
    * 獲取所有對話（用於後台）
    */
-  static getAllConversations(): Conversation[] {
-    const stored = localStorage.getItem(this.CONVERSATIONS_KEY);
-    if (!stored) return [];
-    
+  static async getAllConversations(): Promise<Conversation[]> {
     try {
-      return JSON.parse(stored);
+      const response = await fetch('http://localhost:3002/conversations');
+      if (!response.ok) {
+        return [];
+      }
+      const conversations = await response.json();
+      return Array.isArray(conversations) ? conversations : [];
     } catch (e) {
-      console.error('Failed to parse conversations:', e);
+      console.error('Failed to load conversations:', e);
       return [];
     }
   }
@@ -126,56 +129,63 @@ export class ConversationService {
   /**
    * 根據 ID 獲取對話
    */
-  static getConversationById(id: string): Conversation | null {
-    const conversations = this.getAllConversations();
+  static async getConversationById(id: string): Promise<Conversation | null> {
+    const conversations = await this.getAllConversations();
     return conversations.find(c => c.id === id) || null;
   }
   
   /**
    * 根據用戶 ID 獲取對話
    */
-  static getConversationsByUserId(userId: string): Conversation[] {
-    const conversations = this.getAllConversations();
+  static async getConversationsByUserId(userId: string): Promise<Conversation[]> {
+    const conversations = await this.getAllConversations();
     return conversations.filter(c => c.userId === userId);
   }
   
   /**
    * 保存對話
    */
-  private static saveConversation(conversation: Conversation): void {
-    const conversations = this.getAllConversations();
-    const index = conversations.findIndex(c => c.id === conversation.id);
-    
-    if (index >= 0) {
-      conversations[index] = conversation;
-    } else {
-      conversations.push(conversation);
+  private static async saveConversation(conversation: Conversation): Promise<void> {
+    // 使用SQL API保存對話
+    try {
+      const response = await fetch('http://localhost:3002/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(conversation)
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save conversation: ${response.statusText}`);
+      }
+    } catch (error) {
+      console.error('Failed to save conversation:', error);
+      throw error;
     }
-    
-    localStorage.setItem(this.CONVERSATIONS_KEY, JSON.stringify(conversations));
   }
   
   /**
    * 人工接管對話
    */
-  static takeoverConversation(conversationId: string, agentId: string): void {
-    const conversation = this.getConversationById(conversationId);
+  static async takeoverConversation(conversationId: string, agentId: string): Promise<void> {
+    const conversation = await this.getConversationById(conversationId);
     if (!conversation) return;
-    
+
     conversation.status = 'human-takeover';
     conversation.humanAgentId = agentId;
-    this.saveConversation(conversation);
+    await this.saveConversation(conversation);
   }
   
   /**
    * 添加人工回覆
    */
-  static addHumanReply(conversationId: string, content: string, agentId: string): Message {
-    const conversation = this.getConversationById(conversationId);
+  static async addHumanReply(conversationId: string, content: string, agentId: string): Promise<Message> {
+    const conversation = await this.getConversationById(conversationId);
     if (!conversation) {
       throw new Error('Conversation not found');
     }
-    
+
     const message: Message = {
       id: this.generateMessageId(),
       conversationId: conversationId,
@@ -186,22 +196,22 @@ export class ConversationService {
         agentId: agentId
       }
     };
-    
+
     conversation.messages.push(message);
     conversation.lastMessageAt = Date.now();
-    
-    this.saveConversation(conversation);
-    
+
+    await this.saveConversation(conversation);
+
     return message;
   }
   
   /**
    * 檢查是否有新訊息（用於輪詢）
    */
-  static hasNewMessages(conversationId: string, lastMessageId: string): boolean {
-    const conversation = this.getConversationById(conversationId);
+  static async hasNewMessages(conversationId: string, lastMessageId: string): Promise<boolean> {
+    const conversation = await this.getConversationById(conversationId);
     if (!conversation) return false;
-    
+
     const lastMessage = conversation.messages[conversation.messages.length - 1];
     return lastMessage && lastMessage.id !== lastMessageId;
   }
@@ -209,13 +219,13 @@ export class ConversationService {
   /**
    * 獲取新訊息（用於輪詢）
    */
-  static getNewMessages(conversationId: string, lastMessageId: string): Message[] {
-    const conversation = this.getConversationById(conversationId);
+  static async getNewMessages(conversationId: string, lastMessageId: string): Promise<Message[]> {
+    const conversation = await this.getConversationById(conversationId);
     if (!conversation) return [];
-    
+
     const lastIndex = conversation.messages.findIndex(m => m.id === lastMessageId);
     if (lastIndex < 0) return [];
-    
+
     return conversation.messages.slice(lastIndex + 1);
   }
   

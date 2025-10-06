@@ -1,7 +1,6 @@
 import { StorageService } from '../services/StorageService';
 import { ConversationService } from '../services/ConversationService';
 import { ManualIndexService } from '../services/ManualIndexService';
-import { SitemapService } from '../services/SitemapService';
 import { SQLService } from '../services/SQLService';
 
 /**
@@ -15,6 +14,9 @@ export class AdminPanel {
   private currentPage: string = 'dashboard';
 
   constructor() {
+    // 將實例綁定到 window 對象，供 HTML 中的 onclick 使用
+    (window as any).adminPanel = this;
+
     this.init();
   }
 
@@ -48,11 +50,11 @@ export class AdminPanel {
   /**
    * 處理路由變化
    */
-  private handleRouteChange(): void {
+  private async handleRouteChange(): Promise<void> {
     const path = window.location.pathname;
 
     if (path === '/lens-service' || path.startsWith('/lens-service/')) {
-      this.open();
+      await this.open();
     } else if (this.isOpen) {
       this.close();
     }
@@ -61,8 +63,14 @@ export class AdminPanel {
   /**
    * 打開後台
    */
-  open(): void {
+  async open(): Promise<void> {
     if (this.isOpen) return;
+
+    // 檢查是否已經存在管理後台容器，如果存在則移除
+    const existingContainer = document.getElementById('lens-service-admin');
+    if (existingContainer) {
+      existingContainer.remove();
+    }
 
     // 檢查 IP 白名單
     if (!this.checkIPWhitelist()) {
@@ -94,6 +102,11 @@ export class AdminPanel {
     document.body.appendChild(this.container);
 
     this.bindEvents();
+
+    // 如果已認證，載入頁面內容
+    if (this.isAuthenticated) {
+      await this.updatePageContent();
+    }
   }
 
   /**
@@ -231,6 +244,86 @@ export class AdminPanel {
   }
 
   /**
+   * 顯示編輯對話框
+   */
+  private showEditDialog(title: string, currentValue: string, isTextarea: boolean = false): Promise<string | null> {
+    return new Promise((resolve) => {
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+      `;
+
+      const inputElement = isTextarea
+        ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit;">${currentValue}</textarea>`
+        : `<input type="text" id="edit-input" value="${currentValue}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;">`;
+
+      modal.innerHTML = `
+        <div style="background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%;">
+          <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1f2937;">${title}</h3>
+          ${inputElement}
+          <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px;">
+            <button id="cancel-btn" style="padding: 8px 16px; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; cursor: pointer;">取消</button>
+            <button id="save-btn" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">儲存</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      const input = modal.querySelector('#edit-input') as HTMLInputElement | HTMLTextAreaElement;
+      const cancelBtn = modal.querySelector('#cancel-btn');
+      const saveBtn = modal.querySelector('#save-btn');
+
+      // 自動選中文本
+      input.focus();
+      if (input instanceof HTMLInputElement) {
+        input.select();
+      } else {
+        input.setSelectionRange(0, input.value.length);
+      }
+
+      cancelBtn?.addEventListener('click', () => {
+        document.body.removeChild(modal);
+        resolve(null);
+      });
+
+      saveBtn?.addEventListener('click', () => {
+        const value = input.value.trim();
+        document.body.removeChild(modal);
+        resolve(value);
+      });
+
+      // Enter鍵儲存（僅限input）
+      if (input instanceof HTMLInputElement) {
+        input.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            const value = input.value.trim();
+            document.body.removeChild(modal);
+            resolve(value);
+          }
+        });
+      }
+
+      // 點擊背景關閉
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          document.body.removeChild(modal);
+          resolve(null);
+        }
+      });
+    });
+  }
+
+  /**
    * 顯示自定義確認對話框
    */
   private showConfirmDialog(message: string): Promise<boolean> {
@@ -354,14 +447,21 @@ export class AdminPanel {
 
         console.log('Login attempt with username:', username); // Debug
 
-        // 暫時使用簡單的本地認證，避免API問題
-        if (username === 'lens' && password === '1234') {
-          console.log('Login successful (local auth)');
+        try {
+          // 使用DatabaseService進行登入驗證
+          const { DatabaseService } = await import('../services/DatabaseService');
+          const user = await DatabaseService.login(username, password);
+
+          console.log('Login successful (database auth)');
           this.isAuthenticated = true;
           this.container!.innerHTML = this.renderAdminUI();
-          this.bindEvents(); // 重新綁定事件
-        } else {
-          this.showAlertDialog('用戶名或密碼錯誤').then(() => {
+          // 載入頁面內容
+          await this.updatePageContent();
+          // 重新綁定事件
+          this.bindEvents();
+        } catch (error) {
+          console.error('Login error:', error);
+          this.showAlertDialog('登入時發生錯誤，請稍後再試').then(() => {
             passwordInput.value = '';
             passwordInput.focus();
           });
@@ -377,23 +477,39 @@ export class AdminPanel {
       }
     }
 
-    // 導航按鈕
-    const navItems = this.container.querySelectorAll('.nav-item');
-    navItems.forEach(item => {
-      item.addEventListener('click', () => {
-        const page = (item as HTMLElement).dataset.page;
-        if (page) {
-          this.currentPage = page;
-          const contentDiv = this.container!.querySelector('#admin-content');
-          if (contentDiv) {
-            contentDiv.innerHTML = this.renderPageContent();
+    // 導航按鈕 - 使用setTimeout確保DOM已更新
+    setTimeout(() => {
+      const navItems = this.container!.querySelectorAll('.nav-item');
+      console.log('Binding nav items, found:', navItems.length);
+
+      if (navItems.length === 0 && this.isAuthenticated) {
+        console.warn('Nav items not found, retrying...');
+        setTimeout(() => this.bindEvents(), 100);
+        return;
+      }
+
+      navItems.forEach((item, index) => {
+        console.log(`Binding nav item ${index}:`, (item as HTMLElement).dataset.page);
+
+        // 移除現有的事件監聽器（如果有的話）
+        const newItem = item.cloneNode(true) as HTMLElement;
+        item.parentNode!.replaceChild(newItem, item);
+
+        newItem.addEventListener('click', async () => {
+          const page = newItem.dataset.page;
+          console.log('Nav item clicked:', page);
+          if (page) {
+            this.currentPage = page;
+            // 重新渲染整個 UI 以更新導航高亮
+            this.container!.innerHTML = this.renderAdminUI();
+            // 載入頁面內容
+            await this.updatePageContent();
+            // 重新綁定事件（在內容載入後）
+            this.bindEvents();
           }
-          // 重新渲染整個 UI 以更新導航高亮
-          this.container!.innerHTML = this.renderAdminUI();
-          this.bindEvents();
-        }
+        });
       });
-    });
+    }, 50);
 
     // 登出按鈕
     const logoutBtn = this.container.querySelector('#admin-logout');
@@ -408,7 +524,7 @@ export class AdminPanel {
     // Telegram 設定表單
     const telegramSettingsForm = this.container.querySelector('#telegram-settings-form') as HTMLFormElement;
     if (telegramSettingsForm) {
-      telegramSettingsForm.addEventListener('submit', (e) => {
+      telegramSettingsForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -419,18 +535,14 @@ export class AdminPanel {
         alert(`Telegram 通知已${enabled ? '啟用' : '停用'}`);
 
         // 重新渲染頁面
-        const contentDiv = this.container!.querySelector('#admin-content');
-        if (contentDiv) {
-          contentDiv.innerHTML = this.renderPageContent();
-          this.bindEvents();
-        }
+        await this.updatePageContent();
       });
     }
 
     // 密碼更改表單
     const changePasswordForm = this.container.querySelector('#change-password-form') as HTMLFormElement;
     if (changePasswordForm) {
-      changePasswordForm.addEventListener('submit', (e) => {
+      changePasswordForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -446,18 +558,14 @@ export class AdminPanel {
         alert('密碼已更新');
 
         // 重新渲染頁面
-        const contentDiv = this.container!.querySelector('#admin-content');
-        if (contentDiv) {
-          contentDiv.innerHTML = this.renderPageContent();
-          this.bindEvents(); // 重新綁定事件
-        }
+        await this.updatePageContent();
       });
     }
 
     // IP 白名單表單
     const ipWhitelistForm = this.container.querySelector('#ip-whitelist-form') as HTMLFormElement;
     if (ipWhitelistForm) {
-      ipWhitelistForm.addEventListener('submit', (e) => {
+      ipWhitelistForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -474,113 +582,11 @@ export class AdminPanel {
         alert(`已更新 IP 白名單（${ips.length} 個 IP）`);
 
         // 重新渲染頁面
-        const contentDiv = this.container!.querySelector('#admin-content');
-        if (contentDiv) {
-          contentDiv.innerHTML = this.renderPageContent();
-          this.bindEvents(); // 重新綁定事件
-        }
+        await this.updatePageContent();
       });
     }
 
-    // 手動索引新增表單
-    const addManualIndexForm = this.container.querySelector('#add-manual-index-form') as HTMLFormElement;
-    if (addManualIndexForm) {
-      addManualIndexForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        const nameInput = this.container!.querySelector('#index-name') as HTMLInputElement;
-        const descInput = this.container!.querySelector('#index-description') as HTMLInputElement;
-        const contentInput = this.container!.querySelector('#index-content') as HTMLTextAreaElement;
-
-        const name = nameInput?.value || '';
-        const description = descInput?.value || '';
-        const content = contentInput?.value || '';
-
-        if (!name || !content) {
-          await this.showAlertDialog('請填寫名稱和內容');
-          return;
-        }
-
-        try {
-          await ManualIndexService.create({ name, description, content });
-          await this.showAlertDialog('索引已新增');
-
-          // 重新渲染頁面
-          const contentDiv = this.container!.querySelector('#admin-content');
-          if (contentDiv) {
-            contentDiv.innerHTML = this.renderPageContent();
-            this.bindEvents();
-          }
-        } catch (error) {
-          await this.showAlertDialog(`新增失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
-        }
-      });
-    }
-
-    // 編輯索引按鈕
-    const editIndexBtns = this.container.querySelectorAll('.edit-index-btn');
-    editIndexBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const id = (btn as HTMLElement).dataset.id;
-        if (id) {
-          this.showEditIndexModal(id);
-        }
-      });
-    });
-
-    // 刪除索引按鈕
-    const deleteIndexBtns = this.container.querySelectorAll('.delete-index-btn');
-    deleteIndexBtns.forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const id = (btn as HTMLElement).dataset.id;
-        if (id) {
-          const confirmed = await this.showConfirmDialog('確定要刪除這個索引嗎？');
-          if (confirmed) {
-            try {
-              ManualIndexService.delete(id);
-              await this.showAlertDialog('索引已刪除');
-
-              // 重新渲染頁面
-              const contentDiv = this.container!.querySelector('#admin-content');
-              if (contentDiv) {
-                contentDiv.innerHTML = this.renderPageContent();
-                this.bindEvents();
-              }
-            } catch (error) {
-              await this.showAlertDialog(`刪除失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
-            }
-          }
-        }
-      });
-    });
-
-    // 生成所有embeddings按鈕
-    const generateEmbeddingsBtn = this.container.querySelector('#generate-embeddings-btn');
-    if (generateEmbeddingsBtn) {
-      generateEmbeddingsBtn.addEventListener('click', async () => {
-        const confirmed = await this.showConfirmDialog('確定要為所有索引生成向量嵌入嗎？這可能需要一些時間。');
-        if (confirmed) {
-          try {
-            const button = generateEmbeddingsBtn as HTMLButtonElement;
-            button.disabled = true;
-            button.textContent = '生成中...';
-
-            const count = await ManualIndexService.generateEmbeddingsForAll();
-            await this.showAlertDialog(`成功為 ${count} 個索引生成了向量嵌入`);
-
-            // 重新渲染頁面
-            const contentDiv = this.container!.querySelector('#admin-content');
-            if (contentDiv) {
-              contentDiv.innerHTML = this.renderPageContent();
-              this.bindEvents();
-            }
-          } catch (error) {
-            await this.showAlertDialog(`生成失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
-          }
-        }
-      });
-    }
+    // 手動索引事件已移至bindManualIndexEvents()方法
 
     // API 配置表單
     const apiConfigForm = this.container.querySelector('#api-config-form') as HTMLFormElement;
@@ -623,7 +629,7 @@ export class AdminPanel {
     // Agent 工具配置表單
     const agentToolConfigForm = this.container.querySelector('#agent-tool-config-form') as HTMLFormElement;
     if (agentToolConfigForm) {
-      agentToolConfigForm.addEventListener('submit', (e) => {
+      agentToolConfigForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -639,11 +645,7 @@ export class AdminPanel {
           alert('Agent 設定已儲存');
 
           // 重新渲染頁面
-          const contentDiv = this.container!.querySelector('#admin-content');
-          if (contentDiv) {
-            contentDiv.innerHTML = this.renderPageContent();
-            this.bindEvents();
-          }
+          await this.updatePageContent();
         }
       });
     }
@@ -651,7 +653,7 @@ export class AdminPanel {
     // SQL Plugin 配置表單
     const sqlPluginConfigForm = this.container.querySelector('#sql-plugin-config-form') as HTMLFormElement;
     if (sqlPluginConfigForm) {
-      sqlPluginConfigForm.addEventListener('submit', (e) => {
+      sqlPluginConfigForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -679,18 +681,14 @@ export class AdminPanel {
         alert('SQL Plugin 設定已儲存');
 
         // 重新渲染頁面
-        const contentDiv = this.container!.querySelector('#admin-content');
-        if (contentDiv) {
-          contentDiv.innerHTML = this.renderPageContent();
-          this.bindEvents();
-        }
+        await this.updatePageContent();
       });
     }
 
     // SQL 連接新增表單
     const sqlConnectionForm = this.container.querySelector('#sql-connection-form') as HTMLFormElement;
     if (sqlConnectionForm) {
-      sqlConnectionForm.addEventListener('submit', (e) => {
+      sqlConnectionForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -722,11 +720,7 @@ export class AdminPanel {
           alert('SQL 連接已新增');
 
           // 重新渲染頁面
-          const contentDiv = this.container!.querySelector('#admin-content');
-          if (contentDiv) {
-            contentDiv.innerHTML = this.renderPageContent();
-            this.bindEvents();
-          }
+          await this.updatePageContent();
         } catch (error) {
           console.error('Error creating SQL connection:', error);
           alert('新增失敗');
@@ -737,7 +731,7 @@ export class AdminPanel {
     // 刪除 SQL 連接按鈕
     const deleteSQLConnectionBtns = this.container.querySelectorAll('.delete-sql-connection');
     deleteSQLConnectionBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = (btn as HTMLElement).dataset.id;
         if (id && confirm('確定要刪除這個連接嗎？')) {
           try {
@@ -745,11 +739,7 @@ export class AdminPanel {
             alert('連接已刪除');
 
             // 重新渲染頁面
-            const contentDiv = this.container!.querySelector('#admin-content');
-            if (contentDiv) {
-              contentDiv.innerHTML = this.renderPageContent();
-              this.bindEvents();
-            }
+            await this.updatePageContent();
           } catch (error) {
             console.error('Error deleting SQL connection:', error);
             alert('刪除失敗');
@@ -757,6 +747,9 @@ export class AdminPanel {
         }
       });
     });
+
+    // 內容區域的事件綁定已移至 bindContentEvents() 方法中處理
+
   }
 
   /**
@@ -766,7 +759,7 @@ export class AdminPanel {
     return `
       <div style="display: flex; height: 100vh;">
         <!-- 左側導航 -->
-        <div style="width: 250px; background: white; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column;">
+        <div style="width: 25%; min-width: 300px; background: white; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column;">
           <div style="padding: 24px; border-bottom: 1px solid #e5e7eb;">
             <h1 style="font-size: 20px; font-weight: 700; margin: 0; color: #1f2937;">Lens Service</h1>
             <p style="font-size: 12px; color: #6b7280; margin: 4px 0 0 0;">管理後台</p>
@@ -774,8 +767,8 @@ export class AdminPanel {
 
           <nav style="flex: 1; padding: 16px; overflow-y: auto;">
             ${this.renderNavItem('dashboard', '儀表板')}
+            ${this.renderNavItem('conversations', '客服對話')}
             ${this.renderNavItem('manual-index', '手動索引')}
-            ${this.renderNavItem('conversations', '客服記錄')}
             ${this.renderNavItem('system', '系統設定')}
           </nav>
 
@@ -789,7 +782,7 @@ export class AdminPanel {
         <!-- 右側內容區 -->
         <div style="flex: 1; overflow-y: auto; padding: 32px; background: #f9fafb;">
           <div id="admin-content">
-            ${this.renderPageContent()}
+            <!-- 內容將通過updatePageContent()異步載入 -->
           </div>
         </div>
       </div>
@@ -828,66 +821,295 @@ export class AdminPanel {
   /**
    * 渲染頁面內容
    */
-  private renderPageContent(): string {
+  private async renderPageContent(): Promise<string> {
     switch (this.currentPage) {
       case 'dashboard':
-        return this.renderDashboard();
+        return await this.renderDashboard();
       case 'manual-index':
-        return this.renderManualIndex();
+        return await this.renderManualIndex();
       case 'conversations':
-        return this.renderConversations();
+        return await this.renderConversations();
       case 'system':
-        return this.renderSystemSettings();
+        return await this.renderSystemSettings();
       default:
         return '<p>頁面不存在</p>';
     }
   }
 
   /**
+   * 更新頁面內容（async helper）
+   */
+  private async updatePageContent(): Promise<void> {
+    const contentDiv = this.container!.querySelector('#admin-content');
+    if (contentDiv) {
+      contentDiv.innerHTML = await this.renderPageContent();
+      // 只綁定內容區域的事件，不重複綁定全局事件
+      this.bindContentEvents();
+    }
+  }
+
+  /**
+   * 綁定內容區域的事件
+   */
+  private bindContentEvents(): void {
+    if (!this.container) return;
+
+    // 手動索引相關事件
+    this.bindManualIndexEvents();
+
+    // 客服對話相關事件
+    this.bindCustomerServiceEvents();
+
+    // 管理員相關事件
+    this.bindAdminUserEvents();
+
+    // 系統設定相關事件
+    this.bindSystemSettingsEvents();
+  }
+
+  /**
+   * 綁定手動索引相關事件
+   */
+  private bindManualIndexEvents(): void {
+    // 新增索引按鈕
+    const addIndexBtn = this.container!.querySelector('#add-index-btn');
+    if (addIndexBtn) {
+      addIndexBtn.addEventListener('click', async () => {
+        await this.showAddIndexModal();
+      });
+    }
+
+    // 生成所有Embeddings按鈕
+    const generateEmbeddingsBtn = this.container!.querySelector('#generate-embeddings-btn');
+    if (generateEmbeddingsBtn) {
+      generateEmbeddingsBtn.addEventListener('click', async () => {
+        try {
+          const button = generateEmbeddingsBtn as HTMLButtonElement;
+          button.disabled = true;
+          button.textContent = '生成中...';
+
+          const count = await ManualIndexService.generateEmbeddingsForAll();
+          await this.showAlertDialog(`成功為 ${count} 個索引生成了向量嵌入`);
+
+          // 重新渲染頁面
+          await this.updatePageContent();
+        } catch (error) {
+          await this.showAlertDialog(`生成失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+        } finally {
+          const button = generateEmbeddingsBtn as HTMLButtonElement;
+          button.disabled = false;
+          button.textContent = '生成所有Embeddings';
+        }
+      });
+    }
+
+    // 編輯和刪除按鈕
+    const editButtons = this.container!.querySelectorAll('.edit-index-btn');
+    editButtons.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = (btn as HTMLElement).dataset.id;
+        if (id) {
+          await this.showEditIndexModal(id);
+        }
+      });
+    });
+
+    const deleteButtons = this.container!.querySelectorAll('.delete-index-btn');
+    deleteButtons.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = (btn as HTMLElement).dataset.id;
+        if (id) {
+          await this.showDeleteConfirmDialog(id);
+        }
+      });
+    });
+  }
+
+
+
+  /**
+   * 綁定客服對話相關事件
+   */
+  private bindCustomerServiceEvents(): void {
+    // 客服對話相關事件
+    const refreshConversationsBtn = this.container!.querySelector('#refresh-conversations');
+    if (refreshConversationsBtn) {
+      refreshConversationsBtn.addEventListener('click', async () => {
+        await this.updatePageContent();
+      });
+    }
+
+    // 查看對話按鈕
+    const viewConversationBtns = this.container!.querySelectorAll('.view-conversation-btn');
+    viewConversationBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const conversationId = (e.target as HTMLElement).getAttribute('data-id');
+        if (conversationId) {
+          await this.showConversationModal(conversationId);
+        }
+      });
+    });
+
+    // 刪除對話按鈕
+    const deleteConversationBtns = this.container!.querySelectorAll('.delete-conversation-btn');
+    deleteConversationBtns.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const conversationId = (e.target as HTMLElement).getAttribute('data-id');
+        if (conversationId) {
+          const confirmed = await this.showConfirmDialog('確定要刪除這個對話嗎？此操作無法復原。');
+          if (confirmed) {
+            try {
+              const { CustomerServiceManager } = await import('../services/CustomerServiceManager');
+              await CustomerServiceManager.deleteConversation(conversationId);
+              await this.showAlertDialog('對話已刪除');
+              await this.updatePageContent();
+            } catch (error) {
+              await this.showAlertDialog(`刪除失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+            }
+          }
+        }
+      });
+    });
+  }
+
+  /**
+   * 綁定管理員相關事件
+   */
+  private bindAdminUserEvents(): void {
+    // 管理員相關事件已在bindEvents中處理
+  }
+
+  /**
+   * 綁定系統設定相關事件
+   */
+  private bindSystemSettingsEvents(): void {
+    // 編輯預設回覆按鈕
+    const editDefaultReplyBtn = this.container!.querySelector('#edit-default-reply-btn');
+    if (editDefaultReplyBtn) {
+      editDefaultReplyBtn.addEventListener('click', async () => {
+        const displayDiv = this.container!.querySelector('#default-reply-display') as HTMLDivElement;
+        const currentValue = displayDiv.textContent || '';
+
+        const newValue = await this.showEditDialog('編輯預設回覆', currentValue, true);
+        if (newValue !== null) {
+          try {
+            const { DatabaseService } = await import('../services/DatabaseService');
+            await DatabaseService.updateSetting('default_reply', newValue);
+
+            displayDiv.textContent = newValue;
+            await this.showAlertDialog('預設回覆已更新');
+          } catch (error) {
+            console.error('Failed to save default reply:', error);
+            await this.showAlertDialog('儲存失敗，請稍後再試');
+          }
+        }
+      });
+    }
+
+    // 編輯系統提示詞按鈕
+    const editSystemPromptBtn = this.container!.querySelector('#edit-system-prompt-btn');
+    if (editSystemPromptBtn) {
+      editSystemPromptBtn.addEventListener('click', async () => {
+        const displayDiv = this.container!.querySelector('#system-prompt-display') as HTMLDivElement;
+        const currentValue = displayDiv.textContent || '';
+
+        const newValue = await this.showEditDialog('編輯系統提示詞', currentValue, true);
+        if (newValue !== null) {
+          try {
+            const { DatabaseService } = await import('../services/DatabaseService');
+            await DatabaseService.updateSetting('system_prompt', newValue);
+
+            displayDiv.textContent = newValue;
+            await this.showAlertDialog('系統提示詞已更新');
+          } catch (error) {
+            console.error('Failed to save system prompt:', error);
+            await this.showAlertDialog('儲存失敗，請稍後再試');
+          }
+        }
+      });
+    }
+
+    // 新增管理員按鈕
+    const addAdminUserBtn = this.container!.querySelector('#add-admin-user-btn');
+    if (addAdminUserBtn) {
+      addAdminUserBtn.addEventListener('click', async () => {
+        await this.showAddAdminUserModal();
+      });
+    }
+
+    // 刪除管理員按鈕
+    const deleteAdminUserBtns = this.container!.querySelectorAll('.delete-admin-user-btn');
+    deleteAdminUserBtns.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const userId = (btn as HTMLElement).dataset.id;
+        if (userId) {
+          const confirmed = await this.showConfirmDialog('確定要刪除此管理員帳號嗎？此操作無法復原。');
+          if (confirmed) {
+            try {
+              const { DatabaseService } = await import('../services/DatabaseService');
+              await DatabaseService.deleteAdminUser(userId);
+
+              await this.showAlertDialog('管理員帳號已刪除');
+              await this.updatePageContent();
+            } catch (error) {
+              console.error('Failed to delete admin user:', error);
+              await this.showAlertDialog(`刪除失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+            }
+          }
+        }
+      });
+    });
+  }
+
+  /**
    * 渲染儀表板
    */
-  private renderDashboard(): string {
-    const conversations = ConversationService.getAllConversations();
-    const manualIndexes = ManualIndexService.getAll();
-    const toolConfig = StorageService.loadAgentToolConfig();
+  private async renderDashboard(): Promise<string> {
+    let conversations: any[] = [];
+    let manualIndexes: any[] = [];
+    let dbStatus = '連接失敗';
+
+    try {
+      // 獲取統計數據
+      const [conversationsRes, indexesRes] = await Promise.all([
+        fetch('http://localhost:3002/conversations').catch(() => null),
+        fetch('http://localhost:3002/manual-indexes').catch(() => null)
+      ]);
+
+      if (conversationsRes?.ok) {
+        conversations = await conversationsRes.json();
+        dbStatus = '正常連接';
+      }
+      if (indexesRes?.ok) {
+        manualIndexes = await indexesRes.json();
+      }
+    } catch (error) {
+      console.error('Failed to load dashboard data:', error);
+    }
 
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">儀表板</h2>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 32px;">
         ${this.renderStatCard('💬', '對話總數', conversations.length.toString())}
         ${this.renderStatCard('📝', '手動索引', manualIndexes.length.toString())}
       </div>
 
-      <!-- Agent 設定 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">Agent 設定</h3>
-        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">配置 Agent 使用的搜尋工具</p>
-
-        <form id="agent-tool-config-form">
-          <div style="margin-bottom: 16px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
-              <input type="checkbox" id="manual-index-enabled" ${toolConfig?.manualIndex?.enabled ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;" />
-              <span style="font-size: 14px; color: #374151; font-weight: 500;">啟用手動索引搜尋</span>
-            </label>
-            <p style="margin: 4px 0 0 26px; font-size: 12px; color: #6b7280;">搜尋手動新增的索引內容</p>
+      <!-- 系統狀態 -->
+      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">系統狀態</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px;">
+            <span style="font-size: 14px; color: #374151;">Telegram通知:</span>
+            <span style="font-size: 14px; color: #059669; font-weight: 500;">✅ 已啟用</span>
           </div>
-
-          <div style="margin-bottom: 16px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
-              <input type="checkbox" id="frontend-pages-enabled" ${toolConfig?.frontendPages?.enabled ? 'checked' : ''} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;" />
-              <span style="font-size: 14px; color: #374151; font-weight: 500;">啟用前端頁面搜尋</span>
-            </label>
-            <p style="margin: 4px 0 0 26px; font-size: 12px; color: #6b7280;">搜尋當前網站的所有頁面內容</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px;">
+            <span style="font-size: 14px; color: #374151;">數據庫連接:</span>
+            <span style="font-size: 14px; color: ${dbStatus === '正常連接' ? '#059669' : '#dc2626'}; font-weight: 500;">
+              ${dbStatus === '正常連接' ? '✅' : '❌'} ${dbStatus}
+            </span>
           </div>
-
-          <button
-            type="submit"
-            style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
-          >
-            儲存設定
-          </button>
-        </form>
+        </div>
       </div>
     `;
   }
@@ -908,60 +1130,21 @@ export class AdminPanel {
   /**
    * 渲染手動索引頁面
    */
-  private renderManualIndex(): string {
-    const indexes = ManualIndexService.getAll();
+  private async renderManualIndex(): Promise<string> {
+    const indexes = await ManualIndexService.getAll();
 
     return `
-      <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">手動索引</h2>
-      <p style="color: #6b7280; margin-bottom: 24px;">手動新增索引內容供 Agent 搜尋</p>
-
-      <!-- 新增索引表單 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">新增索引</h3>
-
-        <form id="add-manual-index-form">
-          <div style="margin-bottom: 16px;">
-            <label for="index-name" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">名稱</label>
-            <input
-              type="text"
-              id="index-name"
-              name="name"
-              placeholder="例如：產品介紹"
-              required
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
-            />
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <label for="index-description" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">描述</label>
-            <input
-              type="text"
-              id="index-description"
-              name="description"
-              placeholder="簡短描述這個索引的內容"
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
-            />
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <label for="index-content" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">內容</label>
-            <textarea
-              id="index-content"
-              name="content"
-              placeholder="輸入索引內容..."
-              rows="8"
-              required
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937; resize: vertical;"
-            ></textarea>
-          </div>
-
-          <button
-            type="submit"
-            style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
-          >
-            新增索引
-          </button>
-        </form>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: #1f2937;">手動索引</h2>
+          <p style="color: #6b7280; margin: 0;">手動新增索引內容供 Agent 搜尋</p>
+        </div>
+        <button
+          id="add-index-btn"
+          style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
+        >
+          + 新增索引
+        </button>
       </div>
 
       <!-- 索引列表 -->
@@ -982,14 +1165,19 @@ export class AdminPanel {
           <div style="display: flex; flex-direction: column; gap: 12px;">
             ${indexes.map(index => `
               <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
                   <div style="flex: 1;">
                     <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">${index.name}</h4>
-                    <p style="font-size: 14px; color: #6b7280; margin: 0;">${index.description || '無描述'}</p>
+                    <p style="font-size: 14px; color: #6b7280; margin: 0 0 8px 0;">${index.description || '無描述'}</p>
+                    ${index.url ? `<p style="font-size: 12px; color: #3b82f6; margin: 0 0 8px 0; font-family: monospace;"><a href="${index.url}" target="_blank" style="color: inherit; text-decoration: none;">${index.url}</a></p>` : ''}
                     ${index.embedding ?
-                      '<span style="font-size: 11px; background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block;">✓ 已生成向量</span>' :
-                      '<span style="font-size: 11px; background: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block;">⚠ 未生成向量</span>'
+                      '<span style="font-size: 11px; background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; display: inline-block;">✓ 已生成向量</span>' :
+                      '<span style="font-size: 11px; background: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; display: inline-block;">⚠ 未生成向量</span>'
                     }
+                    <p style="font-size: 12px; color: #9ca3af; margin: 8px 0 0 0;">
+                      建立時間：${new Date(index.createdAt).toLocaleString('zh-TW')}
+                      ${index.updatedAt !== index.createdAt ? ` | 更新時間：${new Date(index.updatedAt).toLocaleString('zh-TW')}` : ''}
+                    </p>
                   </div>
                   <div style="display: flex; gap: 8px;">
                     <button
@@ -1008,13 +1196,6 @@ export class AdminPanel {
                     </button>
                   </div>
                 </div>
-                <p style="font-size: 13px; color: #9ca3af; margin: 8px 0 0 0;">
-                  ${index.content.substring(0, 150)}${index.content.length > 150 ? '...' : ''}
-                </p>
-                <p style="font-size: 12px; color: #9ca3af; margin: 8px 0 0 0;">
-                  建立時間：${new Date(index.createdAt).toLocaleString('zh-TW')}
-                  ${index.updatedAt !== index.createdAt ? ` | 更新時間：${new Date(index.updatedAt).toLocaleString('zh-TW')}` : ''}
-                </p>
               </div>
             `).join('')}
           </div>
@@ -1242,118 +1423,7 @@ export class AdminPanel {
     };
   }
 
-  /**
-   * 渲染客服記錄頁面
-   */
-  private renderConversations(): string {
-    const conversations = ConversationService.getAllConversations();
 
-    return `
-      <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">客服記錄</h2>
-      <p style="color: #6b7280; margin-bottom: 24px;">查看所有用戶對話記錄</p>
-
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">統計資訊</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-          <div style="padding: 16px; background: #f9fafb; border-radius: 8px;">
-            <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">總對話數</div>
-            <div style="font-size: 24px; font-weight: 700; color: #1f2937;">${conversations.length}</div>
-          </div>
-          <div style="padding: 16px; background: #f9fafb; border-radius: 8px;">
-            <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">總訊息數</div>
-            <div style="font-size: 24px; font-weight: 700; color: #1f2937;">${conversations.reduce((sum, conv) => sum + conv.messages.length, 0)}</div>
-          </div>
-          <div style="padding: 16px; background: #f9fafb; border-radius: 8px;">
-            <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">活躍用戶</div>
-            <div style="font-size: 24px; font-weight: 700; color: #1f2937;">${new Set(conversations.map(c => c.userId)).size}</div>
-          </div>
-        </div>
-      </div>
-
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">對話列表</h3>
-
-        ${conversations.length === 0 ? `
-          <p style="color: #9ca3af; text-align: center; padding: 32px 0;">尚無對話記錄</p>
-        ` : `
-          <div style="display: flex; flex-direction: column; gap: 16px;">
-            ${conversations.slice().reverse().map(conv => {
-              const lastMessage = conv.messages[conv.messages.length - 1];
-              const messageCount = conv.messages.length;
-              const userMessages = conv.messages.filter(m => m.role === 'user').length;
-              const assistantMessages = conv.messages.filter(m => m.role === 'assistant').length;
-
-              return `
-                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.2s;"
-                     onmouseover="this.style.borderColor='#7c3aed'; this.style.boxShadow='0 4px 6px rgba(124, 58, 237, 0.1)'"
-                     onmouseout="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'"
-                     onclick="this.querySelector('.conversation-details').style.display = this.querySelector('.conversation-details').style.display === 'none' ? 'block' : 'none'">
-                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-                    <div>
-                      <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">
-                        對話 ID: ${(conv.conversationId || conv.id).substring(0, 8)}...
-                      </h4>
-                      <p style="font-size: 14px; color: #6b7280; margin: 0;">
-                        用戶 ID: ${conv.userId.substring(0, 8)}...
-                      </p>
-                    </div>
-                    <div style="text-align: right;">
-                      <div style="font-size: 12px; color: #9ca3af;">
-                        ${new Date(conv.createdAt || conv.startedAt).toLocaleString('zh-TW')}
-                      </div>
-                      <div style="font-size: 12px; color: #9ca3af; margin-top: 4px;">
-                        ${messageCount} 則訊息
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style="padding: 12px; background: #f9fafb; border-radius: 6px; margin-bottom: 12px;">
-                    <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">最後訊息：</div>
-                    <div style="font-size: 14px; color: #1f2937;">
-                      ${lastMessage ? (lastMessage.content.substring(0, 100) + (lastMessage.content.length > 100 ? '...' : '')) : '無訊息'}
-                    </div>
-                  </div>
-
-                  <div style="display: flex; gap: 16px; font-size: 13px; color: #6b7280;">
-                    <span>👤 用戶: ${userMessages}</span>
-                    <span>🤖 助手: ${assistantMessages}</span>
-                    <span>📅 ${new Date(conv.updatedAt || conv.lastMessageAt).toLocaleDateString('zh-TW')}</span>
-                  </div>
-
-                  <!-- 對話詳情（預設隱藏） -->
-                  <div class="conversation-details" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-                    <h5 style="font-size: 14px; font-weight: 600; margin: 0 0 12px 0; color: #1f2937;">完整對話記錄</h5>
-                    <div style="max-height: 400px; overflow-y: auto;">
-                      ${conv.messages.map(msg => `
-                        <div style="margin-bottom: 12px; padding: 12px; background: ${msg.role === 'user' ? '#ede9fe' : '#f3f4f6'}; border-radius: 6px;">
-                          <div style="font-size: 12px; font-weight: 600; color: ${msg.role === 'user' ? '#7c3aed' : '#6b7280'}; margin-bottom: 4px;">
-                            ${msg.role === 'user' ? '👤 用戶' : '🤖 助手'} - ${new Date(msg.timestamp).toLocaleString('zh-TW')}
-                          </div>
-                          <div style="font-size: 14px; color: #1f2937; white-space: pre-wrap;">
-                            ${msg.content}
-                          </div>
-                          ${msg.sources && msg.sources.length > 0 ? `
-                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.1);">
-                              <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">參考來源：</div>
-                              ${msg.sources.map((source, idx) => `
-                                <div style="font-size: 12px; color: #7c3aed; margin-top: 2px;">
-                                  [${idx + 1}] ${source.title}
-                                </div>
-                              `).join('')}
-                            </div>
-                          ` : ''}
-                        </div>
-                      `).join('')}
-                    </div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `}
-      </div>
-    `;
-  }
 
   /**
    * 渲染 Agent & API 設定頁面（合併）
@@ -1512,328 +1582,16 @@ export class AdminPanel {
     `;
   }
 
-  /**
-   * 渲染系統設定頁面（包含密碼和 IP 白名單）
-   */
-  private renderSystemSettings(): string {
-    const currentPassword = StorageService.loadAdminPassword();
-    const ipWhitelist = this.getIPWhitelist();
-    const telegramEnabled = this.getTelegramEnabled();
-    const hasTelegramConfig = this.hasTelegramConfig();
 
-    return `
-      <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
 
-      <!-- Telegram 通知設定 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">Telegram 通知</h3>
-        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">當 AI 無法回答問題時，發送通知到 Telegram</p>
 
-        ${!hasTelegramConfig ? `
-          <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-            <p style="color: #92400e; font-size: 14px; margin: 0;">
-              ⚠️ 未配置 Telegram Bot Token 和 Chat ID，此功能已禁用
-            </p>
-          </div>
-        ` : ''}
-
-        <form id="telegram-settings-form">
-          <div style="margin-bottom: 16px;">
-            <label style="display: flex; align-items: center; cursor: ${hasTelegramConfig ? 'pointer' : 'not-allowed'};">
-              <input
-                type="checkbox"
-                id="telegram-enabled"
-                ${telegramEnabled ? 'checked' : ''}
-                ${!hasTelegramConfig ? 'disabled' : ''}
-                style="margin-right: 8px; cursor: ${hasTelegramConfig ? 'pointer' : 'not-allowed'};"
-              />
-              <span style="color: ${hasTelegramConfig ? '#1f2937' : '#9ca3af'};">啟用 Telegram 通知</span>
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            ${!hasTelegramConfig ? 'disabled' : ''}
-            style="
-              padding: 10px 20px;
-              background: ${hasTelegramConfig ? '#7c3aed' : '#d1d5db'};
-              color: white;
-              border: none;
-              border-radius: 8px;
-              font-size: 14px;
-              font-weight: 500;
-              cursor: ${hasTelegramConfig ? 'pointer' : 'not-allowed'};
-            "
-          >
-            儲存設定
-          </button>
-        </form>
-      </div>
-
-      <!-- 密碼設定 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">管理員密碼</h3>
-        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">當前密碼：${currentPassword}</p>
-
-        <form id="change-password-form">
-          <div style="margin-bottom: 16px;">
-            <label for="new-password" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">新密碼</label>
-            <input
-              type="password"
-              id="new-password"
-              name="newPassword"
-              placeholder="請輸入新密碼"
-              autocomplete="new-password"
-              style="
-                width: 100%;
-                max-width: 400px;
-                padding: 10px 14px;
-                border: 1px solid #d1d5db;
-                border-radius: 8px;
-                font-size: 14px;
-                box-sizing: border-box;
-                background: white;
-                color: #1f2937;
-                outline: none;
-              "
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            style="
-              padding: 10px 20px;
-              background: #7c3aed;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              font-size: 14px;
-              font-weight: 500;
-              cursor: pointer;
-            "
-          >
-            更新密碼
-          </button>
-        </form>
-      </div>
-
-      <!-- IP 白名單設定 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">IP 白名單</h3>
-        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">限制可以訪問管理後台的 IP 地址</p>
-
-        <div style="margin-bottom: 16px;">
-          <p style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">當前白名單：</p>
-          <div style="background: #f9fafb; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #4b5563;">
-            ${ipWhitelist.length > 0 ? ipWhitelist.join('<br>') : '（空白 - 允許所有 IP）'}
-          </div>
-        </div>
-
-        <form id="ip-whitelist-form">
-          <div style="margin-bottom: 16px;">
-            <label for="ip-list" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">IP 列表（每行一個）</label>
-            <textarea
-              id="ip-list"
-              name="ipList"
-              placeholder="例如：&#10;192.168.1.1&#10;10.0.0.1"
-              rows="5"
-              style="
-                width: 100%;
-                max-width: 400px;
-                padding: 10px 14px;
-                border: 1px solid #d1d5db;
-                border-radius: 8px;
-                font-size: 14px;
-                font-family: monospace;
-                box-sizing: border-box;
-                background: white;
-                color: #1f2937;
-                outline: none;
-                resize: vertical;
-              "
-            >${ipWhitelist.join('\n')}</textarea>
-          </div>
-
-          <button
-            type="submit"
-            style="
-              padding: 10px 20px;
-              background: #10b981;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              font-size: 14px;
-              font-weight: 500;
-              cursor: pointer;
-            "
-          >
-            更新白名單
-          </button>
-        </form>
-      </div>
-    `;
-  }
-
-  /**
-   * 渲染資料庫管理頁面
-   */
-  private renderDatabaseManagement(): string {
-    return `
-      <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">資料庫管理</h2>
-      <p style="color: #6b7280; margin-bottom: 24px;">配置服務用資料庫，用於存儲對話記錄和索引數據</p>
-
-      <!-- 說明 -->
-      <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
-        <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 8px 0; color: #1e40af;">💡 重要說明</h3>
-        <ul style="margin: 0; padding-left: 20px; color: #1e40af; font-size: 14px; line-height: 1.6;">
-          <li>此處配置的資料庫用於<strong>存儲服務數據</strong>（對話記錄、手動索引等）</li>
-          <li>與「SQL 資料庫」頁面的配置不同，該頁面用於 Agent 搜尋外部資料</li>
-          <li>由於瀏覽器安全限制，需要提供一個<strong>後端 API</strong>來連接資料庫</li>
-          <li>API 需要支援基本的 CRUD 操作（創建、讀取、更新、刪除）</li>
-        </ul>
-      </div>
-
-      <!-- API 配置 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">後端 API 配置</h3>
-
-        <form id="database-api-config-form">
-          <div style="margin-bottom: 16px;">
-            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">API Base URL</label>
-            <input
-              type="text"
-              id="db-api-url"
-              placeholder="https://your-api.com/api"
-              style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
-            >
-            <p style="color: #6b7280; font-size: 12px; margin-top: 4px;">後端 API 的基礎 URL</p>
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">API Key（選填）</label>
-            <input
-              type="password"
-              id="db-api-key"
-              placeholder="your-api-key"
-              style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
-            >
-            <p style="color: #6b7280; font-size: 12px; margin-top: 4px;">如果 API 需要認證，請提供 API Key</p>
-          </div>
-
-          <button
-            type="submit"
-            style="width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
-          >
-            儲存 API 配置
-          </button>
-        </form>
-      </div>
-
-      <!-- Schema 驗證 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">資料庫 Schema 驗證</h3>
-        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">驗證資料庫是否包含所需的表格和欄位</p>
-
-        <div style="margin-bottom: 16px;">
-          <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 12px 0; color: #374151;">必需的表格</h4>
-
-          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-            <h5 style="font-size: 14px; font-weight: 600; margin: 0 0 8px 0; color: #1f2937;">1. conversations（對話記錄）</h5>
-            <div style="font-family: monospace; font-size: 13px; color: #6b7280; line-height: 1.6;">
-              - id (VARCHAR/UUID, PRIMARY KEY)<br>
-              - user_id (VARCHAR)<br>
-              - conversation_id (VARCHAR)<br>
-              - messages (JSON/TEXT)<br>
-              - created_at (TIMESTAMP)<br>
-              - updated_at (TIMESTAMP)
-            </div>
-          </div>
-
-          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-            <h5 style="font-size: 14px; font-weight: 600; margin: 0 0 8px 0; color: #1f2937;">2. manual_indexes（手動索引）</h5>
-            <div style="font-family: monospace; font-size: 13px; color: #6b7280; line-height: 1.6;">
-              - id (VARCHAR/UUID, PRIMARY KEY)<br>
-              - name (VARCHAR)<br>
-              - description (TEXT)<br>
-              - content (TEXT)<br>
-              - keywords (JSON/TEXT)<br>
-              - fingerprint (TEXT)<br>
-              - created_at (TIMESTAMP)<br>
-              - updated_at (TIMESTAMP)
-            </div>
-          </div>
-        </div>
-
-        <button
-          id="verify-schema-btn"
-          style="width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
-        >
-          驗證 Schema
-        </button>
-
-        <div id="schema-verification-result" style="margin-top: 16px; display: none;"></div>
-      </div>
-
-      <!-- API 端點說明 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">後端 API 端點要求</h3>
-        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">您的後端 API 需要實現以下端點：</p>
-
-        <div style="font-family: monospace; font-size: 13px; background: #f9fafb; padding: 16px; border-radius: 8px; line-height: 1.8;">
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #10b981;">GET</strong> <span style="color: #1f2937;">/conversations</span><br>
-            <span style="color: #6b7280; font-size: 12px;">獲取所有對話記錄</span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #3b82f6;">POST</strong> <span style="color: #1f2937;">/conversations</span><br>
-            <span style="color: #6b7280; font-size: 12px;">創建新對話</span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #f59e0b;">PUT</strong> <span style="color: #1f2937;">/conversations/:id</span><br>
-            <span style="color: #6b7280; font-size: 12px;">更新對話</span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #ef4444;">DELETE</strong> <span style="color: #1f2937;">/conversations/:id</span><br>
-            <span style="color: #6b7280; font-size: 12px;">刪除對話</span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #10b981;">GET</strong> <span style="color: #1f2937;">/manual-indexes</span><br>
-            <span style="color: #6b7280; font-size: 12px;">獲取所有手動索引</span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #3b82f6;">POST</strong> <span style="color: #1f2937;">/manual-indexes</span><br>
-            <span style="color: #6b7280; font-size: 12px;">創建新索引</span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #ef4444;">DELETE</strong> <span style="color: #1f2937;">/manual-indexes/:id</span><br>
-            <span style="color: #6b7280; font-size: 12px;">刪除索引</span>
-          </div>
-
-          <div>
-            <strong style="color: #3b82f6;">POST</strong> <span style="color: #1f2937;">/verify-schema</span><br>
-            <span style="color: #6b7280; font-size: 12px;">驗證資料庫 Schema</span>
-          </div>
-        </div>
-      </div>
-    `;
-  }
 
   /**
    * 檢查是否有 Telegram 配置
    */
   private hasTelegramConfig(): boolean {
-    const botToken = (window as any).NEXT_PUBLIC_TELEGRAM_BOT_TOKEN ||
-                     process.env.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN;
-    const chatId = (window as any).NEXT_PUBLIC_TELEGRAM_CHAT_ID ||
-                   process.env.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
-    return !!(botToken && chatId);
+    const telegramConfig = (window as any).SM_TELEGRAM_CONFIG;
+    return !!(telegramConfig && telegramConfig.botToken && telegramConfig.chatId);
   }
 
   /**
@@ -1841,7 +1599,8 @@ export class AdminPanel {
    */
   private getTelegramEnabled(): boolean {
     const enabled = localStorage.getItem('telegram_enabled');
-    return enabled === 'true';
+    // 默認啟用 Telegram 通知
+    return enabled !== 'false';
   }
 
   /**
@@ -1854,10 +1613,10 @@ export class AdminPanel {
   /**
    * 顯示編輯索引模態框
    */
-  private showEditIndexModal(id: string): void {
-    const index = ManualIndexService.getById(id);
+  private async showEditIndexModal(id: string): Promise<void> {
+    const index = await ManualIndexService.getById(id);
     if (!index) {
-      alert('找不到該索引');
+      await this.showAlertDialog('找不到該索引');
       return;
     }
 
@@ -1945,25 +1704,21 @@ export class AdminPanel {
       const content = (modal.querySelector('#edit-index-content') as HTMLTextAreaElement).value;
 
       if (!name || !content) {
-        alert('請填寫名稱和內容');
+        await this.showAlertDialog('請填寫名稱和內容');
         return;
       }
 
       try {
         await ManualIndexService.update(id, { name, description, content });
-        alert('索引已更新');
+        await this.showAlertDialog('索引已更新');
 
         // 關閉模態框
         document.body.removeChild(modal);
 
         // 重新渲染頁面
-        const contentDiv = this.container!.querySelector('#admin-content');
-        if (contentDiv) {
-          contentDiv.innerHTML = this.renderPageContent();
-          this.bindEvents();
-        }
+        await this.updatePageContent();
       } catch (error) {
-        alert(`更新失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+        await this.showAlertDialog(`更新失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
       }
     });
 
@@ -1977,6 +1732,713 @@ export class AdminPanel {
         document.body.removeChild(modal);
       }
     });
+  }
+
+  /**
+   * 顯示新增索引模態框
+   */
+  private async showAddIndexModal(): Promise<void> {
+    // 創建模態框
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `;
+
+    modal.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">新增索引</h3>
+
+        <form id="add-index-form">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">名稱</label>
+            <input
+              type="text"
+              id="add-index-name"
+              placeholder="例如：產品介紹"
+              required
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">描述</label>
+            <input
+              type="text"
+              id="add-index-description"
+              placeholder="簡短描述這個索引的內容"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">URL（選填）</label>
+            <input
+              type="url"
+              id="add-index-url"
+              placeholder="https://example.com/page"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">內容</label>
+            <textarea
+              id="add-index-content"
+              placeholder="輸入索引內容..."
+              rows="8"
+              required
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;"
+            ></textarea>
+          </div>
+
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button
+              type="button"
+              id="cancel-add-btn"
+              style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              新增索引
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // 綁定事件
+    const form = modal.querySelector('#add-index-form') as HTMLFormElement;
+    const cancelBtn = modal.querySelector('#cancel-add-btn') as HTMLButtonElement;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = (modal.querySelector('#add-index-name') as HTMLInputElement).value;
+      const description = (modal.querySelector('#add-index-description') as HTMLInputElement).value;
+      const url = (modal.querySelector('#add-index-url') as HTMLInputElement).value;
+      const content = (modal.querySelector('#add-index-content') as HTMLTextAreaElement).value;
+
+      if (!name || !content) {
+        await this.showAlertDialog('請填寫名稱和內容');
+        return;
+      }
+
+      try {
+        await ManualIndexService.create({ name, description, content, url: url || undefined });
+        await this.showAlertDialog('索引已新增');
+
+        // 關閉模態框
+        document.body.removeChild(modal);
+
+        // 重新渲染頁面
+        await this.updatePageContent();
+      } catch (error) {
+        await this.showAlertDialog(`新增失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+      }
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+
+    // 點擊背景關閉
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+  }
+
+  /**
+   * 顯示刪除確認對話框
+   */
+  private async showDeleteConfirmDialog(id: string): Promise<void> {
+    const index = await ManualIndexService.getById(id);
+    if (!index) {
+      await this.showAlertDialog('找不到該索引');
+      return;
+    }
+
+    const confirmed = await this.showConfirmDialog(`確定要刪除索引「${index.name}」嗎？此操作無法復原。`);
+    if (confirmed) {
+      try {
+        await ManualIndexService.delete(id);
+        await this.showAlertDialog('索引已刪除');
+        await this.updatePageContent();
+      } catch (error) {
+        await this.showAlertDialog(`刪除失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+      }
+    }
+  }
+
+
+
+
+
+
+
+  /**
+   * 渲染客服對話頁面
+   */
+  private async renderConversations(): Promise<string> {
+    try {
+      const { CustomerServiceManager } = await import('../services/CustomerServiceManager');
+      const conversations = await CustomerServiceManager.getAllConversations();
+
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">客服對話管理</h2>
+          <div style="display: flex; gap: 12px;">
+            <button id="refresh-conversations" style="
+              padding: 10px 20px;
+              background: #f3f4f6;
+              color: #374151;
+              border: none;
+              border-radius: 8px;
+              font-size: 14px;
+              cursor: pointer;
+            ">🔄 刷新</button>
+          </div>
+        </div>
+
+        <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+          ${conversations.length === 0 ? `
+            <div style="padding: 48px; text-align: center; color: #6b7280;">
+              <p style="font-size: 16px; margin: 0;">目前沒有對話記錄</p>
+            </div>
+          ` : `
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">對話ID</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">用戶ID</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">訊息數</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">狀態</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">開始時間</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${conversations.slice().reverse().map(conv => `
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                      <td style="padding: 16px; color: #1f2937; font-family: monospace; font-size: 12px;">${conv.id.substring(0, 8)}...</td>
+                      <td style="padding: 16px; color: #1f2937;">${conv.userId}</td>
+                      <td style="padding: 16px; color: #1f2937;">${conv.messages.length}</td>
+                      <td style="padding: 16px;">
+                        <span style="
+                          padding: 4px 8px;
+                          border-radius: 4px;
+                          font-size: 12px;
+                          font-weight: 500;
+                          background: ${conv.status === 'active' ? '#dcfce7' : '#f3f4f6'};
+                          color: ${conv.status === 'active' ? '#166534' : '#374151'};
+                        ">${conv.status === 'active' ? '進行中' : '已結束'}</span>
+                      </td>
+                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${new Date(conv.startedAt).toLocaleString()}</td>
+                      <td style="padding: 16px;">
+                        <div style="display: flex; gap: 8px;">
+                          <button class="view-conversation-btn" data-id="${conv.id}" style="
+                            padding: 6px 12px;
+                            background: #3b82f6;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            font-size: 12px;
+                            cursor: pointer;
+                          ">查看</button>
+                          <button class="delete-conversation-btn" data-id="${conv.id}" style="
+                            padding: 6px 12px;
+                            background: #ef4444;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            font-size: 12px;
+                            cursor: pointer;
+                          ">刪除</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `}
+        </div>
+      `;
+    } catch (error) {
+      console.error('Failed to render conversations:', error);
+      return `
+        <div style="padding: 24px; text-align: center; color: #ef4444;">
+          <p>載入對話記錄失敗：${error instanceof Error ? error.message : '未知錯誤'}</p>
+        </div>
+      `;
+    }
+  }
+
+  /**
+   * 渲染管理員用戶頁面
+   */
+  private async renderAdminUsers(): Promise<string> {
+    try {
+      const { AdminUserManager } = await import('../services/AdminUserManager');
+      const adminUsers = await AdminUserManager.getAllAdminUsers();
+
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">管理員帳號管理</h2>
+          <button id="add-admin-user-btn" style="
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+          ">+ 新增管理員</button>
+        </div>
+
+        <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+          ${adminUsers.length === 0 ? `
+            <div style="padding: 48px; text-align: center; color: #6b7280;">
+              <p style="font-size: 16px; margin: 0;">目前沒有管理員帳號</p>
+            </div>
+          ` : `
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">用戶名</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">角色</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">狀態</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">創建時間</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">最後登錄</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${adminUsers.map(user => `
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                      <td style="padding: 16px; color: #1f2937; font-weight: 500;">${user.username}</td>
+                      <td style="padding: 16px;">
+                        <span style="
+                          padding: 4px 8px;
+                          border-radius: 4px;
+                          font-size: 12px;
+                          font-weight: 500;
+                          background: ${user.role === 'super_admin' ? '#fef3c7' : '#dbeafe'};
+                          color: ${user.role === 'super_admin' ? '#92400e' : '#1e40af'};
+                        ">${user.role === 'super_admin' ? '超級管理員' : '管理員'}</span>
+                      </td>
+                      <td style="padding: 16px;">
+                        <span style="
+                          padding: 4px 8px;
+                          border-radius: 4px;
+                          font-size: 12px;
+                          font-weight: 500;
+                          background: ${user.is_active ? '#dcfce7' : '#fee2e2'};
+                          color: ${user.is_active ? '#166534' : '#dc2626'};
+                        ">${user.is_active ? '啟用' : '停用'}</span>
+                      </td>
+                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${new Date(user.created_at).toLocaleString()}</td>
+                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${user.last_login ? new Date(user.last_login).toLocaleString() : '從未登錄'}</td>
+                      <td style="padding: 16px;">
+                        <div style="display: flex; gap: 8px;">
+                          <button class="edit-admin-user-btn" data-id="${user.id}" style="
+                            padding: 6px 12px;
+                            background: #3b82f6;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            font-size: 12px;
+                            cursor: pointer;
+                          ">編輯</button>
+                          ${user.username !== 'lens' ? `
+                            <button class="delete-admin-user-btn" data-id="${user.id}" style="
+                              padding: 6px 12px;
+                              background: #ef4444;
+                              color: white;
+                              border: none;
+                              border-radius: 6px;
+                              font-size: 12px;
+                              cursor: pointer;
+                            ">刪除</button>
+                          ` : ''}
+                        </div>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          `}
+        </div>
+      `;
+    } catch (error) {
+      console.error('Failed to render admin users:', error);
+      return `
+        <div style="padding: 24px; text-align: center; color: #ef4444;">
+          <p>載入管理員列表失敗：${error instanceof Error ? error.message : '未知錯誤'}</p>
+        </div>
+      `;
+    }
+  }
+
+
+
+  /**
+   * 渲染系統設定頁面
+   */
+  private async renderSystemSettings(): Promise<string> {
+    let settings: any[] = [];
+    let adminUsers: any[] = [];
+
+    try {
+      const { DatabaseService } = await import('../services/DatabaseService');
+      const [settingsData, adminUsersData] = await Promise.all([
+        DatabaseService.getSettings().catch(() => []),
+        DatabaseService.getAdminUsers().catch(() => [])
+      ]);
+
+      settings = settingsData;
+      adminUsers = adminUsersData;
+    } catch (error) {
+      console.error('Failed to load system settings:', error);
+    }
+
+    const defaultReply = settings.find(s => s.key === 'default_reply')?.value || '';
+    const systemPrompt = settings.find(s => s.key === 'system_prompt')?.value || '';
+
+    return `
+      <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
+
+      <!-- 系統設定 -->
+      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">基本設定</h3>
+
+        <form id="system-settings-form">
+          <div style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label style="color: #374151; font-weight: 500;">無法回答時的固定回覆</label>
+              <button
+                id="edit-default-reply-btn"
+                style="background: #3b82f6; color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+                onmouseover="this.style.background='#2563eb'"
+                onmouseout="this.style.background='#3b82f6'"
+              >
+                編輯
+              </button>
+            </div>
+            <div
+              id="default-reply-display"
+              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 60px; white-space: pre-wrap;"
+            >${defaultReply}</div>
+          </div>
+
+          <div style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label style="color: #374151; font-weight: 500;">LLM系統提示詞</label>
+              <button
+                id="edit-system-prompt-btn"
+                style="background: #3b82f6; color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+                onmouseover="this.style.background='#2563eb'"
+                onmouseout="this.style.background='#3b82f6'"
+              >
+                編輯
+              </button>
+            </div>
+            <div
+              id="system-prompt-display"
+              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 80px; white-space: pre-wrap;"
+            >${systemPrompt}</div>
+          </div>
+        </form>
+      </div>
+
+      <!-- 管理員帳號 -->
+      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="font-size: 18px; font-weight: 600; margin: 0; color: #1f2937;">管理員帳號（${adminUsers.length}）</h3>
+          <button
+            id="add-admin-user-btn"
+            style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+          >
+            + 新增管理員
+          </button>
+        </div>
+
+        ${adminUsers.length === 0 ? `
+          <p style="color: #9ca3af; text-align: center; padding: 32px 0;">尚無管理員帳號</p>
+        ` : `
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            ${adminUsers.map(user => `
+              <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">${user.username}</h4>
+                    <p style="font-size: 14px; color: #6b7280; margin: 0;">${user.email || '無Email'}</p>
+                    <p style="font-size: 12px; color: #9ca3af; margin: 4px 0 0 0;">
+                      建立時間：${new Date(user.createdAt).toLocaleString('zh-TW')}
+                    </p>
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button
+                      class="delete-admin-user-btn"
+                      data-id="${user.id}"
+                      style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+                    >
+                      刪除
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+    `;
+  }
+
+  /**
+   * 顯示新增管理員模態框
+   */
+  private async showAddAdminUserModal(): Promise<void> {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;
+    `;
+
+    modal.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="margin: 0 0 16px 0; color: #1f2937;">新增管理員</h3>
+
+        <form id="add-admin-user-form">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">用戶名</label>
+            <input
+              type="text"
+              id="add-admin-username"
+              required
+              style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
+              placeholder="請輸入用戶名"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">密碼</label>
+            <input
+              type="password"
+              id="add-admin-password"
+              required
+              style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
+              placeholder="請輸入密碼"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">Email（選填）</label>
+            <input
+              type="email"
+              id="add-admin-email"
+              style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
+              placeholder="請輸入Email"
+            />
+          </div>
+
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button
+              type="button"
+              id="cancel-add-admin-btn"
+              style="padding: 10px 20px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; cursor: pointer;"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; cursor: pointer;"
+            >
+              新增管理員
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // 綁定事件
+    const form = modal.querySelector('#add-admin-user-form') as HTMLFormElement;
+    const cancelBtn = modal.querySelector('#cancel-add-admin-btn') as HTMLButtonElement;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const username = (modal.querySelector('#add-admin-username') as HTMLInputElement).value;
+      const password = (modal.querySelector('#add-admin-password') as HTMLInputElement).value;
+      const email = (modal.querySelector('#add-admin-email') as HTMLInputElement).value;
+
+      try {
+        const { DatabaseService } = await import('../services/DatabaseService');
+        await DatabaseService.createAdminUser(username, password, email);
+
+        document.body.removeChild(modal);
+        await this.showAlertDialog('管理員帳號已新增');
+        await this.updatePageContent();
+      } catch (error) {
+        await this.showAlertDialog(`新增失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+      }
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+
+    // 點擊背景關閉
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+  }
+
+  /**
+   * 顯示對話詳情模態框
+   */
+  private async showConversationModal(conversationId: string): Promise<void> {
+    try {
+      const { CustomerServiceManager } = await import('../services/CustomerServiceManager');
+      const conversation = await CustomerServiceManager.getConversationById(conversationId);
+
+      if (!conversation) {
+        await this.showAlertDialog('找不到該對話記錄');
+        return;
+      }
+
+      const modal = document.createElement('div');
+      modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+      `;
+
+      modal.innerHTML = `
+        <div style="
+          background: white;
+          border-radius: 12px;
+          width: 90%;
+          max-width: 800px;
+          max-height: 80vh;
+          overflow-y: auto;
+          padding: 24px;
+        ">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #1f2937; font-size: 18px; font-weight: 600;">對話詳情</h3>
+            <button id="close-conversation-modal" style="
+              background: none;
+              border: none;
+              font-size: 24px;
+              cursor: pointer;
+              color: #6b7280;
+              padding: 0;
+              width: 30px;
+              height: 30px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">&times;</button>
+          </div>
+
+          <div style="margin-bottom: 16px; padding: 16px; background: #f9fafb; border-radius: 8px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 14px;">
+              <div><strong>對話ID:</strong> ${conversation.id}</div>
+              <div><strong>用戶ID:</strong> ${conversation.userId}</div>
+              <div><strong>訊息數:</strong> ${conversation.messages?.length || 0}</div>
+              <div><strong>狀態:</strong> ${conversation.status}</div>
+              <div><strong>建立時間:</strong> ${conversation.createdAt ? new Date(conversation.createdAt).toLocaleString('zh-TW') : '未知'}</div>
+              <div><strong>更新時間:</strong> ${conversation.updatedAt ? new Date(conversation.updatedAt).toLocaleString('zh-TW') : '未知'}</div>
+            </div>
+          </div>
+
+          <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+            <h4 style="margin: 0 0 12px 0; color: #374151; font-size: 16px;">對話記錄</h4>
+            ${conversation.messages && conversation.messages.length > 0 ?
+              conversation.messages.map((msg: any) => `
+                <div style="margin-bottom: 12px; padding: 12px; border-radius: 8px; ${msg.role === 'user' ? 'background: #eff6ff; margin-left: 20px;' : 'background: #f0fdf4; margin-right: 20px;'}">
+                  <div style="font-weight: 600; color: #374151; margin-bottom: 4px;">
+                    ${msg.role === 'user' ? '👤 用戶' : '🤖 助理'}
+                    <span style="font-weight: normal; color: #6b7280; font-size: 12px; margin-left: 8px;">
+                      ${new Date(msg.timestamp).toLocaleString('zh-TW')}
+                    </span>
+                  </div>
+                  <div style="color: #1f2937; line-height: 1.5;">${msg.content}</div>
+                </div>
+              `).join('') :
+              '<p style="color: #6b7280; text-align: center; padding: 20px;">此對話暫無訊息記錄</p>'
+            }
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+            <button id="close-conversation-modal-btn" style="
+              padding: 10px 20px;
+              background: #6b7280;
+              color: white;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              font-size: 14px;
+            ">關閉</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+
+      // 綁定關閉事件
+      const closeBtn = modal.querySelector('#close-conversation-modal');
+      const closeBtnBottom = modal.querySelector('#close-conversation-modal-btn');
+
+      const closeModal = () => {
+        document.body.removeChild(modal);
+      };
+
+      closeBtn?.addEventListener('click', closeModal);
+      closeBtnBottom?.addEventListener('click', closeModal);
+
+      // 點擊背景關閉
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          closeModal();
+        }
+      });
+
+    } catch (error) {
+      console.error('Error showing conversation modal:', error);
+      await this.showAlertDialog('載入對話詳情失敗');
+    }
   }
 }
 

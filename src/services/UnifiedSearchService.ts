@@ -19,67 +19,52 @@ export class UnifiedSearchService {
    * 統一搜尋入口
    * 根據 AgentToolConfig 決定搜尋哪些來源
    */
-  async search(query: string, limit: number = 5): Promise<Source[]> {
-    const toolConfig = StorageService.loadAgentToolConfig();
-    if (!toolConfig) {
-      console.warn('No tool config found, using default');
-      return [];
-    }
-
+  async search(query: string, limit: number = 8): Promise<Source[]> {
     const allResults: Array<Source & { priority: number }> = [];
 
-    // 1. 手動索引搜尋
-    if (toolConfig.manualIndex.enabled) {
-      const manualResults = await this.searchManualIndex(query);
+    // 1. 手動索引搜尋 (3個結果)
+    try {
+      const manualResults = await this.searchManualIndex(query, 3);
       allResults.push(...manualResults.map(r => ({
         ...r,
-        priority: toolConfig.manualIndex.priority
+        priority: 1
       })));
+    } catch (error) {
+      console.log('Manual index search failed:', error);
     }
 
-    // 2. 前端頁面搜尋
-    if (toolConfig.frontendPages.enabled) {
-      const pageResults = await this.searchFrontendPages(query);
-      allResults.push(...pageResults.map(r => ({
+    // 2. Agent內容搜尋 (3個結果)
+    try {
+      const agentContentResults = await this.searchAgentContent(query, 3);
+      allResults.push(...agentContentResults.map(r => ({
         ...r,
-        priority: toolConfig.frontendPages.priority
+        priority: 2
       })));
+    } catch (error) {
+      console.log('Agent content search failed:', error);
     }
 
-    // 3. Sitemap 搜尋
-    if (toolConfig.sitemap.enabled) {
-      const sitemapResults = await this.searchSitemap(query);
-      allResults.push(...sitemapResults.map(r => ({
-        ...r,
-        priority: toolConfig.sitemap.priority
-      })));
-    }
+    // 前端頁面搜尋已移除
 
-    // 4. SQL 資料庫搜尋（暫時跳過，需要後端）
-    // if (toolConfig.sqlDatabase.enabled) {
-    //   const sqlResults = await this.searchSQL(query);
-    //   allResults.push(...sqlResults);
-    // }
-
-    // 5. 根據 priority 和 score 排序
+    // 4. 根據 priority 和 score 排序
     const sortedResults = allResults.sort((a, b) => {
-      // 先按 priority 排序，再按 score 排序
+      // 先按 priority 排序（數字越小優先級越高），再按 score 排序
       if (a.priority !== b.priority) {
-        return b.priority - a.priority;
+        return a.priority - b.priority;
       }
       return (b.score || 0) - (a.score || 0);
     });
 
-    // 6. 返回 top N 結果
+    // 5. 返回結果
     return sortedResults.slice(0, limit).map(({ priority, ...source }) => source);
   }
 
   /**
    * 搜尋手動索引（支持BM25 + Vector Search）
    */
-  private async searchManualIndex(query: string): Promise<Source[]> {
+  private async searchManualIndex(query: string, limit: number = 3): Promise<Source[]> {
     try {
-      const results = await ManualIndexService.search(query, 5);
+      const results = await ManualIndexService.search(query, limit);
 
       return results.map(({ index, score, breakdown }) => ({
         type: 'manual-index' as const,
@@ -101,89 +86,29 @@ export class UnifiedSearchService {
     }
   }
 
-  /**
-   * 搜尋前端頁面（已索引的頁面）
-   */
-  private async searchFrontendPages(query: string): Promise<Source[]> {
-    try {
-      const indexedPages = StorageService.loadIndexedPages();
-      if (indexedPages.length === 0) {
-        return [];
-      }
-
-      const queryKeywords = this.extractor.extractKeywords(query);
-
-      // 計算每個頁面的相似度
-      const results = indexedPages.map(page => {
-        // 簡單的關鍵字匹配
-        const pageText = `${page.title} ${page.snippet}`.toLowerCase();
-        const matchCount = queryKeywords.filter(keyword =>
-          pageText.includes(keyword.toLowerCase())
-        ).length;
-
-        const score = matchCount / queryKeywords.length;
-
-        return {
-          page,
-          score
-        };
-      });
-
-      // 過濾並排序
-      return results
-        .filter(r => r.score > 0)
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 5)
-        .map(({ page, score }) => ({
-          type: 'frontend-page' as const,
-          title: page.title,
-          snippet: page.snippet,
-          content: page.snippet,
-          url: page.url,
-          score,
-          metadata: {
-            keywords: page.keywords
-          }
-        }));
-    } catch (error) {
-      console.error('Error searching frontend pages:', error);
-      return [];
-    }
-  }
+  // 前端頁面搜尋功能已移除
 
   /**
-   * 搜尋 Sitemap 頁面
+   * 搜尋 Agent 內容頁面
    */
-  private async searchSitemap(query: string): Promise<Source[]> {
+  private async searchAgentContent(query: string, limit: number = 3): Promise<Source[]> {
     try {
-      const configs = SitemapService.getAll();
-      const allResults: Source[] = [];
+      const { AgentContentService } = await import('./AgentContentService');
+      const results = await AgentContentService.searchAgentContentPages(query, limit);
 
-      for (const config of configs) {
-        // SitemapService.search 的第二個參數應該是 string[]
-        const queryKeywords = this.extractor.extractKeywords(query);
-        const results = await SitemapService.search(config.id, queryKeywords, 3);
-
-        allResults.push(...results.map(({ page, score }) => ({
-          type: 'sitemap' as const,
-          title: page.title,
-          snippet: page.content.substring(0, 500),
-          content: page.content.substring(0, 500),
-          url: page.url,
-          score,
-          metadata: {
-            domain: config.domain,
-            lastUpdated: config.lastUpdated
-          }
-        })));
-      }
-
-      // 排序並返回 top 5
-      return allResults
-        .sort((a, b) => (b.score || 0) - (a.score || 0))
-        .slice(0, 5);
+      return results.map(result => ({
+        type: 'agent-content' as const,
+        title: result.title,
+        snippet: result.content.substring(0, 500),
+        content: result.content,
+        url: result.url,
+        score: result.score,
+        metadata: {
+          source: result.source
+        }
+      }));
     } catch (error) {
-      console.error('Error searching sitemap:', error);
+      console.error('Error searching agent content:', error);
       return [];
     }
   }

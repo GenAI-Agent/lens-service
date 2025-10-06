@@ -46,6 +46,29 @@ export class SupervisorAgent {
   }
 
   /**
+   * 從SQL數據庫獲取系統設定
+   */
+  private async getSystemSettings(): Promise<{ systemPrompt: string; defaultReply: string }> {
+    try {
+      const response = await fetch('http://localhost:3002/settings');
+      if (response.ok) {
+        const settings = await response.json();
+        const systemPrompt = settings.find((s: any) => s.key === 'system_prompt')?.value || '你是一個專業的客服助理，請根據提供的資料回答用戶問題。如果沒有相關資料，請告知用戶會轉交給人工客服處理。';
+        const defaultReply = settings.find((s: any) => s.key === 'default_reply')?.value || '此問題我們會在 3 小時內給予回覆，請稍候。';
+        return { systemPrompt, defaultReply };
+      }
+    } catch (error) {
+      console.error('Failed to load system settings:', error);
+    }
+
+    // 回退到預設值
+    return {
+      systemPrompt: '你是一個專業的客服助理，請根據提供的資料回答用戶問題。如果沒有相關資料，請告知用戶會轉交給人工客服處理。',
+      defaultReply: '此問題我們會在 3 小時內給予回覆，請稍候。'
+    };
+  }
+
+  /**
    * 處理用戶訊息（新的兩階段流程）
    */
   async processMessage(
@@ -96,7 +119,8 @@ export class SupervisorAgent {
    * 階段 1: 使用 LLM 判斷需要使用哪些 search tools
    */
   private async determineSearchTools(userMessage: string): Promise<string[]> {
-    const availableTools = this.pluginManager.getEnabledPlugins().map(p => ({
+    const enabledPlugins = await this.pluginManager.getEnabledPlugins();
+    const availableTools = enabledPlugins.map((p: any) => ({
       id: p.id,
       name: p.name,
       description: p.description || `Search ${p.name}`
@@ -109,7 +133,7 @@ export class SupervisorAgent {
     const systemPrompt = `你是一個工具選擇助手。根據用戶的問題，判斷需要使用哪些搜尋工具。
 
 可用的工具：
-${availableTools.map(t => `- ${t.id}: ${t.description}`).join('\n')}
+${availableTools.map((t: any) => `- ${t.id}: ${t.description}`).join('\n')}
 
 請以 JSON 格式回覆，例如：
 {
@@ -139,7 +163,7 @@ ${availableTools.map(t => `- ${t.id}: ${t.description}`).join('\n')}
     } catch (error) {
       console.error('Failed to determine tools:', error);
       // 如果解析失敗，默認使用所有工具
-      return availableTools.map(t => t.id);
+      return availableTools.map((t: any) => t.id);
     }
   }
 
@@ -151,8 +175,11 @@ ${availableTools.map(t => `- ${t.id}: ${t.description}`).join('\n')}
     conversationHistory: Message[],
     searchContext: string
   ): Promise<{ response: string; canAnswer: boolean }> {
+    // 從SQL數據庫獲取系統設定
+    const { systemPrompt: baseSystemPrompt, defaultReply } = await this.getSystemSettings();
+
     // 構建系統提示詞
-    let systemPrompt = this.currentRule?.systemPrompt || '你是一個專業的客服助手。';
+    let systemPrompt = this.currentRule?.systemPrompt || baseSystemPrompt;
 
     systemPrompt += `
 
@@ -196,7 +223,12 @@ ${searchContext ? `\n搜尋結果：\n${searchContext}` : '\n沒有找到相關�
       // 判斷是否能回答
       const canAnswer = !response.includes('CANNOT_ANSWER');
 
-      // 如果不能回答，移除 CANNOT_ANSWER 標記
+      // 如果不能回答，使用從SQL獲取的預設回覆
+      if (!canAnswer) {
+        return { response: defaultReply, canAnswer: false };
+      }
+
+      // 如果能回答，移除 CANNOT_ANSWER 標記
       const cleanResponse = response.replace(/CANNOT_ANSWER/g, '').trim();
 
       return { response: cleanResponse || response, canAnswer };

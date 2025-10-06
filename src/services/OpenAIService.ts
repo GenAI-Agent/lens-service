@@ -142,5 +142,30 @@ export class OpenAIService {
     
     return embeddings;
   }
+
+  /**
+   * 發送視覺消息（截圖分析）
+   */
+  async sendVisionMessage(prompt: string, base64Image: string): Promise<string> {
+    const messages = [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: prompt
+          },
+          {
+            type: 'image_url',
+            image_url: {
+              url: base64Image.startsWith('data:') ? base64Image : `data:image/png;base64,${base64Image}`
+            }
+          }
+        ]
+      }
+    ];
+
+    return await this.chatCompletion(messages, 0.7, 1500);
+  }
 }
 

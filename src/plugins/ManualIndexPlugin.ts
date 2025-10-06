@@ -15,7 +15,7 @@ export class ManualIndexPlugin implements SearchPlugin {
 
   async initialize(): Promise<void> {
     // 檢查是否有索引資料
-    const indexes = ManualIndexService.getAll();
+    const indexes = await ManualIndexService.getAll();
     console.log(`📚 Manual Index Plugin: ${indexes.length} indexes loaded`);
   }
 
@@ -44,16 +44,18 @@ export class ManualIndexPlugin implements SearchPlugin {
     }
   }
 
-  isAvailable(): boolean {
+  async isAvailable(): Promise<boolean> {
     // 檢查是否有索引資料
-    return ManualIndexService.getAll().length > 0;
+    const indexes = await ManualIndexService.getAll();
+    return indexes.length > 0;
   }
 
-  getConfig(): any {
+  async getConfig(): Promise<any> {
+    const indexes = await ManualIndexService.getAll();
     return {
       enabled: this.enabled,
       priority: this.priority,
-      indexCount: ManualIndexService.getAll().length
+      indexCount: indexes.length
     };
   }
 

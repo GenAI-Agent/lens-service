@@ -1,13 +1,13 @@
-var Y = Object.defineProperty;
-var J = (m, e, t) => e in m ? Y(m, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : m[e] = t;
-var l = (m, e, t) => J(m, typeof e != "symbol" ? e + "" : e, t);
+var F = Object.defineProperty;
+var U = (g, e, t) => e in g ? F(g, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : g[e] = t;
+var d = (g, e, t) => U(g, typeof e != "symbol" ? e + "" : e, t);
 class j {
   constructor(e) {
-    l(this, "endpoint");
-    l(this, "apiKey");
-    l(this, "deployment");
-    l(this, "embeddingDeployment");
-    l(this, "apiVersion");
+    d(this, "endpoint");
+    d(this, "apiKey");
+    d(this, "deployment");
+    d(this, "embeddingDeployment");
+    d(this, "apiVersion");
     if (!e)
       throw new Error("Azure OpenAI config is required");
     this.endpoint = e.endpoint, this.apiKey = e.apiKey, this.deployment = e.deployment, this.embeddingDeployment = e.embeddingDeployment || "text-embedding-3-small", this.apiVersion = e.apiVersion || "2024-02-15-preview";
@@ -100,8 +100,31 @@ class j {
     }
     return t;
   }
+  /**
+   * 發送視覺消息（截圖分析）
+   */
+  async sendVisionMessage(e, t) {
+    const n = [
+      {
+        role: "user",
+        content: [
+          {
+            type: "text",
+            text: e
+          },
+          {
+            type: "image_url",
+            image_url: {
+              url: t.startsWith("data:") ? t : `data:image/png;base64,${t}`
+            }
+          }
+        ]
+      }
+    ];
+    return await this.chatCompletion(n, 0.7, 1500);
+  }
 }
-class v {
+class b {
   /**
    * 保存對話狀態
    */
@@ -260,11 +283,11 @@ class v {
     return e === this.loadAdminPassword();
   }
 }
-l(v, "CONVERSATION_KEY", "sm_conversation"), l(v, "INDEX_KEY", "sm_indexed_pages"), l(v, "CONFIG_KEY", "sm_config"), l(v, "AGENT_TOOL_CONFIG_KEY", "sm_agent_tool_config"), l(v, "ADMIN_PASSWORD_KEY", "sm_admin_password");
-class V {
+d(b, "CONVERSATION_KEY", "sm_conversation"), d(b, "INDEX_KEY", "sm_indexed_pages"), d(b, "CONFIG_KEY", "sm_config"), d(b, "AGENT_TOOL_CONFIG_KEY", "sm_agent_tool_config"), d(b, "ADMIN_PASSWORD_KEY", "sm_admin_password");
+class H {
   constructor(e, t) {
-    l(this, "openAI");
-    l(this, "siteConfig");
+    d(this, "openAI");
+    d(this, "siteConfig");
     this.openAI = e, this.siteConfig = t;
   }
   /**
@@ -286,7 +309,7 @@ class V {
       }
       await this.sleep(500);
     }
-    v.saveIndexedPages(i), console.log(`Indexing complete. Indexed ${i.length} pages.`);
+    b.saveIndexedPages(i), console.log(`Indexing complete. Indexed ${i.length} pages.`);
   }
   /**
    * 發現本地專案的所有頁面
@@ -321,8 +344,8 @@ class V {
           const a = await this.fetchPage(s);
           this.extractLinks(a, s).forEach((c) => {
             try {
-              const g = new URL(c);
-              this.isSameDomain(g.hostname, r) && n.push(c);
+              const p = new URL(c);
+              this.isSameDomain(p.hostname, r) && n.push(c);
             } catch {
             }
           });
@@ -371,7 +394,7 @@ class V {
   extractContent(e) {
     var s, a;
     const n = new DOMParser().parseFromString(e, "text/html"), o = ((s = n.querySelector("title")) == null ? void 0 : s.textContent) || "";
-    n.querySelectorAll("script, style, nav, footer, header").forEach((d) => d.remove());
+    n.querySelectorAll("script, style, nav, footer, header").forEach((l) => l.remove());
     const r = (((a = n.body) == null ? void 0 : a.textContent) || "").replace(/\s+/g, " ").trim();
     return { title: o, content: r };
   }
@@ -430,14 +453,14 @@ class V {
     return new Promise((t) => setTimeout(t, e));
   }
 }
-class G {
+class B {
   constructor(e, t, n = [], o) {
-    l(this, "openAI");
-    l(this, "pluginManager");
-    l(this, "rules");
-    l(this, "currentRule");
-    l(this, "telegramBotToken");
-    l(this, "telegramChatId");
+    d(this, "openAI");
+    d(this, "pluginManager");
+    d(this, "rules");
+    d(this, "currentRule");
+    d(this, "telegramBotToken");
+    d(this, "telegramChatId");
     this.openAI = e, this.pluginManager = t, this.rules = n, this.telegramBotToken = o == null ? void 0 : o.botToken, this.telegramChatId = o == null ? void 0 : o.chatId, n.length > 0 && (this.currentRule = n.find((i) => i.isActive) || n[0]);
   }
   /**
@@ -448,6 +471,25 @@ class G {
     t && (this.currentRule = t);
   }
   /**
+   * 從SQL數據庫獲取系統設定
+   */
+  async getSystemSettings() {
+    var e, t;
+    try {
+      const n = await fetch("http://localhost:3002/settings");
+      if (n.ok) {
+        const o = await n.json(), i = ((e = o.find((s) => s.key === "system_prompt")) == null ? void 0 : e.value) || "你是一個專業的客服助理，請根據提供的資料回答用戶問題。如果沒有相關資料，請告知用戶會轉交給人工客服處理。", r = ((t = o.find((s) => s.key === "default_reply")) == null ? void 0 : t.value) || "此問題我們會在 3 小時內給予回覆，請稍候。";
+        return { systemPrompt: i, defaultReply: r };
+      }
+    } catch (n) {
+      console.error("Failed to load system settings:", n);
+    }
+    return {
+      systemPrompt: "你是一個專業的客服助理，請根據提供的資料回答用戶問題。如果沒有相關資料，請告知用戶會轉交給人工客服處理。",
+      defaultReply: "此問題我們會在 3 小時內給予回覆，請稍候。"
+    };
+  }
+  /**
    * 處理用戶訊息（新的兩階段流程）
    */
   async processMessage(e, t, n, o) {
@@ -456,12 +498,12 @@ class G {
     console.log("🔧 Tools to use:", i);
     let r = [], s = "";
     i.length > 0 && (console.log("🔍 Searching with tools:", i), r = await this.pluginManager.search(e, 5), s = this.formatSearchContext(r), console.log(`✅ Found ${r.length} results`));
-    const { response: a, canAnswer: d } = await this.generateResponse(
+    const { response: a, canAnswer: l } = await this.generateResponse(
       e,
       t,
       s
     );
-    return d ? { response: a, sources: r, needsHumanReply: !1 } : (console.log("⚠️ Cannot answer, sending to Telegram..."), await this.sendToTelegram(n, o, e), {
+    return l ? { response: a, sources: r, needsHumanReply: !1 } : (console.log("⚠️ Cannot answer, sending to Telegram..."), await this.sendToTelegram(n, o, e), {
       response: "此問題我們會在 3 小時內給予回覆，請稍候。",
       sources: [],
       needsHumanReply: !0
@@ -471,17 +513,17 @@ class G {
    * 階段 1: 使用 LLM 判斷需要使用哪些 search tools
    */
   async determineSearchTools(e) {
-    const t = this.pluginManager.getEnabledPlugins().map((o) => ({
-      id: o.id,
-      name: o.name,
-      description: o.description || `Search ${o.name}`
+    const n = (await this.pluginManager.getEnabledPlugins()).map((i) => ({
+      id: i.id,
+      name: i.name,
+      description: i.description || `Search ${i.name}`
     }));
-    if (t.length === 0)
+    if (n.length === 0)
       return [];
-    const n = `你是一個工具選擇助手。根據用戶的問題，判斷需要使用哪些搜尋工具。
+    const o = `你是一個工具選擇助手。根據用戶的問題，判斷需要使用哪些搜尋工具。
 
 可用的工具：
-${t.map((o) => `- ${o.id}: ${o.description}`).join(`
+${n.map((i) => `- ${i.id}: ${i.description}`).join(`
 `)}
 
 請以 JSON 格式回覆，例如：
@@ -496,26 +538,27 @@ ${t.map((o) => `- ${o.id}: ${o.description}`).join(`
   "reason": "這是一般對話，不需要搜尋"
 }`;
     try {
-      const o = await this.openAI.chatCompletion(
+      const i = await this.openAI.chatCompletion(
         [
-          { role: "system", content: n },
+          { role: "system", content: o },
           { role: "user", content: e }
         ],
         0.3,
         500
-      ), i = JSON.parse(o);
-      return console.log("Tool selection reason:", i.reason), i.tools || [];
-    } catch (o) {
-      return console.error("Failed to determine tools:", o), t.map((i) => i.id);
+      ), r = JSON.parse(i);
+      return console.log("Tool selection reason:", r.reason), r.tools || [];
+    } catch (i) {
+      return console.error("Failed to determine tools:", i), n.map((r) => r.id);
     }
   }
   /**
    * 階段 3: 基於搜尋結果生成回覆
    */
   async generateResponse(e, t, n) {
-    var s, a, d;
-    let o = ((s = this.currentRule) == null ? void 0 : s.systemPrompt) || "你是一個專業的客服助手。";
-    o += `
+    var l, c, p;
+    const { systemPrompt: o, defaultReply: i } = await this.getSystemSettings();
+    let r = ((l = this.currentRule) == null ? void 0 : l.systemPrompt) || o;
+    r += `
 
 你的任務是根據提供的搜尋結果回答用戶問題。
 
@@ -529,29 +572,29 @@ ${n ? `
 搜尋結果：
 ${n}` : `
 沒有找到相關的搜尋結果。`}`;
-    const i = this.getRecentQA(t, 2), r = [
-      { role: "system", content: o }
+    const s = this.getRecentQA(t, 2), a = [
+      { role: "system", content: r }
     ];
-    i.length > 0 && r.push({
+    s.length > 0 && a.push({
       role: "system",
       content: `
---- 對話記憶（前 ${i.length} 次 QA）---
-${i.join(`
+--- 對話記憶（前 ${s.length} 次 QA）---
+${s.join(`
 
 `)}`
-    }), r.push({
+    }), a.push({
       role: "user",
       content: e
     });
     try {
-      const c = await this.openAI.chatCompletion(
-        r,
-        ((a = this.currentRule) == null ? void 0 : a.temperature) || 0.7,
-        ((d = this.currentRule) == null ? void 0 : d.maxTokens) || 1e3
-      ), g = !c.includes("CANNOT_ANSWER");
-      return { response: c.replace(/CANNOT_ANSWER/g, "").trim() || c, canAnswer: g };
-    } catch (c) {
-      return console.error("Failed to generate response:", c), {
+      const h = await this.openAI.chatCompletion(
+        a,
+        ((c = this.currentRule) == null ? void 0 : c.temperature) || 0.7,
+        ((p = this.currentRule) == null ? void 0 : p.maxTokens) || 1e3
+      ), u = !h.includes("CANNOT_ANSWER");
+      return u ? { response: h.replace(/CANNOT_ANSWER/g, "").trim() || h, canAnswer: u } : { response: i, canAnswer: !1 };
+    } catch (h) {
+      return console.error("Failed to generate response:", h), {
         response: "抱歉，系統暫時無法處理您的請求。",
         canAnswer: !1
       };
@@ -646,7 +689,7 @@ User ID: ${t}
     return this.currentRule;
   }
 }
-const b = {
+const f = {
   container: `
     position: fixed;
     top: 0;
@@ -662,10 +705,9 @@ const b = {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.3);
+    background: transparent;
     pointer-events: auto;
     z-index: 1;
-    backdrop-filter: blur(2px);
   `,
   panel: `
     position: fixed;
@@ -712,15 +754,17 @@ const b = {
     line-height: 1.5;
   `,
   assistantMessage: `
-    align-self: flex-start;
-    background: #f3f4f6;
+    align-self: stretch;
+    background: transparent;
     color: #1f2937;
-    padding: 12px 16px;
-    border-radius: 12px;
-    max-width: 80%;
+    padding: 16px 0;
+    border-radius: 0;
+    max-width: 100%;
     word-wrap: break-word;
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 15px;
+    line-height: 1.6;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 16px;
   `,
   sources: `
     margin-top: 8px;
@@ -831,21 +875,38 @@ const b = {
     border-color: #6366f1;
   `
 };
-class W {
+class K {
+  /**
+   * 將 Markdown 文本轉換為 HTML
+   */
+  static render(e) {
+    if (!e) return "";
+    let t = e;
+    return t = t.replace(/```(\w+)?\n([\s\S]*?)```/g, (n, o, i) => `<pre style="background: #f8f9fa; padding: 16px; border-radius: 8px; overflow-x: auto; margin: 12px 0; border-left: 4px solid #6366f1;"><code class="language-${o || ""}" style="font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 13px; line-height: 1.4;">${this.escapeHtml(i.trim())}</code></pre>`), t = t.replace(/`([^`]+)`/g, (n, o) => `<code style="background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace; font-size: 13px; color: #e11d48;">${this.escapeHtml(o)}</code>`), t = t.replace(/^### (.*$)/gm, '<h3 style="font-size: 18px; font-weight: 600; margin: 16px 0 8px 0; color: #1f2937;">$1</h3>'), t = t.replace(/^## (.*$)/gm, '<h2 style="font-size: 20px; font-weight: 600; margin: 20px 0 10px 0; color: #1f2937;">$1</h2>'), t = t.replace(/^# (.*$)/gm, '<h1 style="font-size: 24px; font-weight: 700; margin: 24px 0 12px 0; color: #1f2937;">$1</h1>'), t = t.replace(/\*\*(.*?)\*\*/g, '<strong style="font-weight: 600; color: #1f2937;">$1</strong>'), t = t.replace(/\*(.*?)\*/g, '<em style="font-style: italic;">$1</em>'), t = t.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color: #6366f1; text-decoration: none; border-bottom: 1px solid #6366f1;">$1</a>'), t = t.replace(/^[\s]*[-*+] (.*)$/gm, '<li style="margin: 4px 0; padding-left: 8px;">$1</li>'), t = t.replace(/(<li[^>]*>.*<\/li>)/s, '<ul style="margin: 12px 0; padding-left: 20px; list-style-type: disc;">$1</ul>'), t = t.replace(/^[\s]*\d+\. (.*)$/gm, '<li style="margin: 4px 0; padding-left: 8px;">$1</li>'), t = t.replace(/(<li[^>]*>.*<\/li>)/s, '<ol style="margin: 12px 0; padding-left: 20px;">$1</ol>'), t = t.replace(/^> (.*)$/gm, '<blockquote style="border-left: 4px solid #e5e7eb; padding-left: 16px; margin: 12px 0; color: #6b7280; font-style: italic;">$1</blockquote>'), t = t.replace(/^---$/gm, '<hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">'), t = t.replace(/\n\n/g, '</p><p style="margin: 12px 0; line-height: 1.6; color: #374151;">'), t = t.replace(/\n/g, "<br>"), t.startsWith("<") || (t = `<p style="margin: 12px 0; line-height: 1.6; color: #374151;">${t}</p>`), t;
+  }
+  /**
+   * 轉義 HTML 特殊字符
+   */
+  static escapeHtml(e) {
+    const t = document.createElement("div");
+    return t.textContent = e, t.innerHTML;
+  }
+}
+class Q {
   constructor(e = "33.33%", t = "right") {
-    l(this, "container");
-    l(this, "overlay");
-    l(this, "panel");
-    l(this, "isOpen", !1);
-    l(this, "width");
-    l(this, "position");
-    l(this, "capturedImage", null);
-    l(this, "capturedText", null);
+    d(this, "container");
+    d(this, "overlay");
+    d(this, "panel");
+    d(this, "isOpen", !1);
+    d(this, "width");
+    d(this, "position");
+    d(this, "capturedImage", null);
+    d(this, "capturedText", null);
     // 回調函數
-    l(this, "onSendMessage");
-    l(this, "onSelectRule");
-    l(this, "onClose");
-    l(this, "onOpen");
+    d(this, "onSendMessage");
+    d(this, "onSelectRule");
+    d(this, "onClose");
+    d(this, "onOpen");
     this.width = e, this.position = t, this.container = this.createContainer(), this.overlay = this.createOverlay(), this.panel = this.createPanel();
   }
   /**
@@ -853,40 +914,40 @@ class W {
    */
   createContainer() {
     const e = document.createElement("div");
-    return e.id = "sm-container", e.style.cssText = b.container, e;
+    return e.id = "sm-container", e.style.cssText = f.container, e;
   }
   /**
    * 創建遮罩層
    */
   createOverlay() {
     const e = document.createElement("div");
-    return e.style.cssText = b.overlay, e.style.display = "none", e.addEventListener("click", () => this.close()), e;
+    return e.style.cssText = f.overlay, e.style.display = "none", e.addEventListener("click", () => this.close()), e;
   }
   /**
    * 創建面板
    */
   createPanel() {
     const e = document.createElement("div");
-    return e.style.cssText = b.panel, e.style.width = this.width, this.position === "right" ? (e.style.right = `-${this.width}`, e.style.left = "auto") : (e.style.left = `-${this.width}`, e.style.right = "auto"), e.innerHTML = `
-      <div id="sm-view-container" style="${b.viewContainer}">
+    return e.style.cssText = f.panel, e.style.width = this.width, this.position === "right" ? (e.style.right = `-${this.width}`, e.style.left = "auto") : (e.style.left = `-${this.width}`, e.style.right = "auto"), e.innerHTML = `
+      <div id="sm-view-container" style="${f.viewContainer}">
         <!-- 右上角工具按鈕 -->
         <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; z-index: 10;">
-          <button id="sm-rules-tab" style="${b.iconButton}" title="規則">
+          <button id="sm-rules-tab" style="${f.iconButton}" title="規則">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
             </svg>
           </button>
-          <button id="sm-history-btn" style="${b.iconButton}" title="歷史記錄">
+          <button id="sm-history-btn" style="${f.iconButton}" title="歷史記錄">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </button>
-          <button id="sm-refresh-btn" style="${b.iconButton}" title="刷新">
+          <button id="sm-refresh-btn" style="${f.iconButton}" title="刷新">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0118.8-4.3M22 12.5a10 10 0 01-18.8 4.2"/>
             </svg>
           </button>
-          <button id="sm-close-btn" style="${b.iconButton}" title="關閉">
+          <button id="sm-close-btn" style="${f.iconButton}" title="關閉">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
@@ -894,9 +955,9 @@ class W {
         </div>
 
         <!-- 對話視圖 -->
-        <div id="sm-chat-view" style="${b.chatView}">
-          <div id="sm-messages" style="${b.messagesContainer}"></div>
-          <div style="${b.inputContainer}">
+        <div id="sm-chat-view" style="${f.chatView}">
+          <div id="sm-messages" style="${f.messagesContainer}"></div>
+          <div style="${f.inputContainer}">
             <!-- 圖片預覽（預設隱藏） -->
             <div id="sm-image-preview" style="display: none; margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 8px; position: relative;">
               <img id="sm-preview-img" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;" />
@@ -909,9 +970,9 @@ class W {
                 type="text"
                 id="sm-input"
                 placeholder="輸入訊息..."
-                style="${b.input}"
+                style="${f.input}"
               />
-              <button id="sm-send-btn" style="${b.sendIconButton}" title="發送">
+              <button id="sm-send-btn" style="${f.sendIconButton}" title="發送">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                 </svg>
@@ -921,7 +982,7 @@ class W {
         </div>
 
         <!-- 規則視圖 -->
-        <div id="sm-rules-view" style="${b.rulesView}; display: none;">
+        <div id="sm-rules-view" style="${f.rulesView}; display: none;">
           <div id="sm-rules-list"></div>
         </div>
       </div>
@@ -931,16 +992,28 @@ class W {
    * 綁定事件
    */
   bindEvents(e) {
-    var n, o, i, r, s, a, d;
-    (n = e.querySelector("#sm-close-btn")) == null || n.addEventListener("click", () => {
+    var o, i, r, s, a, l;
+    (o = e.querySelector("#sm-close-btn")) == null || o.addEventListener("click", () => {
       this.close();
-    }), (o = e.querySelector("#sm-send-btn")) == null || o.addEventListener("click", () => {
-      this.handleSend();
     });
-    const t = e.querySelector("#sm-input");
-    t == null || t.addEventListener("keypress", (c) => {
-      c.key === "Enter" && this.handleSend();
-    }), (i = e.querySelector("#sm-chat-tab")) == null || i.addEventListener("click", () => {
+    const t = e.querySelector("#sm-send-btn");
+    t ? (console.log("✅ Send button found, binding click event"), t.addEventListener("click", (c) => {
+      console.log("🔥 Send button clicked via addEventListener!"), c.preventDefault(), c.stopPropagation(), this.handleSend();
+    }), t.onclick = (c) => {
+      console.log("🔥 Send button clicked via onclick!"), c.preventDefault(), c.stopPropagation(), this.handleSend();
+    }, e.addEventListener("click", (c) => {
+      (c.target.id === "sm-send-btn" || c.target.closest("#sm-send-btn")) && (console.log("🔥 Send button clicked via delegation!"), c.preventDefault(), c.stopPropagation(), this.handleSend());
+    })) : console.error("❌ Send button not found!");
+    const n = e.querySelector("#sm-input");
+    n ? (console.log("✅ Input field found, binding events"), n.addEventListener("keypress", (c) => {
+      c.key === "Enter" && (console.log("🔥 Enter key pressed in input"), this.handleSend());
+    }), n.addEventListener("input", (c) => {
+      console.log("🔥 Input event:", c.target.value);
+    }), n.addEventListener("focus", () => {
+      console.log("🔥 Input focused");
+    }), n.addEventListener("blur", () => {
+      console.log("🔥 Input blurred");
+    })) : console.error("❌ Input field not found!"), (i = e.querySelector("#sm-chat-tab")) == null || i.addEventListener("click", () => {
       this.showView("chat");
     }), (r = e.querySelector("#sm-rules-tab")) == null || r.addEventListener("click", () => {
       this.showView("rules");
@@ -948,7 +1021,7 @@ class W {
       this.clearMessages();
     }), (a = e.querySelector("#sm-history-btn")) == null || a.addEventListener("click", () => {
       this.showHistory();
-    }), (d = e.querySelector("#sm-remove-image")) == null || d.addEventListener("click", () => {
+    }), (l = e.querySelector("#sm-remove-image")) == null || l.addEventListener("click", () => {
       this.clearCapturedImage();
     });
   }
@@ -964,7 +1037,7 @@ class W {
    */
   showView(e) {
     const t = this.panel.querySelector("#sm-chat-view"), n = this.panel.querySelector("#sm-rules-view"), o = this.panel.querySelector("#sm-chat-tab"), i = this.panel.querySelector("#sm-rules-tab");
-    e === "chat" ? (t.style.display = "flex", n.style.display = "none", o.style.cssText = b.tabButton + "; " + b.tabButtonActive, i.style.cssText = b.tabButton) : (t.style.display = "none", n.style.display = "block", o.style.cssText = b.tabButton, i.style.cssText = b.tabButton + "; " + b.tabButtonActive);
+    e === "chat" ? (t.style.display = "flex", n.style.display = "none", o.style.cssText = f.tabButton + "; " + f.tabButtonActive, i.style.cssText = f.tabButton) : (t.style.display = "none", n.style.display = "block", o.style.cssText = f.tabButton, i.style.cssText = f.tabButton + "; " + f.tabButtonActive);
   }
   /**
    * 添加訊息
@@ -973,11 +1046,11 @@ class W {
     const t = this.panel.querySelector("#sm-messages");
     if (!t) return;
     const n = document.createElement("div");
-    if (n.style.cssText = e.role === "user" ? b.userMessage : b.assistantMessage, n.textContent = e.content, e.sources && e.sources.length > 0) {
+    if (n.style.cssText = e.role === "user" ? f.userMessage : f.assistantMessage, e.role === "assistant" ? n.innerHTML = K.render(e.content) : n.textContent = e.content, e.sources && e.sources.length > 0) {
       const o = document.createElement("div");
-      o.style.cssText = b.sources, o.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((i, r) => {
+      o.style.cssText = f.sources, o.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((i, r) => {
         const s = document.createElement("a");
-        s.href = i.url, s.target = "_blank", s.textContent = `[${r + 1}] ${i.title}`, s.style.cssText = b.sourceLink, o.appendChild(s), o.appendChild(document.createElement("br"));
+        s.href = i.url, s.target = "_blank", s.textContent = `[${r + 1}] ${i.title}`, s.style.cssText = f.sourceLink, o.appendChild(s), o.appendChild(document.createElement("br"));
       }), n.appendChild(o);
     }
     t.appendChild(n), setTimeout(() => {
@@ -989,15 +1062,27 @@ class W {
    */
   setRules(e, t) {
     const n = this.panel.querySelector("#sm-rules-list");
-    n && (n.innerHTML = "", e.forEach((o) => {
-      const i = document.createElement("div");
-      i.style.cssText = b.ruleItem, o.id === t && (i.style.cssText += "; " + b.ruleItemActive), i.innerHTML = `
-        <h3 style="${b.ruleTitle}">${o.name}</h3>
-        <p style="${b.ruleDescription}">${o.description || ""}</p>
+    if (n) {
+      if (n.innerHTML = "", e.length === 0) {
+        const o = document.createElement("div");
+        o.style.cssText = `
+        padding: 20px;
+        text-align: center;
+        color: #6b7280;
+        font-size: 14px;
+      `, o.textContent = "沒有規則", n.appendChild(o);
+        return;
+      }
+      e.forEach((o) => {
+        const i = document.createElement("div");
+        i.style.cssText = f.ruleItem, o.id === t && (i.style.cssText += "; " + f.ruleItemActive), i.innerHTML = `
+        <h3 style="${f.ruleTitle}">${o.name}</h3>
+        <p style="${f.ruleDescription}">${o.description || ""}</p>
       `, i.addEventListener("click", () => {
-        this.onSelectRule && this.onSelectRule(o.id), this.showView("chat");
-      }), n.appendChild(i);
-    }));
+          this.onSelectRule && this.onSelectRule(o.id), this.showView("chat");
+        }), n.appendChild(i);
+      });
+    }
   }
   /**
    * 清除訊息
@@ -1011,35 +1096,35 @@ class W {
    */
   async showHistory() {
     try {
-      const e = localStorage.getItem("lens_service_user_id") || "default_user", t = await fetch(`/api/conversations?userId=${e}`);
-      if (!t.ok) {
-        console.error("Failed to fetch conversations:", t.statusText), alert("載入歷史記錄失敗，請稍後再試");
+      const e = await fetch("http://localhost:3002/conversations");
+      if (!e.ok) {
+        alert("目前沒有對話記錄");
         return;
       }
-      const n = await t.json();
-      if (n.length === 0)
+      const t = await e.json();
+      if (!Array.isArray(t) || t.length === 0)
         alert("目前沒有對話記錄");
       else {
-        const o = n.map(
-          (i) => `對話 ID: ${i.conversationId}
-時間: ${new Date(i.createdAt).toLocaleString()}
-訊息數: ${Array.isArray(i.messages) ? i.messages.length : 0}`
+        const n = t.map(
+          (o) => `對話 ID: ${o.id}
+時間: ${new Date(o.created_at).toLocaleString()}
+訊息數: ${Array.isArray(o.messages) ? o.messages.length : 0}`
         ).join(`
 
 `);
-        alert(`找到 ${n.length} 條對話記錄
+        alert(`找到 ${t.length} 條對話記錄
 
-${o}`);
+${n}`);
       }
     } catch (e) {
-      console.error("Failed to load history:", e), alert("載入歷史記錄失敗，請檢查網路連接");
+      console.error("Failed to load history:", e), alert("載入歷史記錄失敗");
     }
   }
   /**
    * 打開面板
    */
   open() {
-    this.isOpen || (this.container.parentElement || (document.body.appendChild(this.container), this.container.appendChild(this.overlay), this.container.appendChild(this.panel)), this.pushPageContent(), this.overlay.style.display = "block", setTimeout(() => {
+    this.isOpen || (this.container.parentElement || (document.body.appendChild(this.container), this.container.appendChild(this.overlay), this.container.appendChild(this.panel)), this.overlay.style.display = "block", setTimeout(() => {
       this.position === "right" ? this.panel.style.right = "0" : this.panel.style.left = "0";
     }, 10), this.isOpen = !0, this.onOpen && this.onOpen());
   }
@@ -1047,23 +1132,29 @@ ${o}`);
    * 關閉面板
    */
   close() {
-    this.isOpen && (this.restorePageContent(), this.position === "right" ? this.panel.style.right = `-${this.width}` : this.panel.style.left = `-${this.width}`, setTimeout(() => {
+    this.isOpen && (this.position === "right" ? this.panel.style.right = `-${this.width}` : this.panel.style.left = `-${this.width}`, setTimeout(() => {
       this.overlay.style.display = "none";
     }, 300), this.isOpen = !1, this.onClose && this.onClose());
+  }
+  /**
+   * 檢查面板是否打開
+   */
+  isPanelOpen() {
+    return this.isOpen;
   }
   /**
    * 推動頁面內容
    */
   pushPageContent() {
-    const e = document.body, t = parseFloat(this.width.replace("%", "")), n = t * 0.67;
-    this.position === "right" ? (e.style.transform = `translateX(-${n}%)`, e.style.width = `${100 - t}%`) : (e.style.transform = `translateX(${n}%)`, e.style.width = `${100 - t}%`), e.style.transition = "transform 0.3s ease, width 0.3s ease", e.style.overflow = "hidden";
+    const e = document.body, t = parseFloat(this.width.replace("%", "")), n = 100 - t;
+    this.position === "right" ? (e.style.transform = "translateX(0)", e.style.width = `${n}%`, e.style.marginLeft = "0", e.style.marginRight = "0") : (e.style.transform = `translateX(${t}%)`, e.style.width = `${n}%`, e.style.marginLeft = "0", e.style.marginRight = "0"), e.style.transition = "transform 0.3s ease, width 0.3s ease", e.style.boxSizing = "border-box";
   }
   /**
    * 恢復頁面內容
    */
   restorePageContent() {
     const e = document.body;
-    e.style.transform = "", e.style.width = "", e.style.transition = "", e.style.overflow = "";
+    e.style.transform = "", e.style.width = "", e.style.transition = "", e.style.boxSizing = "", e.style.marginLeft = "", e.style.marginRight = "";
   }
   /**
    * 設置捕獲的圖片
@@ -1084,6 +1175,16 @@ ${o}`);
     e && (e.style.display = "none");
   }
   /**
+   * 將截圖設置到輸入框
+   */
+  setScreenshotInInput(e) {
+    this.capturedImage = e;
+    const t = this.panel.querySelector("#sm-image-preview"), n = this.panel.querySelector("#sm-preview-img");
+    t && n && (n.src = e, t.style.display = "block"), this.isOpen || this.open();
+    const o = this.panel.querySelector("#sm-input");
+    o && o.focus();
+  }
+  /**
    * 設置回調函數
    */
   setCallbacks(e) {
@@ -1096,14 +1197,14 @@ ${o}`);
     this.close(), this.container.parentElement && document.body.removeChild(this.container);
   }
 }
-class X {
+class J {
   constructor() {
-    l(this, "isEnabled", !1);
-    l(this, "onCapture");
+    d(this, "isEnabled", !1);
+    d(this, "onCapture");
     /**
      * 處理點擊事件
      */
-    l(this, "handleClick", async (e) => {
+    d(this, "handleClick", async (e) => {
       if (!e.ctrlKey || !this.isEnabled)
         return;
       e.preventDefault(), e.stopPropagation();
@@ -1195,7 +1296,7 @@ class X {
     }, 500);
   }
 }
-class Q {
+class N {
   /**
    * 提取當前頁面的所有文字內容
    */
@@ -1205,15 +1306,15 @@ class Q {
     n.querySelectorAll("script, style, nav, footer, header, .sm-container").forEach((a) => a.remove());
     const o = ((s = n.textContent) == null ? void 0 : s.replace(/\s+/g, " ").trim()) || "", i = [];
     document.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach((a) => {
-      var g;
-      const d = parseInt(a.tagName.substring(1)), c = ((g = a.textContent) == null ? void 0 : g.trim()) || "";
-      c && i.push({ level: d, text: c });
+      var p;
+      const l = parseInt(a.tagName.substring(1)), c = ((p = a.textContent) == null ? void 0 : p.trim()) || "";
+      c && i.push({ level: l, text: c });
     });
     const r = [];
     return document.querySelectorAll("a[href]").forEach((a) => {
-      var g;
-      const d = ((g = a.textContent) == null ? void 0 : g.trim()) || "", c = a.href;
-      d && c && r.push({ text: d, href: c });
+      var p;
+      const l = ((p = a.textContent) == null ? void 0 : p.trim()) || "", c = a.href;
+      l && c && r.push({ text: l, href: c });
     }), {
       title: e,
       url: t,
@@ -1242,10 +1343,10 @@ class Q {
     for (; i = o.nextNode(); ) {
       const r = i.textContent || "", s = r.toLowerCase();
       if (s.includes(n)) {
-        const a = i.parentElement, d = s.indexOf(n), c = Math.max(0, d - 50), g = Math.min(r.length, d + e.length + 50), x = r.substring(c, g);
+        const a = i.parentElement, l = s.indexOf(n), c = Math.max(0, l - 50), p = Math.min(r.length, l + e.length + 50), h = r.substring(c, p);
         t.push({
           text: r.trim(),
-          context: "..." + x + "...",
+          context: "..." + h + "...",
           element: a
         });
       }
@@ -1253,242 +1354,7 @@ class Q {
     return t;
   }
 }
-class P {
-  /**
-   * 獲取或創建當前用戶
-   */
-  static getCurrentUser() {
-    const e = localStorage.getItem(this.USER_KEY);
-    if (e) {
-      const t = JSON.parse(e), n = this.getOrCreateSessionId();
-      return t.sessionId = n, t.metadata.lastSeen = Date.now(), this.saveUser(t), t;
-    }
-    return this.createNewUser();
-  }
-  /**
-   * 創建新用戶
-   */
-  static createNewUser() {
-    const e = this.generateUserId(), t = this.getOrCreateSessionId(), n = {
-      id: e,
-      sessionId: t,
-      metadata: {
-        userAgent: navigator.userAgent,
-        firstSeen: Date.now(),
-        lastSeen: Date.now(),
-        totalConversations: 0
-      }
-    };
-    return this.saveUser(n), console.log("Created new user:", n.id), n;
-  }
-  /**
-   * 保存用戶資料
-   */
-  static saveUser(e) {
-    localStorage.setItem(this.USER_KEY, JSON.stringify(e));
-  }
-  /**
-   * 獲取或創建 session ID
-   */
-  static getOrCreateSessionId() {
-    let e = sessionStorage.getItem(this.SESSION_KEY);
-    return e || (e = this.generateSessionId(), sessionStorage.setItem(this.SESSION_KEY, e)), e;
-  }
-  /**
-   * 生成用戶 ID
-   */
-  static generateUserId() {
-    return "user_" + this.generateRandomId();
-  }
-  /**
-   * 生成 session ID
-   */
-  static generateSessionId() {
-    return "session_" + this.generateRandomId();
-  }
-  /**
-   * 生成隨機 ID
-   */
-  static generateRandomId() {
-    return Date.now().toString(36) + Math.random().toString(36).substring(2);
-  }
-  /**
-   * 增加用戶的對話計數
-   */
-  static incrementConversationCount() {
-    const e = this.getCurrentUser();
-    e.metadata.totalConversations++, this.saveUser(e);
-  }
-  /**
-   * 獲取用戶 ID
-   */
-  static getUserId() {
-    return this.getCurrentUser().id;
-  }
-  /**
-   * 獲取 session ID
-   */
-  static getSessionId() {
-    return this.getCurrentUser().sessionId;
-  }
-}
-l(P, "USER_KEY", "sm_user"), l(P, "SESSION_KEY", "sm_session");
-class N {
-  /**
-   * 獲取當前對話
-   * 如果沒有活躍對話，創建新對話
-   */
-  static getCurrentConversation() {
-    const e = localStorage.getItem(this.CURRENT_CONVERSATION_KEY);
-    if (e) {
-      const t = this.getConversationById(e);
-      if (t && t.status === "active")
-        return t;
-    }
-    return this.createNewConversation();
-  }
-  /**
-   * 創建新對話
-   */
-  static createNewConversation() {
-    const e = P.getUserId(), t = this.generateConversationId(), n = {
-      id: t,
-      userId: e,
-      messages: [],
-      startedAt: Date.now(),
-      lastMessageAt: Date.now(),
-      status: "active",
-      metadata: {
-        userAgent: navigator.userAgent,
-        referrer: document.referrer
-      }
-    };
-    return this.saveConversation(n), localStorage.setItem(this.CURRENT_CONVERSATION_KEY, t), P.incrementConversationCount(), console.log("Created new conversation:", t), n;
-  }
-  /**
-   * 添加訊息到當前對話
-   */
-  static addMessage(e, t, n, o) {
-    const i = this.getCurrentConversation(), r = {
-      id: this.generateMessageId(),
-      conversationId: i.id,
-      role: e,
-      content: t,
-      imageBase64: n,
-      timestamp: Date.now(),
-      metadata: o
-    };
-    return i.messages.push(r), i.lastMessageAt = Date.now(), this.saveConversation(i), r;
-  }
-  /**
-   * 獲取當前對話的所有訊息
-   */
-  static getMessages() {
-    return this.getCurrentConversation().messages;
-  }
-  /**
-   * 關閉當前對話
-   */
-  static closeCurrentConversation() {
-    const e = this.getCurrentConversation();
-    e.status = "closed", this.saveConversation(e), localStorage.removeItem(this.CURRENT_CONVERSATION_KEY);
-  }
-  /**
-   * 獲取所有對話（用於後台）
-   */
-  static getAllConversations() {
-    const e = localStorage.getItem(this.CONVERSATIONS_KEY);
-    if (!e) return [];
-    try {
-      return JSON.parse(e);
-    } catch (t) {
-      return console.error("Failed to parse conversations:", t), [];
-    }
-  }
-  /**
-   * 根據 ID 獲取對話
-   */
-  static getConversationById(e) {
-    return this.getAllConversations().find((n) => n.id === e) || null;
-  }
-  /**
-   * 根據用戶 ID 獲取對話
-   */
-  static getConversationsByUserId(e) {
-    return this.getAllConversations().filter((n) => n.userId === e);
-  }
-  /**
-   * 保存對話
-   */
-  static saveConversation(e) {
-    const t = this.getAllConversations(), n = t.findIndex((o) => o.id === e.id);
-    n >= 0 ? t[n] = e : t.push(e), localStorage.setItem(this.CONVERSATIONS_KEY, JSON.stringify(t));
-  }
-  /**
-   * 人工接管對話
-   */
-  static takeoverConversation(e, t) {
-    const n = this.getConversationById(e);
-    n && (n.status = "human-takeover", n.humanAgentId = t, this.saveConversation(n));
-  }
-  /**
-   * 添加人工回覆
-   */
-  static addHumanReply(e, t, n) {
-    const o = this.getConversationById(e);
-    if (!o)
-      throw new Error("Conversation not found");
-    const i = {
-      id: this.generateMessageId(),
-      conversationId: e,
-      role: "human-agent",
-      content: t,
-      timestamp: Date.now(),
-      metadata: {
-        agentId: n
-      }
-    };
-    return o.messages.push(i), o.lastMessageAt = Date.now(), this.saveConversation(o), i;
-  }
-  /**
-   * 檢查是否有新訊息（用於輪詢）
-   */
-  static hasNewMessages(e, t) {
-    const n = this.getConversationById(e);
-    if (!n) return !1;
-    const o = n.messages[n.messages.length - 1];
-    return o && o.id !== t;
-  }
-  /**
-   * 獲取新訊息（用於輪詢）
-   */
-  static getNewMessages(e, t) {
-    const n = this.getConversationById(e);
-    if (!n) return [];
-    const o = n.messages.findIndex((i) => i.id === t);
-    return o < 0 ? [] : n.messages.slice(o + 1);
-  }
-  /**
-   * 生成對話 ID
-   */
-  static generateConversationId() {
-    return "conv_" + Date.now().toString(36) + Math.random().toString(36).substring(2);
-  }
-  /**
-   * 生成訊息 ID
-   */
-  static generateMessageId() {
-    return "msg_" + Date.now().toString(36) + Math.random().toString(36).substring(2);
-  }
-  /**
-   * 清除所有對話（用於測試）
-   */
-  static clearAll() {
-    localStorage.removeItem(this.CONVERSATIONS_KEY), localStorage.removeItem(this.CURRENT_CONVERSATION_KEY);
-  }
-}
-l(N, "CONVERSATIONS_KEY", "sm_conversations"), l(N, "CURRENT_CONVERSATION_KEY", "sm_current_conversation");
-class k {
+class S {
   /**
    * 提取頁面主要內容
    */
@@ -1643,10 +1509,10 @@ class k {
       o.forEach((c) => {
         a.includes(c) && (s += 5);
       });
-      const d = r.content.toLowerCase();
+      const l = r.content.toLowerCase();
       return o.forEach((c) => {
-        const g = (d.match(new RegExp(c, "g")) || []).length;
-        s += g * 2;
+        const p = (l.match(new RegExp(c, "g")) || []).length;
+        s += p * 2;
       }), {
         heading: r.heading,
         content: r.content,
@@ -1695,7 +1561,186 @@ class k {
     return o;
   }
 }
-class A {
+class C {
+  /**
+   * 設置配置（為了兼容性）
+   */
+  static setConfig(e) {
+    this.baseUrl = "/api/lens";
+  }
+  /**
+   * 執行SQL查詢（通過Next.js API Routes）
+   */
+  static async query(e, t = []) {
+    try {
+      const o = await (await fetch(`${this.baseUrl}/query`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ sql: e, params: t })
+      })).json();
+      if (!o.success)
+        throw new Error(o.error || "Database query failed");
+      return o.data;
+    } catch (n) {
+      throw console.error("Database query error:", n), n;
+    }
+  }
+  /**
+   * 系統設定相關方法
+   */
+  static async getSettings() {
+    try {
+      const t = await (await fetch(`${this.baseUrl}/settings`)).json();
+      if (!t.success)
+        throw new Error(t.error || "Failed to fetch settings");
+      return t.data;
+    } catch (e) {
+      throw console.error("Get settings error:", e), e;
+    }
+  }
+  static async updateSetting(e, t) {
+    try {
+      const o = await (await fetch(`${this.baseUrl}/settings/${e}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ value: t })
+      })).json();
+      if (!o.success)
+        throw new Error(o.error || "Failed to update setting");
+      return o.data;
+    } catch (n) {
+      throw console.error("Update setting error:", n), n;
+    }
+  }
+  /**
+   * 管理員用戶相關方法
+   */
+  static async getAdminUsers() {
+    try {
+      const t = await (await fetch(`${this.baseUrl}/admin-users`)).json();
+      if (!t.success)
+        throw new Error(t.error || "Failed to fetch admin users");
+      return t.data;
+    } catch (e) {
+      throw console.error("Get admin users error:", e), e;
+    }
+  }
+  static async createAdminUser(e, t, n) {
+    try {
+      const i = await (await fetch(`${this.baseUrl}/admin-users`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username: e, password: t, email: n })
+      })).json();
+      if (!i.success)
+        throw new Error(i.error || "Failed to create admin user");
+      return i.data;
+    } catch (o) {
+      throw console.error("Create admin user error:", o), o;
+    }
+  }
+  static async deleteAdminUser(e) {
+    try {
+      const n = await (await fetch(`${this.baseUrl}/admin-users/${e}`, {
+        method: "DELETE"
+      })).json();
+      if (!n.success)
+        throw new Error(n.error || "Failed to delete admin user");
+      return n.data;
+    } catch (t) {
+      throw console.error("Delete admin user error:", t), t;
+    }
+  }
+  /**
+   * 登入驗證
+   */
+  static async login(e, t) {
+    try {
+      const o = await (await fetch(`${this.baseUrl}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ username: e, password: t })
+      })).json();
+      if (!o.success)
+        throw new Error(o.error || "Login failed");
+      return o.data;
+    } catch (n) {
+      throw console.error("Login error:", n), n;
+    }
+  }
+  /**
+   * 手動索引相關方法
+   */
+  static async getManualIndexes() {
+    return this.query(`
+      SELECT id, name, description, url, content, embedding, metadata, 
+             created_at, updated_at
+      FROM manual_indexes 
+      ORDER BY created_at DESC
+    `);
+  }
+  static async createManualIndex(e) {
+    const t = `
+      INSERT INTO manual_indexes (name, description, url, content, created_at, updated_at)
+      VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      RETURNING id, name, description, url, content, created_at, updated_at
+    `, n = [e.name, e.description, e.url || null, e.content];
+    return (await this.query(t, n))[0];
+  }
+  // 為了兼容性，添加saveManualIndex別名
+  static async saveManualIndex(e) {
+    return this.createManualIndex(e);
+  }
+  static async updateManualIndex(e, t) {
+    const n = `
+      UPDATE manual_indexes 
+      SET name = $1, description = $2, url = $3, content = $4, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $5
+      RETURNING id, name, description, url, content, created_at, updated_at
+    `, o = [t.name, t.description, t.url || null, t.content, e];
+    return (await this.query(n, o))[0];
+  }
+  static async deleteManualIndex(e) {
+    return (await this.query("DELETE FROM manual_indexes WHERE id = $1 RETURNING *", [e]))[0];
+  }
+  /**
+   * 對話記錄相關方法
+   */
+  static async getConversations() {
+    return this.query(`
+      SELECT id, user_id, messages, status, created_at, updated_at
+      FROM conversations 
+      ORDER BY created_at DESC
+    `);
+  }
+  static async deleteConversation(e) {
+    return (await this.query("DELETE FROM conversations WHERE id = $1 RETURNING *", [e]))[0];
+  }
+  /**
+   * 健康檢查
+   */
+  static async healthCheck() {
+    try {
+      return (await (await fetch(`${this.baseUrl.replace("/api", "")}/health`)).json()).status === "healthy";
+    } catch (e) {
+      return console.error("Health check failed:", e), !1;
+    }
+  }
+}
+d(C, "baseUrl", "/api/lens");
+const I = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  DatabaseService: C
+}, Symbol.toStringTag, { value: "Module" }));
+class x {
   /**
    * 設置OpenAI服務實例（用於生成embeddings）
    */
@@ -1705,26 +1750,24 @@ class A {
   /**
    * 獲取所有手動索引
    */
-  static getAll() {
-    const e = localStorage.getItem(this.STORAGE_KEY);
-    if (!e) return [];
+  static async getAll() {
     try {
-      return JSON.parse(e);
-    } catch (t) {
-      return console.error("Failed to parse manual indexes:", t), [];
+      return await C.getManualIndexes();
+    } catch (e) {
+      return console.error("Failed to get manual indexes:", e), [];
     }
   }
   /**
    * 根據 ID 獲取索引
    */
-  static getById(e) {
-    return this.getAll().find((n) => n.id === e) || null;
+  static async getById(e) {
+    return (await this.getAll()).find((n) => n.id === e) || null;
   }
   /**
    * 創建新索引
    */
   static async create(e) {
-    const t = new k(), n = t.extractKeywords(e.content), o = t.generateFingerprint(e.content);
+    const t = new S(), n = t.extractKeywords(e.content), o = t.generateFingerprint(e.content);
     let i;
     if (this.openAIService)
       try {
@@ -1738,24 +1781,25 @@ class A {
       name: e.name,
       description: e.description,
       content: e.content,
+      url: e.url,
       keywords: n,
       fingerprint: o,
       embedding: i,
       metadata: e.metadata || {},
       createdAt: Date.now(),
       updatedAt: Date.now()
-    }, s = this.getAll();
-    return s.push(r), this.saveAll(s), console.log("Created manual index:", r.id), r;
+    }, s = await this.getAll();
+    return s.push(r), await this.saveAll(s), console.log("Created manual index:", r.id), r;
   }
   /**
    * 更新索引
    */
   static async update(e, t) {
-    const n = this.getAll(), o = n.find((i) => i.id === e);
+    const n = await this.getAll(), o = n.find((i) => i.id === e);
     if (!o) return null;
     if (t.name !== void 0 && (o.name = t.name), t.description !== void 0 && (o.description = t.description), t.metadata !== void 0 && (o.metadata = t.metadata), t.content !== void 0) {
       o.content = t.content;
-      const i = new k();
+      const i = new S();
       if (o.keywords = i.extractKeywords(t.content), o.fingerprint = i.generateFingerprint(t.content), this.openAIService)
         try {
           const r = `${o.name} ${o.description} ${t.content}`;
@@ -1764,42 +1808,42 @@ class A {
           console.warn("Failed to update embedding:", r);
         }
     }
-    return o.updatedAt = Date.now(), this.saveAll(n), console.log("Updated manual index:", e), o;
+    return o.updatedAt = Date.now(), await this.saveAll(n), console.log("Updated manual index:", e), o;
   }
   /**
    * 刪除索引
    */
-  static delete(e) {
-    const t = this.getAll(), n = t.filter((o) => o.id !== e);
-    return n.length === t.length ? !1 : (this.saveAll(n), console.log("Deleted manual index:", e), !0);
+  static async delete(e) {
+    const t = await this.getAll();
+    return t.filter((o) => o.id !== e).length === t.length ? !1 : (await C.deleteManualIndex(e), console.log("Deleted manual index:", e), !0);
   }
   /**
    * 搜尋索引（混合搜索：BM25 + Vector Search）
    */
   static async search(e, t = 5) {
-    const n = this.getAll();
+    const n = await this.getAll();
     if (n.length === 0) return [];
-    const o = new k(), i = o.extractKeywords(e), r = o.generateFingerprint(e);
+    const o = new S(), i = o.extractKeywords(e), r = o.generateFingerprint(e);
     let s = null;
     if (this.openAIService)
       try {
         s = await this.openAIService.generateEmbedding(e);
-      } catch (d) {
-        console.warn("Failed to generate query embedding:", d);
+      } catch (l) {
+        console.warn("Failed to generate query embedding:", l);
       }
-    return n.map((d) => {
-      const c = this.calculateBM25Score(i, d), g = this.calculateFingerprintScore(r, d.fingerprint), x = s && d.embedding ? this.calculateCosineSimilarity(s, d.embedding) : 0;
-      let y;
-      return x > 0 ? y = c * 0.4 + x * 0.4 + g * 0.2 : y = c * 0.6 + g * 0.4, {
-        index: d,
-        score: y,
+    return n.map((l) => {
+      const c = this.calculateBM25Score(i, l), p = this.calculateFingerprintScore(r, l.fingerprint), h = s && l.embedding ? this.calculateCosineSimilarity(s, l.embedding) : 0;
+      let u;
+      return h > 0 ? u = c * 0.4 + h * 0.4 + p * 0.2 : u = c * 0.6 + p * 0.4, {
+        index: l,
+        score: u,
         breakdown: {
           bm25Score: c,
-          vectorScore: x,
-          fingerprintScore: g
+          vectorScore: h,
+          fingerprintScore: p
         }
       };
-    }).filter((d) => d.score > 0).sort((d, c) => c.score - d.score).slice(0, t);
+    }).filter((l) => l.score > 0).sort((l, c) => c.score - l.score).slice(0, t);
   }
   /**
    * 計算BM25分數
@@ -1809,10 +1853,10 @@ class A {
     const n = 1.2, o = 0.75, i = t.content.length, r = 1e3;
     let s = 0;
     for (const a of e) {
-      const d = t.keywords.filter((y) => y === a).length;
-      if (d === 0) continue;
-      const c = Math.log(10 / 2), g = d * (n + 1), x = d + n * (1 - o + o * (i / r));
-      s += c * (g / x);
+      const l = t.keywords.filter((u) => u === a).length;
+      if (l === 0) continue;
+      const c = Math.log(10 / 2), p = l * (n + 1), h = l + n * (1 - o + o * (i / r));
+      s += c * (p / h);
     }
     return Math.min(s / e.length, 1);
   }
@@ -1847,8 +1891,9 @@ class A {
   /**
    * 保存所有索引
    */
-  static saveAll(e) {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(e));
+  static async saveAll(e) {
+    for (const t of e)
+      await C.saveManualIndex(t);
   }
   /**
    * 生成 ID
@@ -1859,8 +1904,10 @@ class A {
   /**
    * 清除所有索引（用於測試）
    */
-  static clearAll() {
-    localStorage.removeItem(this.STORAGE_KEY);
+  static async clearAll() {
+    const e = await this.getAll();
+    for (const t of e)
+      await C.deleteManualIndex(t.id);
   }
   /**
    * 匯出索引（JSON）
@@ -1872,13 +1919,13 @@ class A {
   /**
    * 匯入索引（JSON）
    */
-  static importFromJSON(e) {
+  static async importFromJSON(e) {
     try {
       const t = JSON.parse(e);
       if (!Array.isArray(t))
         throw new Error("Invalid format: expected array");
-      const o = [...this.getAll(), ...t];
-      return this.saveAll(o), console.log(`Imported ${t.length} manual indexes`), t.length;
+      const o = [...await this.getAll(), ...t];
+      return await this.saveAll(o), console.log(`Imported ${t.length} manual indexes`), t.length;
     } catch (t) {
       throw console.error("Failed to import indexes:", t), t;
     }
@@ -1889,7 +1936,7 @@ class A {
   static async generateEmbeddingsForAll() {
     if (!this.openAIService)
       return console.warn("OpenAI service not available for embedding generation"), 0;
-    const e = this.getAll();
+    const e = await this.getAll();
     let t = 0;
     for (const n of e)
       if (!n.embedding)
@@ -1899,11 +1946,11 @@ class A {
         } catch (o) {
           console.error(`Failed to generate embedding for ${n.name}:`, o);
         }
-    return t > 0 && (this.saveAll(e), console.log(`Generated embeddings for ${t} indexes`)), t;
+    return t > 0 && (await this.saveAll(e), console.log(`Generated embeddings for ${t} indexes`)), t;
   }
 }
-l(A, "STORAGE_KEY", "sm_manual_indexes"), l(A, "openAIService", null);
-class z {
+d(x, "openAIService", null);
+class A {
   /**
    * 獲取所有 SQL 連接
    */
@@ -2017,14 +2064,14 @@ class z {
     const s = [];
     for (const a of r)
       try {
-        const d = await this.query(a.id, e, t);
-        for (const c of d)
+        const l = await this.query(a.id, e, t);
+        for (const c of l)
           s.push({
             ...c,
             connectionName: a.name
           });
-      } catch (d) {
-        console.error(`Failed to search connection ${a.name}:`, d);
+      } catch (l) {
+        console.error(`Failed to search connection ${a.name}:`, l);
       }
     return s.slice(0, o);
   }
@@ -2065,15 +2112,14 @@ class z {
     return JSON.stringify(e, null, 2);
   }
 }
-l(z, "STORAGE_KEY", "sm_sql_connections");
-var H = {};
-class Z {
+d(A, "STORAGE_KEY", "sm_sql_connections");
+class W {
   constructor() {
-    l(this, "container", null);
-    l(this, "isOpen", !1);
-    l(this, "isAuthenticated", !1);
-    l(this, "currentPage", "dashboard");
-    this.init();
+    d(this, "container", null);
+    d(this, "isOpen", !1);
+    d(this, "isAuthenticated", !1);
+    d(this, "currentPage", "dashboard");
+    window.adminPanel = this, this.init();
   }
   /**
    * 初始化
@@ -2095,20 +2141,21 @@ class Z {
   /**
    * 處理路由變化
    */
-  handleRouteChange() {
+  async handleRouteChange() {
     const e = window.location.pathname;
-    e === "/lens-service" || e.startsWith("/lens-service/") ? this.open() : this.isOpen && this.close();
+    e === "/lens-service" || e.startsWith("/lens-service/") ? await this.open() : this.isOpen && this.close();
   }
   /**
    * 打開後台
    */
-  open() {
-    if (!this.isOpen) {
-      if (!this.checkIPWhitelist()) {
-        alert("您的 IP 不在白名單中，無法訪問管理後台"), window.location.href = "/";
-        return;
-      }
-      this.isOpen = !0, this.container = document.createElement("div"), this.container.id = "lens-service-admin", this.container.style.cssText = `
+  async open() {
+    if (this.isOpen) return;
+    const e = document.getElementById("lens-service-admin");
+    if (e && e.remove(), !this.checkIPWhitelist()) {
+      alert("您的 IP 不在白名單中，無法訪問管理後台"), window.location.href = "/";
+      return;
+    }
+    this.isOpen = !0, this.container = document.createElement("div"), this.container.id = "lens-service-admin", this.container.style.cssText = `
       position: fixed;
       top: 0;
       left: 0;
@@ -2118,8 +2165,7 @@ class Z {
       z-index: 999999;
       overflow: hidden;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    `, this.container.innerHTML = this.isAuthenticated ? this.renderAdminUI() : this.renderLoginUI(), document.body.appendChild(this.container), this.bindEvents();
-    }
+    `, this.container.innerHTML = this.isAuthenticated ? this.renderAdminUI() : this.renderLoginUI(), document.body.appendChild(this.container), this.bindEvents(), this.isAuthenticated && await this.updatePageContent();
   }
   /**
    * 關閉後台
@@ -2234,6 +2280,51 @@ class Z {
     `;
   }
   /**
+   * 顯示編輯對話框
+   */
+  showEditDialog(e, t, n = !1) {
+    return new Promise((o) => {
+      const i = document.createElement("div");
+      i.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+      `;
+      const r = n ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit;">${t}</textarea>` : `<input type="text" id="edit-input" value="${t}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;">`;
+      i.innerHTML = `
+        <div style="background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%;">
+          <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1f2937;">${e}</h3>
+          ${r}
+          <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px;">
+            <button id="cancel-btn" style="padding: 8px 16px; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; cursor: pointer;">取消</button>
+            <button id="save-btn" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">儲存</button>
+          </div>
+        </div>
+      `, document.body.appendChild(i);
+      const s = i.querySelector("#edit-input"), a = i.querySelector("#cancel-btn"), l = i.querySelector("#save-btn");
+      s.focus(), s instanceof HTMLInputElement ? s.select() : s.setSelectionRange(0, s.value.length), a == null || a.addEventListener("click", () => {
+        document.body.removeChild(i), o(null);
+      }), l == null || l.addEventListener("click", () => {
+        const c = s.value.trim();
+        document.body.removeChild(i), o(c);
+      }), s instanceof HTMLInputElement && s.addEventListener("keydown", (c) => {
+        if (c.key === "Enter") {
+          const p = s.value.trim();
+          document.body.removeChild(i), o(p);
+        }
+      }), i.addEventListener("click", (c) => {
+        c.target === i && (document.body.removeChild(i), o(null));
+      });
+    });
+  }
+  /**
    * 顯示自定義確認對話框
    */
   showConfirmDialog(e) {
@@ -2323,174 +2414,126 @@ class Z {
     if (!this.container) return;
     const e = this.container.querySelector("#admin-login-form");
     if (e) {
-      e.addEventListener("submit", async (p) => {
-        p.preventDefault(), p.stopPropagation();
-        const f = this.container.querySelector("#admin-username"), h = this.container.querySelector("#admin-password"), S = (f == null ? void 0 : f.value) || "", w = (h == null ? void 0 : h.value) || "";
-        console.log("Login attempt with username:", S), S === "lens" && w === "1234" ? (console.log("Login successful (local auth)"), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), this.bindEvents()) : this.showAlertDialog("用戶名或密碼錯誤").then(() => {
-          h.value = "", h.focus();
-        });
-      });
-      const u = this.container.querySelector("#admin-username");
-      u && setTimeout(() => {
-        u.focus();
-      }, 100);
-    }
-    this.container.querySelectorAll(".nav-item").forEach((u) => {
-      u.addEventListener("click", () => {
-        const p = u.dataset.page;
-        if (p) {
-          this.currentPage = p;
-          const f = this.container.querySelector("#admin-content");
-          f && (f.innerHTML = this.renderPageContent()), this.container.innerHTML = this.renderAdminUI(), this.bindEvents();
+      e.addEventListener("submit", async (h) => {
+        h.preventDefault(), h.stopPropagation();
+        const u = this.container.querySelector("#admin-username"), m = this.container.querySelector("#admin-password"), y = (u == null ? void 0 : u.value) || "", v = (m == null ? void 0 : m.value) || "";
+        console.log("Login attempt with username:", y);
+        try {
+          const { DatabaseService: w } = await Promise.resolve().then(() => I), z = await w.login(y, v);
+          console.log("Login successful (database auth)"), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), await this.updatePageContent(), this.bindEvents();
+        } catch (w) {
+          console.error("Login error:", w), this.showAlertDialog("登入時發生錯誤，請稍後再試").then(() => {
+            m.value = "", m.focus();
+          });
         }
       });
-    });
-    const n = this.container.querySelector("#admin-logout");
-    n && n.addEventListener("click", () => {
+      const p = this.container.querySelector("#admin-username");
+      p && setTimeout(() => {
+        p.focus();
+      }, 100);
+    }
+    setTimeout(() => {
+      const p = this.container.querySelectorAll(".nav-item");
+      if (console.log("Binding nav items, found:", p.length), p.length === 0 && this.isAuthenticated) {
+        console.warn("Nav items not found, retrying..."), setTimeout(() => this.bindEvents(), 100);
+        return;
+      }
+      p.forEach((h, u) => {
+        console.log(`Binding nav item ${u}:`, h.dataset.page);
+        const m = h.cloneNode(!0);
+        h.parentNode.replaceChild(m, h), m.addEventListener("click", async () => {
+          const y = m.dataset.page;
+          console.log("Nav item clicked:", y), y && (this.currentPage = y, this.container.innerHTML = this.renderAdminUI(), await this.updatePageContent(), this.bindEvents());
+        });
+      });
+    }, 50);
+    const t = this.container.querySelector("#admin-logout");
+    t && t.addEventListener("click", () => {
       this.isAuthenticated = !1, this.container.innerHTML = this.renderLoginUI(), this.bindEvents();
     });
-    const o = this.container.querySelector("#telegram-settings-form");
-    o && o.addEventListener("submit", (u) => {
-      u.preventDefault(), u.stopPropagation();
-      const p = this.container.querySelector("#telegram-enabled"), f = (p == null ? void 0 : p.checked) || !1;
-      this.setTelegramEnabled(f), alert(`Telegram 通知已${f ? "啟用" : "停用"}`);
-      const h = this.container.querySelector("#admin-content");
-      h && (h.innerHTML = this.renderPageContent(), this.bindEvents());
+    const n = this.container.querySelector("#telegram-settings-form");
+    n && n.addEventListener("submit", async (p) => {
+      p.preventDefault(), p.stopPropagation();
+      const h = this.container.querySelector("#telegram-enabled"), u = (h == null ? void 0 : h.checked) || !1;
+      this.setTelegramEnabled(u), alert(`Telegram 通知已${u ? "啟用" : "停用"}`), await this.updatePageContent();
     });
-    const i = this.container.querySelector("#change-password-form");
-    i && i.addEventListener("submit", (u) => {
-      u.preventDefault(), u.stopPropagation();
-      const p = this.container.querySelector("#new-password"), f = (p == null ? void 0 : p.value) || "";
-      if (f.length < 4) {
+    const o = this.container.querySelector("#change-password-form");
+    o && o.addEventListener("submit", async (p) => {
+      p.preventDefault(), p.stopPropagation();
+      const h = this.container.querySelector("#new-password"), u = (h == null ? void 0 : h.value) || "";
+      if (u.length < 4) {
         alert("密碼長度至少 4 個字元");
         return;
       }
-      v.saveAdminPassword(f), alert("密碼已更新");
-      const h = this.container.querySelector("#admin-content");
-      h && (h.innerHTML = this.renderPageContent(), this.bindEvents());
+      b.saveAdminPassword(u), alert("密碼已更新"), await this.updatePageContent();
     });
-    const r = this.container.querySelector("#ip-whitelist-form");
-    r && r.addEventListener("submit", (u) => {
-      u.preventDefault(), u.stopPropagation();
-      const p = this.container.querySelector("#ip-list"), h = ((p == null ? void 0 : p.value) || "").split(`
-`).map((w) => w.trim()).filter((w) => w.length > 0);
-      this.saveIPWhitelist(h), alert(`已更新 IP 白名單（${h.length} 個 IP）`);
-      const S = this.container.querySelector("#admin-content");
-      S && (S.innerHTML = this.renderPageContent(), this.bindEvents());
+    const i = this.container.querySelector("#ip-whitelist-form");
+    i && i.addEventListener("submit", async (p) => {
+      p.preventDefault(), p.stopPropagation();
+      const h = this.container.querySelector("#ip-list"), m = ((h == null ? void 0 : h.value) || "").split(`
+`).map((y) => y.trim()).filter((y) => y.length > 0);
+      this.saveIPWhitelist(m), alert(`已更新 IP 白名單（${m.length} 個 IP）`), await this.updatePageContent();
     });
-    const s = this.container.querySelector("#add-manual-index-form");
-    s && s.addEventListener("submit", async (u) => {
-      u.preventDefault(), u.stopPropagation();
-      const p = this.container.querySelector("#index-name"), f = this.container.querySelector("#index-description"), h = this.container.querySelector("#index-content"), S = (p == null ? void 0 : p.value) || "", w = (f == null ? void 0 : f.value) || "", I = (h == null ? void 0 : h.value) || "";
-      if (!S || !I) {
-        await this.showAlertDialog("請填寫名稱和內容");
-        return;
-      }
-      try {
-        await A.create({ name: S, description: w, content: I }), await this.showAlertDialog("索引已新增");
-        const E = this.container.querySelector("#admin-content");
-        E && (E.innerHTML = this.renderPageContent(), this.bindEvents());
-      } catch (E) {
-        await this.showAlertDialog(`新增失敗：${E instanceof Error ? E.message : "未知錯誤"}`);
-      }
-    }), this.container.querySelectorAll(".edit-index-btn").forEach((u) => {
-      u.addEventListener("click", () => {
-        const p = u.dataset.id;
-        p && this.showEditIndexModal(p);
-      });
-    }), this.container.querySelectorAll(".delete-index-btn").forEach((u) => {
-      u.addEventListener("click", async () => {
-        const p = u.dataset.id;
-        if (p && await this.showConfirmDialog("確定要刪除這個索引嗎？"))
-          try {
-            A.delete(p), await this.showAlertDialog("索引已刪除");
-            const h = this.container.querySelector("#admin-content");
-            h && (h.innerHTML = this.renderPageContent(), this.bindEvents());
-          } catch (h) {
-            await this.showAlertDialog(`刪除失敗：${h instanceof Error ? h.message : "未知錯誤"}`);
-          }
-      });
-    });
-    const c = this.container.querySelector("#generate-embeddings-btn");
-    c && c.addEventListener("click", async () => {
-      if (await this.showConfirmDialog("確定要為所有索引生成向量嵌入嗎？這可能需要一些時間。"))
-        try {
-          const p = c;
-          p.disabled = !0, p.textContent = "生成中...";
-          const f = await A.generateEmbeddingsForAll();
-          await this.showAlertDialog(`成功為 ${f} 個索引生成了向量嵌入`);
-          const h = this.container.querySelector("#admin-content");
-          h && (h.innerHTML = this.renderPageContent(), this.bindEvents());
-        } catch (p) {
-          await this.showAlertDialog(`生成失敗：${p instanceof Error ? p.message : "未知錯誤"}`);
-        }
-    });
-    const g = this.container.querySelector("#api-config-form");
-    g && g.addEventListener("submit", (u) => {
-      var _, R, $, L, q, M;
-      u.preventDefault(), u.stopPropagation();
-      const p = ((_ = this.container.querySelector("#llm-endpoint")) == null ? void 0 : _.value) || "", f = ((R = this.container.querySelector("#llm-api-key")) == null ? void 0 : R.value) || "", h = (($ = this.container.querySelector("#llm-deployment")) == null ? void 0 : $.value) || "", S = ((L = this.container.querySelector("#embed-endpoint")) == null ? void 0 : L.value) || "", w = ((q = this.container.querySelector("#embed-api-key")) == null ? void 0 : q.value) || "", I = ((M = this.container.querySelector("#embed-deployment")) == null ? void 0 : M.value) || "", E = {
+    const r = this.container.querySelector("#api-config-form");
+    r && r.addEventListener("submit", (p) => {
+      var L, q, k, $, T, P;
+      p.preventDefault(), p.stopPropagation();
+      const h = ((L = this.container.querySelector("#llm-endpoint")) == null ? void 0 : L.value) || "", u = ((q = this.container.querySelector("#llm-api-key")) == null ? void 0 : q.value) || "", m = ((k = this.container.querySelector("#llm-deployment")) == null ? void 0 : k.value) || "", y = (($ = this.container.querySelector("#embed-endpoint")) == null ? void 0 : $.value) || "", v = ((T = this.container.querySelector("#embed-api-key")) == null ? void 0 : T.value) || "", w = ((P = this.container.querySelector("#embed-deployment")) == null ? void 0 : P.value) || "", z = {
         azureOpenAI: {
-          endpoint: p,
-          apiKey: f,
-          deployment: h,
-          embeddingDeployment: I
+          endpoint: h,
+          apiKey: u,
+          deployment: m,
+          embeddingDeployment: w
         },
         llmAPI: {
-          endpoint: p,
-          apiKey: f,
-          deployment: h
+          endpoint: h,
+          apiKey: u,
+          deployment: m
         },
         embeddingAPI: {
-          endpoint: S,
-          apiKey: w,
-          deployment: I
+          endpoint: y,
+          apiKey: v,
+          deployment: w
         }
       };
-      v.saveConfig(E), alert("API 設定已儲存");
+      b.saveConfig(z), alert("API 設定已儲存");
     });
-    const x = this.container.querySelector("#agent-tool-config-form");
-    x && x.addEventListener("submit", (u) => {
-      var S, w;
-      u.preventDefault(), u.stopPropagation();
-      const p = ((S = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : S.checked) || !1, f = ((w = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : w.checked) || !1, h = v.loadAgentToolConfig();
-      if (h) {
-        h.manualIndex.enabled = p, h.frontendPages.enabled = f, v.saveAgentToolConfig(h), alert("Agent 設定已儲存");
-        const I = this.container.querySelector("#admin-content");
-        I && (I.innerHTML = this.renderPageContent(), this.bindEvents());
-      }
+    const s = this.container.querySelector("#agent-tool-config-form");
+    s && s.addEventListener("submit", async (p) => {
+      var y, v;
+      p.preventDefault(), p.stopPropagation();
+      const h = ((y = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : y.checked) || !1, u = ((v = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : v.checked) || !1, m = b.loadAgentToolConfig();
+      m && (m.manualIndex.enabled = h, m.frontendPages.enabled = u, b.saveAgentToolConfig(m), alert("Agent 設定已儲存"), await this.updatePageContent());
     });
-    const y = this.container.querySelector("#sql-plugin-config-form");
-    y && y.addEventListener("submit", (u) => {
-      var L, q, M, D, F, U, K, B;
-      u.preventDefault(), u.stopPropagation();
-      const p = ((L = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : L.checked) || !1, f = parseInt(((q = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : q.value) || "5"), h = ((M = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : M.value) || "", S = ((D = this.container.querySelector("#sql-connection-id")) == null ? void 0 : D.value) || "", w = ((F = this.container.querySelector("#sql-search-table")) == null ? void 0 : F.value) || "knowledge_base", I = ((U = this.container.querySelector("#sql-title-column")) == null ? void 0 : U.value) || "title", E = ((K = this.container.querySelector("#sql-content-column")) == null ? void 0 : K.value) || "content", _ = ((B = this.container.querySelector("#sql-url-column")) == null ? void 0 : B.value) || "url", R = {
-        enabled: p,
-        priority: f,
-        apiEndpoint: h,
-        connectionId: S,
-        searchTable: w,
-        titleColumn: I,
-        contentColumn: E,
-        urlColumn: _
+    const a = this.container.querySelector("#sql-plugin-config-form");
+    a && a.addEventListener("submit", async (p) => {
+      var k, $, T, P, D, O, _, R;
+      p.preventDefault(), p.stopPropagation();
+      const h = ((k = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : k.checked) || !1, u = parseInt((($ = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : $.value) || "5"), m = ((T = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : T.value) || "", y = ((P = this.container.querySelector("#sql-connection-id")) == null ? void 0 : P.value) || "", v = ((D = this.container.querySelector("#sql-search-table")) == null ? void 0 : D.value) || "knowledge_base", w = ((O = this.container.querySelector("#sql-title-column")) == null ? void 0 : O.value) || "title", z = ((_ = this.container.querySelector("#sql-content-column")) == null ? void 0 : _.value) || "content", L = ((R = this.container.querySelector("#sql-url-column")) == null ? void 0 : R.value) || "url", q = {
+        enabled: h,
+        priority: u,
+        apiEndpoint: m,
+        connectionId: y,
+        searchTable: v,
+        titleColumn: w,
+        contentColumn: z,
+        urlColumn: L
       };
-      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(R)), alert("SQL Plugin 設定已儲存");
-      const $ = this.container.querySelector("#admin-content");
-      $ && ($.innerHTML = this.renderPageContent(), this.bindEvents());
+      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(q)), alert("SQL Plugin 設定已儲存"), await this.updatePageContent();
     });
-    const C = this.container.querySelector("#sql-connection-form");
-    C && C.addEventListener("submit", (u) => {
-      var h, S;
-      u.preventDefault(), u.stopPropagation();
-      const p = ((h = this.container.querySelector("#sql-conn-name")) == null ? void 0 : h.value) || "", f = (S = this.container.querySelector("#sql-conn-type")) == null ? void 0 : S.value;
-      if (!p) {
+    const l = this.container.querySelector("#sql-connection-form");
+    l && l.addEventListener("submit", async (p) => {
+      var m, y;
+      p.preventDefault(), p.stopPropagation();
+      const h = ((m = this.container.querySelector("#sql-conn-name")) == null ? void 0 : m.value) || "", u = (y = this.container.querySelector("#sql-conn-type")) == null ? void 0 : y.value;
+      if (!h) {
         alert("請輸入連接名稱");
         return;
       }
       try {
-        z.create({
-          name: p,
-          type: f,
+        A.create({
+          name: h,
+          type: u,
           host: "localhost",
           port: 3306,
           database: "mydb",
@@ -2502,22 +2545,18 @@ class Z {
             contentField: "content",
             urlField: "url"
           }
-        }), alert("SQL 連接已新增");
-        const w = this.container.querySelector("#admin-content");
-        w && (w.innerHTML = this.renderPageContent(), this.bindEvents());
-      } catch (w) {
-        console.error("Error creating SQL connection:", w), alert("新增失敗");
+        }), alert("SQL 連接已新增"), await this.updatePageContent();
+      } catch (v) {
+        console.error("Error creating SQL connection:", v), alert("新增失敗");
       }
-    }), this.container.querySelectorAll(".delete-sql-connection").forEach((u) => {
-      u.addEventListener("click", () => {
-        const p = u.dataset.id;
-        if (p && confirm("確定要刪除這個連接嗎？"))
+    }), this.container.querySelectorAll(".delete-sql-connection").forEach((p) => {
+      p.addEventListener("click", async () => {
+        const h = p.dataset.id;
+        if (h && confirm("確定要刪除這個連接嗎？"))
           try {
-            z.delete(p), alert("連接已刪除");
-            const f = this.container.querySelector("#admin-content");
-            f && (f.innerHTML = this.renderPageContent(), this.bindEvents());
-          } catch (f) {
-            console.error("Error deleting SQL connection:", f), alert("刪除失敗");
+            A.delete(h), alert("連接已刪除"), await this.updatePageContent();
+          } catch (u) {
+            console.error("Error deleting SQL connection:", u), alert("刪除失敗");
           }
       });
     });
@@ -2529,7 +2568,7 @@ class Z {
     return `
       <div style="display: flex; height: 100vh;">
         <!-- 左側導航 -->
-        <div style="width: 250px; background: white; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column;">
+        <div style="width: 25%; min-width: 300px; background: white; border-right: 1px solid #e5e7eb; display: flex; flex-direction: column;">
           <div style="padding: 24px; border-bottom: 1px solid #e5e7eb;">
             <h1 style="font-size: 20px; font-weight: 700; margin: 0; color: #1f2937;">Lens Service</h1>
             <p style="font-size: 12px; color: #6b7280; margin: 4px 0 0 0;">管理後台</p>
@@ -2537,8 +2576,8 @@ class Z {
 
           <nav style="flex: 1; padding: 16px; overflow-y: auto;">
             ${this.renderNavItem("dashboard", "儀表板")}
+            ${this.renderNavItem("conversations", "客服對話")}
             ${this.renderNavItem("manual-index", "手動索引")}
-            ${this.renderNavItem("conversations", "客服記錄")}
             ${this.renderNavItem("system", "系統設定")}
           </nav>
 
@@ -2552,7 +2591,7 @@ class Z {
         <!-- 右側內容區 -->
         <div style="flex: 1; overflow-y: auto; padding: 32px; background: #f9fafb;">
           <div id="admin-content">
-            ${this.renderPageContent()}
+            <!-- 內容將通過updatePageContent()異步載入 -->
           </div>
         </div>
       </div>
@@ -2589,63 +2628,175 @@ class Z {
   /**
    * 渲染頁面內容
    */
-  renderPageContent() {
+  async renderPageContent() {
     switch (this.currentPage) {
       case "dashboard":
-        return this.renderDashboard();
+        return await this.renderDashboard();
       case "manual-index":
-        return this.renderManualIndex();
+        return await this.renderManualIndex();
       case "conversations":
-        return this.renderConversations();
+        return await this.renderConversations();
       case "system":
-        return this.renderSystemSettings();
+        return await this.renderSystemSettings();
       default:
         return "<p>頁面不存在</p>";
     }
   }
   /**
+   * 更新頁面內容（async helper）
+   */
+  async updatePageContent() {
+    const e = this.container.querySelector("#admin-content");
+    e && (e.innerHTML = await this.renderPageContent(), this.bindContentEvents());
+  }
+  /**
+   * 綁定內容區域的事件
+   */
+  bindContentEvents() {
+    this.container && (this.bindManualIndexEvents(), this.bindCustomerServiceEvents(), this.bindAdminUserEvents(), this.bindSystemSettingsEvents());
+  }
+  /**
+   * 綁定手動索引相關事件
+   */
+  bindManualIndexEvents() {
+    const e = this.container.querySelector("#add-index-btn");
+    e && e.addEventListener("click", async () => {
+      await this.showAddIndexModal();
+    });
+    const t = this.container.querySelector("#generate-embeddings-btn");
+    t && t.addEventListener("click", async () => {
+      try {
+        const i = t;
+        i.disabled = !0, i.textContent = "生成中...";
+        const r = await x.generateEmbeddingsForAll();
+        await this.showAlertDialog(`成功為 ${r} 個索引生成了向量嵌入`), await this.updatePageContent();
+      } catch (i) {
+        await this.showAlertDialog(`生成失敗：${i instanceof Error ? i.message : "未知錯誤"}`);
+      } finally {
+        const i = t;
+        i.disabled = !1, i.textContent = "生成所有Embeddings";
+      }
+    }), this.container.querySelectorAll(".edit-index-btn").forEach((i) => {
+      i.addEventListener("click", async () => {
+        const r = i.dataset.id;
+        r && await this.showEditIndexModal(r);
+      });
+    }), this.container.querySelectorAll(".delete-index-btn").forEach((i) => {
+      i.addEventListener("click", async () => {
+        const r = i.dataset.id;
+        r && await this.showDeleteConfirmDialog(r);
+      });
+    });
+  }
+  /**
+   * 綁定客服對話相關事件
+   */
+  bindCustomerServiceEvents() {
+    const e = this.container.querySelector("#refresh-conversations");
+    e && e.addEventListener("click", async () => {
+      await this.updatePageContent();
+    }), this.container.querySelectorAll(".view-conversation-btn").forEach((o) => {
+      o.addEventListener("click", async (i) => {
+        const r = i.target.getAttribute("data-id");
+        r && await this.showConversationModal(r);
+      });
+    }), this.container.querySelectorAll(".delete-conversation-btn").forEach((o) => {
+      o.addEventListener("click", async (i) => {
+        const r = i.target.getAttribute("data-id");
+        if (r && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
+          try {
+            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-CDEnprzI.mjs");
+            await a.deleteConversation(r), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
+          } catch (a) {
+            await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
+          }
+      });
+    });
+  }
+  /**
+   * 綁定管理員相關事件
+   */
+  bindAdminUserEvents() {
+  }
+  /**
+   * 綁定系統設定相關事件
+   */
+  bindSystemSettingsEvents() {
+    const e = this.container.querySelector("#edit-default-reply-btn");
+    e && e.addEventListener("click", async () => {
+      const i = this.container.querySelector("#default-reply-display"), r = i.textContent || "", s = await this.showEditDialog("編輯預設回覆", r, !0);
+      if (s !== null)
+        try {
+          const { DatabaseService: a } = await Promise.resolve().then(() => I);
+          await a.updateSetting("default_reply", s), i.textContent = s, await this.showAlertDialog("預設回覆已更新");
+        } catch (a) {
+          console.error("Failed to save default reply:", a), await this.showAlertDialog("儲存失敗，請稍後再試");
+        }
+    });
+    const t = this.container.querySelector("#edit-system-prompt-btn");
+    t && t.addEventListener("click", async () => {
+      const i = this.container.querySelector("#system-prompt-display"), r = i.textContent || "", s = await this.showEditDialog("編輯系統提示詞", r, !0);
+      if (s !== null)
+        try {
+          const { DatabaseService: a } = await Promise.resolve().then(() => I);
+          await a.updateSetting("system_prompt", s), i.textContent = s, await this.showAlertDialog("系統提示詞已更新");
+        } catch (a) {
+          console.error("Failed to save system prompt:", a), await this.showAlertDialog("儲存失敗，請稍後再試");
+        }
+    });
+    const n = this.container.querySelector("#add-admin-user-btn");
+    n && n.addEventListener("click", async () => {
+      await this.showAddAdminUserModal();
+    }), this.container.querySelectorAll(".delete-admin-user-btn").forEach((i) => {
+      i.addEventListener("click", async () => {
+        const r = i.dataset.id;
+        if (r && await this.showConfirmDialog("確定要刪除此管理員帳號嗎？此操作無法復原。"))
+          try {
+            const { DatabaseService: a } = await Promise.resolve().then(() => I);
+            await a.deleteAdminUser(r), await this.showAlertDialog("管理員帳號已刪除"), await this.updatePageContent();
+          } catch (a) {
+            console.error("Failed to delete admin user:", a), await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
+          }
+      });
+    });
+  }
+  /**
    * 渲染儀表板
    */
-  renderDashboard() {
-    var o, i;
-    const e = N.getAllConversations(), t = A.getAll(), n = v.loadAgentToolConfig();
+  async renderDashboard() {
+    let e = [], t = [], n = "連接失敗";
+    try {
+      const [o, i] = await Promise.all([
+        fetch("http://localhost:3002/conversations").catch(() => null),
+        fetch("http://localhost:3002/manual-indexes").catch(() => null)
+      ]);
+      o != null && o.ok && (e = await o.json(), n = "正常連接"), i != null && i.ok && (t = await i.json());
+    } catch (o) {
+      console.error("Failed to load dashboard data:", o);
+    }
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">儀表板</h2>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 24px; margin-bottom: 32px;">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 32px;">
         ${this.renderStatCard("💬", "對話總數", e.length.toString())}
         ${this.renderStatCard("📝", "手動索引", t.length.toString())}
       </div>
 
-      <!-- Agent 設定 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">Agent 設定</h3>
-        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">配置 Agent 使用的搜尋工具</p>
-
-        <form id="agent-tool-config-form">
-          <div style="margin-bottom: 16px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
-              <input type="checkbox" id="manual-index-enabled" ${(o = n == null ? void 0 : n.manualIndex) != null && o.enabled ? "checked" : ""} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;" />
-              <span style="font-size: 14px; color: #374151; font-weight: 500;">啟用手動索引搜尋</span>
-            </label>
-            <p style="margin: 4px 0 0 26px; font-size: 12px; color: #6b7280;">搜尋手動新增的索引內容</p>
+      <!-- 系統狀態 -->
+      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">系統狀態</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px;">
+            <span style="font-size: 14px; color: #374151;">Telegram通知:</span>
+            <span style="font-size: 14px; color: #059669; font-weight: 500;">✅ 已啟用</span>
           </div>
-
-          <div style="margin-bottom: 16px;">
-            <label style="display: flex; align-items: center; cursor: pointer;">
-              <input type="checkbox" id="frontend-pages-enabled" ${(i = n == null ? void 0 : n.frontendPages) != null && i.enabled ? "checked" : ""} style="margin-right: 8px; width: 18px; height: 18px; cursor: pointer;" />
-              <span style="font-size: 14px; color: #374151; font-weight: 500;">啟用前端頁面搜尋</span>
-            </label>
-            <p style="margin: 4px 0 0 26px; font-size: 12px; color: #6b7280;">搜尋當前網站的所有頁面內容</p>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px;">
+            <span style="font-size: 14px; color: #374151;">數據庫連接:</span>
+            <span style="font-size: 14px; color: ${n === "正常連接" ? "#059669" : "#dc2626"}; font-weight: 500;">
+              ${n === "正常連接" ? "✅" : "❌"} ${n}
+            </span>
           </div>
-
-          <button
-            type="submit"
-            style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
-          >
-            儲存設定
-          </button>
-        </form>
+        </div>
       </div>
     `;
   }
@@ -2664,59 +2815,20 @@ class Z {
   /**
    * 渲染手動索引頁面
    */
-  renderManualIndex() {
-    const e = A.getAll();
+  async renderManualIndex() {
+    const e = await x.getAll();
     return `
-      <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">手動索引</h2>
-      <p style="color: #6b7280; margin-bottom: 24px;">手動新增索引內容供 Agent 搜尋</p>
-
-      <!-- 新增索引表單 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">新增索引</h3>
-
-        <form id="add-manual-index-form">
-          <div style="margin-bottom: 16px;">
-            <label for="index-name" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">名稱</label>
-            <input
-              type="text"
-              id="index-name"
-              name="name"
-              placeholder="例如：產品介紹"
-              required
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
-            />
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <label for="index-description" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">描述</label>
-            <input
-              type="text"
-              id="index-description"
-              name="description"
-              placeholder="簡短描述這個索引的內容"
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
-            />
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <label for="index-content" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">內容</label>
-            <textarea
-              id="index-content"
-              name="content"
-              placeholder="輸入索引內容..."
-              rows="8"
-              required
-              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937; resize: vertical;"
-            ></textarea>
-          </div>
-
-          <button
-            type="submit"
-            style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
-          >
-            新增索引
-          </button>
-        </form>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+        <div>
+          <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: #1f2937;">手動索引</h2>
+          <p style="color: #6b7280; margin: 0;">手動新增索引內容供 Agent 搜尋</p>
+        </div>
+        <button
+          id="add-index-btn"
+          style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
+        >
+          + 新增索引
+        </button>
       </div>
 
       <!-- 索引列表 -->
@@ -2737,11 +2849,16 @@ class Z {
           <div style="display: flex; flex-direction: column; gap: 12px;">
             ${e.map((t) => `
               <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
                   <div style="flex: 1;">
                     <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">${t.name}</h4>
-                    <p style="font-size: 14px; color: #6b7280; margin: 0;">${t.description || "無描述"}</p>
-                    ${t.embedding ? '<span style="font-size: 11px; background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block;">✓ 已生成向量</span>' : '<span style="font-size: 11px; background: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; margin-top: 4px; display: inline-block;">⚠ 未生成向量</span>'}
+                    <p style="font-size: 14px; color: #6b7280; margin: 0 0 8px 0;">${t.description || "無描述"}</p>
+                    ${t.url ? `<p style="font-size: 12px; color: #3b82f6; margin: 0 0 8px 0; font-family: monospace;"><a href="${t.url}" target="_blank" style="color: inherit; text-decoration: none;">${t.url}</a></p>` : ""}
+                    ${t.embedding ? '<span style="font-size: 11px; background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; display: inline-block;">✓ 已生成向量</span>' : '<span style="font-size: 11px; background: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; display: inline-block;">⚠ 未生成向量</span>'}
+                    <p style="font-size: 12px; color: #9ca3af; margin: 8px 0 0 0;">
+                      建立時間：${new Date(t.createdAt).toLocaleString("zh-TW")}
+                      ${t.updatedAt !== t.createdAt ? ` | 更新時間：${new Date(t.updatedAt).toLocaleString("zh-TW")}` : ""}
+                    </p>
                   </div>
                   <div style="display: flex; gap: 8px;">
                     <button
@@ -2760,13 +2877,6 @@ class Z {
                     </button>
                   </div>
                 </div>
-                <p style="font-size: 13px; color: #9ca3af; margin: 8px 0 0 0;">
-                  ${t.content.substring(0, 150)}${t.content.length > 150 ? "..." : ""}
-                </p>
-                <p style="font-size: 12px; color: #9ca3af; margin: 8px 0 0 0;">
-                  建立時間：${new Date(t.createdAt).toLocaleString("zh-TW")}
-                  ${t.updatedAt !== t.createdAt ? ` | 更新時間：${new Date(t.updatedAt).toLocaleString("zh-TW")}` : ""}
-                </p>
               </div>
             `).join("")}
           </div>
@@ -2791,7 +2901,7 @@ class Z {
    * 渲染 SQL 資料庫頁面
    */
   renderSQL() {
-    const e = z.getAll(), t = this.loadSQLPluginConfig();
+    const e = A.getAll(), t = this.loadSQLPluginConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">SQL 資料庫</h2>
       <p style="color: #6b7280; margin-bottom: 24px;">連接 SQL 資料庫作為搜尋來源</p>
@@ -2988,118 +3098,11 @@ class Z {
     };
   }
   /**
-   * 渲染客服記錄頁面
-   */
-  renderConversations() {
-    const e = N.getAllConversations();
-    return `
-      <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">客服記錄</h2>
-      <p style="color: #6b7280; margin-bottom: 24px;">查看所有用戶對話記錄</p>
-
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">統計資訊</h3>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-          <div style="padding: 16px; background: #f9fafb; border-radius: 8px;">
-            <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">總對話數</div>
-            <div style="font-size: 24px; font-weight: 700; color: #1f2937;">${e.length}</div>
-          </div>
-          <div style="padding: 16px; background: #f9fafb; border-radius: 8px;">
-            <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">總訊息數</div>
-            <div style="font-size: 24px; font-weight: 700; color: #1f2937;">${e.reduce((t, n) => t + n.messages.length, 0)}</div>
-          </div>
-          <div style="padding: 16px; background: #f9fafb; border-radius: 8px;">
-            <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">活躍用戶</div>
-            <div style="font-size: 24px; font-weight: 700; color: #1f2937;">${new Set(e.map((t) => t.userId)).size}</div>
-          </div>
-        </div>
-      </div>
-
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">對話列表</h3>
-
-        ${e.length === 0 ? `
-          <p style="color: #9ca3af; text-align: center; padding: 32px 0;">尚無對話記錄</p>
-        ` : `
-          <div style="display: flex; flex-direction: column; gap: 16px;">
-            ${e.slice().reverse().map((t) => {
-      const n = t.messages[t.messages.length - 1], o = t.messages.length, i = t.messages.filter((s) => s.role === "user").length, r = t.messages.filter((s) => s.role === "assistant").length;
-      return `
-                <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; cursor: pointer; transition: all 0.2s;"
-                     onmouseover="this.style.borderColor='#7c3aed'; this.style.boxShadow='0 4px 6px rgba(124, 58, 237, 0.1)'"
-                     onmouseout="this.style.borderColor='#e5e7eb'; this.style.boxShadow='none'"
-                     onclick="this.querySelector('.conversation-details').style.display = this.querySelector('.conversation-details').style.display === 'none' ? 'block' : 'none'">
-                  <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
-                    <div>
-                      <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">
-                        對話 ID: ${(t.conversationId || t.id).substring(0, 8)}...
-                      </h4>
-                      <p style="font-size: 14px; color: #6b7280; margin: 0;">
-                        用戶 ID: ${t.userId.substring(0, 8)}...
-                      </p>
-                    </div>
-                    <div style="text-align: right;">
-                      <div style="font-size: 12px; color: #9ca3af;">
-                        ${new Date(t.createdAt || t.startedAt).toLocaleString("zh-TW")}
-                      </div>
-                      <div style="font-size: 12px; color: #9ca3af; margin-top: 4px;">
-                        ${o} 則訊息
-                      </div>
-                    </div>
-                  </div>
-
-                  <div style="padding: 12px; background: #f9fafb; border-radius: 6px; margin-bottom: 12px;">
-                    <div style="font-size: 13px; color: #6b7280; margin-bottom: 4px;">最後訊息：</div>
-                    <div style="font-size: 14px; color: #1f2937;">
-                      ${n ? n.content.substring(0, 100) + (n.content.length > 100 ? "..." : "") : "無訊息"}
-                    </div>
-                  </div>
-
-                  <div style="display: flex; gap: 16px; font-size: 13px; color: #6b7280;">
-                    <span>👤 用戶: ${i}</span>
-                    <span>🤖 助手: ${r}</span>
-                    <span>📅 ${new Date(t.updatedAt || t.lastMessageAt).toLocaleDateString("zh-TW")}</span>
-                  </div>
-
-                  <!-- 對話詳情（預設隱藏） -->
-                  <div class="conversation-details" style="display: none; margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
-                    <h5 style="font-size: 14px; font-weight: 600; margin: 0 0 12px 0; color: #1f2937;">完整對話記錄</h5>
-                    <div style="max-height: 400px; overflow-y: auto;">
-                      ${t.messages.map((s) => `
-                        <div style="margin-bottom: 12px; padding: 12px; background: ${s.role === "user" ? "#ede9fe" : "#f3f4f6"}; border-radius: 6px;">
-                          <div style="font-size: 12px; font-weight: 600; color: ${s.role === "user" ? "#7c3aed" : "#6b7280"}; margin-bottom: 4px;">
-                            ${s.role === "user" ? "👤 用戶" : "🤖 助手"} - ${new Date(s.timestamp).toLocaleString("zh-TW")}
-                          </div>
-                          <div style="font-size: 14px; color: #1f2937; white-space: pre-wrap;">
-                            ${s.content}
-                          </div>
-                          ${s.sources && s.sources.length > 0 ? `
-                            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(0,0,0,0.1);">
-                              <div style="font-size: 12px; color: #6b7280; margin-bottom: 4px;">參考來源：</div>
-                              ${s.sources.map((a, d) => `
-                                <div style="font-size: 12px; color: #7c3aed; margin-top: 2px;">
-                                  [${d + 1}] ${a.title}
-                                </div>
-                              `).join("")}
-                            </div>
-                          ` : ""}
-                        </div>
-                      `).join("")}
-                    </div>
-                  </div>
-                </div>
-              `;
-    }).join("")}
-          </div>
-        `}
-      </div>
-    `;
-  }
-  /**
    * 渲染 Agent & API 設定頁面（合併）
    */
   renderAgentAndAPI() {
-    var n, o, i, r, s, a, d, c, g, x, y, C;
-    const e = v.loadConfig() || {}, t = v.loadAgentToolConfig();
+    var n, o, i, r, s, a, l, c, p, h, u, m;
+    const e = b.loadConfig() || {}, t = b.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">Agent & API 設定</h2>
 
@@ -3160,7 +3163,7 @@ class Z {
                 id="embed-endpoint"
                 name="embedEndpoint"
                 placeholder="https://your-resource.openai.azure.com/"
-                value="${((d = e.embeddingAPI) == null ? void 0 : d.endpoint) || ((c = e.azureOpenAI) == null ? void 0 : c.endpoint) || ""}"
+                value="${((l = e.embeddingAPI) == null ? void 0 : l.endpoint) || ((c = e.azureOpenAI) == null ? void 0 : c.endpoint) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -3172,7 +3175,7 @@ class Z {
                 id="embed-api-key"
                 name="embedApiKey"
                 placeholder="your-api-key"
-                value="${((g = e.embeddingAPI) == null ? void 0 : g.apiKey) || ((x = e.azureOpenAI) == null ? void 0 : x.apiKey) || ""}"
+                value="${((p = e.embeddingAPI) == null ? void 0 : p.apiKey) || ((h = e.azureOpenAI) == null ? void 0 : h.apiKey) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -3184,7 +3187,7 @@ class Z {
                 id="embed-deployment"
                 name="embedDeployment"
                 placeholder="text-embedding-3-small"
-                value="${((y = e.embeddingAPI) == null ? void 0 : y.deployment) || ((C = e.azureOpenAI) == null ? void 0 : C.embeddingDeployment) || ""}"
+                value="${((u = e.embeddingAPI) == null ? void 0 : u.deployment) || ((m = e.azureOpenAI) == null ? void 0 : m.embeddingDeployment) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -3250,325 +3253,17 @@ class Z {
     `;
   }
   /**
-   * 渲染系統設定頁面（包含密碼和 IP 白名單）
-   */
-  renderSystemSettings() {
-    const e = v.loadAdminPassword(), t = this.getIPWhitelist(), n = this.getTelegramEnabled(), o = this.hasTelegramConfig();
-    return `
-      <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
-
-      <!-- Telegram 通知設定 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">Telegram 通知</h3>
-        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">當 AI 無法回答問題時，發送通知到 Telegram</p>
-
-        ${o ? "" : `
-          <div style="background: #fef3c7; border: 1px solid #fbbf24; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
-            <p style="color: #92400e; font-size: 14px; margin: 0;">
-              ⚠️ 未配置 Telegram Bot Token 和 Chat ID，此功能已禁用
-            </p>
-          </div>
-        `}
-
-        <form id="telegram-settings-form">
-          <div style="margin-bottom: 16px;">
-            <label style="display: flex; align-items: center; cursor: ${o ? "pointer" : "not-allowed"};">
-              <input
-                type="checkbox"
-                id="telegram-enabled"
-                ${n ? "checked" : ""}
-                ${o ? "" : "disabled"}
-                style="margin-right: 8px; cursor: ${o ? "pointer" : "not-allowed"};"
-              />
-              <span style="color: ${o ? "#1f2937" : "#9ca3af"};">啟用 Telegram 通知</span>
-            </label>
-          </div>
-
-          <button
-            type="submit"
-            ${o ? "" : "disabled"}
-            style="
-              padding: 10px 20px;
-              background: ${o ? "#7c3aed" : "#d1d5db"};
-              color: white;
-              border: none;
-              border-radius: 8px;
-              font-size: 14px;
-              font-weight: 500;
-              cursor: ${o ? "pointer" : "not-allowed"};
-            "
-          >
-            儲存設定
-          </button>
-        </form>
-      </div>
-
-      <!-- 密碼設定 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">管理員密碼</h3>
-        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">當前密碼：${e}</p>
-
-        <form id="change-password-form">
-          <div style="margin-bottom: 16px;">
-            <label for="new-password" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">新密碼</label>
-            <input
-              type="password"
-              id="new-password"
-              name="newPassword"
-              placeholder="請輸入新密碼"
-              autocomplete="new-password"
-              style="
-                width: 100%;
-                max-width: 400px;
-                padding: 10px 14px;
-                border: 1px solid #d1d5db;
-                border-radius: 8px;
-                font-size: 14px;
-                box-sizing: border-box;
-                background: white;
-                color: #1f2937;
-                outline: none;
-              "
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            style="
-              padding: 10px 20px;
-              background: #7c3aed;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              font-size: 14px;
-              font-weight: 500;
-              cursor: pointer;
-            "
-          >
-            更新密碼
-          </button>
-        </form>
-      </div>
-
-      <!-- IP 白名單設定 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">IP 白名單</h3>
-        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">限制可以訪問管理後台的 IP 地址</p>
-
-        <div style="margin-bottom: 16px;">
-          <p style="font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">當前白名單：</p>
-          <div style="background: #f9fafb; padding: 12px; border-radius: 6px; font-family: monospace; font-size: 13px; color: #4b5563;">
-            ${t.length > 0 ? t.join("<br>") : "（空白 - 允許所有 IP）"}
-          </div>
-        </div>
-
-        <form id="ip-whitelist-form">
-          <div style="margin-bottom: 16px;">
-            <label for="ip-list" style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">IP 列表（每行一個）</label>
-            <textarea
-              id="ip-list"
-              name="ipList"
-              placeholder="例如：&#10;192.168.1.1&#10;10.0.0.1"
-              rows="5"
-              style="
-                width: 100%;
-                max-width: 400px;
-                padding: 10px 14px;
-                border: 1px solid #d1d5db;
-                border-radius: 8px;
-                font-size: 14px;
-                font-family: monospace;
-                box-sizing: border-box;
-                background: white;
-                color: #1f2937;
-                outline: none;
-                resize: vertical;
-              "
-            >${t.join(`
-`)}</textarea>
-          </div>
-
-          <button
-            type="submit"
-            style="
-              padding: 10px 20px;
-              background: #10b981;
-              color: white;
-              border: none;
-              border-radius: 8px;
-              font-size: 14px;
-              font-weight: 500;
-              cursor: pointer;
-            "
-          >
-            更新白名單
-          </button>
-        </form>
-      </div>
-    `;
-  }
-  /**
-   * 渲染資料庫管理頁面
-   */
-  renderDatabaseManagement() {
-    return `
-      <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">資料庫管理</h2>
-      <p style="color: #6b7280; margin-bottom: 24px;">配置服務用資料庫，用於存儲對話記錄和索引數據</p>
-
-      <!-- 說明 -->
-      <div style="background: #eff6ff; border-left: 4px solid #3b82f6; padding: 16px; border-radius: 8px; margin-bottom: 24px;">
-        <h3 style="font-size: 16px; font-weight: 600; margin: 0 0 8px 0; color: #1e40af;">💡 重要說明</h3>
-        <ul style="margin: 0; padding-left: 20px; color: #1e40af; font-size: 14px; line-height: 1.6;">
-          <li>此處配置的資料庫用於<strong>存儲服務數據</strong>（對話記錄、手動索引等）</li>
-          <li>與「SQL 資料庫」頁面的配置不同，該頁面用於 Agent 搜尋外部資料</li>
-          <li>由於瀏覽器安全限制，需要提供一個<strong>後端 API</strong>來連接資料庫</li>
-          <li>API 需要支援基本的 CRUD 操作（創建、讀取、更新、刪除）</li>
-        </ul>
-      </div>
-
-      <!-- API 配置 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">後端 API 配置</h3>
-
-        <form id="database-api-config-form">
-          <div style="margin-bottom: 16px;">
-            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">API Base URL</label>
-            <input
-              type="text"
-              id="db-api-url"
-              placeholder="https://your-api.com/api"
-              style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
-            >
-            <p style="color: #6b7280; font-size: 12px; margin-top: 4px;">後端 API 的基礎 URL</p>
-          </div>
-
-          <div style="margin-bottom: 16px;">
-            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">API Key（選填）</label>
-            <input
-              type="password"
-              id="db-api-key"
-              placeholder="your-api-key"
-              style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
-            >
-            <p style="color: #6b7280; font-size: 12px; margin-top: 4px;">如果 API 需要認證，請提供 API Key</p>
-          </div>
-
-          <button
-            type="submit"
-            style="width: 100%; padding: 12px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
-          >
-            儲存 API 配置
-          </button>
-        </form>
-      </div>
-
-      <!-- Schema 驗證 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">資料庫 Schema 驗證</h3>
-        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">驗證資料庫是否包含所需的表格和欄位</p>
-
-        <div style="margin-bottom: 16px;">
-          <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 12px 0; color: #374151;">必需的表格</h4>
-
-          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-            <h5 style="font-size: 14px; font-weight: 600; margin: 0 0 8px 0; color: #1f2937;">1. conversations（對話記錄）</h5>
-            <div style="font-family: monospace; font-size: 13px; color: #6b7280; line-height: 1.6;">
-              - id (VARCHAR/UUID, PRIMARY KEY)<br>
-              - user_id (VARCHAR)<br>
-              - conversation_id (VARCHAR)<br>
-              - messages (JSON/TEXT)<br>
-              - created_at (TIMESTAMP)<br>
-              - updated_at (TIMESTAMP)
-            </div>
-          </div>
-
-          <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 12px;">
-            <h5 style="font-size: 14px; font-weight: 600; margin: 0 0 8px 0; color: #1f2937;">2. manual_indexes（手動索引）</h5>
-            <div style="font-family: monospace; font-size: 13px; color: #6b7280; line-height: 1.6;">
-              - id (VARCHAR/UUID, PRIMARY KEY)<br>
-              - name (VARCHAR)<br>
-              - description (TEXT)<br>
-              - content (TEXT)<br>
-              - keywords (JSON/TEXT)<br>
-              - fingerprint (TEXT)<br>
-              - created_at (TIMESTAMP)<br>
-              - updated_at (TIMESTAMP)
-            </div>
-          </div>
-        </div>
-
-        <button
-          id="verify-schema-btn"
-          style="width: 100%; padding: 12px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
-        >
-          驗證 Schema
-        </button>
-
-        <div id="schema-verification-result" style="margin-top: 16px; display: none;"></div>
-      </div>
-
-      <!-- API 端點說明 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">後端 API 端點要求</h3>
-        <p style="color: #6b7280; margin-bottom: 16px; font-size: 14px;">您的後端 API 需要實現以下端點：</p>
-
-        <div style="font-family: monospace; font-size: 13px; background: #f9fafb; padding: 16px; border-radius: 8px; line-height: 1.8;">
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #10b981;">GET</strong> <span style="color: #1f2937;">/conversations</span><br>
-            <span style="color: #6b7280; font-size: 12px;">獲取所有對話記錄</span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #3b82f6;">POST</strong> <span style="color: #1f2937;">/conversations</span><br>
-            <span style="color: #6b7280; font-size: 12px;">創建新對話</span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #f59e0b;">PUT</strong> <span style="color: #1f2937;">/conversations/:id</span><br>
-            <span style="color: #6b7280; font-size: 12px;">更新對話</span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #ef4444;">DELETE</strong> <span style="color: #1f2937;">/conversations/:id</span><br>
-            <span style="color: #6b7280; font-size: 12px;">刪除對話</span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #10b981;">GET</strong> <span style="color: #1f2937;">/manual-indexes</span><br>
-            <span style="color: #6b7280; font-size: 12px;">獲取所有手動索引</span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #3b82f6;">POST</strong> <span style="color: #1f2937;">/manual-indexes</span><br>
-            <span style="color: #6b7280; font-size: 12px;">創建新索引</span>
-          </div>
-
-          <div style="margin-bottom: 12px;">
-            <strong style="color: #ef4444;">DELETE</strong> <span style="color: #1f2937;">/manual-indexes/:id</span><br>
-            <span style="color: #6b7280; font-size: 12px;">刪除索引</span>
-          </div>
-
-          <div>
-            <strong style="color: #3b82f6;">POST</strong> <span style="color: #1f2937;">/verify-schema</span><br>
-            <span style="color: #6b7280; font-size: 12px;">驗證資料庫 Schema</span>
-          </div>
-        </div>
-      </div>
-    `;
-  }
-  /**
    * 檢查是否有 Telegram 配置
    */
   hasTelegramConfig() {
-    const e = window.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN || H.NEXT_PUBLIC_TELEGRAM_BOT_TOKEN, t = window.NEXT_PUBLIC_TELEGRAM_CHAT_ID || H.NEXT_PUBLIC_TELEGRAM_CHAT_ID;
-    return !!(e && t);
+    const e = window.SM_TELEGRAM_CONFIG;
+    return !!(e && e.botToken && e.chatId);
   }
   /**
    * 獲取 Telegram 啟用狀態
    */
   getTelegramEnabled() {
-    return localStorage.getItem("telegram_enabled") === "true";
+    return localStorage.getItem("telegram_enabled") !== "false";
   }
   /**
    * 設置 Telegram 啟用狀態
@@ -3579,10 +3274,10 @@ class Z {
   /**
    * 顯示編輯索引模態框
    */
-  showEditIndexModal(e) {
-    const t = A.getById(e);
+  async showEditIndexModal(e) {
+    const t = await x.getById(e);
     if (!t) {
-      alert("找不到該索引");
+      await this.showAlertDialog("找不到該索引");
       return;
     }
     const n = document.createElement("div");
@@ -3654,17 +3349,15 @@ class Z {
     const o = n.querySelector("#edit-index-form"), i = n.querySelector("#cancel-edit-btn");
     o.addEventListener("submit", async (r) => {
       r.preventDefault();
-      const s = n.querySelector("#edit-index-name").value, a = n.querySelector("#edit-index-description").value, d = n.querySelector("#edit-index-content").value;
-      if (!s || !d) {
-        alert("請填寫名稱和內容");
+      const s = n.querySelector("#edit-index-name").value, a = n.querySelector("#edit-index-description").value, l = n.querySelector("#edit-index-content").value;
+      if (!s || !l) {
+        await this.showAlertDialog("請填寫名稱和內容");
         return;
       }
       try {
-        await A.update(e, { name: s, description: a, content: d }), alert("索引已更新"), document.body.removeChild(n);
-        const c = this.container.querySelector("#admin-content");
-        c && (c.innerHTML = this.renderPageContent(), this.bindEvents());
+        await x.update(e, { name: s, description: a, content: l }), await this.showAlertDialog("索引已更新"), document.body.removeChild(n), await this.updatePageContent();
       } catch (c) {
-        alert(`更新失敗：${c instanceof Error ? c.message : "未知錯誤"}`);
+        await this.showAlertDialog(`更新失敗：${c instanceof Error ? c.message : "未知錯誤"}`);
       }
     }), i.addEventListener("click", () => {
       document.body.removeChild(n);
@@ -3672,10 +3365,689 @@ class Z {
       r.target === n && document.body.removeChild(n);
     });
   }
+  /**
+   * 顯示新增索引模態框
+   */
+  async showAddIndexModal() {
+    const e = document.createElement("div");
+    e.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    `, e.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">新增索引</h3>
+
+        <form id="add-index-form">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">名稱</label>
+            <input
+              type="text"
+              id="add-index-name"
+              placeholder="例如：產品介紹"
+              required
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">描述</label>
+            <input
+              type="text"
+              id="add-index-description"
+              placeholder="簡短描述這個索引的內容"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">URL（選填）</label>
+            <input
+              type="url"
+              id="add-index-url"
+              placeholder="https://example.com/page"
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">內容</label>
+            <textarea
+              id="add-index-content"
+              placeholder="輸入索引內容..."
+              rows="8"
+              required
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;"
+            ></textarea>
+          </div>
+
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button
+              type="button"
+              id="cancel-add-btn"
+              style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              新增索引
+            </button>
+          </div>
+        </form>
+      </div>
+    `, document.body.appendChild(e);
+    const t = e.querySelector("#add-index-form"), n = e.querySelector("#cancel-add-btn");
+    t.addEventListener("submit", async (o) => {
+      o.preventDefault();
+      const i = e.querySelector("#add-index-name").value, r = e.querySelector("#add-index-description").value, s = e.querySelector("#add-index-url").value, a = e.querySelector("#add-index-content").value;
+      if (!i || !a) {
+        await this.showAlertDialog("請填寫名稱和內容");
+        return;
+      }
+      try {
+        await x.create({ name: i, description: r, content: a, url: s || void 0 }), await this.showAlertDialog("索引已新增"), document.body.removeChild(e), await this.updatePageContent();
+      } catch (l) {
+        await this.showAlertDialog(`新增失敗：${l instanceof Error ? l.message : "未知錯誤"}`);
+      }
+    }), n.addEventListener("click", () => {
+      document.body.removeChild(e);
+    }), e.addEventListener("click", (o) => {
+      o.target === e && document.body.removeChild(e);
+    });
+  }
+  /**
+   * 顯示刪除確認對話框
+   */
+  async showDeleteConfirmDialog(e) {
+    const t = await x.getById(e);
+    if (!t) {
+      await this.showAlertDialog("找不到該索引");
+      return;
+    }
+    if (await this.showConfirmDialog(`確定要刪除索引「${t.name}」嗎？此操作無法復原。`))
+      try {
+        await x.delete(e), await this.showAlertDialog("索引已刪除"), await this.updatePageContent();
+      } catch (o) {
+        await this.showAlertDialog(`刪除失敗：${o instanceof Error ? o.message : "未知錯誤"}`);
+      }
+  }
+  /**
+   * 渲染客服對話頁面
+   */
+  async renderConversations() {
+    try {
+      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-CDEnprzI.mjs"), t = await e.getAllConversations();
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">客服對話管理</h2>
+          <div style="display: flex; gap: 12px;">
+            <button id="refresh-conversations" style="
+              padding: 10px 20px;
+              background: #f3f4f6;
+              color: #374151;
+              border: none;
+              border-radius: 8px;
+              font-size: 14px;
+              cursor: pointer;
+            ">🔄 刷新</button>
+          </div>
+        </div>
+
+        <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+          ${t.length === 0 ? `
+            <div style="padding: 48px; text-align: center; color: #6b7280;">
+              <p style="font-size: 16px; margin: 0;">目前沒有對話記錄</p>
+            </div>
+          ` : `
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">對話ID</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">用戶ID</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">訊息數</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">狀態</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">開始時間</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${t.slice().reverse().map((n) => `
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                      <td style="padding: 16px; color: #1f2937; font-family: monospace; font-size: 12px;">${n.id.substring(0, 8)}...</td>
+                      <td style="padding: 16px; color: #1f2937;">${n.userId}</td>
+                      <td style="padding: 16px; color: #1f2937;">${n.messages.length}</td>
+                      <td style="padding: 16px;">
+                        <span style="
+                          padding: 4px 8px;
+                          border-radius: 4px;
+                          font-size: 12px;
+                          font-weight: 500;
+                          background: ${n.status === "active" ? "#dcfce7" : "#f3f4f6"};
+                          color: ${n.status === "active" ? "#166534" : "#374151"};
+                        ">${n.status === "active" ? "進行中" : "已結束"}</span>
+                      </td>
+                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${new Date(n.startedAt).toLocaleString()}</td>
+                      <td style="padding: 16px;">
+                        <div style="display: flex; gap: 8px;">
+                          <button class="view-conversation-btn" data-id="${n.id}" style="
+                            padding: 6px 12px;
+                            background: #3b82f6;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            font-size: 12px;
+                            cursor: pointer;
+                          ">查看</button>
+                          <button class="delete-conversation-btn" data-id="${n.id}" style="
+                            padding: 6px 12px;
+                            background: #ef4444;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            font-size: 12px;
+                            cursor: pointer;
+                          ">刪除</button>
+                        </div>
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          `}
+        </div>
+      `;
+    } catch (e) {
+      return console.error("Failed to render conversations:", e), `
+        <div style="padding: 24px; text-align: center; color: #ef4444;">
+          <p>載入對話記錄失敗：${e instanceof Error ? e.message : "未知錯誤"}</p>
+        </div>
+      `;
+    }
+  }
+  /**
+   * 渲染管理員用戶頁面
+   */
+  async renderAdminUsers() {
+    try {
+      const { AdminUserManager: e } = await import("./AdminUserManager-CYA3JVwT.mjs"), t = await e.getAllAdminUsers();
+      return `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">管理員帳號管理</h2>
+          <button id="add-admin-user-btn" style="
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+          ">+ 新增管理員</button>
+        </div>
+
+        <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+          ${t.length === 0 ? `
+            <div style="padding: 48px; text-align: center; color: #6b7280;">
+              <p style="font-size: 16px; margin: 0;">目前沒有管理員帳號</p>
+            </div>
+          ` : `
+            <div style="overflow-x: auto;">
+              <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                  <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">用戶名</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">角色</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">狀態</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">創建時間</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">最後登錄</th>
+                    <th style="padding: 16px; text-align: left; font-weight: 600; color: #374151;">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${t.map((n) => `
+                    <tr style="border-bottom: 1px solid #f1f5f9;">
+                      <td style="padding: 16px; color: #1f2937; font-weight: 500;">${n.username}</td>
+                      <td style="padding: 16px;">
+                        <span style="
+                          padding: 4px 8px;
+                          border-radius: 4px;
+                          font-size: 12px;
+                          font-weight: 500;
+                          background: ${n.role === "super_admin" ? "#fef3c7" : "#dbeafe"};
+                          color: ${n.role === "super_admin" ? "#92400e" : "#1e40af"};
+                        ">${n.role === "super_admin" ? "超級管理員" : "管理員"}</span>
+                      </td>
+                      <td style="padding: 16px;">
+                        <span style="
+                          padding: 4px 8px;
+                          border-radius: 4px;
+                          font-size: 12px;
+                          font-weight: 500;
+                          background: ${n.is_active ? "#dcfce7" : "#fee2e2"};
+                          color: ${n.is_active ? "#166534" : "#dc2626"};
+                        ">${n.is_active ? "啟用" : "停用"}</span>
+                      </td>
+                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${new Date(n.created_at).toLocaleString()}</td>
+                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${n.last_login ? new Date(n.last_login).toLocaleString() : "從未登錄"}</td>
+                      <td style="padding: 16px;">
+                        <div style="display: flex; gap: 8px;">
+                          <button class="edit-admin-user-btn" data-id="${n.id}" style="
+                            padding: 6px 12px;
+                            background: #3b82f6;
+                            color: white;
+                            border: none;
+                            border-radius: 6px;
+                            font-size: 12px;
+                            cursor: pointer;
+                          ">編輯</button>
+                          ${n.username !== "lens" ? `
+                            <button class="delete-admin-user-btn" data-id="${n.id}" style="
+                              padding: 6px 12px;
+                              background: #ef4444;
+                              color: white;
+                              border: none;
+                              border-radius: 6px;
+                              font-size: 12px;
+                              cursor: pointer;
+                            ">刪除</button>
+                          ` : ""}
+                        </div>
+                      </td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          `}
+        </div>
+      `;
+    } catch (e) {
+      return console.error("Failed to render admin users:", e), `
+        <div style="padding: 24px; text-align: center; color: #ef4444;">
+          <p>載入管理員列表失敗：${e instanceof Error ? e.message : "未知錯誤"}</p>
+        </div>
+      `;
+    }
+  }
+  /**
+   * 渲染系統設定頁面
+   */
+  async renderSystemSettings() {
+    var i, r;
+    let e = [], t = [];
+    try {
+      const { DatabaseService: s } = await Promise.resolve().then(() => I), [a, l] = await Promise.all([
+        s.getSettings().catch(() => []),
+        s.getAdminUsers().catch(() => [])
+      ]);
+      e = a, t = l;
+    } catch (s) {
+      console.error("Failed to load system settings:", s);
+    }
+    const n = ((i = e.find((s) => s.key === "default_reply")) == null ? void 0 : i.value) || "", o = ((r = e.find((s) => s.key === "system_prompt")) == null ? void 0 : r.value) || "";
+    return `
+      <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
+
+      <!-- 系統設定 -->
+      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">基本設定</h3>
+
+        <form id="system-settings-form">
+          <div style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label style="color: #374151; font-weight: 500;">無法回答時的固定回覆</label>
+              <button
+                id="edit-default-reply-btn"
+                style="background: #3b82f6; color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+                onmouseover="this.style.background='#2563eb'"
+                onmouseout="this.style.background='#3b82f6'"
+              >
+                編輯
+              </button>
+            </div>
+            <div
+              id="default-reply-display"
+              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 60px; white-space: pre-wrap;"
+            >${n}</div>
+          </div>
+
+          <div style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label style="color: #374151; font-weight: 500;">LLM系統提示詞</label>
+              <button
+                id="edit-system-prompt-btn"
+                style="background: #3b82f6; color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+                onmouseover="this.style.background='#2563eb'"
+                onmouseout="this.style.background='#3b82f6'"
+              >
+                編輯
+              </button>
+            </div>
+            <div
+              id="system-prompt-display"
+              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 80px; white-space: pre-wrap;"
+            >${o}</div>
+          </div>
+        </form>
+      </div>
+
+      <!-- 管理員帳號 -->
+      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="font-size: 18px; font-weight: 600; margin: 0; color: #1f2937;">管理員帳號（${t.length}）</h3>
+          <button
+            id="add-admin-user-btn"
+            style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+          >
+            + 新增管理員
+          </button>
+        </div>
+
+        ${t.length === 0 ? `
+          <p style="color: #9ca3af; text-align: center; padding: 32px 0;">尚無管理員帳號</p>
+        ` : `
+          <div style="display: flex; flex-direction: column; gap: 12px;">
+            ${t.map((s) => `
+              <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div>
+                    <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">${s.username}</h4>
+                    <p style="font-size: 14px; color: #6b7280; margin: 0;">${s.email || "無Email"}</p>
+                    <p style="font-size: 12px; color: #9ca3af; margin: 4px 0 0 0;">
+                      建立時間：${new Date(s.createdAt).toLocaleString("zh-TW")}
+                    </p>
+                  </div>
+                  <div style="display: flex; gap: 8px;">
+                    <button
+                      class="delete-admin-user-btn"
+                      data-id="${s.id}"
+                      style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+                    >
+                      刪除
+                    </button>
+                  </div>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        `}
+      </div>
+    `;
+  }
+  /**
+   * 顯示新增管理員模態框
+   */
+  async showAddAdminUserModal() {
+    const e = document.createElement("div");
+    e.style.cssText = `
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;
+    `, e.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="margin: 0 0 16px 0; color: #1f2937;">新增管理員</h3>
+
+        <form id="add-admin-user-form">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">用戶名</label>
+            <input
+              type="text"
+              id="add-admin-username"
+              required
+              style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
+              placeholder="請輸入用戶名"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">密碼</label>
+            <input
+              type="password"
+              id="add-admin-password"
+              required
+              style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
+              placeholder="請輸入密碼"
+            />
+          </div>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">Email（選填）</label>
+            <input
+              type="email"
+              id="add-admin-email"
+              style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
+              placeholder="請輸入Email"
+            />
+          </div>
+
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button
+              type="button"
+              id="cancel-add-admin-btn"
+              style="padding: 10px 20px; background: #f3f4f6; color: #374151; border: none; border-radius: 8px; cursor: pointer;"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; cursor: pointer;"
+            >
+              新增管理員
+            </button>
+          </div>
+        </form>
+      </div>
+    `, document.body.appendChild(e);
+    const t = e.querySelector("#add-admin-user-form"), n = e.querySelector("#cancel-add-admin-btn");
+    t.addEventListener("submit", async (o) => {
+      o.preventDefault();
+      const i = e.querySelector("#add-admin-username").value, r = e.querySelector("#add-admin-password").value, s = e.querySelector("#add-admin-email").value;
+      try {
+        const { DatabaseService: a } = await Promise.resolve().then(() => I);
+        await a.createAdminUser(i, r, s), document.body.removeChild(e), await this.showAlertDialog("管理員帳號已新增"), await this.updatePageContent();
+      } catch (a) {
+        await this.showAlertDialog(`新增失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
+      }
+    }), n.addEventListener("click", () => {
+      document.body.removeChild(e);
+    }), e.addEventListener("click", (o) => {
+      o.target === e && document.body.removeChild(e);
+    });
+  }
+  /**
+   * 顯示對話詳情模態框
+   */
+  async showConversationModal(e) {
+    var t;
+    try {
+      const { CustomerServiceManager: n } = await import("./CustomerServiceManager-CDEnprzI.mjs"), o = await n.getConversationById(e);
+      if (!o) {
+        await this.showAlertDialog("找不到該對話記錄");
+        return;
+      }
+      const i = document.createElement("div");
+      i.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+      `, i.innerHTML = `
+        <div style="
+          background: white;
+          border-radius: 12px;
+          width: 90%;
+          max-width: 800px;
+          max-height: 80vh;
+          overflow-y: auto;
+          padding: 24px;
+        ">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h3 style="margin: 0; color: #1f2937; font-size: 18px; font-weight: 600;">對話詳情</h3>
+            <button id="close-conversation-modal" style="
+              background: none;
+              border: none;
+              font-size: 24px;
+              cursor: pointer;
+              color: #6b7280;
+              padding: 0;
+              width: 30px;
+              height: 30px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            ">&times;</button>
+          </div>
+
+          <div style="margin-bottom: 16px; padding: 16px; background: #f9fafb; border-radius: 8px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 14px;">
+              <div><strong>對話ID:</strong> ${o.id}</div>
+              <div><strong>用戶ID:</strong> ${o.userId}</div>
+              <div><strong>訊息數:</strong> ${((t = o.messages) == null ? void 0 : t.length) || 0}</div>
+              <div><strong>狀態:</strong> ${o.status}</div>
+              <div><strong>建立時間:</strong> ${o.createdAt ? new Date(o.createdAt).toLocaleString("zh-TW") : "未知"}</div>
+              <div><strong>更新時間:</strong> ${o.updatedAt ? new Date(o.updatedAt).toLocaleString("zh-TW") : "未知"}</div>
+            </div>
+          </div>
+
+          <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
+            <h4 style="margin: 0 0 12px 0; color: #374151; font-size: 16px;">對話記錄</h4>
+            ${o.messages && o.messages.length > 0 ? o.messages.map((l) => `
+                <div style="margin-bottom: 12px; padding: 12px; border-radius: 8px; ${l.role === "user" ? "background: #eff6ff; margin-left: 20px;" : "background: #f0fdf4; margin-right: 20px;"}">
+                  <div style="font-weight: 600; color: #374151; margin-bottom: 4px;">
+                    ${l.role === "user" ? "👤 用戶" : "🤖 助理"}
+                    <span style="font-weight: normal; color: #6b7280; font-size: 12px; margin-left: 8px;">
+                      ${new Date(l.timestamp).toLocaleString("zh-TW")}
+                    </span>
+                  </div>
+                  <div style="color: #1f2937; line-height: 1.5;">${l.content}</div>
+                </div>
+              `).join("") : '<p style="color: #6b7280; text-align: center; padding: 20px;">此對話暫無訊息記錄</p>'}
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+            <button id="close-conversation-modal-btn" style="
+              padding: 10px 20px;
+              background: #6b7280;
+              color: white;
+              border: none;
+              border-radius: 8px;
+              cursor: pointer;
+              font-size: 14px;
+            ">關閉</button>
+          </div>
+        </div>
+      `, document.body.appendChild(i);
+      const r = i.querySelector("#close-conversation-modal"), s = i.querySelector("#close-conversation-modal-btn"), a = () => {
+        document.body.removeChild(i);
+      };
+      r == null || r.addEventListener("click", a), s == null || s.addEventListener("click", a), i.addEventListener("click", (l) => {
+        l.target === i && a();
+      });
+    } catch (n) {
+      console.error("Error showing conversation modal:", n), await this.showAlertDialog("載入對話詳情失敗");
+    }
+  }
 }
-class ee {
+class M {
+  /**
+   * 獲取或創建當前用戶
+   */
+  static getCurrentUser() {
+    const e = localStorage.getItem(this.USER_KEY);
+    if (e) {
+      const t = JSON.parse(e), n = this.getOrCreateSessionId();
+      return t.sessionId = n, t.metadata.lastSeen = Date.now(), this.saveUser(t), t;
+    }
+    return this.createNewUser();
+  }
+  /**
+   * 創建新用戶
+   */
+  static createNewUser() {
+    const e = this.generateUserId(), t = this.getOrCreateSessionId(), n = {
+      id: e,
+      sessionId: t,
+      metadata: {
+        userAgent: navigator.userAgent,
+        firstSeen: Date.now(),
+        lastSeen: Date.now(),
+        totalConversations: 0
+      }
+    };
+    return this.saveUser(n), console.log("Created new user:", n.id), n;
+  }
+  /**
+   * 保存用戶資料
+   */
+  static saveUser(e) {
+    localStorage.setItem(this.USER_KEY, JSON.stringify(e));
+  }
+  /**
+   * 獲取或創建 session ID
+   */
+  static getOrCreateSessionId() {
+    let e = sessionStorage.getItem(this.SESSION_KEY);
+    return e || (e = this.generateSessionId(), sessionStorage.setItem(this.SESSION_KEY, e)), e;
+  }
+  /**
+   * 生成用戶 ID
+   */
+  static generateUserId() {
+    return "user_" + this.generateRandomId();
+  }
+  /**
+   * 生成 session ID
+   */
+  static generateSessionId() {
+    return "session_" + this.generateRandomId();
+  }
+  /**
+   * 生成隨機 ID
+   */
+  static generateRandomId() {
+    return Date.now().toString(36) + Math.random().toString(36).substring(2);
+  }
+  /**
+   * 增加用戶的對話計數
+   */
+  static incrementConversationCount() {
+    const e = this.getCurrentUser();
+    e.metadata.totalConversations++, this.saveUser(e);
+  }
+  /**
+   * 獲取用戶 ID
+   */
+  static getUserId() {
+    return this.getCurrentUser().id;
+  }
+  /**
+   * 獲取 session ID
+   */
+  static getSessionId() {
+    return this.getCurrentUser().sessionId;
+  }
+}
+d(M, "USER_KEY", "sm_user"), d(M, "SESSION_KEY", "sm_session");
+class Y {
   constructor() {
-    l(this, "plugins", /* @__PURE__ */ new Map());
+    d(this, "plugins", /* @__PURE__ */ new Map());
   }
   /**
    * 註冊 Plugin
@@ -3705,8 +4077,11 @@ class ee {
   /**
    * 獲取所有啟用的 Plugin
    */
-  getEnabledPlugins() {
-    return this.getAllPlugins().filter((e) => e.enabled && e.isAvailable()).sort((e, t) => t.priority - e.priority);
+  async getEnabledPlugins() {
+    const e = this.getAllPlugins(), t = [];
+    for (const n of e)
+      n.enabled && await n.isAvailable() && t.push(n);
+    return t.sort((n, o) => o.priority - n.priority);
   }
   /**
    * 初始化所有 Plugin
@@ -3727,7 +4102,7 @@ class ee {
    * 執行搜尋（所有啟用的 Plugin）
    */
   async search(e, t = 5) {
-    const n = this.getEnabledPlugins();
+    const n = await this.getEnabledPlugins();
     if (n.length === 0)
       return console.warn("No enabled plugins available for search"), [];
     console.log(`🔍 Searching with ${n.length} plugins:`, n.map((r) => r.name));
@@ -3749,9 +4124,9 @@ class ee {
       })
     )).flat();
     return i.sort((r, s) => {
-      var c, g;
-      const a = ((c = r.metadata) == null ? void 0 : c.priority) || 0, d = ((g = s.metadata) == null ? void 0 : g.priority) || 0;
-      return a !== d ? d - a : (s.score || 0) - (r.score || 0);
+      var c, p;
+      const a = ((c = r.metadata) == null ? void 0 : c.priority) || 0, l = ((p = s.metadata) == null ? void 0 : p.priority) || 0;
+      return a !== l ? l - a : (s.score || 0) - (r.score || 0);
     }), i.slice(0, t);
   }
   /**
@@ -3761,21 +4136,21 @@ class ee {
     this.plugins.forEach((e) => e.dispose()), this.plugins.clear(), console.log("🧹 All plugins disposed");
   }
 }
-class te {
+class G {
   constructor() {
-    l(this, "id", "manual-index");
-    l(this, "name", "手動索引");
-    l(this, "description", "搜尋管理員手動新增的索引內容");
-    l(this, "priority", 10);
-    l(this, "enabled", !0);
+    d(this, "id", "manual-index");
+    d(this, "name", "手動索引");
+    d(this, "description", "搜尋管理員手動新增的索引內容");
+    d(this, "priority", 10);
+    d(this, "enabled", !0);
   }
   async initialize() {
-    const e = A.getAll();
+    const e = await x.getAll();
     console.log(`📚 Manual Index Plugin: ${e.length} indexes loaded`);
   }
   async search(e, t = 5) {
     try {
-      return (await A.search(e, t)).map(({ index: o, score: i, breakdown: r }) => ({
+      return (await x.search(e, t)).map(({ index: o, score: i, breakdown: r }) => ({
         type: "manual-index",
         title: o.name,
         snippet: o.content.substring(0, 200),
@@ -3794,14 +4169,15 @@ class te {
       return console.error("Error in ManualIndexPlugin.search:", n), [];
     }
   }
-  isAvailable() {
-    return A.getAll().length > 0;
+  async isAvailable() {
+    return (await x.getAll()).length > 0;
   }
-  getConfig() {
+  async getConfig() {
+    const e = await x.getAll();
     return {
       enabled: this.enabled,
       priority: this.priority,
-      indexCount: A.getAll().length
+      indexCount: e.length
     };
   }
   updateConfig(e) {
@@ -3810,31 +4186,31 @@ class te {
   dispose() {
   }
 }
-class ne {
+class V {
   constructor() {
-    l(this, "id", "frontend-pages");
-    l(this, "name", "前端頁面");
-    l(this, "description", "搜尋當前網站已索引的頁面內容");
-    l(this, "priority", 8);
-    l(this, "enabled", !0);
-    l(this, "extractor");
-    this.extractor = new k();
+    d(this, "id", "frontend-pages");
+    d(this, "name", "前端頁面");
+    d(this, "description", "搜尋當前網站已索引的頁面內容");
+    d(this, "priority", 8);
+    d(this, "enabled", !0);
+    d(this, "extractor");
+    this.extractor = new S();
   }
   async initialize() {
-    const e = v.loadIndexedPages();
+    const e = b.loadIndexedPages();
     console.log(`📄 Frontend Page Plugin: ${e.length} pages loaded`);
   }
   async search(e, t = 5) {
     try {
-      const n = v.loadIndexedPages();
+      const n = b.loadIndexedPages();
       if (n.length === 0)
         return [];
       const o = this.extractor.extractKeywords(e);
       return n.map((r) => {
-        const s = `${r.title} ${r.snippet}`.toLowerCase(), d = o.filter(
+        const s = `${r.title} ${r.snippet}`.toLowerCase(), l = o.filter(
           (c) => s.includes(c.toLowerCase())
         ).length / o.length;
-        return { page: r, score: d };
+        return { page: r, score: l };
       }).filter((r) => r.score > 0).sort((r, s) => s.score - r.score).slice(0, t).map(({ page: r, score: s }) => ({
         type: "frontend-page",
         title: r.title,
@@ -3852,13 +4228,13 @@ class ne {
     }
   }
   isAvailable() {
-    return v.loadIndexedPages().length > 0;
+    return b.loadIndexedPages().length > 0;
   }
   getConfig() {
     return {
       enabled: this.enabled,
       priority: this.priority,
-      pageCount: v.loadIndexedPages().length
+      pageCount: b.loadIndexedPages().length
     };
   }
   updateConfig(e) {
@@ -3867,7 +4243,7 @@ class ne {
   dispose() {
   }
 }
-class T {
+class E {
   /**
    * 獲取所有 Sitemap 配置
    */
@@ -3926,19 +4302,19 @@ class T {
       throw new Error("Sitemap config not found");
     console.log("Crawling sitemap:", t.sitemapUrl);
     try {
-      const o = await (await fetch(t.sitemapUrl)).text(), r = new DOMParser().parseFromString(o, "text/xml"), s = Array.from(r.querySelectorAll("url loc")).map((y) => y.textContent || "");
+      const o = await (await fetch(t.sitemapUrl)).text(), r = new DOMParser().parseFromString(o, "text/xml"), s = Array.from(r.querySelectorAll("url loc")).map((u) => u.textContent || "");
       console.log(`Found ${s.length} URLs in sitemap`);
-      const d = s.slice(0, 50), c = [];
-      for (const y of d)
+      const l = s.slice(0, 50), c = [];
+      for (const u of l)
         try {
-          const C = await this.crawlPage(y);
-          C && c.push(C);
-        } catch (C) {
-          console.error(`Failed to crawl ${y}:`, C);
+          const m = await this.crawlPage(u);
+          m && c.push(m);
+        } catch (m) {
+          console.error(`Failed to crawl ${u}:`, m);
         }
       t.pages = c, t.lastUpdated = Date.now();
-      const g = this.getAll(), x = g.findIndex((y) => y.id === e);
-      x >= 0 && (g[x] = t, this.saveAll(g)), console.log(`Crawled ${c.length} pages successfully`);
+      const p = this.getAll(), h = p.findIndex((u) => u.id === e);
+      h >= 0 && (p[h] = t, this.saveAll(p)), console.log(`Crawled ${c.length} pages successfully`);
     } catch (n) {
       throw console.error("Failed to crawl sitemap:", n), n;
     }
@@ -3949,14 +4325,14 @@ class T {
   static async crawlPage(e) {
     var t;
     try {
-      const o = await (await fetch(e)).text(), r = new DOMParser().parseFromString(o, "text/html"), s = ((t = r.querySelector("title")) == null ? void 0 : t.textContent) || e, a = new k(), d = a.extractText(r.body), c = a.extractKeywords(d), g = a.generateFingerprint(d);
+      const o = await (await fetch(e)).text(), r = new DOMParser().parseFromString(o, "text/html"), s = ((t = r.querySelector("title")) == null ? void 0 : t.textContent) || e, a = new S(), l = a.extractText(r.body), c = a.extractKeywords(l), p = a.generateFingerprint(l);
       return {
         url: e,
         title: s,
-        content: d.substring(0, 5e3),
+        content: l.substring(0, 5e3),
         // 限制長度
         keywords: c,
-        fingerprint: g,
+        fingerprint: p,
         lastCrawled: Date.now()
       };
     } catch (n) {
@@ -3969,18 +4345,18 @@ class T {
   static search(e, t, n = 5) {
     const o = this.getAll().filter((c) => c.enabled), i = t && t.length > 0 ? o.filter((c) => t.includes(c.domain)) : o;
     if (i.length === 0) return [];
-    const r = new k(), s = r.extractKeywords(e), a = r.generateFingerprint(e), d = [];
+    const r = new S(), s = r.extractKeywords(e), a = r.generateFingerprint(e), l = [];
     for (const c of i)
-      for (const g of c.pages) {
-        const x = this.calculateSimilarity(
+      for (const p of c.pages) {
+        const h = this.calculateSimilarity(
           s,
           a,
-          g.keywords,
-          g.fingerprint
+          p.keywords,
+          p.fingerprint
         );
-        x > 0 && d.push({ page: g, domain: c.domain, score: x });
+        h > 0 && l.push({ page: p, domain: c.domain, score: h });
       }
-    return d.sort((c, g) => g.score - c.score).slice(0, n);
+    return l.sort((c, p) => p.score - c.score).slice(0, n);
   }
   /**
    * 計算相似度
@@ -4039,38 +4415,38 @@ class T {
     this.updateTimers.forEach((e) => clearInterval(e)), this.updateTimers.clear(), localStorage.removeItem(this.STORAGE_KEY);
   }
 }
-l(T, "STORAGE_KEY", "sm_sitemap_configs"), l(T, "updateTimers", /* @__PURE__ */ new Map());
-class oe {
+d(E, "STORAGE_KEY", "sm_sitemap_configs"), d(E, "updateTimers", /* @__PURE__ */ new Map());
+class X {
   constructor() {
-    l(this, "id", "sitemap");
-    l(this, "name", "Sitemap 索引");
-    l(this, "description", "搜尋外部網站的 Sitemap 內容");
-    l(this, "priority", 6);
-    l(this, "enabled", !1);
+    d(this, "id", "sitemap");
+    d(this, "name", "Sitemap 索引");
+    d(this, "description", "搜尋外部網站的 Sitemap 內容");
+    d(this, "priority", 6);
+    d(this, "enabled", !1);
     // 預設關閉，需要配置 Sitemap 後才啟用
-    l(this, "extractor");
-    this.extractor = new k();
+    d(this, "extractor");
+    this.extractor = new S();
   }
   async initialize() {
-    const e = T.getAll();
+    const e = E.getAll();
     console.log(`🗺️ Sitemap Plugin: ${e.length} sitemaps loaded`), e.length > 0 && (this.enabled = !0);
   }
   async search(e, t = 5) {
     try {
-      const n = T.getAll();
+      const n = E.getAll();
       if (n.length === 0)
         return [];
       const o = [], i = this.extractor.extractKeywords(e);
       for (const r of n)
         try {
-          const s = await T.search(r.id, i, 3);
-          o.push(...s.map(({ page: a, score: d }) => ({
+          const s = await E.search(r.id, i, 3);
+          o.push(...s.map(({ page: a, score: l }) => ({
             type: "sitemap",
             title: a.title,
             snippet: a.content.substring(0, 200),
             content: a.content.substring(0, 500),
             url: a.url,
-            score: d,
+            score: l,
             metadata: {
               domain: r.domain,
               lastUpdated: r.lastUpdated,
@@ -4086,13 +4462,13 @@ class oe {
     }
   }
   isAvailable() {
-    return T.getAll().length > 0;
+    return E.getAll().length > 0;
   }
   getConfig() {
     return {
       enabled: this.enabled,
       priority: this.priority,
-      sitemapCount: T.getAll().length
+      sitemapCount: E.getAll().length
     };
   }
   updateConfig(e) {
@@ -4101,16 +4477,16 @@ class oe {
   dispose() {
   }
 }
-class ie {
+class Z {
   constructor(e) {
-    l(this, "id", "sql-database");
-    l(this, "name", "SQL 資料庫");
-    l(this, "description", "搜尋 SQL 資料庫中的內容");
-    l(this, "priority", 5);
-    l(this, "enabled", !1);
+    d(this, "id", "sql-database");
+    d(this, "name", "SQL 資料庫");
+    d(this, "description", "搜尋 SQL 資料庫中的內容");
+    d(this, "priority", 5);
+    d(this, "enabled", !1);
     // 預設關閉，需要配置後才能啟用
-    l(this, "config");
-    l(this, "extractor");
+    d(this, "config");
+    d(this, "extractor");
     this.config = {
       enabled: !1,
       priority: 5,
@@ -4120,7 +4496,7 @@ class ie {
       contentColumn: "content",
       urlColumn: "url",
       ...e
-    }, this.enabled = this.config.enabled, this.priority = this.config.priority, this.extractor = new k();
+    }, this.enabled = this.config.enabled, this.priority = this.config.priority, this.extractor = new S();
   }
   async initialize() {
     if (!this.config.connectionId) {
@@ -4132,11 +4508,11 @@ class ie {
       return;
     }
     try {
-      if (!z.getById(this.config.connectionId)) {
+      if (!A.getById(this.config.connectionId)) {
         console.warn(`⚠️ SQL Plugin: Connection ${this.config.connectionId} not found`), this.enabled = !1;
         return;
       }
-      if (!await z.testConnection(
+      if (!await A.testConnection(
         this.config.connectionId,
         this.config.apiEndpoint
       )) {
@@ -4152,7 +4528,7 @@ class ie {
     if (!this.isAvailable())
       return [];
     try {
-      const n = this.extractor.extractKeywords(e, 5), o = this.buildSearchQuery(n, t), i = await z.query(
+      const n = this.extractor.extractKeywords(e, 5), o = this.buildSearchQuery(n, t), i = await A.query(
         this.config.connectionId,
         o,
         this.config.apiEndpoint
@@ -4166,7 +4542,7 @@ class ie {
    * 構建搜尋 SQL 查詢
    */
   buildSearchQuery(e, t) {
-    const { searchTable: n, searchColumns: o, titleColumn: i, contentColumn: r, urlColumn: s } = this.config, a = o.map((d) => e.map((c) => `${d} LIKE '%${c}%'`).join(" OR ")).join(" OR ");
+    const { searchTable: n, searchColumns: o, titleColumn: i, contentColumn: r, urlColumn: s } = this.config, a = o.map((l) => e.map((c) => `${l} LIKE '%${c}%'`).join(" OR ")).join(" OR ");
     return `
       SELECT 
         ${i} as title,
@@ -4211,73 +4587,107 @@ class ie {
     this.enabled = !1;
   }
 }
-function re() {
-  const m = localStorage.getItem("sm_sql_plugin_config"), e = m ? JSON.parse(m) : {};
-  return new ie(e);
+function ee() {
+  const g = localStorage.getItem("sm_sql_plugin_config"), e = g ? JSON.parse(g) : {};
+  return new Z(e);
 }
-function se() {
-  const m = new ee();
-  return m.register(new te()), m.register(new ne()), m.register(new oe()), m.register(re()), m;
+function te() {
+  const g = new Y();
+  return g.register(new G()), g.register(new V()), g.register(new X()), g.register(ee()), g;
 }
-function ae(m) {
+function ne(g) {
   const e = localStorage.getItem("sm_plugin_configs");
   if (e)
     try {
       const t = JSON.parse(e);
       Object.keys(t).forEach((n) => {
-        const o = m.getPlugin(n);
+        const o = g.getPlugin(n);
         o && o.updateConfig(t[n]);
       }), console.log("✅ Plugin configs loaded from localStorage");
     } catch (t) {
       console.error("Error loading plugin configs:", t);
     }
 }
-class le {
+class oe {
   constructor() {
-    l(this, "config");
-    l(this, "openAI");
-    l(this, "indexing");
-    l(this, "agent");
-    l(this, "panel");
-    l(this, "capture");
-    l(this, "conversationState");
-    l(this, "initialized", !1);
-    l(this, "captureMode", !1);
-    l(this, "adminPanel");
-    l(this, "pluginManager");
+    d(this, "config");
+    d(this, "openAI");
+    d(this, "indexing");
+    d(this, "agent");
+    d(this, "panel");
+    d(this, "capture");
+    d(this, "conversationState");
+    d(this, "initialized", !1);
+    d(this, "captureMode", !1);
+    d(this, "adminPanel");
+    d(this, "pluginManager");
+    d(this, "floatingIcon");
+    d(this, "screenshotMode", !1);
+    d(this, "hoverHandler", null);
+    d(this, "mouseLeaveHandler", null);
+  }
+  /**
+   * 從SQL載入規則
+   */
+  async loadRulesFromSQL() {
+    try {
+      const e = await fetch("http://localhost:3002/rules");
+      if (!e.ok)
+        return console.log("No rules found in database, using empty array"), [];
+      const t = await e.json();
+      return Array.isArray(t) ? t : [];
+    } catch (e) {
+      return console.error("Failed to load rules from SQL:", e), [];
+    }
   }
   /**
    * 初始化 Widget
    */
-  init(e) {
-    var n, o, i;
+  async init(e) {
+    var o, i, r, s;
     if (this.initialized) {
       console.warn("ServiceModuler already initialized");
       return;
     }
-    this.config = e, P.getCurrentUser(), console.log("User ID:", P.getUserId()), this.pluginManager = se(), ae(this.pluginManager), this.pluginManager.initializeAll().then(() => {
+    this.config = e, M.getCurrentUser(), console.log("User ID:", M.getUserId()), this.pluginManager = te(), ne(this.pluginManager), this.pluginManager.initializeAll().then(() => {
       console.log("✅ All plugins initialized");
-    }).catch((r) => {
-      console.error("❌ Plugin initialization error:", r);
-    }), this.openAI = new j(e.azureOpenAI || e.llmAPI), this.indexing = new V(this.openAI, e.siteConfig), A.setOpenAIService(this.openAI);
+    }).catch((a) => {
+      console.error("❌ Plugin initialization error:", a);
+    }), this.openAI = new j(e.azureOpenAI || e.llmAPI), this.indexing = new H(this.openAI, e.siteConfig), x.setOpenAIService(this.openAI), C.setConfig({});
     const t = e.telegram && e.telegram.botToken && e.telegram.chatId ? e.telegram : void 0;
-    this.agent = new G(
+    window.SM_TELEGRAM_CONFIG = t;
+    const n = await this.loadRulesFromSQL();
+    this.agent = new B(
       this.openAI,
       this.pluginManager,
-      e.rules || [],
+      n,
       t
-    ), this.capture = new X(), this.panel = new W(
-      ((n = e.ui) == null ? void 0 : n.width) || "33.33%",
-      ((o = e.ui) == null ? void 0 : o.position) || "right"
+    ), this.capture = new J(), this.panel = new Q(
+      ((o = e.ui) == null ? void 0 : o.width) || "33.33%",
+      ((i = e.ui) == null ? void 0 : i.position) || "right"
     ), this.panel.setCallbacks({
-      onSendMessage: (r, s) => this.handleSendMessage(r, s),
-      onSelectRule: (r) => this.handleSelectRule(r),
+      onSendMessage: (a, l) => this.handleSendMessage(a, l),
+      onSelectRule: (a) => this.handleSelectRule(a),
       onClose: () => this.handleClose(),
       onOpen: () => this.handleOpen()
     }), this.loadConversationState(), this.agent && this.panel.setRules(
       this.agent.getRules(),
-      (i = this.agent.getCurrentRule()) == null ? void 0 : i.id
-    ), this.adminPanel = new Z(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
+      (r = this.agent.getCurrentRule()) == null ? void 0 : r.id
+    ), this.adminPanel || (this.adminPanel = new W()), window.location.pathname === "/lens-service" && this.openAdminPanel(), this.bindGlobalKeyboardShortcuts(), ((s = e.ui) == null ? void 0 : s.iconPosition) !== !1 && this.createFloatingIcon(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
+  }
+  /**
+   * 綁定全局快捷鍵
+   */
+  bindGlobalKeyboardShortcuts() {
+    document.addEventListener("keydown", (e) => {
+      var t, n;
+      e.key && e.key.toLowerCase() === "q" && ((t = this.panel) != null && t.isPanelOpen()) ? (console.log("🎯 Q key pressed, panel is open, enabling screenshot mode"), this.enableScreenshotMode()) : e.key && e.key.toLowerCase() === "q" && console.log("🎯 Q key pressed, but panel is not open:", (n = this.panel) == null ? void 0 : n.isPanelOpen());
+    }), document.addEventListener("keyup", (e) => {
+      e.key && e.key.toLowerCase() === "q" && this.disableScreenshotMode();
+    }), document.addEventListener("click", (e) => {
+      var t;
+      this.screenshotMode && ((t = this.panel) != null && t.isPanelOpen()) && (console.log("📸 Screenshot click detected"), e.preventDefault(), e.stopPropagation(), this.captureElementScreenshot(e.target));
+    }, !0);
   }
   /**
    * 打開面板
@@ -4313,36 +4723,36 @@ class le {
     };
     (o = this.conversationState) == null || o.messages.push(n), this.panel.addMessage(n), this.saveConversationState();
     try {
-      let d, c, g = !1;
-      const x = ((i = this.conversationState) == null ? void 0 : i.sessionId) || this.generateSessionId(), y = localStorage.getItem("lens_service_user_id") || "default_user";
+      let l, c, p = !1;
+      const h = ((i = this.conversationState) == null ? void 0 : i.sessionId) || this.generateSessionId(), u = localStorage.getItem("lens_service_user_id") || "default_user";
       if (t)
-        d = await this.openAI.chatCompletionWithImage(
+        l = await this.openAI.chatCompletionWithImage(
           e || "請分析這張圖片並回答問題",
           t,
           ((r = this.conversationState) == null ? void 0 : r.messages.slice(0, -1)) || []
           // 不包含剛添加的用戶訊息
         );
       else {
-        const O = await this.agent.processMessage(
+        const y = await this.agent.processMessage(
           e,
           ((s = this.conversationState) == null ? void 0 : s.messages) || [],
-          x,
-          y
+          h,
+          u
         );
-        d = O.response, c = O.sources, g = O.needsHumanReply;
+        l = y.response, c = y.sources, p = y.needsHumanReply;
       }
-      const C = {
+      const m = {
         role: "assistant",
-        content: d,
+        content: l,
         timestamp: Date.now(),
         sources: c
       };
-      (a = this.conversationState) == null || a.messages.push(C), this.panel.addMessage(C), this.saveConversationState(), await this.saveConversationToDatabase(x, y);
-    } catch (d) {
-      console.error("Error processing message:", d);
+      (a = this.conversationState) == null || a.messages.push(m), this.panel.addMessage(m), this.saveConversationState(), await this.saveConversationToDatabase(h, u);
+    } catch (l) {
+      console.error("Error processing message:", l);
       const c = {
         role: "assistant",
-        content: `抱歉，發生錯誤：${d instanceof Error ? d.message : "未知錯誤"}`,
+        content: `抱歉，發生錯誤：${l instanceof Error ? l.message : "未知錯誤"}`,
         timestamp: Date.now()
       };
       this.panel.addMessage(c);
@@ -4382,6 +4792,12 @@ class le {
     ));
   }
   /**
+   * 打開管理後台
+   */
+  openAdminPanel() {
+    this.adminPanel && this.adminPanel.open().catch(console.error);
+  }
+  /**
    * 開始索引網站
    * @param mode 'local' = 索引本地專案, 'domain' = 爬取域名（默認）
    */
@@ -4415,7 +4831,7 @@ class le {
    * 搜尋當前頁面內容
    */
   searchCurrentPage(e) {
-    return Q.searchInCurrentPage(e).map((n) => ({
+    return N.searchInCurrentPage(e).map((n) => ({
       text: n.text,
       context: n.context
     }));
@@ -4424,7 +4840,7 @@ class le {
    * 獲取當前頁面內容
    */
   getCurrentPageContent() {
-    return Q.extractCurrentPageContent();
+    return N.extractCurrentPageContent();
   }
   /**
    * 清除對話
@@ -4436,7 +4852,7 @@ class le {
   /**
    * 打開管理後台
    */
-  openAdmin() {
+  async openAdmin() {
     if (!this.initialized) {
       console.error("ServiceModuler not initialized. Call init() first.");
       return;
@@ -4445,7 +4861,7 @@ class le {
       console.error("AdminPanel not initialized");
       return;
     }
-    this.adminPanel.open();
+    await this.adminPanel.open();
   }
   /**
    * 銷毀 Widget
@@ -4482,7 +4898,7 @@ class le {
    * 載入對話狀態
    */
   loadConversationState() {
-    let e = v.loadConversation();
+    let e = b.loadConversation();
     e || (e = {
       sessionId: this.generateSessionId(),
       messages: []
@@ -4494,7 +4910,212 @@ class le {
    * 保存對話狀態
    */
   saveConversationState() {
-    this.conversationState && v.saveConversation(this.conversationState);
+    this.conversationState && b.saveConversation(this.conversationState);
+  }
+  /**
+   * 創建浮動圖標
+   */
+  createFloatingIcon() {
+    var o, i;
+    this.floatingIcon && this.floatingIcon.remove();
+    const e = (i = (o = this.config) == null ? void 0 : o.ui) == null ? void 0 : i.iconPosition;
+    let t = { bottom: "20px", right: "20px" };
+    if (typeof e == "string")
+      switch (e) {
+        case "bottom-left":
+          t = { bottom: "20px", left: "20px" };
+          break;
+        case "top-right":
+          t = { top: "20px", right: "20px" };
+          break;
+        case "top-left":
+          t = { top: "20px", left: "20px" };
+          break;
+        default:
+          t = { top: "20px", right: "20px" };
+      }
+    else e && typeof e == "object" && (t = e);
+    this.floatingIcon = document.createElement("button"), this.floatingIcon.id = "lens-service-floating-icon", this.floatingIcon.innerHTML = `
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+    `;
+    const n = `
+      position: fixed;
+      z-index: 999999;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 50%;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      ${Object.entries(t).map(([r, s]) => `${r}: ${s}`).join("; ")};
+    `;
+    this.floatingIcon.style.cssText = n, this.floatingIcon.addEventListener("mouseenter", () => {
+      this.floatingIcon.style.transform = "scale(1.1)", this.floatingIcon.style.boxShadow = "0 6px 25px rgba(0, 0, 0, 0.2)";
+    }), this.floatingIcon.addEventListener("mouseleave", () => {
+      this.floatingIcon.style.transform = "scale(1)", this.floatingIcon.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.15)";
+    }), this.floatingIcon.addEventListener("click", () => {
+      this.open();
+    }), document.body.appendChild(this.floatingIcon);
+  }
+  /**
+   * 移除浮動圖標
+   */
+  removeFloatingIcon() {
+    this.floatingIcon && (this.floatingIcon.remove(), this.floatingIcon = void 0);
+  }
+  /**
+   * 啟用截圖模式
+   */
+  enableScreenshotMode() {
+    if (this.screenshotMode) return;
+    this.screenshotMode = !0, document.body.style.cursor = "crosshair";
+    const e = document.createElement("div");
+    e.id = "lens-screenshot-overlay", e.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 123, 255, 0.1);
+      z-index: 999998;
+      pointer-events: none;
+      border: 2px dashed #007bff;
+    `, document.body.appendChild(e), this.addHoverHighlight(), console.log("📸 Screenshot mode enabled - Q+Click to capture elements");
+  }
+  /**
+   * 禁用截圖模式
+   */
+  disableScreenshotMode() {
+    if (!this.screenshotMode) return;
+    this.screenshotMode = !1, document.body.style.cursor = "";
+    const e = document.getElementById("lens-screenshot-overlay");
+    e && e.remove(), this.removeHoverHighlight();
+  }
+  /**
+   * 添加hover高亮效果
+   */
+  addHoverHighlight() {
+    if (this.removeHoverHighlight(), this.hoverHandler = (e) => {
+      if (!this.screenshotMode) return;
+      const t = e.target;
+      if (!t || t.closest("#lens-service-panel") || t.closest("#lens-service-admin"))
+        return;
+      const n = document.querySelector(".lens-hover-highlight");
+      n && n.classList.remove("lens-hover-highlight"), t.classList.add("lens-hover-highlight");
+    }, this.mouseLeaveHandler = (e) => {
+      if (!this.screenshotMode) return;
+      const t = e.target;
+      t && t.classList.remove("lens-hover-highlight");
+    }, !document.getElementById("lens-hover-styles")) {
+      const e = document.createElement("style");
+      e.id = "lens-hover-styles", e.textContent = `
+        .lens-hover-highlight {
+          outline: 2px solid #007bff !important;
+          outline-offset: 2px !important;
+          background-color: rgba(0, 123, 255, 0.1) !important;
+        }
+      `, document.head.appendChild(e);
+    }
+    document.addEventListener("mouseover", this.hoverHandler), document.addEventListener("mouseleave", this.mouseLeaveHandler);
+  }
+  /**
+   * 移除hover高亮效果
+   */
+  removeHoverHighlight() {
+    this.hoverHandler && (document.removeEventListener("mouseover", this.hoverHandler), this.hoverHandler = null), this.mouseLeaveHandler && (document.removeEventListener("mouseleave", this.mouseLeaveHandler), this.mouseLeaveHandler = null), document.querySelectorAll(".lens-hover-highlight").forEach((n) => n.classList.remove("lens-hover-highlight"));
+    const t = document.getElementById("lens-hover-styles");
+    t && t.remove();
+  }
+  /**
+   * 捕獲元素截圖
+   */
+  async captureElementScreenshot(e) {
+    var t;
+    try {
+      console.log("📸 Capturing screenshot of element:", e), window.html2canvas || await this.loadHtml2Canvas();
+      const n = window.html2canvas, o = e.style.cssText;
+      e.style.cssText += "; outline: 3px solid #007bff; outline-offset: 2px;", await new Promise((s) => setTimeout(s, 100));
+      const i = await n(e, {
+        backgroundColor: "#ffffff",
+        scale: 1,
+        logging: !1,
+        useCORS: !0,
+        allowTaint: !0
+      });
+      e.style.cssText = o;
+      const r = i.toDataURL("image/png");
+      this.panel && this.panel.setScreenshotInInput(r), console.log("✅ Screenshot captured and added to input");
+    } catch (n) {
+      console.error("❌ Failed to capture screenshot:", n), (t = this.panel) == null || t.addMessage({
+        id: Date.now().toString(),
+        content: "截圖失敗，請重試。",
+        role: "assistant",
+        timestamp: Date.now()
+      });
+    } finally {
+      this.disableScreenshotMode();
+    }
+  }
+  /**
+   * 載入 html2canvas 庫
+   */
+  async loadHtml2Canvas() {
+    return new Promise((e, t) => {
+      const n = document.createElement("script");
+      n.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", n.onload = () => e(), n.onerror = () => t(new Error("Failed to load html2canvas")), document.head.appendChild(n);
+    });
+  }
+  /**
+   * 發送截圖到 AI 進行分析
+   */
+  async sendScreenshotToAI(e, t) {
+    var n, o, i;
+    try {
+      if (!this.openAI)
+        throw new Error("OpenAI service not initialized");
+      const r = {
+        tagName: t.tagName,
+        className: t.className,
+        id: t.id,
+        textContent: ((n = t.textContent) == null ? void 0 : n.substring(0, 200)) || "",
+        attributes: Array.from(t.attributes).map((l) => `${l.name}="${l.value}"`).join(" ")
+      }, s = `
+用戶截取了網頁上的一個元素，請分析這個截圖並提供相關說明。
+
+元素信息：
+- 標籤：${r.tagName}
+- 類名：${r.className}
+- ID：${r.id}
+- 文本內容：${r.textContent}
+- 屬性：${r.attributes}
+
+請分析截圖內容並提供有用的信息或建議。
+      `.trim(), a = await this.openAI.sendVisionMessage(s, e);
+      (o = this.panel) == null || o.addMessage({
+        id: Date.now().toString(),
+        content: `📸 **截圖分析結果：**
+
+${a}`,
+        role: "assistant",
+        timestamp: Date.now()
+      });
+    } catch (r) {
+      console.error("❌ Failed to send screenshot to AI:", r), (i = this.panel) == null || i.addMessage({
+        id: Date.now().toString(),
+        content: "截圖分析失敗，請檢查 AI 服務配置。",
+        role: "assistant",
+        timestamp: Date.now()
+      });
+    }
   }
   /**
    * 生成 Session ID
@@ -4503,8 +5124,8 @@ class le {
     return `sm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }
-const de = new le();
-typeof window < "u" && (window.LensService = de);
+const ie = new oe();
+typeof window < "u" && (window.LensService = ie);
 export {
-  de as default
+  ie as default
 };

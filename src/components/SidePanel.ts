@@ -1,5 +1,7 @@
 import { Message, Rule } from '../types';
 import { styles } from './styles';
+import { MarkdownRenderer } from '../utils/markdown';
+
 
 /**
  * 側邊欄面板組件
@@ -146,18 +148,70 @@ export class SidePanel {
       this.close();
     });
     
-    // 發送按鈕
-    panel.querySelector('#sm-send-btn')?.addEventListener('click', () => {
-      this.handleSend();
-    });
-    
-    // 輸入框 Enter 鍵
-    const input = panel.querySelector('#sm-input') as HTMLInputElement;
-    input?.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
+    // 發送按鈕 - 使用多種事件綁定方式確保可靠性
+    const sendBtn = panel.querySelector('#sm-send-btn');
+    if (sendBtn) {
+      console.log('✅ Send button found, binding click event');
+
+      // 方法1: 標準事件監聽器
+      sendBtn.addEventListener('click', (e) => {
+        console.log('🔥 Send button clicked via addEventListener!');
+        e.preventDefault();
+        e.stopPropagation();
         this.handleSend();
-      }
-    });
+      });
+
+      // 方法2: 直接設置onclick屬性
+      (sendBtn as HTMLElement).onclick = (e) => {
+        console.log('🔥 Send button clicked via onclick!');
+        e.preventDefault();
+        e.stopPropagation();
+        this.handleSend();
+      };
+
+      // 方法3: 使用事件委託
+      panel.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).id === 'sm-send-btn' ||
+            (e.target as HTMLElement).closest('#sm-send-btn')) {
+          console.log('🔥 Send button clicked via delegation!');
+          e.preventDefault();
+          e.stopPropagation();
+          this.handleSend();
+        }
+      });
+    } else {
+      console.error('❌ Send button not found!');
+    }
+    
+    // 輸入框事件
+    const input = panel.querySelector('#sm-input') as HTMLInputElement;
+    if (input) {
+      console.log('✅ Input field found, binding events');
+
+      // Enter 鍵發送
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          console.log('🔥 Enter key pressed in input');
+          this.handleSend();
+        }
+      });
+
+      // 輸入事件調試
+      input.addEventListener('input', (e) => {
+        console.log('🔥 Input event:', (e.target as HTMLInputElement).value);
+      });
+
+      // 聚焦事件調試
+      input.addEventListener('focus', () => {
+        console.log('🔥 Input focused');
+      });
+
+      input.addEventListener('blur', () => {
+        console.log('🔥 Input blurred');
+      });
+    } else {
+      console.error('❌ Input field not found!');
+    }
     
     // 標籤切換
     panel.querySelector('#sm-chat-tab')?.addEventListener('click', () => {
@@ -228,11 +282,16 @@ export class SidePanel {
     if (!messagesContainer) return;
     
     const messageEl = document.createElement('div');
-    messageEl.style.cssText = message.role === 'user' 
-      ? styles.userMessage 
+    messageEl.style.cssText = message.role === 'user'
+      ? styles.userMessage
       : styles.assistantMessage;
-    
-    messageEl.textContent = message.content;
+
+    // 對於助手消息使用 Markdown 渲染，用戶消息保持純文本
+    if (message.role === 'assistant') {
+      messageEl.innerHTML = MarkdownRenderer.render(message.content);
+    } else {
+      messageEl.textContent = message.content;
+    }
     
     // 如果有來源，添加來源連結
     if (message.sources && message.sources.length > 0) {
@@ -267,29 +326,43 @@ export class SidePanel {
   setRules(rules: Rule[], currentRuleId?: string): void {
     const rulesList = this.panel.querySelector('#sm-rules-list');
     if (!rulesList) return;
-    
+
     rulesList.innerHTML = '';
-    
+
+    if (rules.length === 0) {
+      // 沒有規則時顯示提示
+      const noRulesEl = document.createElement('div');
+      noRulesEl.style.cssText = `
+        padding: 20px;
+        text-align: center;
+        color: #6b7280;
+        font-size: 14px;
+      `;
+      noRulesEl.textContent = '沒有規則';
+      rulesList.appendChild(noRulesEl);
+      return;
+    }
+
     rules.forEach(rule => {
       const ruleEl = document.createElement('div');
       ruleEl.style.cssText = styles.ruleItem;
-      
+
       if (rule.id === currentRuleId) {
         ruleEl.style.cssText += '; ' + styles.ruleItemActive;
       }
-      
+
       ruleEl.innerHTML = `
         <h3 style="${styles.ruleTitle}">${rule.name}</h3>
         <p style="${styles.ruleDescription}">${rule.description || ''}</p>
       `;
-      
+
       ruleEl.addEventListener('click', () => {
         if (this.onSelectRule) {
           this.onSelectRule(rule.id);
         }
         this.showView('chat');
       });
-      
+
       rulesList.appendChild(ruleEl);
     });
   }
@@ -309,31 +382,29 @@ export class SidePanel {
    */
   async showHistory(): Promise<void> {
     try {
-      // 獲取當前用戶的對話記錄
-      const userId = localStorage.getItem('lens_service_user_id') || 'default_user';
-      const response = await fetch(`/api/conversations?userId=${userId}`);
+      // 從SQL讀取對話記錄
+      const response = await fetch('http://localhost:3002/conversations');
 
       if (!response.ok) {
-        console.error('Failed to fetch conversations:', response.statusText);
-        alert('載入歷史記錄失敗，請稍後再試');
+        alert('目前沒有對話記錄');
         return;
       }
 
       const conversations = await response.json();
 
       // 顯示歷史記錄
-      if (conversations.length === 0) {
+      if (!Array.isArray(conversations) || conversations.length === 0) {
         alert('目前沒有對話記錄');
       } else {
         const historyText = conversations.map((c: any) =>
-          `對話 ID: ${c.conversationId}\n時間: ${new Date(c.createdAt).toLocaleString()}\n訊息數: ${Array.isArray(c.messages) ? c.messages.length : 0}`
+          `對話 ID: ${c.id}\n時間: ${new Date(c.created_at).toLocaleString()}\n訊息數: ${Array.isArray(c.messages) ? c.messages.length : 0}`
         ).join('\n\n');
 
         alert(`找到 ${conversations.length} 條對話記錄\n\n${historyText}`);
       }
     } catch (error) {
       console.error('Failed to load history:', error);
-      alert('載入歷史記錄失敗，請檢查網路連接');
+      alert('載入歷史記錄失敗');
     }
   }
   
@@ -349,9 +420,6 @@ export class SidePanel {
       this.container.appendChild(this.overlay);
       this.container.appendChild(this.panel);
     }
-
-    // 推動頁面內容，讓原頁面變成2/3寬度
-    this.pushPageContent();
 
     // 顯示遮罩
     this.overlay.style.display = 'block';
@@ -379,9 +447,6 @@ export class SidePanel {
   close(): void {
     if (!this.isOpen) return;
 
-    // 恢復頁面內容
-    this.restorePageContent();
-
     // 滑出面板
     if (this.position === 'right') {
       this.panel.style.right = `-${this.width}`;
@@ -400,6 +465,13 @@ export class SidePanel {
       this.onClose();
     }
   }
+
+  /**
+   * 檢查面板是否打開
+   */
+  isPanelOpen(): boolean {
+    return this.isOpen;
+  }
   
   /**
    * 推動頁面內容
@@ -408,20 +480,27 @@ export class SidePanel {
     const body = document.body;
     const html = document.documentElement;
 
-    // 計算推動距離（面板寬度的2/3，讓原頁面變成2/3寬度）
+    // 計算面板寬度百分比
     const panelWidthPercent = parseFloat(this.width.replace('%', ''));
-    const pushDistance = panelWidthPercent * 0.67; // 推動2/3的面板寬度
+    // 原頁面應該變成 100% - 面板寬度
+    const pageWidthPercent = 100 - panelWidthPercent;
 
     if (this.position === 'right') {
-      body.style.transform = `translateX(-${pushDistance}%)`;
-      body.style.width = `${100 - panelWidthPercent}%`;
+      // 右側面板：頁面向左推動，寬度縮小
+      body.style.transform = `translateX(0)`;
+      body.style.width = `${pageWidthPercent}%`;
+      body.style.marginLeft = '0';
+      body.style.marginRight = '0';
     } else {
-      body.style.transform = `translateX(${pushDistance}%)`;
-      body.style.width = `${100 - panelWidthPercent}%`;
+      // 左側面板：頁面向右推動，寬度縮小
+      body.style.transform = `translateX(${panelWidthPercent}%)`;
+      body.style.width = `${pageWidthPercent}%`;
+      body.style.marginLeft = '0';
+      body.style.marginRight = '0';
     }
 
     body.style.transition = 'transform 0.3s ease, width 0.3s ease';
-    body.style.overflow = 'hidden';
+    body.style.boxSizing = 'border-box';
   }
 
   /**
@@ -433,7 +512,9 @@ export class SidePanel {
     body.style.transform = '';
     body.style.width = '';
     body.style.transition = '';
-    body.style.overflow = '';
+    body.style.boxSizing = '';
+    body.style.marginLeft = '';
+    body.style.marginRight = '';
   }
 
   /**
@@ -470,6 +551,33 @@ export class SidePanel {
     const preview = this.panel.querySelector('#sm-image-preview') as HTMLElement;
     if (preview) {
       preview.style.display = 'none';
+    }
+  }
+
+  /**
+   * 將截圖設置到輸入框
+   */
+  setScreenshotInInput(base64Image: string): void {
+    this.capturedImage = base64Image;
+
+    // 顯示圖片預覽
+    const preview = this.panel.querySelector('#sm-image-preview') as HTMLElement;
+    const img = this.panel.querySelector('#sm-preview-img') as HTMLImageElement;
+
+    if (preview && img) {
+      img.src = base64Image;
+      preview.style.display = 'block';
+    }
+
+    // 自動打開面板如果還沒打開
+    if (!this.isOpen) {
+      this.open();
+    }
+
+    // 聚焦到輸入框
+    const input = this.panel.querySelector('#sm-input') as HTMLInputElement;
+    if (input) {
+      input.focus();
     }
   }
 

@@ -1,13 +1,14 @@
 import { ManualIndex } from '../types';
 import { ContentExtractor } from './ContentExtractor';
 import { OpenAIService } from './OpenAIService';
+import { DatabaseService } from './DatabaseService';
+
 
 /**
  * 手動索引管理服務
  * 允許在後台手動新增索引內容，支持BM25和向量搜索
  */
 export class ManualIndexService {
-  private static readonly STORAGE_KEY = 'sm_manual_indexes';
   private static openAIService: OpenAIService | null = null;
 
   /**
@@ -20,14 +21,11 @@ export class ManualIndexService {
   /**
    * 獲取所有手動索引
    */
-  static getAll(): ManualIndex[] {
-    const stored = localStorage.getItem(this.STORAGE_KEY);
-    if (!stored) return [];
-    
+  static async getAll(): Promise<ManualIndex[]> {
     try {
-      return JSON.parse(stored);
+      return await DatabaseService.getManualIndexes();
     } catch (e) {
-      console.error('Failed to parse manual indexes:', e);
+      console.error('Failed to get manual indexes:', e);
       return [];
     }
   }
@@ -35,8 +33,8 @@ export class ManualIndexService {
   /**
    * 根據 ID 獲取索引
    */
-  static getById(id: string): ManualIndex | null {
-    const indexes = this.getAll();
+  static async getById(id: string): Promise<ManualIndex | null> {
+    const indexes = await this.getAll();
     return indexes.find(idx => idx.id === id) || null;
   }
   
@@ -47,6 +45,7 @@ export class ManualIndexService {
     name: string;
     description: string;
     content: string;
+    url?: string;
     metadata?: Record<string, any>;
   }): Promise<ManualIndex> {
     const extractor = new ContentExtractor();
@@ -70,6 +69,7 @@ export class ManualIndexService {
       name: data.name,
       description: data.description,
       content: data.content,
+      url: data.url,
       keywords: keywords,
       fingerprint: fingerprint,
       embedding: embedding,
@@ -78,9 +78,9 @@ export class ManualIndexService {
       updatedAt: Date.now()
     };
 
-    const indexes = this.getAll();
+    const indexes = await this.getAll();
     indexes.push(index);
-    this.saveAll(indexes);
+    await this.saveAll(indexes);
 
     console.log('Created manual index:', index.id);
 
@@ -96,7 +96,7 @@ export class ManualIndexService {
     content?: string;
     metadata?: Record<string, any>;
   }): Promise<ManualIndex | null> {
-    const indexes = this.getAll();
+    const indexes = await this.getAll();
     const index = indexes.find(idx => idx.id === id);
 
     if (!index) return null;
@@ -128,7 +128,7 @@ export class ManualIndexService {
 
     index.updatedAt = Date.now();
 
-    this.saveAll(indexes);
+    await this.saveAll(indexes);
 
     console.log('Updated manual index:', id);
 
@@ -138,18 +138,18 @@ export class ManualIndexService {
   /**
    * 刪除索引
    */
-  static delete(id: string): boolean {
-    const indexes = this.getAll();
+  static async delete(id: string): Promise<boolean> {
+    const indexes = await this.getAll();
     const newIndexes = indexes.filter(idx => idx.id !== id);
-    
+
     if (newIndexes.length === indexes.length) {
       return false; // 沒有找到
     }
-    
-    this.saveAll(newIndexes);
-    
+
+    await DatabaseService.deleteManualIndex(id);
+
     console.log('Deleted manual index:', id);
-    
+
     return true;
   }
   
@@ -165,7 +165,7 @@ export class ManualIndexService {
       fingerprintScore: number;
     };
   }>> {
-    const indexes = this.getAll();
+    const indexes = await this.getAll();
     if (indexes.length === 0) return [];
 
     const extractor = new ContentExtractor();
@@ -305,8 +305,11 @@ export class ManualIndexService {
   /**
    * 保存所有索引
    */
-  private static saveAll(indexes: ManualIndex[]): void {
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(indexes));
+  private static async saveAll(indexes: ManualIndex[]): Promise<void> {
+    // 保存所有索引到資料庫
+    for (const index of indexes) {
+      await DatabaseService.saveManualIndex(index);
+    }
   }
   
   /**
@@ -319,8 +322,11 @@ export class ManualIndexService {
   /**
    * 清除所有索引（用於測試）
    */
-  static clearAll(): void {
-    localStorage.removeItem(this.STORAGE_KEY);
+  static async clearAll(): Promise<void> {
+    const indexes = await this.getAll();
+    for (const index of indexes) {
+      await DatabaseService.deleteManualIndex(index.id);
+    }
   }
   
   /**
@@ -334,7 +340,7 @@ export class ManualIndexService {
   /**
    * 匯入索引（JSON）
    */
-  static importFromJSON(json: string): number {
+  static async importFromJSON(json: string): Promise<number> {
     try {
       const indexes: ManualIndex[] = JSON.parse(json);
 
@@ -344,10 +350,10 @@ export class ManualIndexService {
       }
 
       // 合併到現有索引
-      const existing = this.getAll();
+      const existing = await this.getAll();
       const merged = [...existing, ...indexes];
 
-      this.saveAll(merged);
+      await this.saveAll(merged);
 
       console.log(`Imported ${indexes.length} manual indexes`);
 
@@ -367,7 +373,7 @@ export class ManualIndexService {
       return 0;
     }
 
-    const indexes = this.getAll();
+    const indexes = await this.getAll();
     let updatedCount = 0;
 
     for (const index of indexes) {
@@ -388,7 +394,7 @@ export class ManualIndexService {
     }
 
     if (updatedCount > 0) {
-      this.saveAll(indexes);
+      await this.saveAll(indexes);
       console.log(`Generated embeddings for ${updatedCount} indexes`);
     }
 

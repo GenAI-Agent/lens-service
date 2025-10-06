@@ -45,14 +45,13 @@ export class PageScreenshotService {
       
       // 截圖
       const canvas = await html2canvas(document.body, {
-        y: scrollY,
         height: Math.min(this.maxScreenshotHeight, pageHeight - scrollY),
         windowHeight: this.maxScreenshotHeight,
         scrollY: -scrollY,
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#ffffff'
-      });
+        background: '#ffffff'
+      } as any);
       
       screenshots.push({
         dataUrl: canvas.toDataURL('image/jpeg', 0.8),
@@ -102,8 +101,8 @@ export class PageScreenshotService {
       const canvas = await html2canvas(element, {
         useCORS: true,
         allowTaint: true,
-        backgroundColor: '#ffffff'
-      });
+        background: '#ffffff'
+      } as any);
       
       screenshots.push({
         dataUrl: canvas.toDataURL('image/jpeg', 0.8),
@@ -119,12 +118,11 @@ export class PageScreenshotService {
         const height = Math.min(this.maxScreenshotHeight, elementHeight - y);
         
         const canvas = await html2canvas(element, {
-          y: y,
           height: height,
           useCORS: true,
           allowTaint: true,
-          backgroundColor: '#ffffff'
-        });
+          background: '#ffffff'
+        } as any);
         
         screenshots.push({
           dataUrl: canvas.toDataURL('image/jpeg', 0.8),

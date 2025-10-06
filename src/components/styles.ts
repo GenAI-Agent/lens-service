@@ -19,10 +19,9 @@ export const styles = {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.3);
+    background: transparent;
     pointer-events: auto;
     z-index: 1;
-    backdrop-filter: blur(2px);
   `,
   
   panel: `
@@ -107,15 +106,17 @@ export const styles = {
   `,
   
   assistantMessage: `
-    align-self: flex-start;
-    background: #f3f4f6;
+    align-self: stretch;
+    background: transparent;
     color: #1f2937;
-    padding: 12px 16px;
-    border-radius: 12px;
-    max-width: 80%;
+    padding: 16px 0;
+    border-radius: 0;
+    max-width: 100%;
     word-wrap: break-word;
-    font-size: 14px;
-    line-height: 1.5;
+    font-size: 15px;
+    line-height: 1.6;
+    border-bottom: 1px solid #f1f5f9;
+    margin-bottom: 16px;
   `,
   
   sources: `

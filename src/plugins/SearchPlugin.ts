@@ -46,7 +46,7 @@ export interface SearchPlugin {
   /**
    * 檢查 Plugin 是否可用
    */
-  isAvailable(): boolean;
+  isAvailable(): boolean | Promise<boolean>;
 
   /**
    * 獲取 Plugin 配置
@@ -110,10 +110,20 @@ export class PluginManager {
   /**
    * 獲取所有啟用的 Plugin
    */
-  getEnabledPlugins(): SearchPlugin[] {
-    return this.getAllPlugins()
-      .filter(plugin => plugin.enabled && plugin.isAvailable())
-      .sort((a, b) => b.priority - a.priority);
+  async getEnabledPlugins(): Promise<SearchPlugin[]> {
+    const plugins = this.getAllPlugins();
+    const enabledPlugins: SearchPlugin[] = [];
+
+    for (const plugin of plugins) {
+      if (plugin.enabled) {
+        const available = await plugin.isAvailable();
+        if (available) {
+          enabledPlugins.push(plugin);
+        }
+      }
+    }
+
+    return enabledPlugins.sort((a, b) => b.priority - a.priority);
   }
 
   /**
@@ -139,7 +149,7 @@ export class PluginManager {
    * 執行搜尋（所有啟用的 Plugin）
    */
   async search(query: string, limit: number = 5): Promise<Source[]> {
-    const enabledPlugins = this.getEnabledPlugins();
+    const enabledPlugins = await this.getEnabledPlugins();
 
     if (enabledPlugins.length === 0) {
       console.warn('No enabled plugins available for search');

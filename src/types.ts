@@ -48,13 +48,22 @@ export interface ServiceModulerConfig {
     includePaths?: string[];     // 包含的路徑
     excludePaths?: string[];     // 排除的路徑
   };
-  
+
   // UI 配置
   ui?: {
+    // 側邊欄配置
     position?: 'left' | 'right'; // 側邊欄位置
     width?: string;              // 側邊欄寬度，默認 '33.33%'
     primaryColor?: string;
     language?: 'zh-TW' | 'en';
+
+    // 客服圖標位置配置
+    iconPosition?: {
+      bottom?: string;    // 距離底部的距離，如 '20px'
+      right?: string;     // 距離右邊的距離，如 '20px'
+      top?: string;       // 距離頂部的距離，如 '20px'
+      left?: string;      // 距離左邊的距離，如 '20px'
+    } | 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | false; // false 表示不顯示浮動圖標
   };
   
   // 功能配置
@@ -69,6 +78,9 @@ export interface ServiceModulerConfig {
   
   // 調試模式
   debug?: boolean;
+
+  // API端點配置
+  apiEndpoint?: string;
 }
 
 export interface Rule {
@@ -98,7 +110,7 @@ export interface Message {
 }
 
 export interface Source {
-  type?: 'manual-index' | 'frontend-page' | 'sitemap' | 'sql';
+  type?: 'manual-index' | 'frontend-page' | 'sitemap' | 'sql' | 'agent-content';
   url: string;
   title: string;
   snippet?: string;  // 可選，向後兼容
@@ -153,6 +165,7 @@ export interface ManualIndex {
   name: string;
   description: string;
   content: string;
+  url?: string; // 新增URL欄位
   keywords: string[];
   fingerprint: number[];
   embedding?: number[]; // 新增：向量嵌入，用於語義搜索
