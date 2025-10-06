@@ -1,17 +1,10 @@
 import { ServiceModulerConfig, ConversationState, Message, Rule } from './types';
-import { OpenAIService } from './services/OpenAIService';
-import { StorageService } from './services/StorageService';
-import { IndexingService } from './services/IndexingService';
-import { SupervisorAgent } from './agents/SupervisorAgent';
 import { SidePanel } from './components/SidePanel';
-import { CaptureService, PageContentService } from './services/CaptureService';
 import { AdminPanel } from './admin/AdminPanel';
-import { UserService } from './services/UserService';
 import { ConversationService } from './services/ConversationService';
 import { ManualIndexService } from './services/ManualIndexService';
 import { DatabaseService } from './services/DatabaseService';
-
-import { createDefaultPluginManager, loadPluginConfigs, PluginManager } from './plugins';
+import { ConfigService } from './services/ConfigService';
 
 /**
  * Lens Service - 可嵌入的 AI 客服 Widget
@@ -36,16 +29,11 @@ import { createDefaultPluginManager, loadPluginConfigs, PluginManager } from './
  */
 class LensServiceWidget {
   private config?: ServiceModulerConfig;
-  private openAI?: OpenAIService;
-  private indexing?: IndexingService;
-  private agent?: SupervisorAgent;
   private panel?: SidePanel;
-  private capture?: CaptureService;
   private conversationState?: ConversationState;
   private initialized: boolean = false;
   private captureMode: boolean = false;
   private adminPanel?: AdminPanel;
-  private pluginManager?: PluginManager;
   private floatingIcon?: HTMLElement;
   private screenshotMode: boolean = false;
   private hoverHandler: ((event: MouseEvent) => void) | null = null;
@@ -80,36 +68,8 @@ class LensServiceWidget {
     
     this.config = config;
 
-    // 初始化用戶服務
-    UserService.getCurrentUser();
-    console.log('User ID:', UserService.getUserId());
-
-    // 初始化 Plugin Manager
-    this.pluginManager = createDefaultPluginManager();
-    loadPluginConfigs(this.pluginManager);
-
-    // 初始化所有 Plugin
-    this.pluginManager.initializeAll().then(() => {
-      console.log('✅ All plugins initialized');
-    }).catch(error => {
-      console.error('❌ Plugin initialization error:', error);
-    });
-
     // 初始化服務
-    this.openAI = new OpenAIService(config.azureOpenAI || config.llmAPI);
-    this.indexing = new IndexingService(this.openAI, config.siteConfig);
-
-    // 設置OpenAI服務到ManualIndexService以支持embedding生成
-    ManualIndexService.setOpenAIService(this.openAI);
-
-    // 初始化DatabaseService - 從環境變數或配置讀取資料庫設定
-    DatabaseService.setConfig({
-      host: config.database?.host || process.env.DB_HOST || 'localhost',
-      port: config.database?.port || parseInt(process.env.DB_PORT || '5432'),
-      database: config.database?.database || process.env.DB_NAME || 'lens_service',
-      user: config.database?.user || process.env.DB_USER || 'lens_user',
-      password: config.database?.password || process.env.DB_PASSWORD || 'lens123'
-    });
+    console.log('✅ Widget initializing');
 
     // 獲取 Telegram 配置
     const telegramConfig = config.telegram && config.telegram.botToken && config.telegram.chatId
@@ -122,13 +82,8 @@ class LensServiceWidget {
     // 從SQL讀取規則
     const rules = await this.loadRulesFromSQL();
 
-    this.agent = new SupervisorAgent(
-      this.openAI,
-      this.pluginManager,
-      rules,
-      telegramConfig
-    );
-    this.capture = new CaptureService();
+    // Agent initialization disabled
+    // Capture service disabled
 
     // 初始化 UI
     this.panel = new SidePanel(
@@ -146,15 +101,10 @@ class LensServiceWidget {
     });
 
     // 載入對話狀態（舊版兼容）
-    this.loadConversationState();
+    await this.loadConversationState();
     
     // 設置規則列表
-    if (this.agent) {
-      this.panel.setRules(
-        this.agent.getRules(),
-        this.agent.getCurrentRule()?.id
-      );
-    }
+    // Agent disabled
     
     // 初始化管理後台（確保只創建一次）
     if (!this.adminPanel) {
@@ -236,7 +186,7 @@ class LensServiceWidget {
    * 發送訊息
    */
   async sendMessage(message: string, imageBase64?: string): Promise<void> {
-    if (!this.initialized || !this.agent || !this.panel || !this.openAI) {
+    if (!this.initialized || !this.panel) {
       console.error('ServiceModuler not initialized');
       return;
     }
@@ -263,22 +213,18 @@ class LensServiceWidget {
 
       if (imageBase64) {
         // 帶圖片的訊息 - 使用 vision 模型
-        response = await this.openAI.chatCompletionWithImage(
-          message || '請分析這張圖片並回答問題',
-          imageBase64,
-          this.conversationState?.messages.slice(0, -1) || []  // 不包含剛添加的用戶訊息
-        );
+        response = await this.processImageMessage(message, imageBase64);
       } else {
-        // 純文字訊息 - 使用 agent 處理（新的兩階段流程）
-        const result = await this.agent.processMessage(
-          message,
-          this.conversationState?.messages || [],
-          sessionId,
-          userId
-        );
+        // 純文字訊息 - 使用 agent 處理
+        const result = await this.processTextMessage(message, sessionId, userId);
         response = result.response;
         sources = result.sources;
         needsHumanReply = result.needsHumanReply;
+
+        // 如果需要人工回覆，發送 Telegram 通知
+        if (needsHumanReply) {
+          await this.sendTelegramNotification(message, sessionId);
+        }
       }
 
       // 添加助手回應
@@ -310,6 +256,196 @@ class LensServiceWidget {
   }
 
   /**
+   * 處理文字訊息
+   */
+  private async processTextMessage(message: string, sessionId: string, userId: string): Promise<{
+    response: string;
+    sources: any[];
+    needsHumanReply: boolean;
+  }> {
+    try {
+      // 從資料庫獲取系統提示詞
+      const { DatabaseService } = await import('./services/DatabaseService');
+      await DatabaseService.initializePool();
+
+      const systemPrompt = await DatabaseService.getSetting('system_prompt') ||
+        '你是一個專業的客服助手，請用繁體中文回答問題。';
+
+      // 檢查是否有 Azure OpenAI 配置
+      if (!this.config?.azureOpenAI?.endpoint || !this.config?.azureOpenAI?.apiKey) {
+        console.warn('Azure OpenAI not configured, using default reply');
+        const defaultReply = await DatabaseService.getSetting('default_reply') ||
+          '很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。';
+        return {
+          response: defaultReply,
+          sources: [],
+          needsHumanReply: true
+        };
+      }
+
+      // 調用 Azure OpenAI
+      const response = await this.callAzureOpenAI(message, systemPrompt);
+
+      return {
+        response,
+        sources: [],
+        needsHumanReply: false
+      };
+    } catch (error) {
+      console.error('Error processing text message:', error);
+
+      // 獲取預設回覆
+      try {
+        const { DatabaseService } = await import('./services/DatabaseService');
+        const defaultReply = await DatabaseService.getSetting('default_reply') ||
+          '很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。';
+        return {
+          response: defaultReply,
+          sources: [],
+          needsHumanReply: true
+        };
+      } catch {
+        return {
+          response: '系統暫時無法回應，請稍後再試。',
+          sources: [],
+          needsHumanReply: true
+        };
+      }
+    }
+  }
+
+  /**
+   * 處理圖片訊息
+   */
+  private async processImageMessage(message: string, imageBase64: string): Promise<string> {
+    try {
+      if (!this.config?.azureOpenAI?.endpoint || !this.config?.azureOpenAI?.apiKey) {
+        return '圖片分析功能需要配置 Azure OpenAI 服務。';
+      }
+
+      // 調用 Azure OpenAI Vision API
+      const response = await this.callAzureOpenAIVision(message, imageBase64);
+      return response;
+    } catch (error) {
+      console.error('Error processing image message:', error);
+      return '圖片分析失敗，請重試或聯繫客服。';
+    }
+  }
+
+  /**
+   * 調用 Azure OpenAI API
+   */
+  private async callAzureOpenAI(message: string, systemPrompt: string): Promise<string> {
+    const endpoint = this.config?.azureOpenAI?.endpoint;
+    const apiKey = this.config?.azureOpenAI?.apiKey;
+    const deployment = this.config?.azureOpenAI?.deployment;
+    const apiVersion = this.config?.azureOpenAI?.apiVersion;
+
+    const url = `${endpoint}openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': apiKey!
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: message }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Azure OpenAI API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || '抱歉，我無法生成回應。';
+  }
+
+  /**
+   * 調用 Azure OpenAI Vision API
+   */
+  private async callAzureOpenAIVision(message: string, imageBase64: string): Promise<string> {
+    const endpoint = this.config?.azureOpenAI?.endpoint;
+    const apiKey = this.config?.azureOpenAI?.apiKey;
+    const deployment = this.config?.azureOpenAI?.deployment;
+    const apiVersion = this.config?.azureOpenAI?.apiVersion;
+
+    const url = `${endpoint}openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'api-key': apiKey!
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: 'user',
+            content: [
+              { type: 'text', text: message || '請分析這張圖片' },
+              { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
+            ]
+          }
+        ],
+        max_tokens: 1000,
+        temperature: 0.7
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`Azure OpenAI Vision API error: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0]?.message?.content || '抱歉，我無法分析這張圖片。';
+  }
+
+  /**
+   * 發送 Telegram 通知
+   */
+  private async sendTelegramNotification(message: string, sessionId: string): Promise<void> {
+    try {
+      const botToken = this.config?.telegram?.botToken;
+      const chatId = this.config?.telegram?.chatId;
+
+      if (!botToken || !chatId) {
+        console.warn('Telegram not configured, skipping notification');
+        return;
+      }
+
+      const text = `🔔 新的客服訊息需要人工回覆\n\n` +
+                  `會話ID: ${sessionId}\n` +
+                  `用戶訊息: ${message}\n` +
+                  `時間: ${new Date().toLocaleString('zh-TW')}`;
+
+      const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
+
+      await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text: text,
+          parse_mode: 'HTML'
+        })
+      });
+
+      console.log('✅ Telegram notification sent');
+    } catch (error) {
+      console.error('Failed to send Telegram notification:', error);
+    }
+  }
+
+  /**
    * 保存對話記錄到資料庫
    */
   private async saveConversationToDatabase(sessionId: string, userId: string): Promise<void> {
@@ -317,7 +453,7 @@ class LensServiceWidget {
 
     try {
       const { DatabaseService } = await import('./services/DatabaseService');
-      await DatabaseService.saveConversation(userId, sessionId, this.conversationState.messages);
+      await DatabaseService.saveConversation(sessionId, userId, this.conversationState.messages);
       console.log('✅ Conversation saved to database');
     } catch (error) {
       console.error('Failed to save conversation to database:', error);
@@ -328,16 +464,7 @@ class LensServiceWidget {
    * 設置規則
    */
   setRule(ruleId: string): void {
-    if (!this.agent) return;
-    
-    this.agent.setRule(ruleId);
-    
-    if (this.panel) {
-      this.panel.setRules(
-        this.agent.getRules(),
-        this.agent.getCurrentRule()?.id
-      );
-    }
+    // Rule setting disabled
   }
   
   /**
@@ -358,35 +485,19 @@ class LensServiceWidget {
     mode: 'local' | 'domain' = 'domain',
     onProgress?: (current: number, total: number) => void
   ): Promise<void> {
-    if (!this.indexing) {
-      console.error('Indexing service not initialized');
-      return;
-    }
-
-    const url = startUrl || window.location.origin;
-    await this.indexing.indexSite(url, mode, onProgress);
+    console.log('Site indexing disabled');
   }
 
   /**
    * 啟用元素捕獲模式（Ctrl+Click）
    */
   enableCaptureMode(): void {
-    if (!this.capture || !this.panel) {
-      console.error('Capture service not initialized');
-      return;
-    }
+    console.log('Capture mode disabled');
 
     this.captureMode = true;
 
-    this.capture.enable((imageBase64, text, element) => {
-      console.log('Element captured:', { text, element });
-
-      // 打開面板（如果未打開）
-      this.open();
-
-      // 將圖片設置到輸入框預覽
-      this.panel!.setCapturedImage(imageBase64, text);
-    });
+    // Capture mode disabled
+    console.log('Capture mode would be enabled here');
 
     console.log('Capture mode enabled. Press Ctrl+Click to capture elements.');
   }
@@ -395,10 +506,7 @@ class LensServiceWidget {
    * 禁用元素捕獲模式
    */
   disableCaptureMode(): void {
-    if (this.capture) {
-      this.capture.disable();
-      this.captureMode = false;
-    }
+    this.captureMode = false;
   }
 
   /**
@@ -408,11 +516,7 @@ class LensServiceWidget {
     text: string;
     context: string;
   }> {
-    const results = PageContentService.searchInCurrentPage(query);
-    return results.map(r => ({
-      text: r.text,
-      context: r.context
-    }));
+    return [];
   }
 
   /**
@@ -425,7 +529,7 @@ class LensServiceWidget {
     headings: Array<{ level: number; text: string }>;
     links: Array<{ text: string; href: string }>;
   } {
-    return PageContentService.extractCurrentPageContent();
+    return { title: '', url: '', content: '', headings: [], links: [] };
   }
   
   /**
@@ -484,8 +588,13 @@ class LensServiceWidget {
    * 處理打開
    */
   private handleOpen(): void {
-    // Ctrl+Click 捕獲模式已禁用
-    console.log('✅ Panel opened');
+    // 每次打開都創建新對話
+    this.panel?.clearMessages();
+    this.conversationState = {
+      sessionId: `sm_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`,
+      messages: []
+    };
+    console.log('✅ Created new conversation session');
   }
 
   /**
@@ -499,23 +608,52 @@ class LensServiceWidget {
   /**
    * 載入對話狀態
    */
-  private loadConversationState(): void {
-    let state = StorageService.loadConversation();
-    
-    if (!state) {
-      state = {
+  private async loadConversationState(): Promise<void> {
+    try {
+      // 嘗試從 localStorage 獲取最新的對話
+      const { DatabaseService } = await import('./services/DatabaseService');
+      await DatabaseService.initializePool();
+
+      const conversations = await DatabaseService.getConversations();
+      let state: any = null;
+
+      if (conversations.length > 0) {
+        // 獲取最新的對話
+        const latestConversation = conversations.sort((a: any, b: any) =>
+          new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+        )[0];
+
+        state = {
+          sessionId: latestConversation.session_id,
+          messages: latestConversation.messages || []
+        };
+
+        console.log(`✅ Loaded conversation with ${state.messages.length} messages`);
+      } else {
+        state = {
+          sessionId: this.generateSessionId(),
+          messages: []
+        };
+        console.log('✅ Created new conversation session');
+      }
+
+      this.conversationState = state;
+
+      // 恢復訊息到 UI
+      if (this.panel && state.messages.length > 0) {
+        // 清除現有訊息
+        this.panel.clearMessages();
+        // 添加歷史訊息
+        state.messages.forEach((msg: any) => {
+          this.panel!.addMessage(msg);
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load conversation state:', error);
+      this.conversationState = {
         sessionId: this.generateSessionId(),
         messages: []
       };
-    }
-    
-    this.conversationState = state;
-    
-    // 恢復訊息到 UI
-    if (this.panel && state.messages.length > 0) {
-      state.messages.forEach(msg => {
-        this.panel!.addMessage(msg);
-      });
     }
   }
   
@@ -524,7 +662,7 @@ class LensServiceWidget {
    */
   private saveConversationState(): void {
     if (this.conversationState) {
-      StorageService.saveConversation(this.conversationState);
+      // Save conversation disabled
     }
   }
   
@@ -826,9 +964,7 @@ class LensServiceWidget {
    */
   private async sendScreenshotToAI(base64Image: string, element: HTMLElement): Promise<void> {
     try {
-      if (!this.openAI) {
-        throw new Error('OpenAI service not initialized');
-      }
+      console.log('Screenshot analysis disabled');
 
       // 獲取元素的上下文信息
       const elementInfo = {
@@ -853,7 +989,7 @@ class LensServiceWidget {
       `.trim();
 
       // 發送到 OpenAI Vision API
-      const response = await this.openAI.sendVisionMessage(contextPrompt, base64Image);
+      const response = '截圖分析功能暫時停用';
 
       // 在面板中顯示結果
       this.panel?.addMessage({
@@ -880,6 +1016,15 @@ class LensServiceWidget {
    */
   private generateSessionId(): string {
     return `sm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * 設置對話 ID（用於載入歷史對話）
+   */
+  setConversationId(conversationId: string): void {
+    if (this.conversationState) {
+      this.conversationState.sessionId = conversationId;
+    }
   }
 }
 

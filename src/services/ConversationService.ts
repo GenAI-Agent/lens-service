@@ -1,6 +1,5 @@
 import { Conversation, Message } from '../types';
-
-import { UserService } from './UserService';
+import { DatabaseService } from './DatabaseService';
 
 /**
  * 對話管理服務
@@ -32,7 +31,7 @@ export class ConversationService {
    * 創建新對話
    */
   static async createNewConversation(): Promise<Conversation> {
-    const userId = UserService.getUserId();
+    const userId = 'user_' + Date.now();
     const conversationId = this.generateConversationId();
 
     const conversation: Conversation = {
@@ -55,7 +54,7 @@ export class ConversationService {
     localStorage.setItem(this.CURRENT_CONVERSATION_KEY, conversationId);
 
     // 增加用戶的對話計數
-    UserService.incrementConversationCount();
+    // UserService.incrementConversationCount();
 
     console.log('Created new conversation:', conversationId);
 
@@ -114,12 +113,16 @@ export class ConversationService {
    */
   static async getAllConversations(): Promise<Conversation[]> {
     try {
-      const response = await fetch('http://localhost:3002/conversations');
-      if (!response.ok) {
-        return [];
-      }
-      const conversations = await response.json();
-      return Array.isArray(conversations) ? conversations : [];
+      const conversations = await DatabaseService.getConversations();
+      return conversations.map(conv => ({
+        id: conv.id,
+        userId: 'user',
+        messages: conv.messages || [],
+        startedAt: new Date(conv.created_at).getTime(),
+        lastMessageAt: new Date(conv.updated_at).getTime(),
+        status: 'active' as const,
+        metadata: {}
+      }));
     } catch (e) {
       console.error('Failed to load conversations:', e);
       return [];
@@ -146,23 +149,26 @@ export class ConversationService {
    * 保存對話
    */
   private static async saveConversation(conversation: Conversation): Promise<void> {
-    // 使用SQL API保存對話
     try {
-      const response = await fetch('http://localhost:3002/conversations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(conversation)
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to save conversation: ${response.statusText}`);
-      }
+      // 使用 DatabaseService 保存對話
+      await DatabaseService.saveConversation(conversation.id, conversation.userId, conversation.messages);
+      console.log('✅ Conversation saved to database');
     } catch (error) {
-      console.error('Failed to save conversation:', error);
-      throw error;
+      console.error('❌ Error saving conversation:', error);
     }
+
+    // 同時保存到本地存儲作為備份
+    const conversations: any[] = [];
+    const existingIndex = conversations.findIndex((c: any) => c.id === conversation.id);
+
+    if (existingIndex >= 0) {
+      conversations[existingIndex] = conversation;
+    } else {
+      conversations.push(conversation);
+    }
+
+    localStorage.setItem(this.CONVERSATIONS_KEY, JSON.stringify(conversations));
+    localStorage.setItem(this.CURRENT_CONVERSATION_KEY, conversation.id);
   }
   
   /**

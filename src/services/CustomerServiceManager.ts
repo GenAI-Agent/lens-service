@@ -11,11 +11,9 @@ export class CustomerServiceManager {
    */
   static async getAllConversations(): Promise<Conversation[]> {
     try {
-      const response = await fetch('http://localhost:3002/conversations');
-      if (!response.ok) {
-        return [];
-      }
-      const conversations = await response.json();
+      const { DatabaseService } = await import('./DatabaseService');
+      await DatabaseService.initializePool();
+      const conversations = await DatabaseService.getConversations();
       return Array.isArray(conversations) ? conversations : [];
     } catch (error) {
       console.error('Failed to load conversations:', error);
@@ -28,11 +26,9 @@ export class CustomerServiceManager {
    */
   static async getConversationById(id: string): Promise<Conversation | null> {
     try {
-      const response = await fetch(`http://localhost:3002/conversations/${id}`);
-      if (!response.ok) {
-        return null;
-      }
-      return await response.json();
+      const { DatabaseService } = await import('./DatabaseService');
+      await DatabaseService.initializePool();
+      return await DatabaseService.getConversation(id);
     } catch (error) {
       console.error('Failed to load conversation:', error);
       return null;
@@ -43,12 +39,23 @@ export class CustomerServiceManager {
    * 添加客服回覆到對話
    */
   static async addCustomerServiceReply(
-    conversationId: string, 
-    content: string, 
+    conversationId: string,
+    content: string,
     agentName: string = '客服'
   ): Promise<boolean> {
     try {
-      const message: Omit<Message, 'id'> = {
+      const { DatabaseService } = await import('./DatabaseService');
+      await DatabaseService.initializePool();
+
+      // 獲取現有對話
+      const conversation = await DatabaseService.getConversation(conversationId);
+      if (!conversation) {
+        return false;
+      }
+
+      // 添加客服回覆訊息
+      const message: Message = {
+        id: Date.now().toString(),
         role: 'assistant',
         content: content,
         timestamp: Date.now(),
@@ -58,15 +65,11 @@ export class CustomerServiceManager {
         }
       };
 
-      const response = await fetch(`http://localhost:3002/conversations/${conversationId}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(message)
-      });
+      conversation.messages.push(message);
 
-      return response.ok;
+      // 保存更新的對話
+      await DatabaseService.saveConversation(conversationId, conversation.user_id || 'unknown', conversation.messages);
+      return true;
     } catch (error) {
       console.error('Failed to add customer service reply:', error);
       return false;

@@ -1,272 +1,189 @@
-/**
- * 數據庫服務類 - 自包含的資料庫服務，使用模擬數據
- * 在真實環境中，這應該連接到實際的資料庫
- */
+﻿// Database service using API calls to db-server
+// This service provides a unified interface for accessing PostgreSQL database
+
+const API_BASE_URL = 'http://localhost:3002';
+
 export class DatabaseService {
-  private static dbConfig = {
-    host: 'localhost',
-    port: 5432,
-    database: 'lens_service',
-    user: 'lens_user',
-    password: 'lens123'
-  };
+  private static initialized = false;
 
-  // 模擬資料存儲
-  private static mockData = {
-    settings: [
-      { id: 1, key: 'system_prompt', value: '你是一個專業的客服助理，請友善地回答用戶問題。', created_at: new Date(), updated_at: new Date() },
-      { id: 2, key: 'default_reply', value: '抱歉，我無法回答這個問題，請聯繫人工客服。', created_at: new Date(), updated_at: new Date() }
-    ],
-    admin_users: [
-      { id: 1, username: 'admin', password: 'admin123', email: 'admin@lens-service.com', created_at: new Date(), updated_at: new Date() },
-      { id: 2, username: 'manager', password: 'manager456', email: 'manager@lens-service.com', created_at: new Date(), updated_at: new Date() }
-    ],
-    manual_indexes: [
-      { id: 1, name: '產品說明', description: '產品相關說明', content: '我們的產品提供 AI 客服功能，可以自動回答用戶問題並提供專業的客戶服務。', created_at: new Date(), updated_at: new Date() }
-    ],
-    conversations: [] as any[]
-  };
+  static async initializePool() {
+    if (this.initialized) {
+      return;
+    }
 
-  /**
-   * 設置資料庫配置
-   */
-  static setConfig(config: {
-    host?: string;
-    port?: number;
-    database?: string;
-    user?: string;
-    password?: string;
-  }): void {
-    this.dbConfig = { ...this.dbConfig, ...config };
-    console.log('Database config set:', this.dbConfig);
+    console.log('✅ Database service initialized (API mode)');
+    this.initialized = true;
   }
 
-  /**
-   * 執行SQL查詢（使用模擬數據）
-   */
   static async query(sql: string, params: any[] = []): Promise<any[]> {
     try {
-      console.log('Executing SQL:', sql, 'with params:', params);
-
-      // 簡單的 SQL 解析和模擬執行
-      const sqlLower = sql.toLowerCase().trim();
-
-      if (sqlLower.includes('select * from settings')) {
-        return this.mockData.settings;
-      }
-
-      if (sqlLower.includes('select * from admin_users') || sqlLower.includes('select id, username, email')) {
-        return this.mockData.admin_users.map(user => ({
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          created_at: user.created_at,
-          updated_at: user.updated_at
-        }));
-      }
-
-      if (sqlLower.includes('select id, username, email from admin_users where username')) {
-        const username = params[0];
-        const password = params[1];
-        const user = this.mockData.admin_users.find(u => u.username === username && u.password === password);
-        return user ? [{ id: user.id, username: user.username, email: user.email }] : [];
-      }
-
-      if (sqlLower.includes('select * from manual_indexes') || sqlLower.includes('from manual_indexes')) {
-        return this.mockData.manual_indexes;
-      }
-
-      if (sqlLower.includes('select * from conversations')) {
-        return this.mockData.conversations;
-      }
-
-      // 其他查詢返回空結果
+      console.log('🔍 Mock query:', sql, params);
       return [];
     } catch (error) {
-      console.error('Database query error:', error);
+      console.error('❌ Database query error:', error);
       throw error;
     }
   }
 
-  /**
-   * 系統設定相關方法
-   */
-  static async getSettings(): Promise<any[]> {
-    const sql = 'SELECT * FROM settings ORDER BY id';
-    return this.query(sql);
+  static async initializeTables(): Promise<void> {
+    // No need to initialize tables - they are already in PostgreSQL
+    console.log('✅ Tables already initialized in PostgreSQL');
   }
 
-  static async updateSetting(key: string, value: string): Promise<any> {
-    // 在模擬數據中更新設定
-    const settingIndex = this.mockData.settings.findIndex(s => s.key === key);
+  // Helper method for API calls
+  private static async apiCall(endpoint: string, options: RequestInit = {}): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          ...options.headers,
+        },
+      });
 
-    if (settingIndex >= 0) {
-      // 更新現有設定
-      this.mockData.settings[settingIndex].value = value;
-      this.mockData.settings[settingIndex].updated_at = new Date();
-      console.log(`✅ Updated setting ${key} = ${value}`);
-      return this.mockData.settings[settingIndex];
-    } else {
-      // 創建新設定
-      const newSetting = {
-        id: this.mockData.settings.length + 1,
-        key,
-        value,
-        created_at: new Date(),
-        updated_at: new Date()
-      };
-      this.mockData.settings.push(newSetting);
-      console.log(`✅ Created new setting ${key} = ${value}`);
-      return newSetting;
+      if (!response.ok) {
+        throw new Error(`API call failed: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error(`❌ API call failed for ${endpoint}:`, error);
+      throw error;
     }
   }
 
-  /**
-   * 對話相關方法
-   */
-  static async saveConversation(userId: string, conversationId: string, messages: any[]): Promise<any> {
-    // 檢查是否已存在該對話
-    const existingIndex = this.mockData.conversations.findIndex(c => c.conversation_id === conversationId);
+  // ==================== Settings API ====================
 
-    const conversationData = {
-      id: existingIndex >= 0 ? this.mockData.conversations[existingIndex].id : this.mockData.conversations.length + 1,
-      user_id: userId,
-      conversation_id: conversationId,
-      messages: JSON.stringify(messages),
-      created_at: existingIndex >= 0 ? this.mockData.conversations[existingIndex].created_at : new Date(),
-      updated_at: new Date()
-    };
+  static async getSettings(): Promise<any> {
+    return await this.apiCall('/settings');
+  }
 
-    if (existingIndex >= 0) {
-      this.mockData.conversations[existingIndex] = conversationData;
-    } else {
-      this.mockData.conversations.push(conversationData);
+  static async getSetting(key: string): Promise<string | null> {
+    try {
+      const response = await this.apiCall(`/settings/${key}`);
+      return response.value;
+    } catch (error) {
+      console.error(`Failed to get setting ${key}:`, error);
+      return null;
     }
+  }
 
-    console.log('✅ Conversation saved to mock database:', conversationId);
-    return conversationData;
+  static async setSetting(key: string, value: string): Promise<void> {
+    await this.apiCall(`/settings/${key}`, {
+      method: 'PUT',
+      body: JSON.stringify({ value }),
+    });
+  }
+
+  // ==================== Admin Users API ====================
+
+  static async getAdminUsers(): Promise<any[]> {
+    return await this.apiCall('/admin-users');
+  }
+
+  static async validateAdmin(username: string, password: string): Promise<any | null> {
+    try {
+      const response = await this.apiCall('/admin-users/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+      });
+      return response;
+    } catch (error) {
+      console.error('Admin validation failed:', error);
+      return null;
+    }
+  }
+
+  static async createAdminUser(username: string, password: string, email: string): Promise<void> {
+    await this.apiCall('/admin-users', {
+      method: 'POST',
+      body: JSON.stringify({ username, password, email }),
+    });
+  }
+
+  static async deleteAdminUser(id: string): Promise<void> {
+    await this.apiCall(`/admin-users/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==================== Manual Indexes API ====================
+
+  static async getManualIndexes(): Promise<any[]> {
+    return await this.apiCall('/manual-indexes');
+  }
+
+  static async createManualIndex(name: string, description: string, content: string, url?: string, keywords?: string[]): Promise<void> {
+    const fingerprint = `fp-${Date.now()}`;
+    await this.apiCall('/manual-indexes', {
+      method: 'POST',
+      body: JSON.stringify({
+        id: crypto.randomUUID(),
+        name,
+        description,
+        content,
+        url: url || '',
+        keywords: keywords || [],
+        fingerprint,
+        embedding: null,
+        metadata: {}
+      }),
+    });
+  }
+
+  static async updateManualIndex(id: string, name: string, description: string, content: string, url?: string, keywords?: string[]): Promise<void> {
+    await this.apiCall(`/manual-indexes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        name,
+        description,
+        content,
+        url: url || '',
+        keywords: keywords || []
+      }),
+    });
+  }
+
+  static async deleteManualIndex(id: string): Promise<void> {
+    await this.apiCall(`/manual-indexes/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // ==================== Conversations API ====================
+
+  static async saveConversation(conversation_id: string, user_id: string, messages: any[]): Promise<void> {
+    await this.apiCall('/conversations', {
+      method: 'POST',
+      body: JSON.stringify({
+        user_id,
+        conversation_id,
+        messages
+      }),
+    });
+    console.log('✅ Conversation saved to database:', conversation_id);
+  }
+
+  static async getConversation(conversation_id: string): Promise<any | null> {
+    try {
+      return await this.apiCall(`/conversations/${conversation_id}`);
+    } catch (error) {
+      console.error('Failed to get conversation:', error);
+      return null;
+    }
+  }
+
+  static async getAllConversations(): Promise<any[]> {
+    return await this.apiCall('/conversations');
   }
 
   static async getConversations(): Promise<any[]> {
-    const sql = 'SELECT * FROM conversations ORDER BY updated_at DESC';
-    return this.query(sql);
+    return await this.getAllConversations();
   }
 
-  static async deleteConversation(conversationId: string): Promise<void> {
-    const index = this.mockData.conversations.findIndex(c => c.conversation_id === conversationId);
-    if (index >= 0) {
-      this.mockData.conversations.splice(index, 1);
-    }
-  }
-
-  /**
-   * 管理員用戶相關方法
-   */
-  static async getAdminUsers(): Promise<any[]> {
-    const sql = 'SELECT id, username, email, created_at, updated_at FROM admin_users ORDER BY id';
-    return this.query(sql);
-  }
-
-  static async createAdminUser(username: string, password: string, email: string): Promise<any> {
-    const sql = `
-      INSERT INTO admin_users (username, password, email, created_at, updated_at)
-      VALUES ($1, $2, $3, NOW(), NOW())
-      RETURNING id, username, email, created_at, updated_at
-    `;
-    const result = await this.query(sql, [username, password, email]);
-    return result[0];
-  }
-
-  static async deleteAdminUser(id: string): Promise<any> {
-    const sql = 'DELETE FROM admin_users WHERE id = $1 RETURNING id, username, email';
-    const result = await this.query(sql, [id]);
-    return result[0];
-  }
-
-  /**
-   * 登入驗證
-   */
-  static async login(username: string, password: string): Promise<any> {
-    const sql = 'SELECT id, username, email FROM admin_users WHERE username = $1 AND password = $2';
-    const result = await this.query(sql, [username, password]);
-
-    if (result.length === 0) {
-      throw new Error('Invalid username or password');
-    }
-
-    return result[0];
-  }
-
-  /**
-   * 手動索引相關方法
-   */
-  static async getManualIndexes(): Promise<any[]> {
-    const sql = `
-      SELECT id, name, description, url, content, embedding, metadata, 
-             created_at, updated_at
-      FROM manual_indexes 
-      ORDER BY created_at DESC
-    `;
-    return this.query(sql);
-  }
-
-  static async createManualIndex(data: {
-    name: string;
-    description: string;
-    url?: string;
-    content: string;
-  }): Promise<any> {
-    const sql = `
-      INSERT INTO manual_indexes (name, description, url, content, created_at, updated_at)
-      VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      RETURNING id, name, description, url, content, created_at, updated_at
-    `;
-    const params = [data.name, data.description, data.url || null, data.content];
-    const result = await this.query(sql, params);
-    return result[0];
-  }
-
-  // 為了兼容性，添加saveManualIndex別名
-  static async saveManualIndex(data: any): Promise<any> {
-    return this.createManualIndex(data);
-  }
-
-  static async updateManualIndex(id: string, data: {
-    name: string;
-    description: string;
-    url?: string;
-    content: string;
-  }): Promise<any> {
-    const sql = `
-      UPDATE manual_indexes 
-      SET name = $1, description = $2, url = $3, content = $4, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $5
-      RETURNING id, name, description, url, content, created_at, updated_at
-    `;
-    const params = [data.name, data.description, data.url || null, data.content, id];
-    const result = await this.query(sql, params);
-    return result[0];
-  }
-
-  static async deleteManualIndex(id: string): Promise<any> {
-    const sql = 'DELETE FROM manual_indexes WHERE id = $1 RETURNING *';
-    const result = await this.query(sql, [id]);
-    return result[0];
-  }
-
-
-
-  /**
-   * 健康檢查
-   */
-  static async healthCheck(): Promise<boolean> {
-    try {
-      const sql = 'SELECT 1 as test';
-      await this.query(sql);
-      return true;
-    } catch (error) {
-      console.error('Health check failed:', error);
-      return false;
-    }
+  static async deleteConversation(conversation_id: string): Promise<void> {
+    await this.apiCall(`/conversations/${conversation_id}`, {
+      method: 'DELETE',
+    });
   }
 }

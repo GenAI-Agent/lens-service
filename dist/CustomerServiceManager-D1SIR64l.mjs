@@ -1,13 +1,12 @@
-class a {
+class c {
   /**
    * 獲取所有對話列表
    */
   static async getAllConversations() {
     try {
-      const e = await fetch("http://localhost:3002/conversations");
-      if (!e.ok)
-        return [];
-      const t = await e.json();
+      const { DatabaseService: e } = await import("./index-Dw8rN-wZ.mjs").then((a) => a.a);
+      await e.initializePool();
+      const t = await e.getConversations();
       return Array.isArray(t) ? t : [];
     } catch (e) {
       return console.error("Failed to load conversations:", e), [];
@@ -18,8 +17,8 @@ class a {
    */
   static async getConversationById(e) {
     try {
-      const t = await fetch(`http://localhost:3002/conversations/${e}`);
-      return t.ok ? await t.json() : null;
+      const { DatabaseService: t } = await import("./index-Dw8rN-wZ.mjs").then((a) => a.a);
+      return await t.initializePool(), await t.getConversation(e);
     } catch (t) {
       return console.error("Failed to load conversation:", t), null;
     }
@@ -27,26 +26,26 @@ class a {
   /**
    * 添加客服回覆到對話
    */
-  static async addCustomerServiceReply(e, t, r = "客服") {
+  static async addCustomerServiceReply(e, t, a = "客服") {
     try {
-      const o = {
+      const { DatabaseService: r } = await import("./index-Dw8rN-wZ.mjs").then((s) => s.a);
+      await r.initializePool();
+      const o = await r.getConversation(e);
+      if (!o)
+        return !1;
+      const n = {
+        id: Date.now().toString(),
         role: "assistant",
         content: t,
         timestamp: Date.now(),
         metadata: {
           isCustomerService: !0,
-          agentName: r
+          agentName: a
         }
       };
-      return (await fetch(`http://localhost:3002/conversations/${e}/messages`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify(o)
-      })).ok;
-    } catch (o) {
-      return console.error("Failed to add customer service reply:", o), !1;
+      return o.messages.push(n), await r.saveConversation(e, o.user_id || "unknown", o.messages), !0;
+    } catch (r) {
+      return console.error("Failed to add customer service reply:", r), !1;
     }
   }
   /**
@@ -92,5 +91,5 @@ class a {
   }
 }
 export {
-  a as CustomerServiceManager
+  c as CustomerServiceManager
 };

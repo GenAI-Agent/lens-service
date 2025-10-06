@@ -1,6 +1,6 @@
 import { Message, Rule } from '../types';
 import { styles } from './styles';
-import { MarkdownRenderer } from '../utils/markdown';
+// import { MarkdownRenderer } from '../utils/markdown';
 
 
 /**
@@ -270,7 +270,7 @@ export class SidePanel {
 
     // 對於助手消息使用 Markdown 渲染，用戶消息保持純文本
     if (message.role === 'assistant') {
-      messageEl.innerHTML = MarkdownRenderer.render(message.content);
+      messageEl.innerHTML = message.content;
     } else {
       messageEl.textContent = message.content;
     }
@@ -328,25 +328,172 @@ export class SidePanel {
       const { DatabaseService } = await import('../services/DatabaseService');
       const conversations = await DatabaseService.getConversations();
 
-      // 顯示歷史記錄
-      if (!Array.isArray(conversations) || conversations.length === 0) {
-        alert('目前沒有對話記錄');
-      } else {
-        const historyText = conversations.map((c: any) => {
-          let messages = [];
-          try {
-            messages = typeof c.messages === 'string' ? JSON.parse(c.messages) : c.messages;
-          } catch (e) {
-            messages = [];
-          }
-          return `對話 ID: ${c.conversation_id}\n時間: ${new Date(c.created_at).toLocaleString()}\n訊息數: ${Array.isArray(messages) ? messages.length : 0}`;
-        }).join('\n\n');
-
-        alert(`找到 ${conversations.length} 條對話記錄\n\n${historyText}`);
-      }
+      // 切換到歷史記錄視圖
+      this.showHistoryView(conversations);
     } catch (error) {
       console.error('Failed to load history:', error);
       alert('載入歷史記錄失敗');
+    }
+  }
+
+  /**
+   * 顯示歷史記錄視圖
+   */
+  private showHistoryView(conversations: any[]): void {
+    const chatView = this.panel.querySelector('#sm-chat-view') as HTMLElement;
+    const chatTab = this.panel.querySelector('#sm-chat-tab') as HTMLElement;
+
+    if (!chatView || !chatTab) return;
+
+    // 隱藏聊天視圖
+    chatView.style.display = 'none';
+    chatTab.style.cssText = styles.tabButton;
+
+    // 創建或獲取歷史記錄視圖
+    let historyView = this.panel.querySelector('#sm-history-view') as HTMLElement;
+    if (!historyView) {
+      historyView = document.createElement('div');
+      historyView.id = 'sm-history-view';
+      historyView.style.cssText = styles.chatView;
+      chatView.parentElement?.appendChild(historyView);
+    }
+
+    // 顯示歷史記錄視圖
+    historyView.style.display = 'flex';
+
+    // 渲染歷史記錄列表
+    if (!Array.isArray(conversations) || conversations.length === 0) {
+      historyView.innerHTML = `
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: #6b7280;">
+          <p style="font-size: 14px;">目前沒有對話記錄</p>
+        </div>
+        <div style="padding: 16px; border-top: 1px solid #e5e7eb;">
+          <button id="sm-back-to-chat" style="
+            width: 100%;
+            padding: 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+          ">返回對話</button>
+        </div>
+      `;
+    } else {
+      const historyItems = conversations.map((c: any) => {
+        let messages = [];
+        try {
+          messages = typeof c.messages === 'string' ? JSON.parse(c.messages) : c.messages;
+        } catch (e) {
+          messages = [];
+        }
+
+        const messageCount = Array.isArray(messages) ? messages.length : 0;
+        const createdAt = new Date(c.created_at).toLocaleString('zh-TW', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
+        return `
+          <div class="history-item" data-conversation-id="${c.conversation_id}" style="
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background-color 0.2s;
+          " onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='white'">
+            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+              <div style="font-weight: 600; color: #1f2937; font-size: 14px;">對話 #${c.conversation_id.slice(-8)}</div>
+              <div style="font-size: 12px; color: #6b7280;">${createdAt}</div>
+            </div>
+            <div style="font-size: 12px; color: #6b7280;">
+              訊息數: ${messageCount} | 用戶: ${c.user_id || 'unknown'}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      historyView.innerHTML = `
+        <div style="flex: 1; overflow-y: auto;">
+          <div style="padding: 16px; border-bottom: 2px solid #e5e7eb; background: #f9fafb;">
+            <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;">對話歷史記錄</h3>
+            <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">點擊對話以查看詳情</p>
+          </div>
+          ${historyItems}
+        </div>
+        <div style="padding: 16px; border-top: 1px solid #e5e7eb;">
+          <button id="sm-back-to-chat" style="
+            width: 100%;
+            padding: 12px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+          ">返回對話</button>
+        </div>
+      `;
+    }
+
+    // 綁定返回按鈕事件
+    const backButton = historyView.querySelector('#sm-back-to-chat');
+    backButton?.addEventListener('click', () => {
+      this.showView('chat');
+      historyView.style.display = 'none';
+    });
+
+    // 綁定歷史記錄項目點擊事件
+    const historyItems = historyView.querySelectorAll('.history-item');
+    historyItems.forEach(item => {
+      item.addEventListener('click', async () => {
+        const conversationId = item.getAttribute('data-conversation-id');
+        if (conversationId) {
+          await this.loadConversation(conversationId);
+        }
+      });
+    });
+  }
+
+  /**
+   * 載入指定對話
+   */
+  private async loadConversation(conversationId: string): Promise<void> {
+    try {
+      const { DatabaseService } = await import('../services/DatabaseService');
+      const conversation = await DatabaseService.getConversation(conversationId);
+
+      if (!conversation) {
+        alert('無法載入對話');
+        return;
+      }
+
+      // 清除當前訊息
+      this.clearMessages();
+
+      // 載入對話訊息
+      const messages = Array.isArray(conversation.messages) ? conversation.messages : [];
+      messages.forEach((msg: any) => {
+        this.addMessage(msg);
+      });
+
+      // 切換回聊天視圖
+      const historyView = this.panel.querySelector('#sm-history-view') as HTMLElement;
+      if (historyView) {
+        historyView.style.display = 'none';
+      }
+      this.showView('chat');
+
+      // 通知主應用程式載入了新對話
+      if ((window as any).LensService) {
+        (window as any).LensService.setConversationId(conversationId);
+      }
+    } catch (error) {
+      console.error('Failed to load conversation:', error);
+      alert('載入對話失敗');
     }
   }
   

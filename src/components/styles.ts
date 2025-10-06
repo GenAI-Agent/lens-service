@@ -91,6 +91,7 @@ export const styles = {
     scroll-behavior: smooth;
     scrollbar-width: thin;
     scrollbar-color: #d1d5db #f3f4f6;
+    background: #ffffff;
   `,
   
   userMessage: `
@@ -107,15 +108,15 @@ export const styles = {
   
   assistantMessage: `
     align-self: stretch;
-    background: transparent;
+    background: #f9fafb;
     color: #1f2937;
-    padding: 16px 0;
-    border-radius: 0;
+    padding: 16px;
+    border-radius: 12px;
     max-width: 100%;
     word-wrap: break-word;
     font-size: 15px;
     line-height: 1.6;
-    border-bottom: 1px solid #f1f5f9;
+    border: 1px solid #e5e7eb;
     margin-bottom: 16px;
   `,
   

@@ -1,6 +1,8 @@
+import { DatabaseService } from './DatabaseService';
+
 /**
  * 配置管理服務
- * 管理所有插件配置，包括 API Keys、搜尋設定等
+ * 管理所有插件配置，包括系統設定等
  */
 
 export interface SearchMode {
@@ -220,6 +222,43 @@ export class ConfigService {
     } catch (error) {
       console.error('Failed to import config:', error);
       throw new Error('Invalid config format');
+    }
+  }
+
+  /**
+   * 獲取系統設定
+   */
+  static async getSystemSettings(): Promise<any[]> {
+    try {
+      return await DatabaseService.getSettings();
+    } catch (error) {
+      console.error('Failed to get system settings:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 獲取單個系統設定
+   */
+  static async getSystemSetting(key: string): Promise<string | null> {
+    try {
+      return await DatabaseService.getSetting(key);
+    } catch (error) {
+      console.error('Failed to get system setting:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 設置系統設定
+   */
+  static async setSystemSetting(key: string, value: string): Promise<void> {
+    try {
+      await DatabaseService.setSetting(key, value);
+      console.log('System setting updated:', key);
+    } catch (error) {
+      console.error('Failed to set system setting:', error);
+      throw error;
     }
   }
 }
