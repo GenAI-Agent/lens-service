@@ -1,7 +1,7 @@
 var D = Object.defineProperty;
-var T = (w, e, t) => e in w ? D(w, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : w[e] = t;
-var b = (w, e, t) => T(w, typeof e != "symbol" ? e + "" : e, t);
-const x = {
+var T = (S, e, t) => e in S ? D(S, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : S[e] = t;
+var b = (S, e, t) => T(S, typeof e != "symbol" ? e + "" : e, t);
+const y = {
   container: `
     position: fixed;
     top: 0;
@@ -160,7 +160,7 @@ const x = {
     border-color: #6366f1;
   `
 };
-class O {
+class _ {
   constructor(e = "33.33%", t = "right") {
     b(this, "container");
     b(this, "overlay");
@@ -182,36 +182,36 @@ class O {
    */
   createContainer() {
     const e = document.createElement("div");
-    return e.id = "sm-container", e.style.cssText = x.container, e;
+    return e.id = "sm-container", e.style.cssText = y.container, e;
   }
   /**
    * 創建遮罩層
    */
   createOverlay() {
     const e = document.createElement("div");
-    return e.style.cssText = x.overlay, e.style.display = "none", e.addEventListener("click", () => this.close()), e;
+    return e.style.cssText = y.overlay, e.style.display = "none", e.addEventListener("click", () => this.close()), e;
   }
   /**
    * 創建面板
    */
   createPanel() {
     const e = document.createElement("div");
-    return e.style.cssText = x.panel, e.style.width = this.width, this.position === "right" ? (e.style.right = `-${this.width}`, e.style.left = "auto") : (e.style.left = `-${this.width}`, e.style.right = "auto"), e.innerHTML = `
-      <div id="sm-view-container" style="${x.viewContainer}">
+    return e.style.cssText = y.panel, e.style.width = this.width, this.position === "right" ? (e.style.right = `-${this.width}`, e.style.left = "auto") : (e.style.left = `-${this.width}`, e.style.right = "auto"), e.innerHTML = `
+      <div id="sm-view-container" style="${y.viewContainer}">
         <!-- 右上角工具按鈕 -->
         <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; z-index: 10;">
 
-          <button id="sm-history-btn" style="${x.iconButton}" title="歷史記錄">
+          <button id="sm-history-btn" style="${y.iconButton}" title="歷史記錄">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </button>
-          <button id="sm-refresh-btn" style="${x.iconButton}" title="刷新">
+          <button id="sm-refresh-btn" style="${y.iconButton}" title="刷新">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0118.8-4.3M22 12.5a10 10 0 01-18.8 4.2"/>
             </svg>
           </button>
-          <button id="sm-close-btn" style="${x.iconButton}" title="關閉">
+          <button id="sm-close-btn" style="${y.iconButton}" title="關閉">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 6L6 18M6 6l12 12"/>
             </svg>
@@ -219,9 +219,9 @@ class O {
         </div>
 
         <!-- 對話視圖 -->
-        <div id="sm-chat-view" style="${x.chatView}">
-          <div id="sm-messages" style="${x.messagesContainer}"></div>
-          <div style="${x.inputContainer}">
+        <div id="sm-chat-view" style="${y.chatView}">
+          <div id="sm-messages" style="${y.messagesContainer}"></div>
+          <div style="${y.inputContainer}">
             <!-- 圖片預覽（預設隱藏） -->
             <div id="sm-image-preview" style="display: none; margin-bottom: 12px; padding: 12px; background: #f3f4f6; border-radius: 8px; position: relative;">
               <img id="sm-preview-img" style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px; border: 1px solid #d1d5db;" />
@@ -234,9 +234,9 @@ class O {
                 type="text"
                 id="sm-input"
                 placeholder="輸入訊息..."
-                style="${x.input}"
+                style="${y.input}"
               />
-              <button id="sm-send-btn" style="${x.sendIconButton}" title="發送">
+              <button id="sm-send-btn" style="${y.sendIconButton}" title="發送">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
                 </svg>
@@ -253,30 +253,30 @@ class O {
    * 綁定事件
    */
   bindEvents(e) {
-    var n, i, s, r, a;
+    var n, s, i, r, a;
     (n = e.querySelector("#sm-close-btn")) == null || n.addEventListener("click", () => {
       this.close();
     });
     const t = e.querySelector("#sm-send-btn");
-    t ? (console.log("✅ Send button found, binding click event"), t.addEventListener("click", (c) => {
-      console.log("🔥 Send button clicked via addEventListener!"), c.preventDefault(), c.stopPropagation(), this.handleSend();
-    }), t.onclick = (c) => {
-      console.log("🔥 Send button clicked via onclick!"), c.preventDefault(), c.stopPropagation(), this.handleSend();
-    }, e.addEventListener("click", (c) => {
-      (c.target.id === "sm-send-btn" || c.target.closest("#sm-send-btn")) && (console.log("🔥 Send button clicked via delegation!"), c.preventDefault(), c.stopPropagation(), this.handleSend());
+    t ? (console.log("✅ Send button found, binding click event"), t.addEventListener("click", (d) => {
+      console.log("🔥 Send button clicked via addEventListener!"), d.preventDefault(), d.stopPropagation(), this.handleSend();
+    }), t.onclick = (d) => {
+      console.log("🔥 Send button clicked via onclick!"), d.preventDefault(), d.stopPropagation(), this.handleSend();
+    }, e.addEventListener("click", (d) => {
+      (d.target.id === "sm-send-btn" || d.target.closest("#sm-send-btn")) && (console.log("🔥 Send button clicked via delegation!"), d.preventDefault(), d.stopPropagation(), this.handleSend());
     })) : console.error("❌ Send button not found!");
     const o = e.querySelector("#sm-input");
-    o ? (console.log("✅ Input field found, binding events"), o.addEventListener("keypress", (c) => {
-      c.key === "Enter" && (console.log("🔥 Enter key pressed in input"), this.handleSend());
-    }), o.addEventListener("input", (c) => {
-      console.log("🔥 Input event:", c.target.value);
+    o ? (console.log("✅ Input field found, binding events"), o.addEventListener("keypress", (d) => {
+      d.key === "Enter" && (console.log("🔥 Enter key pressed in input"), this.handleSend());
+    }), o.addEventListener("input", (d) => {
+      console.log("🔥 Input event:", d.target.value);
     }), o.addEventListener("focus", () => {
       console.log("🔥 Input focused");
     }), o.addEventListener("blur", () => {
       console.log("🔥 Input blurred");
-    })) : console.error("❌ Input field not found!"), (i = e.querySelector("#sm-chat-tab")) == null || i.addEventListener("click", () => {
+    })) : console.error("❌ Input field not found!"), (s = e.querySelector("#sm-chat-tab")) == null || s.addEventListener("click", () => {
       this.showView("chat");
-    }), (s = e.querySelector("#sm-refresh-btn")) == null || s.addEventListener("click", () => {
+    }), (i = e.querySelector("#sm-refresh-btn")) == null || i.addEventListener("click", () => {
       this.clearMessages();
     }), (r = e.querySelector("#sm-history-btn")) == null || r.addEventListener("click", () => {
       this.showHistory();
@@ -296,7 +296,7 @@ class O {
    */
   showView(e) {
     const t = this.panel.querySelector("#sm-chat-view"), o = this.panel.querySelector("#sm-chat-tab");
-    e === "chat" && (t.style.display = "flex", o.style.cssText = x.tabButton + "; " + x.tabButtonActive);
+    e === "chat" && (t.style.display = "flex", o.style.cssText = y.tabButton + "; " + y.tabButtonActive);
   }
   /**
    * 添加訊息
@@ -305,11 +305,11 @@ class O {
     const t = this.panel.querySelector("#sm-messages");
     if (!t) return;
     const o = document.createElement("div");
-    if (o.style.cssText = e.role === "user" ? x.userMessage : x.assistantMessage, e.role === "assistant" ? o.innerHTML = e.content : o.textContent = e.content, e.sources && e.sources.length > 0) {
+    if (o.style.cssText = e.role === "user" ? y.userMessage : y.assistantMessage, e.role === "assistant" ? o.innerHTML = e.content : o.textContent = e.content, e.sources && e.sources.length > 0) {
       const n = document.createElement("div");
-      n.style.cssText = x.sources, n.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((i, s) => {
+      n.style.cssText = y.sources, n.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((s, i) => {
         const r = document.createElement("a");
-        r.href = i.url, r.target = "_blank", r.textContent = `[${s + 1}] ${i.title}`, r.style.cssText = x.sourceLink, n.appendChild(r), n.appendChild(document.createElement("br"));
+        r.href = s.url, r.target = "_blank", r.textContent = `[${i + 1}] ${s.title}`, r.style.cssText = y.sourceLink, n.appendChild(r), n.appendChild(document.createElement("br"));
       }), o.appendChild(n);
     }
     t.appendChild(o), setTimeout(() => {
@@ -351,10 +351,10 @@ class O {
     t.style.display = "none";
     let o = this.panel.querySelector("#sm-history-view");
     if (!o) {
-      o = document.createElement("div"), o.id = "sm-history-view", o.style.cssText = x.chatView;
-      const s = t.parentElement;
-      if (console.log("📋 parent element:", s), s)
-        s.appendChild(o), console.log("✅ History view created and appended");
+      o = document.createElement("div"), o.id = "sm-history-view", o.style.cssText = y.chatView;
+      const i = t.parentElement;
+      if (console.log("📋 parent element:", i), i)
+        i.appendChild(o), console.log("✅ History view created and appended");
       else {
         console.error("❌ Parent element not found");
         return;
@@ -379,20 +379,20 @@ class O {
         </div>
       `;
     else {
-      const s = e.map((r) => {
+      const i = e.map((r) => {
         let a = [];
         try {
           a = typeof r.messages == "string" ? JSON.parse(r.messages) : r.messages;
         } catch {
           a = [];
         }
-        const c = Array.isArray(a) ? a.length : 0, h = new Date(r.created_at).toLocaleString("zh-TW", {
+        const d = Array.isArray(a) ? a.length : 0, h = new Date(r.created_at).toLocaleString("zh-TW", {
           year: "numeric",
           month: "2-digit",
           day: "2-digit",
           hour: "2-digit",
           minute: "2-digit"
-        }), l = r.conversation_id || r.id || "unknown", d = l.toString().slice(-8);
+        }), l = r.conversation_id || r.id || "unknown", c = l.toString().slice(-8);
         return `
           <div class="history-item" data-conversation-id="${l}" style="
             padding: 16px;
@@ -401,11 +401,11 @@ class O {
             transition: background-color 0.2s;
           " onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='white'">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-              <div style="font-weight: 600; color: #1f2937; font-size: 14px;">對話 #${d}</div>
+              <div style="font-weight: 600; color: #1f2937; font-size: 14px;">對話 #${c}</div>
               <div style="font-size: 12px; color: #6b7280;">${h}</div>
             </div>
             <div style="font-size: 12px; color: #6b7280;">
-              訊息數: ${c} | 用戶: ${r.user_id || "unknown"}
+              訊息數: ${d} | 用戶: ${r.user_id || "unknown"}
             </div>
           </div>
         `;
@@ -416,7 +416,7 @@ class O {
             <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;">對話歷史記錄</h3>
             <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">點擊對話以查看詳情</p>
           </div>
-          ${s}
+          ${i}
         </div>
         <div style="padding: 16px; border-top: 1px solid #e5e7eb;">
           <button id="sm-back-to-chat" style="
@@ -435,9 +435,9 @@ class O {
     const n = o.querySelector("#sm-back-to-chat");
     n == null || n.addEventListener("click", () => {
       o.style.display = "none", t.style.display = "flex", console.log("✅ Returned to chat view");
-    }), o.querySelectorAll(".history-item").forEach((s) => {
-      s.addEventListener("click", async () => {
-        const r = s.getAttribute("data-conversation-id");
+    }), o.querySelectorAll(".history-item").forEach((i) => {
+      i.addEventListener("click", async () => {
+        const r = i.getAttribute("data-conversation-id");
         r && await this.loadConversation(r);
       });
     });
@@ -455,8 +455,8 @@ class O {
       this.clearMessages(), (Array.isArray(o.messages) ? o.messages : []).forEach((r) => {
         this.addMessage(r);
       });
-      const i = this.panel.querySelector("#sm-history-view"), s = this.panel.querySelector("#sm-chat-view");
-      i && (i.style.display = "none"), s && (s.style.display = "flex"), console.log("✅ Loaded conversation and returned to chat view"), window.LensService && window.LensService.setConversationId(e);
+      const s = this.panel.querySelector("#sm-history-view"), i = this.panel.querySelector("#sm-chat-view");
+      s && (s.style.display = "none"), i && (i.style.display = "flex"), console.log("✅ Loaded conversation and returned to chat view"), window.LensService && window.LensService.setConversationId(e);
     } catch (t) {
       console.error("Failed to load conversation:", t), alert("載入對話失敗");
     }
@@ -502,10 +502,10 @@ class O {
    */
   setCapturedImage(e, t) {
     this.capturedImage = e, this.capturedText = t;
-    const o = this.panel.querySelector("#sm-image-preview"), n = this.panel.querySelector("#sm-preview-img"), i = this.panel.querySelector("#sm-image-context");
-    o && n && i && (o.style.display = "flex", n.src = e, i.textContent = t.substring(0, 100) + (t.length > 100 ? "..." : ""));
-    const s = this.panel.querySelector("#sm-input");
-    s && s.focus();
+    const o = this.panel.querySelector("#sm-image-preview"), n = this.panel.querySelector("#sm-preview-img"), s = this.panel.querySelector("#sm-image-context");
+    o && n && s && (o.style.display = "flex", n.src = e, s.textContent = t.substring(0, 100) + (t.length > 100 ? "..." : ""));
+    const i = this.panel.querySelector("#sm-input");
+    i && i.focus();
   }
   /**
    * 清除捕獲的圖片
@@ -538,8 +538,8 @@ class O {
     this.close(), this.container.parentElement && document.body.removeChild(this.container);
   }
 }
-const _ = "http://localhost:3002";
-class z {
+const O = "http://localhost:3002";
+class C {
   static async initializePool() {
     this.initialized || (console.log("✅ Database service initialized (API mode)"), this.initialized = !0);
   }
@@ -556,7 +556,7 @@ class z {
   // Helper method for API calls
   static async apiCall(e, t = {}) {
     try {
-      const o = await fetch(`${_}${e}`, {
+      const o = await fetch(`${O}${e}`, {
         ...t,
         headers: {
           "Content-Type": "application/json",
@@ -616,8 +616,8 @@ class z {
   static async getManualIndexes() {
     return await this.apiCall("/manual-indexes");
   }
-  static async createManualIndex(e, t, o, n, i) {
-    const s = `fp-${Date.now()}`;
+  static async createManualIndex(e, t, o, n, s) {
+    const i = `fp-${Date.now()}`;
     await this.apiCall("/manual-indexes", {
       method: "POST",
       body: JSON.stringify({
@@ -626,22 +626,22 @@ class z {
         description: t,
         content: o,
         url: n || "",
-        keywords: i || [],
-        fingerprint: s,
+        keywords: s || [],
+        fingerprint: i,
         embedding: null,
         metadata: {}
       })
     });
   }
-  static async updateManualIndex(e, t, o, n, i, s) {
+  static async updateManualIndex(e, t, o, n, s, i) {
     await this.apiCall(`/manual-indexes/${e}`, {
       method: "PUT",
       body: JSON.stringify({
         name: t,
         description: o,
         content: n,
-        url: i || "",
-        keywords: s || []
+        url: s || "",
+        keywords: i || []
       })
     });
   }
@@ -680,15 +680,15 @@ class z {
     });
   }
 }
-b(z, "initialized", !1);
+b(C, "initialized", !1);
 const v = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  DatabaseService: z
+  DatabaseService: C
 }, Symbol.toStringTag, { value: "Module" }));
-class S {
+class z {
   static async getAll() {
     try {
-      return await z.getManualIndexes();
+      return await C.getManualIndexes();
     } catch (e) {
       return console.error("Failed to get manual indexes:", e), [];
     }
@@ -698,7 +698,7 @@ class S {
   }
   static async create(e) {
     try {
-      return await z.createManualIndex(e.title, "", e.content, e.url || "", []), console.log("Created manual index:", e.title), { success: !0 };
+      return await C.createManualIndex(e.title, e.description || "", e.content, e.url || "", []), console.log("Created manual index:", e.title), { success: !0 };
     } catch (t) {
       throw console.error("Failed to create manual index:", t), t;
     }
@@ -706,14 +706,21 @@ class S {
   static async update(e, t) {
     try {
       const o = await this.getById(e);
-      return o ? (await z.updateManualIndex(e, t.title || o.name, "", t.content || o.content, t.url !== void 0 ? t.url : o.url, []), console.log("Updated manual index:", e), { success: !0 }) : null;
+      return o ? (await C.updateManualIndex(
+        e,
+        t.title || o.name,
+        t.description !== void 0 ? t.description : o.description || "",
+        t.content || o.content,
+        t.url !== void 0 ? t.url : o.url,
+        []
+      ), console.log("Updated manual index:", e), { success: !0 }) : null;
     } catch (o) {
       return console.error("Failed to update manual index:", o), null;
     }
   }
   static async delete(e) {
     try {
-      return await z.deleteManualIndex(e), console.log("Deleted manual index:", e), !0;
+      return await C.deleteManualIndex(e), console.log("Deleted manual index:", e), !0;
     } catch (t) {
       return console.error("Failed to delete manual index:", t), !1;
     }
@@ -731,7 +738,7 @@ class S {
 }
 const H = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  ManualIndexService: S
+  ManualIndexService: z
 }, Symbol.toStringTag, { value: "Module" }));
 class j {
   constructor() {
@@ -904,8 +911,8 @@ class j {
    */
   showEditDialog(e, t, o = !1) {
     return new Promise((n) => {
-      const i = document.createElement("div");
-      i.style.cssText = `
+      const s = document.createElement("div");
+      s.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
@@ -917,30 +924,30 @@ class j {
         align-items: center;
         z-index: 1000000;
       `;
-      const s = o ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit; color: #1f2937; background: #ffffff;">${t}</textarea>` : `<input type="text" id="edit-input" value="${t}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #1f2937; background: #ffffff;">`;
-      i.innerHTML = `
+      const i = o ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit; color: #1f2937; background: #ffffff;">${t}</textarea>` : `<input type="text" id="edit-input" value="${t}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #1f2937; background: #ffffff;">`;
+      s.innerHTML = `
         <div style="background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%;">
           <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1f2937;">${e}</h3>
-          ${s}
+          ${i}
           <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px;">
             <button id="cancel-btn" style="padding: 8px 16px; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; cursor: pointer;">取消</button>
             <button id="save-btn" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">儲存</button>
           </div>
         </div>
-      `, document.body.appendChild(i);
-      const r = i.querySelector("#edit-input"), a = i.querySelector("#cancel-btn"), c = i.querySelector("#save-btn");
+      `, document.body.appendChild(s);
+      const r = s.querySelector("#edit-input"), a = s.querySelector("#cancel-btn"), d = s.querySelector("#save-btn");
       r.focus(), r instanceof HTMLInputElement ? r.select() : r.setSelectionRange(0, r.value.length), a == null || a.addEventListener("click", () => {
-        document.body.removeChild(i), n(null);
-      }), c == null || c.addEventListener("click", () => {
+        document.body.removeChild(s), n(null);
+      }), d == null || d.addEventListener("click", () => {
         const h = r.value.trim();
-        document.body.removeChild(i), n(h);
+        document.body.removeChild(s), n(h);
       }), r instanceof HTMLInputElement && r.addEventListener("keydown", (h) => {
         if (h.key === "Enter") {
           const l = r.value.trim();
-          document.body.removeChild(i), n(l);
+          document.body.removeChild(s), n(l);
         }
-      }), i.addEventListener("click", (h) => {
-        h.target === i && (document.body.removeChild(i), n(null));
+      }), s.addEventListener("click", (h) => {
+        h.target === s && (document.body.removeChild(s), n(null));
       });
     });
   }
@@ -949,7 +956,7 @@ class j {
    */
   showConfirmDialog(e) {
     return new Promise((t) => {
-      var s, r;
+      var i, r;
       const o = document.createElement("div");
       o.style.cssText = `
         position: fixed;
@@ -978,11 +985,11 @@ class j {
           <button id="confirm-ok" style="padding: 8px 16px; border: none; background: #007cff; color: white; border-radius: 4px; cursor: pointer;">確定</button>
         </div>
       `, o.appendChild(n), document.body.appendChild(o);
-      const i = (a) => {
+      const s = (a) => {
         document.body.removeChild(o), t(a);
       };
-      (s = n.querySelector("#confirm-ok")) == null || s.addEventListener("click", () => i(!0)), (r = n.querySelector("#confirm-cancel")) == null || r.addEventListener("click", () => i(!1)), o.addEventListener("click", (a) => {
-        a.target === o && i(!1);
+      (i = n.querySelector("#confirm-ok")) == null || i.addEventListener("click", () => s(!0)), (r = n.querySelector("#confirm-cancel")) == null || r.addEventListener("click", () => s(!1)), o.addEventListener("click", (a) => {
+        a.target === o && s(!1);
       });
     });
   }
@@ -991,7 +998,7 @@ class j {
    */
   showAlertDialog(e) {
     return new Promise((t) => {
-      var s;
+      var i;
       const o = document.createElement("div");
       o.style.cssText = `
         position: fixed;
@@ -1019,11 +1026,11 @@ class j {
           <button id="alert-ok" style="padding: 8px 16px; border: none; background: #007cff; color: white; border-radius: 4px; cursor: pointer;">確定</button>
         </div>
       `, o.appendChild(n), document.body.appendChild(o);
-      const i = () => {
+      const s = () => {
         document.body.removeChild(o), t();
       };
-      (s = n.querySelector("#alert-ok")) == null || s.addEventListener("click", i), o.addEventListener("click", (r) => {
-        r.target === o && i();
+      (i = n.querySelector("#alert-ok")) == null || i.addEventListener("click", s), o.addEventListener("click", (r) => {
+        r.target === o && s();
       });
     });
   }
@@ -1044,15 +1051,15 @@ class j {
     if (!this.container) return;
     const e = this.container.querySelector("#admin-login-form");
     if (e) {
-      e.addEventListener("submit", async (d) => {
-        d.preventDefault(), d.stopPropagation();
+      e.addEventListener("submit", async (c) => {
+        c.preventDefault(), c.stopPropagation();
         const p = this.container.querySelector("#admin-username"), u = this.container.querySelector("#admin-password"), g = (p == null ? void 0 : p.value) || "", m = (u == null ? void 0 : u.value) || "";
         console.log("Login attempt with username:", g);
         try {
-          const { DatabaseService: f } = await Promise.resolve().then(() => v), y = await f.validateAdmin(g, m);
+          const { DatabaseService: x } = await Promise.resolve().then(() => v), w = await x.validateAdmin(g, m);
           console.log("Login successful (database auth)"), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), await this.updatePageContent(), this.bindEvents();
-        } catch (f) {
-          console.error("Login error:", f), this.showAlertDialog("登入時發生錯誤，請稍後再試").then(() => {
+        } catch (x) {
+          console.error("Login error:", x), this.showAlertDialog("登入時發生錯誤，請稍後再試").then(() => {
             u.value = "", u.focus();
           });
         }
@@ -1068,10 +1075,10 @@ class j {
         console.warn("Nav items not found, retrying..."), setTimeout(() => this.bindEvents(), 100);
         return;
       }
-      l.forEach((d, p) => {
-        console.log(`Binding nav item ${p}:`, d.dataset.page);
-        const u = d.cloneNode(!0);
-        d.parentNode.replaceChild(u, d), u.addEventListener("click", async () => {
+      l.forEach((c, p) => {
+        console.log(`Binding nav item ${p}:`, c.dataset.page);
+        const u = c.cloneNode(!0);
+        c.parentNode.replaceChild(u, c), u.addEventListener("click", async () => {
           const g = u.dataset.page;
           console.log("Nav item clicked:", g), g && g !== this.currentPage && (this.currentPage = g, await this.updatePageContent(), this.updateNavHighlight());
         });
@@ -1084,58 +1091,58 @@ class j {
     const o = this.container.querySelector("#telegram-settings-form");
     o && o.addEventListener("submit", async (l) => {
       l.preventDefault(), l.stopPropagation();
-      const d = this.container.querySelector("#telegram-enabled"), p = (d == null ? void 0 : d.checked) || !1;
+      const c = this.container.querySelector("#telegram-enabled"), p = (c == null ? void 0 : c.checked) || !1;
       this.setTelegramEnabled(p), alert(`Telegram 通知已${p ? "啟用" : "停用"}`), await this.updatePageContent();
     });
     const n = this.container.querySelector("#change-password-form");
     n && n.addEventListener("submit", async (l) => {
       l.preventDefault(), l.stopPropagation();
-      const d = this.container.querySelector("#new-password");
-      if (((d == null ? void 0 : d.value) || "").length < 4) {
+      const c = this.container.querySelector("#new-password");
+      if (((c == null ? void 0 : c.value) || "").length < 4) {
         alert("密碼長度至少 4 個字元");
         return;
       }
       alert("密碼已更新"), await this.updatePageContent();
     });
-    const i = this.container.querySelector("#ip-whitelist-form");
-    i && i.addEventListener("submit", async (l) => {
+    const s = this.container.querySelector("#ip-whitelist-form");
+    s && s.addEventListener("submit", async (l) => {
       l.preventDefault(), l.stopPropagation();
-      const d = this.container.querySelector("#ip-list"), u = ((d == null ? void 0 : d.value) || "").split(`
+      const c = this.container.querySelector("#ip-list"), u = ((c == null ? void 0 : c.value) || "").split(`
 `).map((g) => g.trim()).filter((g) => g.length > 0);
       this.saveIPWhitelist(u), alert(`已更新 IP 白名單（${u.length} 個 IP）`), await this.updatePageContent();
     });
-    const s = this.container.querySelector("#api-config-form");
-    s && s.addEventListener("submit", (l) => {
-      var d, p, u, g, m, f;
-      l.preventDefault(), l.stopPropagation(), (d = this.container.querySelector("#llm-endpoint")) != null && d.value, (p = this.container.querySelector("#llm-api-key")) != null && p.value, (u = this.container.querySelector("#llm-deployment")) != null && u.value, (g = this.container.querySelector("#embed-endpoint")) != null && g.value, (m = this.container.querySelector("#embed-api-key")) != null && m.value, (f = this.container.querySelector("#embed-deployment")) != null && f.value, alert("API 設定已儲存");
+    const i = this.container.querySelector("#api-config-form");
+    i && i.addEventListener("submit", (l) => {
+      var c, p, u, g, m, x;
+      l.preventDefault(), l.stopPropagation(), (c = this.container.querySelector("#llm-endpoint")) != null && c.value, (p = this.container.querySelector("#llm-api-key")) != null && p.value, (u = this.container.querySelector("#llm-deployment")) != null && u.value, (g = this.container.querySelector("#embed-endpoint")) != null && g.value, (m = this.container.querySelector("#embed-api-key")) != null && m.value, (x = this.container.querySelector("#embed-deployment")) != null && x.value, alert("API 設定已儲存");
     });
     const r = this.container.querySelector("#agent-tool-config-form");
     r && r.addEventListener("submit", async (l) => {
-      var d, p;
-      l.preventDefault(), l.stopPropagation(), (d = this.container.querySelector("#manual-index-enabled")) != null && d.checked, (p = this.container.querySelector("#frontend-pages-enabled")) != null && p.checked, alert("Agent 設定已儲存"), await this.updatePageContent();
+      var c, p;
+      l.preventDefault(), l.stopPropagation(), (c = this.container.querySelector("#manual-index-enabled")) != null && c.checked, (p = this.container.querySelector("#frontend-pages-enabled")) != null && p.checked, alert("Agent 設定已儲存"), await this.updatePageContent();
     });
     const a = this.container.querySelector("#sql-plugin-config-form");
     a && a.addEventListener("submit", async (l) => {
-      var C, I, $, A, E, L, P, q;
+      var f, $, L, A, E, P, q, M;
       l.preventDefault(), l.stopPropagation();
-      const d = ((C = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : C.checked) || !1, p = parseInt(((I = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : I.value) || "5"), u = (($ = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : $.value) || "", g = ((A = this.container.querySelector("#sql-connection-id")) == null ? void 0 : A.value) || "", m = ((E = this.container.querySelector("#sql-search-table")) == null ? void 0 : E.value) || "knowledge_base", f = ((L = this.container.querySelector("#sql-title-column")) == null ? void 0 : L.value) || "title", y = ((P = this.container.querySelector("#sql-content-column")) == null ? void 0 : P.value) || "content", k = ((q = this.container.querySelector("#sql-url-column")) == null ? void 0 : q.value) || "url", M = {
-        enabled: d,
+      const c = ((f = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : f.checked) || !1, p = parseInt((($ = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : $.value) || "5"), u = ((L = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : L.value) || "", g = ((A = this.container.querySelector("#sql-connection-id")) == null ? void 0 : A.value) || "", m = ((E = this.container.querySelector("#sql-search-table")) == null ? void 0 : E.value) || "knowledge_base", x = ((P = this.container.querySelector("#sql-title-column")) == null ? void 0 : P.value) || "title", w = ((q = this.container.querySelector("#sql-content-column")) == null ? void 0 : q.value) || "content", k = ((M = this.container.querySelector("#sql-url-column")) == null ? void 0 : M.value) || "url", I = {
+        enabled: c,
         priority: p,
         apiEndpoint: u,
         connectionId: g,
         searchTable: m,
-        titleColumn: f,
-        contentColumn: y,
+        titleColumn: x,
+        contentColumn: w,
         urlColumn: k
       };
-      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(M)), alert("SQL Plugin 設定已儲存"), await this.updatePageContent();
+      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(I)), alert("SQL Plugin 設定已儲存"), await this.updatePageContent();
     });
-    const c = this.container.querySelector("#sql-connection-form");
-    c && c.addEventListener("submit", async (l) => {
+    const d = this.container.querySelector("#sql-connection-form");
+    d && d.addEventListener("submit", async (l) => {
       var p, u;
       l.preventDefault(), l.stopPropagation();
-      const d = ((p = this.container.querySelector("#sql-conn-name")) == null ? void 0 : p.value) || "";
-      if ((u = this.container.querySelector("#sql-conn-type")) == null || u.value, !d) {
+      const c = ((p = this.container.querySelector("#sql-conn-name")) == null ? void 0 : p.value) || "";
+      if ((u = this.container.querySelector("#sql-conn-type")) == null || u.value, !c) {
         alert("請輸入連接名稱");
         return;
       }
@@ -1260,25 +1267,25 @@ class j {
     const t = this.container.querySelector("#generate-embeddings-btn");
     t && t.addEventListener("click", async () => {
       try {
-        const i = t;
-        i.disabled = !0, i.textContent = "生成中...";
-        const r = (await S.getAll()).length;
+        const s = t;
+        s.disabled = !0, s.textContent = "生成中...";
+        const r = (await z.getAll()).length;
         await this.showAlertDialog(`成功為 ${r} 個索引生成了向量嵌入`), await this.updatePageContent();
-      } catch (i) {
-        await this.showAlertDialog(`生成失敗：${i instanceof Error ? i.message : "未知錯誤"}`);
+      } catch (s) {
+        await this.showAlertDialog(`生成失敗：${s instanceof Error ? s.message : "未知錯誤"}`);
       } finally {
-        const i = t;
-        i.disabled = !1, i.textContent = "生成所有Embeddings";
+        const s = t;
+        s.disabled = !1, s.textContent = "生成所有Embeddings";
       }
-    }), this.container.querySelectorAll(".edit-index-btn").forEach((i) => {
-      i.addEventListener("click", async () => {
-        const s = i.dataset.id;
-        s && await this.showEditIndexModal(s);
+    }), this.container.querySelectorAll(".edit-index-btn").forEach((s) => {
+      s.addEventListener("click", async () => {
+        const i = s.dataset.id;
+        i && await this.showEditIndexModal(i);
       });
-    }), this.container.querySelectorAll(".delete-index-btn").forEach((i) => {
-      i.addEventListener("click", async () => {
-        const s = i.dataset.id;
-        s && await this.showDeleteConfirmDialog(s);
+    }), this.container.querySelectorAll(".delete-index-btn").forEach((s) => {
+      s.addEventListener("click", async () => {
+        const i = s.dataset.id;
+        i && await this.showDeleteConfirmDialog(i);
       });
     });
   }
@@ -1290,17 +1297,17 @@ class j {
     e && e.addEventListener("click", async () => {
       await this.updatePageContent();
     }), this.container.querySelectorAll(".view-conversation-btn").forEach((n) => {
-      n.addEventListener("click", async (i) => {
-        const s = i.target.getAttribute("data-id");
-        s && await this.showConversationModal(s);
+      n.addEventListener("click", async (s) => {
+        const i = s.target.getAttribute("data-id");
+        i && await this.showConversationModal(i);
       });
     }), this.container.querySelectorAll(".delete-conversation-btn").forEach((n) => {
-      n.addEventListener("click", async (i) => {
-        const s = i.target.getAttribute("data-id");
-        if (s && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
+      n.addEventListener("click", async (s) => {
+        const i = s.target.getAttribute("data-id");
+        if (i && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
           try {
-            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-WkGZs3qG.mjs");
-            await a.deleteConversation(s), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
+            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-Ly7tplry.mjs");
+            await a.deleteConversation(i), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
           } catch (a) {
             await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
           }
@@ -1318,38 +1325,52 @@ class j {
   bindSystemSettingsEvents() {
     const e = this.container.querySelector("#edit-default-reply-btn");
     e && e.addEventListener("click", async () => {
-      const i = this.container.querySelector("#default-reply-display"), s = i.textContent || "", r = await this.showEditDialog("編輯預設回覆", s, !0);
-      if (r !== null)
+      const i = this.container.querySelector("#default-reply-display"), r = i.textContent || "", a = await this.showEditDialog("編輯預設回覆", r, !0);
+      if (a !== null)
         try {
-          const { DatabaseService: a } = await Promise.resolve().then(() => v);
-          await a.setSetting("default_reply", r), i.textContent = r, await this.showAlertDialog("預設回覆已更新");
-        } catch (a) {
-          console.error("Failed to save default reply:", a), await this.showAlertDialog("儲存失敗，請稍後再試");
+          const { DatabaseService: d } = await Promise.resolve().then(() => v);
+          await d.setSetting("default_reply", a), i.textContent = a, await this.showAlertDialog("預設回覆已更新");
+        } catch (d) {
+          console.error("Failed to save default reply:", d), await this.showAlertDialog("儲存失敗，請稍後再試");
         }
     });
     const t = this.container.querySelector("#edit-system-prompt-btn");
     t && t.addEventListener("click", async () => {
-      const i = this.container.querySelector("#system-prompt-display"), s = i.textContent || "", r = await this.showEditDialog("編輯系統提示詞", s, !0);
-      if (r !== null)
+      const i = this.container.querySelector("#system-prompt-display"), r = i.textContent || "", a = await this.showEditDialog("編輯系統提示詞", r, !0);
+      if (a !== null)
         try {
-          const { DatabaseService: a } = await Promise.resolve().then(() => v);
-          await a.setSetting("system_prompt", r), i.textContent = r, await this.showAlertDialog("系統提示詞已更新");
-        } catch (a) {
-          console.error("Failed to save system prompt:", a), await this.showAlertDialog("儲存失敗，請稍後再試");
+          const { DatabaseService: d } = await Promise.resolve().then(() => v);
+          await d.setSetting("system_prompt", a), i.textContent = a, await this.showAlertDialog("系統提示詞已更新");
+        } catch (d) {
+          console.error("Failed to save system prompt:", d), await this.showAlertDialog("儲存失敗，請稍後再試");
         }
     });
-    const o = this.container.querySelector("#add-admin-user-btn");
+    const o = this.container.querySelector("#edit-llms-txt-url-btn");
     o && o.addEventListener("click", async () => {
+      const i = this.container.querySelector("#llms-txt-url-display");
+      if (i) {
+        const r = i.textContent === "未設定" ? "" : i.textContent || "", a = await this.showEditDialog("編輯 LLMs.txt 網址", r, !1);
+        if (a !== null)
+          try {
+            const { DatabaseService: d } = await Promise.resolve().then(() => v);
+            await d.setSetting("llms_txt_url", a), i.textContent = a || "未設定", await this.showAlertDialog("LLMs.txt 網址已更新");
+          } catch (d) {
+            console.error("Failed to save llms txt url:", d), await this.showAlertDialog("儲存失敗，請稍後再試");
+          }
+      }
+    });
+    const n = this.container.querySelector("#add-admin-user-btn");
+    n && n.addEventListener("click", async () => {
       await this.showAddAdminUserModal();
     }), this.container.querySelectorAll(".delete-admin-user-btn").forEach((i) => {
       i.addEventListener("click", async () => {
-        const s = i.dataset.id;
-        if (s && await this.showConfirmDialog("確定要刪除此管理員帳號嗎？此操作無法復原。"))
+        const r = i.dataset.id;
+        if (r && await this.showConfirmDialog("確定要刪除此管理員帳號嗎？此操作無法復原。"))
           try {
-            const { DatabaseService: a } = await Promise.resolve().then(() => v);
-            await a.deleteAdminUser(s), await this.showAlertDialog("管理員帳號已刪除"), await this.updatePageContent();
-          } catch (a) {
-            console.error("Failed to delete admin user:", a), await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
+            const { DatabaseService: d } = await Promise.resolve().then(() => v);
+            await d.deleteAdminUser(r), await this.showAlertDialog("管理員帳號已刪除"), await this.updatePageContent();
+          } catch (d) {
+            console.error("Failed to delete admin user:", d), await this.showAlertDialog(`刪除失敗：${d instanceof Error ? d.message : "未知錯誤"}`);
           }
       });
     });
@@ -1360,11 +1381,11 @@ class j {
   async renderDashboard() {
     let e = [], t = [], o = "連接失敗";
     try {
-      const [n, i] = await Promise.all([
+      const [n, s] = await Promise.all([
         fetch("http://localhost:3002/conversations").catch(() => null),
         fetch("http://localhost:3002/manual-indexes").catch(() => null)
       ]);
-      n != null && n.ok && (e = await n.json(), o = "正常連接"), i != null && i.ok && (t = await i.json());
+      n != null && n.ok && (e = await n.json(), o = "正常連接"), s != null && s.ok && (t = await s.json());
     } catch (n) {
       console.error("Failed to load dashboard data:", n);
     }
@@ -1410,7 +1431,7 @@ class j {
    * 渲染手動索引頁面
    */
   async renderManualIndex() {
-    const e = await S.getAll();
+    const e = await z.getAll();
     return `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
         <div>
@@ -1695,7 +1716,7 @@ class j {
    * 渲染 Agent & API 設定頁面（合併）
    */
   renderAgentAndAPI() {
-    var o, n, i, s, r, a, c, h, l, d, p, u;
+    var o, n, s, i, r, a, d, h, l, c, p, u;
     const e = {}, t = {};
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">Agent & API 設定</h2>
@@ -1728,7 +1749,7 @@ class j {
                 id="llm-api-key"
                 name="llmApiKey"
                 placeholder="your-api-key"
-                value="${((i = e.azureOpenAI) == null ? void 0 : i.apiKey) || ((s = e.llmAPI) == null ? void 0 : s.apiKey) || ""}"
+                value="${((s = e.azureOpenAI) == null ? void 0 : s.apiKey) || ((i = e.llmAPI) == null ? void 0 : i.apiKey) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -1757,7 +1778,7 @@ class j {
                 id="embed-endpoint"
                 name="embedEndpoint"
                 placeholder="https://your-resource.openai.azure.com/"
-                value="${((c = e.embeddingAPI) == null ? void 0 : c.endpoint) || ((h = e.azureOpenAI) == null ? void 0 : h.endpoint) || ""}"
+                value="${((d = e.embeddingAPI) == null ? void 0 : d.endpoint) || ((h = e.azureOpenAI) == null ? void 0 : h.endpoint) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -1769,7 +1790,7 @@ class j {
                 id="embed-api-key"
                 name="embedApiKey"
                 placeholder="your-api-key"
-                value="${((l = e.embeddingAPI) == null ? void 0 : l.apiKey) || ((d = e.azureOpenAI) == null ? void 0 : d.apiKey) || ""}"
+                value="${((l = e.embeddingAPI) == null ? void 0 : l.apiKey) || ((c = e.azureOpenAI) == null ? void 0 : c.apiKey) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -1869,7 +1890,7 @@ class j {
    * 顯示編輯索引模態框
    */
   async showEditIndexModal(e) {
-    const t = await S.getById(e);
+    const t = await z.getById(e);
     if (!t) {
       await this.showAlertDialog("找不到該索引");
       return;
@@ -1940,25 +1961,23 @@ class j {
         </form>
       </div>
     `, document.body.appendChild(o);
-    const n = o.querySelector("#edit-index-form"), i = o.querySelector("#cancel-edit-btn");
-    n.addEventListener("submit", async (s) => {
-      s.preventDefault();
-      const r = o.querySelector("#edit-index-name").value;
-      o.querySelector("#edit-index-description").value;
-      const a = o.querySelector("#edit-index-content").value;
-      if (!r || !a) {
+    const n = o.querySelector("#edit-index-form"), s = o.querySelector("#cancel-edit-btn");
+    n.addEventListener("submit", async (i) => {
+      i.preventDefault();
+      const r = o.querySelector("#edit-index-name").value, a = o.querySelector("#edit-index-description").value, d = o.querySelector("#edit-index-content").value;
+      if (!r || !d) {
         await this.showAlertDialog("請填寫名稱和內容");
         return;
       }
       try {
-        await S.update(e, { title: r, content: a, url: "" }), await this.showAlertDialog("索引已更新"), document.body.removeChild(o), await this.updatePageContent();
-      } catch (c) {
-        await this.showAlertDialog(`更新失敗：${c instanceof Error ? c.message : "未知錯誤"}`);
+        await z.update(e, { title: r, description: a, content: d, url: "" }), await this.showAlertDialog("索引已更新"), document.body.removeChild(o), await this.updatePageContent();
+      } catch (h) {
+        await this.showAlertDialog(`更新失敗：${h instanceof Error ? h.message : "未知錯誤"}`);
       }
-    }), i.addEventListener("click", () => {
+    }), s.addEventListener("click", () => {
       document.body.removeChild(o);
-    }), o.addEventListener("click", (s) => {
-      s.target === o && document.body.removeChild(o);
+    }), o.addEventListener("click", (i) => {
+      i.target === o && document.body.removeChild(o);
     });
   }
   /**
@@ -2045,17 +2064,15 @@ class j {
     const t = e.querySelector("#add-index-form"), o = e.querySelector("#cancel-add-btn");
     t.addEventListener("submit", async (n) => {
       n.preventDefault();
-      const i = e.querySelector("#add-index-name").value;
-      e.querySelector("#add-index-description").value;
-      const s = e.querySelector("#add-index-url").value, r = e.querySelector("#add-index-content").value;
-      if (!i || !r) {
+      const s = e.querySelector("#add-index-name").value, i = e.querySelector("#add-index-description").value, r = e.querySelector("#add-index-url").value, a = e.querySelector("#add-index-content").value;
+      if (!s || !a) {
         await this.showAlertDialog("請填寫名稱和內容");
         return;
       }
       try {
-        await S.create({ title: i, content: r, url: s || void 0 }), await this.showAlertDialog("索引已新增"), document.body.removeChild(e), await this.updatePageContent();
-      } catch (a) {
-        await this.showAlertDialog(`新增失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
+        await z.create({ title: s, description: i, content: a, url: r || void 0 }), await this.showAlertDialog("索引已新增"), document.body.removeChild(e), await this.updatePageContent();
+      } catch (d) {
+        await this.showAlertDialog(`新增失敗：${d instanceof Error ? d.message : "未知錯誤"}`);
       }
     }), o.addEventListener("click", () => {
       document.body.removeChild(e);
@@ -2067,14 +2084,14 @@ class j {
    * 顯示刪除確認對話框
    */
   async showDeleteConfirmDialog(e) {
-    const t = await S.getById(e);
+    const t = await z.getById(e);
     if (!t) {
       await this.showAlertDialog("找不到該索引");
       return;
     }
     if (await this.showConfirmDialog(`確定要刪除索引「${t.title || t.name || "未命名"}」嗎？此操作無法復原。`))
       try {
-        await S.delete(e), await this.showAlertDialog("索引已刪除"), await this.updatePageContent();
+        await z.delete(e), await this.showAlertDialog("索引已刪除"), await this.updatePageContent();
       } catch (n) {
         await this.showAlertDialog(`刪除失敗：${n instanceof Error ? n.message : "未知錯誤"}`);
       }
@@ -2084,7 +2101,7 @@ class j {
    */
   async renderConversations() {
     try {
-      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-WkGZs3qG.mjs"), t = await e.getAllConversations();
+      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-Ly7tplry.mjs"), t = await e.getAllConversations();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">客服對話管理</h2>
@@ -2121,12 +2138,12 @@ class j {
                 </thead>
                 <tbody>
                   ${t.slice().reverse().map((o) => {
-        const n = o.conversation_id || o.conversationId || o.id, i = o.user_id || o.userId || "undefined", s = Array.isArray(o.messages) ? o.messages : [], r = o.status || "active", a = o.created_at || o.createdAt || o.startedAt;
+        const n = o.conversation_id || o.conversationId || o.id, s = o.user_id || o.userId || "undefined", i = Array.isArray(o.messages) ? o.messages : [], r = o.status || "active", a = o.created_at || o.createdAt || o.startedAt;
         return `
                     <tr style="border-bottom: 1px solid #f1f5f9;">
                       <td style="padding: 16px; color: #1f2937; font-family: monospace; font-size: 12px;">${n.substring(0, 8)}...</td>
-                      <td style="padding: 16px; color: #1f2937;">${i}</td>
-                      <td style="padding: 16px; color: #1f2937;">${s.length}</td>
+                      <td style="padding: 16px; color: #1f2937;">${s}</td>
+                      <td style="padding: 16px; color: #1f2937;">${i.length}</td>
                       <td style="padding: 16px;">
                         <span style="
                           padding: 4px 8px;
@@ -2182,7 +2199,7 @@ class j {
    */
   async renderAdminUsers() {
     try {
-      const { AdminUserManager: e } = await import("./AdminUserManager-AEkrOUWG.mjs"), t = await e.getAllAdminUsers();
+      const { AdminUserManager: e } = await import("./AdminUserManager-DOA1RIki.mjs"), t = await e.getAllAdminUsers();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">管理員帳號管理</h2>
@@ -2288,15 +2305,15 @@ class j {
   async renderSystemSettings() {
     let e = {}, t = [];
     try {
-      const { DatabaseService: i } = await Promise.resolve().then(() => v), [s, r] = await Promise.all([
+      const { DatabaseService: i } = await Promise.resolve().then(() => v), [r, a] = await Promise.all([
         i.getSettings().catch(() => ({})),
         i.getAdminUsers().catch(() => [])
       ]);
-      e = s, t = r;
+      e = r, t = a;
     } catch (i) {
       console.error("Failed to load system settings:", i);
     }
-    const o = e.default_reply || "", n = e.system_prompt || "";
+    const o = e.default_reply || "", n = e.system_prompt || "", s = e.llms_txt_url || "";
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
 
@@ -2341,6 +2358,25 @@ class j {
               id="system-prompt-display"
               style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 80px; white-space: pre-wrap;"
             >${n}</div>
+          </div>
+
+          <div style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label style="color: #374151; font-weight: 500;">LLMs.txt 網址</label>
+              <button
+                type="button"
+                id="edit-llms-txt-url-btn"
+                style="background: #3b82f6; color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+                onmouseover="this.style.background='#2563eb'"
+                onmouseout="this.style.background='#3b82f6'"
+              >
+                編輯
+              </button>
+            </div>
+            <div
+              id="llms-txt-url-display"
+              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 40px; word-break: break-all;"
+            >${s || "未設定"}</div>
           </div>
         </form>
       </div>
@@ -2454,10 +2490,10 @@ class j {
     const t = e.querySelector("#add-admin-user-form"), o = e.querySelector("#cancel-add-admin-btn");
     t.addEventListener("submit", async (n) => {
       n.preventDefault();
-      const i = e.querySelector("#add-admin-username").value, s = e.querySelector("#add-admin-password").value, r = e.querySelector("#add-admin-email").value;
+      const s = e.querySelector("#add-admin-username").value, i = e.querySelector("#add-admin-password").value, r = e.querySelector("#add-admin-email").value;
       try {
         const { DatabaseService: a } = await Promise.resolve().then(() => v);
-        await a.createAdminUser(i, s, r), document.body.removeChild(e), await this.showAlertDialog("管理員帳號已新增"), await this.updatePageContent();
+        await a.createAdminUser(s, i, r), document.body.removeChild(e), await this.showAlertDialog("管理員帳號已新增"), await this.updatePageContent();
       } catch (a) {
         await this.showAlertDialog(`新增失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
       }
@@ -2472,12 +2508,21 @@ class j {
    */
   async showConversationModal(e) {
     try {
-      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-WkGZs3qG.mjs"), o = await t.getConversationById(e);
+      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-Ly7tplry.mjs"), o = await t.getConversationById(e);
       if (!o) {
         await this.showAlertDialog("找不到該對話記錄");
         return;
       }
-      const n = o.conversation_id || o.conversationId || o.id, i = o.user_id || o.userId || "undefined", s = Array.isArray(o.messages) ? o.messages : [], r = o.status || "active", a = o.created_at || o.createdAt, c = o.updated_at || o.updatedAt, h = document.createElement("div");
+      const n = o.conversation_id || o.conversationId || o.id, s = o.user_id || o.userId || "undefined";
+      let i = [];
+      if (typeof o.messages == "string")
+        try {
+          i = JSON.parse(o.messages);
+        } catch (m) {
+          console.error("Failed to parse messages:", m), i = [];
+        }
+      else Array.isArray(o.messages) && (i = o.messages);
+      const r = o.status || "active", a = o.created_at || o.createdAt, d = o.updated_at || o.updatedAt, h = document.createElement("div");
       h.style.cssText = `
         position: fixed;
         top: 0;
@@ -2519,17 +2564,17 @@ class j {
           <div style="margin-bottom: 16px; padding: 16px; background: #f9fafb; border-radius: 8px;">
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 14px;">
               <div><strong>對話ID:</strong> ${n}</div>
-              <div><strong>用戶ID:</strong> ${i}</div>
-              <div><strong>訊息數:</strong> ${s.length}</div>
+              <div><strong>用戶ID:</strong> ${s}</div>
+              <div><strong>訊息數:</strong> ${i.length}</div>
               <div><strong>狀態:</strong> ${r === "active" ? "進行中" : "已結束"}</div>
               <div><strong>建立時間:</strong> ${a ? new Date(a).toLocaleString("zh-TW") : "未知"}</div>
-              <div><strong>更新時間:</strong> ${c ? new Date(c).toLocaleString("zh-TW") : "未知"}</div>
+              <div><strong>更新時間:</strong> ${d ? new Date(d).toLocaleString("zh-TW") : "未知"}</div>
             </div>
           </div>
 
           <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin-bottom: 16px;">
             <h4 style="margin: 0 0 12px 0; color: #374151; font-size: 16px;">對話記錄</h4>
-            ${s.length > 0 ? s.map((m) => `
+            ${i.length > 0 ? i.map((m) => `
                 <div style="margin-bottom: 12px; padding: 12px; border-radius: 8px; ${m.role === "user" ? "background: #eff6ff; margin-left: 20px;" : "background: #f0fdf4; margin-right: 20px;"}">
                   <div style="font-weight: 600; color: #374151; margin-bottom: 4px;">
                     ${m.role === "user" ? "👤 用戶" : "🤖 助理"}
@@ -2581,24 +2626,24 @@ class j {
           </div>
         </div>
       `, document.body.appendChild(h);
-      const l = h.querySelector("#close-conversation-modal"), d = h.querySelector("#close-conversation-modal-btn"), p = h.querySelector("#send-customer-service-reply"), u = h.querySelector("#customer-service-reply"), g = () => {
+      const l = h.querySelector("#close-conversation-modal"), c = h.querySelector("#close-conversation-modal-btn"), p = h.querySelector("#send-customer-service-reply"), u = h.querySelector("#customer-service-reply"), g = () => {
         document.body.removeChild(h);
       };
-      l == null || l.addEventListener("click", g), d == null || d.addEventListener("click", g), p == null || p.addEventListener("click", async () => {
+      l == null || l.addEventListener("click", g), c == null || c.addEventListener("click", g), p == null || p.addEventListener("click", async () => {
         const m = u == null ? void 0 : u.value.trim();
         if (!m) {
           await this.showAlertDialog("請輸入回覆內容");
           return;
         }
         try {
-          const { CustomerServiceManager: f } = await import("./CustomerServiceManager-WkGZs3qG.mjs");
-          await f.addCustomerServiceReply(
+          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-Ly7tplry.mjs");
+          await x.addCustomerServiceReply(
             e,
             m,
             "客服"
           ) ? (await this.showAlertDialog("回覆已發送"), g(), await this.updatePageContent()) : await this.showAlertDialog("發送失敗，請稍後再試");
-        } catch (f) {
-          console.error("Failed to send reply:", f), await this.showAlertDialog(`發送失敗：${f instanceof Error ? f.message : "未知錯誤"}`);
+        } catch (x) {
+          console.error("Failed to send reply:", x), await this.showAlertDialog(`發送失敗：${x instanceof Error ? x.message : "未知錯誤"}`);
         }
       }), h.addEventListener("click", (m) => {
         m.target === h && g();
@@ -2639,22 +2684,22 @@ class R {
    * 初始化 Widget
    */
   async init(e) {
-    var o, n, i;
+    var o, n, s;
     if (this.initialized) {
       console.warn("ServiceModuler already initialized");
       return;
     }
     this.config = e, console.log("✅ Widget initializing");
     const t = e.telegram && e.telegram.botToken && e.telegram.chatId ? e.telegram : void 0;
-    window.SM_TELEGRAM_CONFIG = t, await this.loadRulesFromSQL(), this.panel = new O(
+    window.SM_TELEGRAM_CONFIG = t, await this.loadRulesFromSQL(), this.panel = new _(
       ((o = e.ui) == null ? void 0 : o.width) || "33.33%",
       ((n = e.ui) == null ? void 0 : n.position) || "right"
     ), this.panel.setCallbacks({
-      onSendMessage: (s, r) => this.handleSendMessage(s, r),
-      onSelectRule: (s) => this.handleSelectRule(s),
+      onSendMessage: (i, r) => this.handleSendMessage(i, r),
+      onSelectRule: (i) => this.handleSelectRule(i),
       onClose: () => this.handleClose(),
       onOpen: () => this.handleOpen()
-    }), await this.loadConversationState(), this.adminPanel || (this.adminPanel = new j()), window.location.pathname === "/lens-service" && this.openAdminPanel(), this.bindGlobalKeyboardShortcuts(), ((i = e.ui) == null ? void 0 : i.iconPosition) !== !1 && !this.isAdminPage() && this.createFloatingIcon(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
+    }), await this.loadConversationState(), this.adminPanel || (this.adminPanel = new j()), window.location.pathname === "/lens-service" && this.openAdminPanel(), this.bindGlobalKeyboardShortcuts(), ((s = e.ui) == null ? void 0 : s.iconPosition) !== !1 && !this.isAdminPage() && this.createFloatingIcon(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
   }
   /**
    * 綁定全局快捷鍵
@@ -2692,7 +2737,7 @@ class R {
    * 發送訊息
    */
   async sendMessage(e, t) {
-    var n, i, s;
+    var n, s, i;
     if (!this.initialized || !this.panel) {
       console.error("ServiceModuler not initialized");
       return;
@@ -2704,21 +2749,21 @@ class R {
     };
     (n = this.conversationState) == null || n.messages.push(o), this.panel.addMessage(o), this.saveConversationState();
     try {
-      let r, a, c = !1;
-      const h = ((i = this.conversationState) == null ? void 0 : i.sessionId) || this.generateSessionId(), l = localStorage.getItem("lens_service_user_id") || "default_user";
+      let r, a, d = !1;
+      const h = ((s = this.conversationState) == null ? void 0 : s.sessionId) || this.generateSessionId(), l = localStorage.getItem("lens_service_user_id") || "default_user";
       if (t)
         r = await this.processImageMessage(e, t);
       else {
         const p = await this.processTextMessage(e, h, l);
-        r = p.response, a = p.sources, c = p.needsHumanReply, c && await this.sendTelegramNotification(e, h);
+        r = p.response, a = p.sources, d = p.needsHumanReply, d && await this.sendTelegramNotification(e, h);
       }
-      const d = {
+      const c = {
         role: "assistant",
         content: r,
         timestamp: Date.now(),
         sources: a
       };
-      (s = this.conversationState) == null || s.messages.push(d), this.panel.addMessage(d), this.saveConversationState(), await this.saveConversationToDatabase(h, l);
+      (i = this.conversationState) == null || i.messages.push(c), this.panel.addMessage(c), this.saveConversationState(), await this.saveConversationToDatabase(h, l);
     } catch (r) {
       console.error("Error processing message:", r);
       const a = {
@@ -2733,49 +2778,71 @@ class R {
    * 處理文字訊息
    */
   async processTextMessage(e, t, o) {
-    var n, i, s, r;
+    var n, s, i, r;
     try {
       const { DatabaseService: a } = await Promise.resolve().then(() => v);
       await a.initializePool();
-      const c = await a.getSetting("system_prompt") || "你是一個專業的客服助手，請用繁體中文回答問題。", h = await a.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。", { ManualIndexService: l } = await Promise.resolve().then(() => H), d = await l.search(e);
-      if (console.log("🔍 Search results:", d), !d || d.length === 0)
+      const d = await a.getSetting("system_prompt") || "你是一個專業的客服助手，請用繁體中文回答問題。", h = await a.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。", { ManualIndexService: l } = await Promise.resolve().then(() => H), c = await l.search(e);
+      console.log("🔍 Manual index search results:", c);
+      const { LlmsTxtService: p } = await import("./LlmsTxtService-B6AZIWeQ.mjs"), u = await p.searchChunks(e);
+      console.log("🔍 LLMs.txt search results:", u);
+      const g = [
+        ...c.map((f) => ({
+          type: "manual_index",
+          title: f.title || f.name,
+          content: f.content,
+          description: f.description || ""
+        })),
+        ...u.map((f) => ({
+          type: "llms_txt",
+          title: "LLMs.txt",
+          content: f.context,
+          // 使用包含前後文的內容
+          score: f.score
+        }))
+      ];
+      if (g.length === 0)
         return console.log("❌ No relevant content found, using default reply"), {
           response: h,
           sources: [],
           needsHumanReply: !0
         };
-      if (!((i = (n = this.config) == null ? void 0 : n.azureOpenAI) != null && i.endpoint) || !((r = (s = this.config) == null ? void 0 : s.azureOpenAI) != null && r.apiKey))
+      if (!((s = (n = this.config) == null ? void 0 : n.azureOpenAI) != null && s.endpoint) || !((r = (i = this.config) == null ? void 0 : i.azureOpenAI) != null && r.apiKey))
         return console.warn("Azure OpenAI not configured, using default reply"), {
           response: h,
           sources: [],
           needsHumanReply: !0
         };
-      const p = d.map(
-        (y) => `標題：${y.title || y.name}
-內容：${y.content}`
-      ).join(`
+      const m = g.map((f) => f.type === "manual_index" ? `【手動索引】
+標題：${f.title}
+${f.description ? `描述：${f.description}
+` : ""}內容：${f.content}` : `【網站資訊】
+${f.content}`).join(`
 
-`), u = `${c}
+---
+
+`), x = `${d}
 
 以下是相關的知識庫內容：
-${p}
 
-請根據以上內容回答用戶的問題。如果內容不足以回答問題，請誠實告知。`, g = await this.callAzureOpenAI(e, u);
-      return ["無法回答", "不清楚", "不確定", "沒有相關", "無法提供"].some((y) => g.includes(y)) ? (console.log("❌ LLM cannot answer, using default reply"), {
+${m}
+
+請根據以上內容回答用戶的問題。如果內容不足以回答問題，請誠實告知。`, w = await this.callAzureOpenAI(e, x);
+      return ["無法回答", "不清楚", "不確定", "沒有相關", "無法提供"].some((f) => w.includes(f)) ? (console.log("❌ LLM cannot answer, using default reply"), {
         response: h,
-        sources: d,
+        sources: g,
         needsHumanReply: !0
       }) : {
-        response: g,
-        sources: d,
+        response: w,
+        sources: g,
         needsHumanReply: !1
       };
     } catch (a) {
       console.error("Error processing text message:", a);
       try {
-        const { DatabaseService: c } = await Promise.resolve().then(() => v);
+        const { DatabaseService: d } = await Promise.resolve().then(() => v);
         return {
-          response: await c.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。",
+          response: await d.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。",
           sources: [],
           needsHumanReply: !0
         };
@@ -2792,9 +2859,9 @@ ${p}
    * 處理圖片訊息
    */
   async processImageMessage(e, t) {
-    var o, n, i, s;
+    var o, n, s, i;
     try {
-      return !((n = (o = this.config) == null ? void 0 : o.azureOpenAI) != null && n.endpoint) || !((s = (i = this.config) == null ? void 0 : i.azureOpenAI) != null && s.apiKey) ? "圖片分析功能需要配置 Azure OpenAI 服務。" : await this.callAzureOpenAIVision(e, t);
+      return !((n = (o = this.config) == null ? void 0 : o.azureOpenAI) != null && n.endpoint) || !((i = (s = this.config) == null ? void 0 : s.azureOpenAI) != null && i.apiKey) ? "圖片分析功能需要配置 Azure OpenAI 服務。" : await this.callAzureOpenAIVision(e, t);
     } catch (r) {
       return console.error("Error processing image message:", r), "圖片分析失敗，請重試或聯繫客服。";
     }
@@ -2803,8 +2870,8 @@ ${p}
    * 調用 Azure OpenAI API
    */
   async callAzureOpenAI(e, t) {
-    var h, l, d, p, u, g, m, f, y, k;
-    const o = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, n = (p = (d = this.config) == null ? void 0 : d.azureOpenAI) == null ? void 0 : p.apiKey, i = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, s = (f = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : f.apiVersion, r = `${o}openai/deployments/${i}/chat/completions?api-version=${s}`, a = await fetch(r, {
+    var h, l, c, p, u, g, m, x, w, k;
+    const o = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, n = (p = (c = this.config) == null ? void 0 : c.azureOpenAI) == null ? void 0 : p.apiKey, s = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, i = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, r = `${o}openai/deployments/${s}/chat/completions?api-version=${i}`, a = await fetch(r, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2821,14 +2888,14 @@ ${p}
     });
     if (!a.ok)
       throw new Error(`Azure OpenAI API error: ${a.status} ${a.statusText}`);
-    return ((k = (y = (await a.json()).choices[0]) == null ? void 0 : y.message) == null ? void 0 : k.content) || "抱歉，我無法生成回應。";
+    return ((k = (w = (await a.json()).choices[0]) == null ? void 0 : w.message) == null ? void 0 : k.content) || "抱歉，我無法生成回應。";
   }
   /**
    * 調用 Azure OpenAI Vision API
    */
   async callAzureOpenAIVision(e, t) {
-    var h, l, d, p, u, g, m, f, y, k;
-    const o = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, n = (p = (d = this.config) == null ? void 0 : d.azureOpenAI) == null ? void 0 : p.apiKey, i = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, s = (f = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : f.apiVersion, r = `${o}openai/deployments/${i}/chat/completions?api-version=${s}`, a = await fetch(r, {
+    var h, l, c, p, u, g, m, x, w, k;
+    const o = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, n = (p = (c = this.config) == null ? void 0 : c.azureOpenAI) == null ? void 0 : p.apiKey, s = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, i = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, r = `${o}openai/deployments/${s}/chat/completions?api-version=${i}`, a = await fetch(r, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2850,20 +2917,20 @@ ${p}
     });
     if (!a.ok)
       throw new Error(`Azure OpenAI Vision API error: ${a.status} ${a.statusText}`);
-    return ((k = (y = (await a.json()).choices[0]) == null ? void 0 : y.message) == null ? void 0 : k.content) || "抱歉，我無法分析這張圖片。";
+    return ((k = (w = (await a.json()).choices[0]) == null ? void 0 : w.message) == null ? void 0 : k.content) || "抱歉，我無法分析這張圖片。";
   }
   /**
    * 發送 Telegram 通知
    */
   async sendTelegramNotification(e, t) {
-    var o, n, i, s;
+    var o, n, s, i;
     try {
-      const r = (n = (o = this.config) == null ? void 0 : o.telegram) == null ? void 0 : n.botToken, a = (s = (i = this.config) == null ? void 0 : i.telegram) == null ? void 0 : s.chatId;
+      const r = (n = (o = this.config) == null ? void 0 : o.telegram) == null ? void 0 : n.botToken, a = (i = (s = this.config) == null ? void 0 : s.telegram) == null ? void 0 : i.chatId;
       if (!r || !a) {
         console.warn("Telegram not configured, skipping notification");
         return;
       }
-      const c = `🔔 新的客服訊息需要人工回覆
+      const d = `🔔 新的客服訊息需要人工回覆
 
 會話ID: ${t}
 用戶訊息: ${e}
@@ -2875,7 +2942,7 @@ ${p}
         },
         body: JSON.stringify({
           chat_id: a,
-          text: c,
+          text: d,
           parse_mode: "HTML"
         })
       }), console.log("✅ Telegram notification sent");
@@ -3004,7 +3071,7 @@ ${p}
       let o = null;
       if (t.length > 0) {
         const n = t.sort(
-          (i, s) => new Date(s.created_at || 0).getTime() - new Date(i.created_at || 0).getTime()
+          (s, i) => new Date(i.created_at || 0).getTime() - new Date(s.created_at || 0).getTime()
         )[0];
         o = {
           sessionId: n.session_id,
@@ -3041,9 +3108,9 @@ ${p}
    * 創建浮動圖標
    */
   createFloatingIcon() {
-    var n, i;
+    var n, s;
     this.floatingIcon && this.floatingIcon.remove();
-    const e = (i = (n = this.config) == null ? void 0 : n.ui) == null ? void 0 : i.iconPosition;
+    const e = (s = (n = this.config) == null ? void 0 : n.ui) == null ? void 0 : s.iconPosition;
     let t = { bottom: "20px", right: "20px" };
     if (typeof e == "string")
       switch (e) {
@@ -3081,7 +3148,7 @@ ${p}
       justify-content: center;
       transition: all 0.3s ease;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      ${Object.entries(t).map(([s, r]) => `${s}: ${r}`).join("; ")};
+      ${Object.entries(t).map(([i, r]) => `${i}: ${r}`).join("; ")};
     `;
     this.floatingIcon.style.cssText = o, this.floatingIcon.addEventListener("mouseenter", () => {
       this.floatingIcon.style.transform = "scale(1.1)", this.floatingIcon.style.boxShadow = "0 6px 25px rgba(0, 0, 0, 0.2)";
@@ -3169,7 +3236,7 @@ ${p}
       console.log("📸 Capturing screenshot of element:", e), window.html2canvas || await this.loadHtml2Canvas();
       const o = window.html2canvas, n = e.style.cssText;
       e.style.cssText += "; outline: 3px solid #007bff; outline-offset: 2px;", await new Promise((r) => setTimeout(r, 100));
-      const i = await o(e, {
+      const s = await o(e, {
         backgroundColor: "#ffffff",
         scale: 1,
         logging: !1,
@@ -3177,8 +3244,8 @@ ${p}
         allowTaint: !0
       });
       e.style.cssText = n;
-      const s = i.toDataURL("image/png");
-      this.panel && this.panel.setScreenshotInInput(s), console.log("✅ Screenshot captured and added to input");
+      const i = s.toDataURL("image/png");
+      this.panel && this.panel.setScreenshotInInput(i), console.log("✅ Screenshot captured and added to input");
     } catch (o) {
       console.error("❌ Failed to capture screenshot:", o), (t = this.panel) == null || t.addMessage({
         id: Date.now().toString(),
@@ -3203,24 +3270,24 @@ ${p}
    * 發送截圖到 AI 進行分析
    */
   async sendScreenshotToAI(e, t) {
-    var o, n, i;
+    var o, n, s;
     try {
       console.log("Screenshot analysis disabled");
-      const s = {
+      const i = {
         tagName: t.tagName,
         className: t.className,
         id: t.id,
         textContent: ((o = t.textContent) == null ? void 0 : o.substring(0, 200)) || "",
-        attributes: Array.from(t.attributes).map((c) => `${c.name}="${c.value}"`).join(" ")
+        attributes: Array.from(t.attributes).map((d) => `${d.name}="${d.value}"`).join(" ")
       }, r = `
 用戶截取了網頁上的一個元素，請分析這個截圖並提供相關說明。
 
 元素信息：
-- 標籤：${s.tagName}
-- 類名：${s.className}
-- ID：${s.id}
-- 文本內容：${s.textContent}
-- 屬性：${s.attributes}
+- 標籤：${i.tagName}
+- 類名：${i.className}
+- ID：${i.id}
+- 文本內容：${i.textContent}
+- 屬性：${i.attributes}
 
 請分析截圖內容並提供有用的信息或建議。
       `.trim();
@@ -3232,8 +3299,8 @@ ${p}
         role: "assistant",
         timestamp: Date.now()
       });
-    } catch (s) {
-      console.error("❌ Failed to send screenshot to AI:", s), (i = this.panel) == null || i.addMessage({
+    } catch (i) {
+      console.error("❌ Failed to send screenshot to AI:", i), (s = this.panel) == null || s.addMessage({
         id: Date.now().toString(),
         content: "截圖分析失敗，請檢查 AI 服務配置。",
         role: "assistant",
@@ -3254,10 +3321,10 @@ ${p}
     this.conversationState && (this.conversationState.sessionId = e);
   }
 }
-const B = new R();
-typeof window < "u" && (window.LensService = B);
+const F = new R();
+typeof window < "u" && (window.LensService = F);
 export {
-  z as D,
-  B as L,
+  C as D,
+  F as L,
   v as a
 };

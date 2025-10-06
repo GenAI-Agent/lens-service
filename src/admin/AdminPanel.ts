@@ -1034,6 +1034,31 @@ export class AdminPanel {
       });
     }
 
+    // 編輯 LLMs.txt URL 按鈕
+    const editLlmsTxtUrlBtn = this.container!.querySelector('#edit-llms-txt-url-btn');
+    if (editLlmsTxtUrlBtn) {
+      editLlmsTxtUrlBtn.addEventListener('click', async () => {
+        const displayDiv = this.container!.querySelector('#llms-txt-url-display');
+        if (displayDiv) {
+          const currentValue = displayDiv.textContent === '未設定' ? '' : displayDiv.textContent || '';
+          const newValue = await this.showEditDialog('編輯 LLMs.txt 網址', currentValue, false);
+
+          if (newValue !== null) {
+            try {
+              const { DatabaseService } = await import('../services/DatabaseService');
+              await DatabaseService.setSetting('llms_txt_url', newValue);
+
+              displayDiv.textContent = newValue || '未設定';
+              await this.showAlertDialog('LLMs.txt 網址已更新');
+            } catch (error) {
+              console.error('Failed to save llms txt url:', error);
+              await this.showAlertDialog('儲存失敗，請稍後再試');
+            }
+          }
+        }
+      });
+    }
+
     // 新增管理員按鈕
     const addAdminUserBtn = this.container!.querySelector('#add-admin-user-btn');
     if (addAdminUserBtn) {
@@ -1714,7 +1739,7 @@ export class AdminPanel {
       }
 
       try {
-        await ManualIndexService.update(id, { title: name, content, url: '' });
+        await ManualIndexService.update(id, { title: name, description, content, url: '' });
         await this.showAlertDialog('索引已更新');
 
         // 關閉模態框
@@ -1844,7 +1869,7 @@ export class AdminPanel {
       }
 
       try {
-        await ManualIndexService.create({ title: name, content, url: url || undefined });
+        await ManualIndexService.create({ title: name, description, content, url: url || undefined });
         await this.showAlertDialog('索引已新增');
 
         // 關閉模態框
@@ -2138,6 +2163,7 @@ export class AdminPanel {
 
     const defaultReply = settings['default_reply'] || '';
     const systemPrompt = settings['system_prompt'] || '';
+    const llmsTxtUrl = settings['llms_txt_url'] || '';
 
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
@@ -2183,6 +2209,25 @@ export class AdminPanel {
               id="system-prompt-display"
               style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 80px; white-space: pre-wrap;"
             >${systemPrompt}</div>
+          </div>
+
+          <div style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <label style="color: #374151; font-weight: 500;">LLMs.txt 網址</label>
+              <button
+                type="button"
+                id="edit-llms-txt-url-btn"
+                style="background: #3b82f6; color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+                onmouseover="this.style.background='#2563eb'"
+                onmouseout="this.style.background='#3b82f6'"
+              >
+                編輯
+              </button>
+            </div>
+            <div
+              id="llms-txt-url-display"
+              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 40px; word-break: break-all;"
+            >${llmsTxtUrl || '未設定'}</div>
           </div>
         </form>
       </div>
@@ -2350,7 +2395,20 @@ export class AdminPanel {
       // 處理資料庫返回的數據結構（使用 any 類型以支持 snake_case）
       const convId = conversation.conversation_id || conversation.conversationId || conversation.id;
       const userId = conversation.user_id || conversation.userId || 'undefined';
-      const messages = Array.isArray(conversation.messages) ? conversation.messages : [];
+
+      // 解析 messages 欄位（可能是 JSON 字串或陣列）
+      let messages = [];
+      if (typeof conversation.messages === 'string') {
+        try {
+          messages = JSON.parse(conversation.messages);
+        } catch (e) {
+          console.error('Failed to parse messages:', e);
+          messages = [];
+        }
+      } else if (Array.isArray(conversation.messages)) {
+        messages = conversation.messages;
+      }
+
       const status = conversation.status || 'active';
       const createdAt = conversation.created_at || conversation.createdAt;
       const updatedAt = conversation.updated_at || conversation.updatedAt;

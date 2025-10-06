@@ -275,13 +275,35 @@ class LensServiceWidget {
 
       // 步驟 1: 搜索手動索引（BM25 + Vector Search）
       const { ManualIndexService } = await import('./services/ManualIndexService');
-      const searchResults = await ManualIndexService.search(message);
+      const manualIndexResults = await ManualIndexService.search(message);
 
-      console.log('🔍 Search results:', searchResults);
+      console.log('🔍 Manual index search results:', manualIndexResults);
+
+      // 步驟 1.5: 搜索 llms.txt（Fingerprint Search with chunks）
+      const { LlmsTxtService } = await import('./services/LlmsTxtService');
+      const llmsTxtResults = await LlmsTxtService.searchChunks(message);
+
+      console.log('🔍 LLMs.txt search results:', llmsTxtResults);
+
+      // 合併搜索結果
+      const allSources = [
+        ...manualIndexResults.map((r: any) => ({
+          type: 'manual_index',
+          title: r.title || r.name,
+          content: r.content,
+          description: r.description || ''
+        })),
+        ...llmsTxtResults.map(r => ({
+          type: 'llms_txt',
+          title: 'LLMs.txt',
+          content: r.context, // 使用包含前後文的內容
+          score: r.score
+        }))
+      ];
 
       // 步驟 2: 判斷能否回答
       // 如果沒有搜索結果或相關度太低，直接返回預設回覆並通知 Telegram
-      if (!searchResults || searchResults.length === 0) {
+      if (allSources.length === 0) {
         console.log('❌ No relevant content found, using default reply');
         return {
           response: defaultReply,
@@ -301,11 +323,15 @@ class LensServiceWidget {
       }
 
       // 步驟 4: 使用搜索結果作為上下文，調用 LLM 生成回覆
-      const context = searchResults.map((result: any) =>
-        `標題：${result.title || result.name}\n內容：${result.content}`
-      ).join('\n\n');
+      const context = allSources.map((source: any) => {
+        if (source.type === 'manual_index') {
+          return `【手動索引】\n標題：${source.title}\n${source.description ? `描述：${source.description}\n` : ''}內容：${source.content}`;
+        } else {
+          return `【網站資訊】\n${source.content}`;
+        }
+      }).join('\n\n---\n\n');
 
-      const enhancedPrompt = `${systemPrompt}\n\n以下是相關的知識庫內容：\n${context}\n\n請根據以上內容回答用戶的問題。如果內容不足以回答問題，請誠實告知。`;
+      const enhancedPrompt = `${systemPrompt}\n\n以下是相關的知識庫內容：\n\n${context}\n\n請根據以上內容回答用戶的問題。如果內容不足以回答問題，請誠實告知。`;
 
       const response = await this.callAzureOpenAI(message, enhancedPrompt);
 
@@ -317,14 +343,14 @@ class LensServiceWidget {
         console.log('❌ LLM cannot answer, using default reply');
         return {
           response: defaultReply,
-          sources: searchResults,
+          sources: allSources,
           needsHumanReply: true
         };
       }
 
       return {
         response,
-        sources: searchResults,
+        sources: allSources,
         needsHumanReply: false
       };
     } catch (error) {

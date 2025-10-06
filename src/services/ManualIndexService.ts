@@ -15,9 +15,9 @@ export class ManualIndexService {
     return indexes.find(idx => idx.id.toString() === id) || null;
   }
   
-  static async create(data: { title: string; content: string; url?: string; }): Promise<any> {
+  static async create(data: { title: string; content: string; url?: string; description?: string; }): Promise<any> {
     try {
-      await DatabaseService.createManualIndex(data.title, '', data.content, data.url || '', []);
+      await DatabaseService.createManualIndex(data.title, data.description || '', data.content, data.url || '', []);
       console.log('Created manual index:', data.title);
       return { success: true };
     } catch (error) {
@@ -26,11 +26,18 @@ export class ManualIndexService {
     }
   }
 
-  static async update(id: string, data: { title?: string; content?: string; url?: string; }): Promise<any | null> {
+  static async update(id: string, data: { title?: string; content?: string; url?: string; description?: string; }): Promise<any | null> {
     try {
       const existing = await this.getById(id);
       if (!existing) return null;
-      await DatabaseService.updateManualIndex(id, data.title || existing.name, '', data.content || existing.content, data.url !== undefined ? data.url : existing.url, []);
+      await DatabaseService.updateManualIndex(
+        id,
+        data.title || existing.name,
+        data.description !== undefined ? data.description : (existing.description || ''),
+        data.content || existing.content,
+        data.url !== undefined ? data.url : existing.url,
+        []
+      );
       console.log('Updated manual index:', id);
       return { success: true };
     } catch (error) {
