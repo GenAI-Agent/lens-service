@@ -2120,13 +2120,13 @@ export class AdminPanel {
    * 渲染系統設定頁面
    */
   private async renderSystemSettings(): Promise<string> {
-    let settings: any[] = [];
+    let settings: any = {};
     let adminUsers: any[] = [];
 
     try {
       const { DatabaseService } = await import('../services/DatabaseService');
       const [settingsData, adminUsersData] = await Promise.all([
-        DatabaseService.getSettings().catch(() => []),
+        DatabaseService.getSettings().catch(() => ({})),
         DatabaseService.getAdminUsers().catch(() => [])
       ]);
 
@@ -2136,8 +2136,8 @@ export class AdminPanel {
       console.error('Failed to load system settings:', error);
     }
 
-    const defaultReply = settings.find(s => s.key === 'default_reply')?.value || '';
-    const systemPrompt = settings.find(s => s.key === 'system_prompt')?.value || '';
+    const defaultReply = settings['default_reply'] || '';
+    const systemPrompt = settings['system_prompt'] || '';
 
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
