@@ -77,11 +77,7 @@ export class SidePanel {
       <div id="sm-view-container" style="${styles.viewContainer}">
         <!-- 右上角工具按鈕 -->
         <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; z-index: 10;">
-          <button id="sm-rules-tab" style="${styles.iconButton}" title="規則">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-            </svg>
-          </button>
+
           <button id="sm-history-btn" style="${styles.iconButton}" title="歷史記錄">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
@@ -126,10 +122,7 @@ export class SidePanel {
           </div>
         </div>
 
-        <!-- 規則視圖 -->
-        <div id="sm-rules-view" style="${styles.rulesView}; display: none;">
-          <div id="sm-rules-list"></div>
-        </div>
+
       </div>
     `;
 
@@ -218,9 +211,7 @@ export class SidePanel {
       this.showView('chat');
     });
     
-    panel.querySelector('#sm-rules-tab')?.addEventListener('click', () => {
-      this.showView('rules');
-    });
+
     
     // 刷新按鈕
     panel.querySelector('#sm-refresh-btn')?.addEventListener('click', () => {
@@ -255,22 +246,13 @@ export class SidePanel {
   /**
    * 顯示視圖
    */
-  private showView(view: 'chat' | 'rules'): void {
+  private showView(view: 'chat'): void {
     const chatView = this.panel.querySelector('#sm-chat-view') as HTMLElement;
-    const rulesView = this.panel.querySelector('#sm-rules-view') as HTMLElement;
     const chatTab = this.panel.querySelector('#sm-chat-tab') as HTMLElement;
-    const rulesTab = this.panel.querySelector('#sm-rules-tab') as HTMLElement;
-    
+
     if (view === 'chat') {
       chatView.style.display = 'flex';
-      rulesView.style.display = 'none';
       chatTab.style.cssText = styles.tabButton + '; ' + styles.tabButtonActive;
-      rulesTab.style.cssText = styles.tabButton;
-    } else {
-      chatView.style.display = 'none';
-      rulesView.style.display = 'block';
-      chatTab.style.cssText = styles.tabButton;
-      rulesTab.style.cssText = styles.tabButton + '; ' + styles.tabButtonActive;
     }
   }
   
@@ -321,50 +303,10 @@ export class SidePanel {
   }
   
   /**
-   * 設置規則列表
+   * 設置規則列表 (已移除規則功能)
    */
   setRules(rules: Rule[], currentRuleId?: string): void {
-    const rulesList = this.panel.querySelector('#sm-rules-list');
-    if (!rulesList) return;
-
-    rulesList.innerHTML = '';
-
-    if (rules.length === 0) {
-      // 沒有規則時顯示提示
-      const noRulesEl = document.createElement('div');
-      noRulesEl.style.cssText = `
-        padding: 20px;
-        text-align: center;
-        color: #6b7280;
-        font-size: 14px;
-      `;
-      noRulesEl.textContent = '沒有規則';
-      rulesList.appendChild(noRulesEl);
-      return;
-    }
-
-    rules.forEach(rule => {
-      const ruleEl = document.createElement('div');
-      ruleEl.style.cssText = styles.ruleItem;
-
-      if (rule.id === currentRuleId) {
-        ruleEl.style.cssText += '; ' + styles.ruleItemActive;
-      }
-
-      ruleEl.innerHTML = `
-        <h3 style="${styles.ruleTitle}">${rule.name}</h3>
-        <p style="${styles.ruleDescription}">${rule.description || ''}</p>
-      `;
-
-      ruleEl.addEventListener('click', () => {
-        if (this.onSelectRule) {
-          this.onSelectRule(rule.id);
-        }
-        this.showView('chat');
-      });
-
-      rulesList.appendChild(ruleEl);
-    });
+    // 規則功能已移除，此方法保留以維持兼容性
   }
   
   /**
@@ -382,23 +324,23 @@ export class SidePanel {
    */
   async showHistory(): Promise<void> {
     try {
-      // 從SQL讀取對話記錄
-      const response = await fetch('http://localhost:3002/conversations');
-
-      if (!response.ok) {
-        alert('目前沒有對話記錄');
-        return;
-      }
-
-      const conversations = await response.json();
+      // 從 DatabaseService 讀取對話記錄
+      const { DatabaseService } = await import('../services/DatabaseService');
+      const conversations = await DatabaseService.getConversations();
 
       // 顯示歷史記錄
       if (!Array.isArray(conversations) || conversations.length === 0) {
         alert('目前沒有對話記錄');
       } else {
-        const historyText = conversations.map((c: any) =>
-          `對話 ID: ${c.id}\n時間: ${new Date(c.created_at).toLocaleString()}\n訊息數: ${Array.isArray(c.messages) ? c.messages.length : 0}`
-        ).join('\n\n');
+        const historyText = conversations.map((c: any) => {
+          let messages = [];
+          try {
+            messages = typeof c.messages === 'string' ? JSON.parse(c.messages) : c.messages;
+          } catch (e) {
+            messages = [];
+          }
+          return `對話 ID: ${c.conversation_id}\n時間: ${new Date(c.created_at).toLocaleString()}\n訊息數: ${Array.isArray(messages) ? messages.length : 0}`;
+        }).join('\n\n');
 
         alert(`找到 ${conversations.length} 條對話記錄\n\n${historyText}`);
       }

@@ -316,22 +316,8 @@ class LensServiceWidget {
     if (!this.conversationState) return;
 
     try {
-      const response = await fetch('/api/conversations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          userId,
-          conversationId: sessionId,
-          messages: this.conversationState.messages
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save conversation');
-      }
-
+      const { DatabaseService } = await import('./services/DatabaseService');
+      await DatabaseService.saveConversation(userId, sessionId, this.conversationState.messages);
       console.log('✅ Conversation saved to database');
     } catch (error) {
       console.error('Failed to save conversation to database:', error);

@@ -23,7 +23,8 @@ export class DatabaseService {
     ],
     manual_indexes: [
       { id: 1, name: '產品說明', description: '產品相關說明', content: '我們的產品提供 AI 客服功能，可以自動回答用戶問題並提供專業的客戶服務。', created_at: new Date(), updated_at: new Date() }
-    ]
+    ],
+    conversations: [] as any[]
   };
 
   /**
@@ -75,6 +76,10 @@ export class DatabaseService {
         return this.mockData.manual_indexes;
       }
 
+      if (sqlLower.includes('select * from conversations')) {
+        return this.mockData.conversations;
+      }
+
       // 其他查詢返回空結果
       return [];
     } catch (error) {
@@ -92,12 +97,66 @@ export class DatabaseService {
   }
 
   static async updateSetting(key: string, value: string): Promise<any> {
-    const sql = `
-      UPDATE settings SET value = $1, updated_at = NOW() WHERE key = $2 RETURNING *;
-      INSERT INTO settings (key, value) SELECT $2, $1 WHERE NOT EXISTS (SELECT 1 FROM settings WHERE key = $2) RETURNING *;
-    `;
-    const result = await this.query(sql, [value, key]);
-    return result[0];
+    // 在模擬數據中更新設定
+    const settingIndex = this.mockData.settings.findIndex(s => s.key === key);
+
+    if (settingIndex >= 0) {
+      // 更新現有設定
+      this.mockData.settings[settingIndex].value = value;
+      this.mockData.settings[settingIndex].updated_at = new Date();
+      console.log(`✅ Updated setting ${key} = ${value}`);
+      return this.mockData.settings[settingIndex];
+    } else {
+      // 創建新設定
+      const newSetting = {
+        id: this.mockData.settings.length + 1,
+        key,
+        value,
+        created_at: new Date(),
+        updated_at: new Date()
+      };
+      this.mockData.settings.push(newSetting);
+      console.log(`✅ Created new setting ${key} = ${value}`);
+      return newSetting;
+    }
+  }
+
+  /**
+   * 對話相關方法
+   */
+  static async saveConversation(userId: string, conversationId: string, messages: any[]): Promise<any> {
+    // 檢查是否已存在該對話
+    const existingIndex = this.mockData.conversations.findIndex(c => c.conversation_id === conversationId);
+
+    const conversationData = {
+      id: existingIndex >= 0 ? this.mockData.conversations[existingIndex].id : this.mockData.conversations.length + 1,
+      user_id: userId,
+      conversation_id: conversationId,
+      messages: JSON.stringify(messages),
+      created_at: existingIndex >= 0 ? this.mockData.conversations[existingIndex].created_at : new Date(),
+      updated_at: new Date()
+    };
+
+    if (existingIndex >= 0) {
+      this.mockData.conversations[existingIndex] = conversationData;
+    } else {
+      this.mockData.conversations.push(conversationData);
+    }
+
+    console.log('✅ Conversation saved to mock database:', conversationId);
+    return conversationData;
+  }
+
+  static async getConversations(): Promise<any[]> {
+    const sql = 'SELECT * FROM conversations ORDER BY updated_at DESC';
+    return this.query(sql);
+  }
+
+  static async deleteConversation(conversationId: string): Promise<void> {
+    const index = this.mockData.conversations.findIndex(c => c.conversation_id === conversationId);
+    if (index >= 0) {
+      this.mockData.conversations.splice(index, 1);
+    }
   }
 
   /**
@@ -195,23 +254,7 @@ export class DatabaseService {
     return result[0];
   }
 
-  /**
-   * 對話記錄相關方法
-   */
-  static async getConversations(): Promise<any[]> {
-    const sql = `
-      SELECT id, user_id, messages, status, created_at, updated_at
-      FROM conversations 
-      ORDER BY created_at DESC
-    `;
-    return this.query(sql);
-  }
 
-  static async deleteConversation(id: string): Promise<any> {
-    const sql = 'DELETE FROM conversations WHERE id = $1 RETURNING *';
-    const result = await this.query(sql, [id]);
-    return result[0];
-  }
 
   /**
    * 健康檢查
