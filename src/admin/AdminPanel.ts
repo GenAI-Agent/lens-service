@@ -428,6 +428,23 @@ export class AdminPanel {
   }
 
   /**
+   * 更新導航高亮
+   */
+  private updateNavHighlight(): void {
+    if (!this.container) return;
+
+    const navItems = this.container.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      const htmlItem = item as HTMLElement;
+      if (htmlItem.dataset.page === this.currentPage) {
+        htmlItem.classList.add('active');
+      } else {
+        htmlItem.classList.remove('active');
+      }
+    });
+  }
+
+  /**
    * 綁定事件
    */
   private bindEvents(): void {
@@ -498,14 +515,12 @@ export class AdminPanel {
         newItem.addEventListener('click', async () => {
           const page = newItem.dataset.page;
           console.log('Nav item clicked:', page);
-          if (page) {
+          if (page && page !== this.currentPage) {
             this.currentPage = page;
-            // 重新渲染整個 UI 以更新導航高亮
-            this.container!.innerHTML = this.renderAdminUI();
-            // 載入頁面內容
+            // 只更新內容區域，不重新渲染整個 UI
             await this.updatePageContent();
-            // 重新綁定事件（在內容載入後）
-            this.bindEvents();
+            // 更新導航高亮
+            this.updateNavHighlight();
           }
         });
       });

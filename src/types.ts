@@ -31,6 +31,15 @@ export interface ServiceModulerConfig {
     chatId: string;
   };
 
+  // 資料庫配置
+  database?: {
+    host?: string;
+    port?: number;
+    database?: string;
+    user?: string;
+    password?: string;
+  };
+
   // 網站配置
   siteConfig?: {
     // 本地專案模式（默認啟用）

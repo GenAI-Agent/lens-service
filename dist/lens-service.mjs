@@ -1,7 +1,7 @@
-var F = Object.defineProperty;
-var U = (g, e, t) => e in g ? F(g, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : g[e] = t;
-var d = (g, e, t) => U(g, typeof e != "symbol" ? e + "" : e, t);
-class j {
+var U = Object.defineProperty;
+var H = (m, e, t) => e in m ? U(m, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : m[e] = t;
+var d = (m, e, t) => H(m, typeof e != "symbol" ? e + "" : e, t);
+class B {
   constructor(e) {
     d(this, "endpoint");
     d(this, "apiKey");
@@ -93,10 +93,10 @@ class j {
   async generateEmbeddings(e) {
     const t = [];
     for (let o = 0; o < e.length; o += 16) {
-      const i = e.slice(o, o + 16), r = await Promise.all(
-        i.map((s) => this.generateEmbedding(s))
+      const i = e.slice(o, o + 16), s = await Promise.all(
+        i.map((r) => this.generateEmbedding(r))
       );
-      t.push(...r);
+      t.push(...s);
     }
     return t;
   }
@@ -284,7 +284,7 @@ class b {
   }
 }
 d(b, "CONVERSATION_KEY", "sm_conversation"), d(b, "INDEX_KEY", "sm_indexed_pages"), d(b, "CONFIG_KEY", "sm_config"), d(b, "AGENT_TOOL_CONFIG_KEY", "sm_agent_tool_config"), d(b, "ADMIN_PASSWORD_KEY", "sm_admin_password");
-class H {
+class j {
   constructor(e, t) {
     d(this, "openAI");
     d(this, "siteConfig");
@@ -299,13 +299,13 @@ class H {
     let o;
     t === "local" ? o = await this.discoverLocalPages() : o = await this.discoverPages(e), console.log(`Found ${o.length} pages to index`);
     const i = [];
-    for (let r = 0; r < o.length; r++) {
-      const s = o[r];
+    for (let s = 0; s < o.length; s++) {
+      const r = o[s];
       try {
-        const a = await this.indexPage(s);
-        a && i.push(a), n && n(r + 1, o.length);
+        const a = await this.indexPage(r);
+        a && i.push(a), n && n(s + 1, o.length);
       } catch (a) {
-        console.error(`Failed to index ${s}:`, a);
+        console.error(`Failed to index ${r}:`, a);
       }
       await this.sleep(500);
     }
@@ -335,22 +335,22 @@ class H {
    * 發現網站的所有頁面
    */
   async discoverPages(e) {
-    const t = /* @__PURE__ */ new Set(), n = [e], o = /* @__PURE__ */ new Set(), r = new URL(e).hostname;
+    const t = /* @__PURE__ */ new Set(), n = [e], o = /* @__PURE__ */ new Set(), s = new URL(e).hostname;
     for (; n.length > 0 && t.size < 100; ) {
-      const s = n.shift();
-      if (!o.has(s) && (o.add(s), !!this.shouldCrawl(s))) {
-        t.add(s);
+      const r = n.shift();
+      if (!o.has(r) && (o.add(r), !!this.shouldCrawl(r))) {
+        t.add(r);
         try {
-          const a = await this.fetchPage(s);
-          this.extractLinks(a, s).forEach((c) => {
+          const a = await this.fetchPage(r);
+          this.extractLinks(a, r).forEach((c) => {
             try {
               const p = new URL(c);
-              this.isSameDomain(p.hostname, r) && n.push(c);
+              this.isSameDomain(p.hostname, s) && n.push(c);
             } catch {
             }
           });
         } catch (a) {
-          console.error(`Failed to discover from ${s}:`, a);
+          console.error(`Failed to discover from ${r}:`, a);
         }
       }
     }
@@ -364,7 +364,7 @@ class H {
       const t = await this.fetchPage(e), { title: n, content: o } = this.extractContent(t);
       if (!o || o.length < 50)
         return null;
-      const i = this.chunkText(o, 500), r = await this.openAI.generateEmbeddings(i);
+      const i = this.chunkText(o, 500), s = await this.openAI.generateEmbeddings(i);
       return {
         url: e,
         title: n,
@@ -373,7 +373,7 @@ class H {
         fingerprint: [],
         lastIndexed: Date.now(),
         chunks: i,
-        embeddings: r
+        embeddings: s
       };
     } catch (t) {
       return console.error(`Failed to index page ${e}:`, t), null;
@@ -392,22 +392,22 @@ class H {
    * 提取頁面內容
    */
   extractContent(e) {
-    var s, a;
-    const n = new DOMParser().parseFromString(e, "text/html"), o = ((s = n.querySelector("title")) == null ? void 0 : s.textContent) || "";
+    var r, a;
+    const n = new DOMParser().parseFromString(e, "text/html"), o = ((r = n.querySelector("title")) == null ? void 0 : r.textContent) || "";
     n.querySelectorAll("script, style, nav, footer, header").forEach((l) => l.remove());
-    const r = (((a = n.body) == null ? void 0 : a.textContent) || "").replace(/\s+/g, " ").trim();
-    return { title: o, content: r };
+    const s = (((a = n.body) == null ? void 0 : a.textContent) || "").replace(/\s+/g, " ").trim();
+    return { title: o, content: s };
   }
   /**
    * 提取連結
    */
   extractLinks(e, t) {
     const o = new DOMParser().parseFromString(e, "text/html"), i = [];
-    return o.querySelectorAll("a[href]").forEach((r) => {
-      const s = r.getAttribute("href");
-      if (s)
+    return o.querySelectorAll("a[href]").forEach((s) => {
+      const r = s.getAttribute("href");
+      if (r)
         try {
-          const a = new URL(s, t).href;
+          const a = new URL(r, t).href;
           i.push(a);
         } catch {
         }
@@ -419,8 +419,8 @@ class H {
   chunkText(e, t) {
     const n = [], o = e.match(/[^.!?]+[.!?]+/g) || [e];
     let i = "";
-    for (const r of o)
-      (i + r).length > t && i ? (n.push(i.trim()), i = r) : i += r;
+    for (const s of o)
+      (i + s).length > t && i ? (n.push(i.trim()), i = s) : i += s;
     return i && n.push(i.trim()), n;
   }
   /**
@@ -431,9 +431,9 @@ class H {
     try {
       const o = new URL(e);
       return !((t = this.siteConfig) != null && t.remoteDomains && !this.siteConfig.remoteDomains.some(
-        (r) => o.hostname.includes(r.domain)
+        (s) => o.hostname.includes(s.domain)
       ) || (n = this.siteConfig) != null && n.excludePaths && this.siteConfig.excludePaths.some(
-        (r) => o.pathname.startsWith(r)
+        (s) => o.pathname.startsWith(s)
       ));
     } catch {
       return !1;
@@ -453,7 +453,7 @@ class H {
     return new Promise((t) => setTimeout(t, e));
   }
 }
-class B {
+class K {
   constructor(e, t, n = [], o) {
     d(this, "openAI");
     d(this, "pluginManager");
@@ -478,8 +478,8 @@ class B {
     try {
       const n = await fetch("http://localhost:3002/settings");
       if (n.ok) {
-        const o = await n.json(), i = ((e = o.find((s) => s.key === "system_prompt")) == null ? void 0 : e.value) || "你是一個專業的客服助理，請根據提供的資料回答用戶問題。如果沒有相關資料，請告知用戶會轉交給人工客服處理。", r = ((t = o.find((s) => s.key === "default_reply")) == null ? void 0 : t.value) || "此問題我們會在 3 小時內給予回覆，請稍候。";
-        return { systemPrompt: i, defaultReply: r };
+        const o = await n.json(), i = ((e = o.find((r) => r.key === "system_prompt")) == null ? void 0 : e.value) || "你是一個專業的客服助理，請根據提供的資料回答用戶問題。如果沒有相關資料，請告知用戶會轉交給人工客服處理。", s = ((t = o.find((r) => r.key === "default_reply")) == null ? void 0 : t.value) || "此問題我們會在 3 小時內給予回覆，請稍候。";
+        return { systemPrompt: i, defaultReply: s };
       }
     } catch (n) {
       console.error("Failed to load system settings:", n);
@@ -496,14 +496,14 @@ class B {
     console.log("🤖 Starting two-stage LLM process...");
     const i = await this.determineSearchTools(e);
     console.log("🔧 Tools to use:", i);
-    let r = [], s = "";
-    i.length > 0 && (console.log("🔍 Searching with tools:", i), r = await this.pluginManager.search(e, 5), s = this.formatSearchContext(r), console.log(`✅ Found ${r.length} results`));
+    let s = [], r = "";
+    i.length > 0 && (console.log("🔍 Searching with tools:", i), s = await this.pluginManager.search(e, 5), r = this.formatSearchContext(s), console.log(`✅ Found ${s.length} results`));
     const { response: a, canAnswer: l } = await this.generateResponse(
       e,
       t,
-      s
+      r
     );
-    return l ? { response: a, sources: r, needsHumanReply: !1 } : (console.log("⚠️ Cannot answer, sending to Telegram..."), await this.sendToTelegram(n, o, e), {
+    return l ? { response: a, sources: s, needsHumanReply: !1 } : (console.log("⚠️ Cannot answer, sending to Telegram..."), await this.sendToTelegram(n, o, e), {
       response: "此問題我們會在 3 小時內給予回覆，請稍候。",
       sources: [],
       needsHumanReply: !0
@@ -545,10 +545,10 @@ ${n.map((i) => `- ${i.id}: ${i.description}`).join(`
         ],
         0.3,
         500
-      ), r = JSON.parse(i);
-      return console.log("Tool selection reason:", r.reason), r.tools || [];
+      ), s = JSON.parse(i);
+      return console.log("Tool selection reason:", s.reason), s.tools || [];
     } catch (i) {
-      return console.error("Failed to determine tools:", i), n.map((r) => r.id);
+      return console.error("Failed to determine tools:", i), n.map((s) => s.id);
     }
   }
   /**
@@ -557,8 +557,8 @@ ${n.map((i) => `- ${i.id}: ${i.description}`).join(`
   async generateResponse(e, t, n) {
     var l, c, p;
     const { systemPrompt: o, defaultReply: i } = await this.getSystemSettings();
-    let r = ((l = this.currentRule) == null ? void 0 : l.systemPrompt) || o;
-    r += `
+    let s = ((l = this.currentRule) == null ? void 0 : l.systemPrompt) || o;
+    s += `
 
 你的任務是根據提供的搜尋結果回答用戶問題。
 
@@ -572,14 +572,14 @@ ${n ? `
 搜尋結果：
 ${n}` : `
 沒有找到相關的搜尋結果。`}`;
-    const s = this.getRecentQA(t, 2), a = [
-      { role: "system", content: r }
+    const r = this.getRecentQA(t, 2), a = [
+      { role: "system", content: s }
     ];
-    s.length > 0 && a.push({
+    r.length > 0 && a.push({
       role: "system",
       content: `
---- 對話記憶（前 ${s.length} 次 QA）---
-${s.join(`
+--- 對話記憶（前 ${r.length} 次 QA）---
+${r.join(`
 
 `)}`
     }), a.push({
@@ -587,14 +587,14 @@ ${s.join(`
       content: e
     });
     try {
-      const h = await this.openAI.chatCompletion(
+      const u = await this.openAI.chatCompletion(
         a,
         ((c = this.currentRule) == null ? void 0 : c.temperature) || 0.7,
         ((p = this.currentRule) == null ? void 0 : p.maxTokens) || 1e3
-      ), u = !h.includes("CANNOT_ANSWER");
-      return u ? { response: h.replace(/CANNOT_ANSWER/g, "").trim() || h, canAnswer: u } : { response: i, canAnswer: !1 };
-    } catch (h) {
-      return console.error("Failed to generate response:", h), {
+      ), h = !u.includes("CANNOT_ANSWER");
+      return h ? { response: u.replace(/CANNOT_ANSWER/g, "").trim() || u, canAnswer: h } : { response: i, canAnswer: !1 };
+    } catch (u) {
+      return console.error("Failed to generate response:", u), {
         response: "抱歉，系統暫時無法處理您的請求。",
         canAnswer: !1
       };
@@ -607,9 +607,9 @@ ${s.join(`
     const n = [];
     let o = "";
     for (let i = e.length - 1; i >= 0 && n.length < t; i--) {
-      const r = e[i];
-      r.role === "assistant" && o ? (n.unshift(`Q: ${o}
-A: ${r.content}`), o = "") : r.role === "user" && (o = r.content);
+      const s = e[i];
+      s.role === "assistant" && o ? (n.unshift(`Q: ${o}
+A: ${s.content}`), o = "") : s.role === "user" && (o = s.content);
     }
     return n;
   }
@@ -875,7 +875,7 @@ const f = {
     border-color: #6366f1;
   `
 };
-class K {
+class Q {
   /**
    * 將 Markdown 文本轉換為 HTML
    */
@@ -892,7 +892,7 @@ class K {
     return t.textContent = e, t.innerHTML;
   }
 }
-class Q {
+class W {
   constructor(e = "33.33%", t = "right") {
     d(this, "container");
     d(this, "overlay");
@@ -992,7 +992,7 @@ class Q {
    * 綁定事件
    */
   bindEvents(e) {
-    var o, i, r, s, a, l;
+    var o, i, s, r, a, l;
     (o = e.querySelector("#sm-close-btn")) == null || o.addEventListener("click", () => {
       this.close();
     });
@@ -1015,9 +1015,9 @@ class Q {
       console.log("🔥 Input blurred");
     })) : console.error("❌ Input field not found!"), (i = e.querySelector("#sm-chat-tab")) == null || i.addEventListener("click", () => {
       this.showView("chat");
-    }), (r = e.querySelector("#sm-rules-tab")) == null || r.addEventListener("click", () => {
+    }), (s = e.querySelector("#sm-rules-tab")) == null || s.addEventListener("click", () => {
       this.showView("rules");
-    }), (s = e.querySelector("#sm-refresh-btn")) == null || s.addEventListener("click", () => {
+    }), (r = e.querySelector("#sm-refresh-btn")) == null || r.addEventListener("click", () => {
       this.clearMessages();
     }), (a = e.querySelector("#sm-history-btn")) == null || a.addEventListener("click", () => {
       this.showHistory();
@@ -1046,11 +1046,11 @@ class Q {
     const t = this.panel.querySelector("#sm-messages");
     if (!t) return;
     const n = document.createElement("div");
-    if (n.style.cssText = e.role === "user" ? f.userMessage : f.assistantMessage, e.role === "assistant" ? n.innerHTML = K.render(e.content) : n.textContent = e.content, e.sources && e.sources.length > 0) {
+    if (n.style.cssText = e.role === "user" ? f.userMessage : f.assistantMessage, e.role === "assistant" ? n.innerHTML = Q.render(e.content) : n.textContent = e.content, e.sources && e.sources.length > 0) {
       const o = document.createElement("div");
-      o.style.cssText = f.sources, o.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((i, r) => {
-        const s = document.createElement("a");
-        s.href = i.url, s.target = "_blank", s.textContent = `[${r + 1}] ${i.title}`, s.style.cssText = f.sourceLink, o.appendChild(s), o.appendChild(document.createElement("br"));
+      o.style.cssText = f.sources, o.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((i, s) => {
+        const r = document.createElement("a");
+        r.href = i.url, r.target = "_blank", r.textContent = `[${s + 1}] ${i.title}`, r.style.cssText = f.sourceLink, o.appendChild(r), o.appendChild(document.createElement("br"));
       }), n.appendChild(o);
     }
     t.appendChild(n), setTimeout(() => {
@@ -1163,8 +1163,8 @@ ${n}`);
     this.capturedImage = e, this.capturedText = t;
     const n = this.panel.querySelector("#sm-image-preview"), o = this.panel.querySelector("#sm-preview-img"), i = this.panel.querySelector("#sm-image-context");
     n && o && i && (n.style.display = "flex", o.src = e, i.textContent = t.substring(0, 100) + (t.length > 100 ? "..." : ""));
-    const r = this.panel.querySelector("#sm-input");
-    r && r.focus();
+    const s = this.panel.querySelector("#sm-input");
+    s && s.focus();
   }
   /**
    * 清除捕獲的圖片
@@ -1296,31 +1296,31 @@ class J {
     }, 500);
   }
 }
-class N {
+class F {
   /**
    * 提取當前頁面的所有文字內容
    */
   static extractCurrentPageContent() {
-    var s;
+    var r;
     const e = document.title, t = window.location.href, n = document.body.cloneNode(!0);
     n.querySelectorAll("script, style, nav, footer, header, .sm-container").forEach((a) => a.remove());
-    const o = ((s = n.textContent) == null ? void 0 : s.replace(/\s+/g, " ").trim()) || "", i = [];
+    const o = ((r = n.textContent) == null ? void 0 : r.replace(/\s+/g, " ").trim()) || "", i = [];
     document.querySelectorAll("h1, h2, h3, h4, h5, h6").forEach((a) => {
       var p;
       const l = parseInt(a.tagName.substring(1)), c = ((p = a.textContent) == null ? void 0 : p.trim()) || "";
       c && i.push({ level: l, text: c });
     });
-    const r = [];
+    const s = [];
     return document.querySelectorAll("a[href]").forEach((a) => {
       var p;
       const l = ((p = a.textContent) == null ? void 0 : p.trim()) || "", c = a.href;
-      l && c && r.push({ text: l, href: c });
+      l && c && s.push({ text: l, href: c });
     }), {
       title: e,
       url: t,
       content: o,
       headings: i,
-      links: r
+      links: s
     };
   }
   /**
@@ -1331,22 +1331,22 @@ class N {
       document.body,
       NodeFilter.SHOW_TEXT,
       {
-        acceptNode: (r) => {
-          const s = r.parentElement;
-          if (!s) return NodeFilter.FILTER_REJECT;
-          const a = s.tagName.toLowerCase();
-          return a === "script" || a === "style" || s.closest(".sm-container") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+        acceptNode: (s) => {
+          const r = s.parentElement;
+          if (!r) return NodeFilter.FILTER_REJECT;
+          const a = r.tagName.toLowerCase();
+          return a === "script" || a === "style" || r.closest(".sm-container") ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
         }
       }
     );
     let i;
     for (; i = o.nextNode(); ) {
-      const r = i.textContent || "", s = r.toLowerCase();
-      if (s.includes(n)) {
-        const a = i.parentElement, l = s.indexOf(n), c = Math.max(0, l - 50), p = Math.min(r.length, l + e.length + 50), h = r.substring(c, p);
+      const s = i.textContent || "", r = s.toLowerCase();
+      if (r.includes(n)) {
+        const a = i.parentElement, l = r.indexOf(n), c = Math.max(0, l - 50), p = Math.min(s.length, l + e.length + 50), u = s.substring(c, p);
         t.push({
-          text: r.trim(),
-          context: "..." + h + "...",
+          text: s.trim(),
+          context: "..." + u + "...",
           element: a
         });
       }
@@ -1354,7 +1354,7 @@ class N {
     return t;
   }
 }
-class S {
+class E {
   /**
    * 提取頁面主要內容
    */
@@ -1371,11 +1371,11 @@ class S {
    * 提取標題
    */
   extractTitle(e) {
-    var i, r, s;
+    var i, s, r;
     const t = (i = e.querySelector('meta[property="og:title"]')) == null ? void 0 : i.getAttribute("content");
     if (t) return t;
-    const n = (r = e.querySelector("title")) == null ? void 0 : r.textContent;
-    return n || ((s = e.querySelector("h1")) == null ? void 0 : s.textContent) || "Untitled";
+    const n = (s = e.querySelector("title")) == null ? void 0 : s.textContent;
+    return n || ((r = e.querySelector("h1")) == null ? void 0 : r.textContent) || "Untitled";
   }
   /**
    * 提取主要內容（去除雜訊）
@@ -1393,9 +1393,9 @@ class S {
       "#main"
     ];
     for (const i of n) {
-      const r = t.querySelector(i);
-      if (r && r.textContent && r.textContent.length > 100)
-        return this.cleanText(r.textContent);
+      const s = t.querySelector(i);
+      if (s && s.textContent && s.textContent.length > 100)
+        return this.cleanText(s.textContent);
     }
     const o = t.querySelector("body");
     return o ? this.cleanText(o.textContent || "") : "";
@@ -1433,15 +1433,15 @@ class S {
     return e.querySelectorAll("h1, h2, h3, h4").forEach((o) => {
       const i = this.cleanText(o.textContent || "");
       if (!i) return;
-      let r = "", s = o.nextElementSibling;
-      for (; s && !s.matches("h1, h2, h3, h4"); ) {
-        const a = s.textContent || "";
-        a.trim() && (r += a + " "), s = s.nextElementSibling;
+      let s = "", r = o.nextElementSibling;
+      for (; r && !r.matches("h1, h2, h3, h4"); ) {
+        const a = r.textContent || "";
+        a.trim() && (s += a + " "), r = r.nextElementSibling;
       }
-      r.trim() && t.push({
+      s.trim() && t.push({
         heading: i,
-        content: this.cleanText(r),
-        relevance: this.calculateRelevance(o, r)
+        content: this.cleanText(s),
+        relevance: this.calculateRelevance(o, s)
       });
     }), t.sort((o, i) => i.relevance - o.relevance);
   }
@@ -1463,8 +1463,8 @@ class S {
     return e.querySelectorAll("img").forEach((n) => {
       const o = n.src, i = n.alt || "";
       if (n.width < 50 || n.height < 50 || o.includes("ad") || o.includes("banner")) return;
-      const r = this.getImageContext(n);
-      t.push({ src: o, alt: i, context: r });
+      const s = this.getImageContext(n);
+      t.push({ src: o, alt: i, context: s });
     }), t;
   }
   /**
@@ -1487,8 +1487,8 @@ class S {
    * 提取元數據
    */
   extractMetadata(e) {
-    var i, r, s;
-    const t = ((i = e.querySelector('meta[name="description"]')) == null ? void 0 : i.getAttribute("content")) || ((r = e.querySelector('meta[property="og:description"]')) == null ? void 0 : r.getAttribute("content")) || void 0, n = (s = e.querySelector('meta[name="keywords"]')) == null ? void 0 : s.getAttribute("content"), o = n ? n.split(",").map((a) => a.trim()) : void 0;
+    var i, s, r;
+    const t = ((i = e.querySelector('meta[name="description"]')) == null ? void 0 : i.getAttribute("content")) || ((s = e.querySelector('meta[property="og:description"]')) == null ? void 0 : s.getAttribute("content")) || void 0, n = (r = e.querySelector('meta[name="keywords"]')) == null ? void 0 : r.getAttribute("content"), o = n ? n.split(",").map((a) => a.trim()) : void 0;
     return { description: t, keywords: o };
   }
   /**
@@ -1503,22 +1503,22 @@ class S {
    */
   searchRelevantSections(e, t = 5) {
     const n = this.extract(), o = e.toLowerCase().split(/\s+/);
-    return n.sections.map((r) => {
-      let s = r.relevance;
-      const a = r.heading.toLowerCase();
+    return n.sections.map((s) => {
+      let r = s.relevance;
+      const a = s.heading.toLowerCase();
       o.forEach((c) => {
-        a.includes(c) && (s += 5);
+        a.includes(c) && (r += 5);
       });
-      const l = r.content.toLowerCase();
+      const l = s.content.toLowerCase();
       return o.forEach((c) => {
         const p = (l.match(new RegExp(c, "g")) || []).length;
-        s += p * 2;
+        r += p * 2;
       }), {
-        heading: r.heading,
-        content: r.content,
-        score: s
+        heading: s.heading,
+        content: s.content,
+        score: r
       };
-    }).sort((r, s) => s.score - r.score).slice(0, t);
+    }).sort((s, r) => r.score - s.score).slice(0, t);
   }
   /**
    * 提取純文字內容
@@ -1534,7 +1534,7 @@ class S {
     const n = e.toLowerCase().replace(/[^\w\s\u4e00-\u9fa5]/g, " ").split(/\s+/).filter((i) => i.length > 1), o = /* @__PURE__ */ new Map();
     for (const i of n)
       o.set(i, (o.get(i) || 0) + 1);
-    return Array.from(o.entries()).sort((i, r) => r[1] - i[1]).slice(0, t).map(([i]) => i);
+    return Array.from(o.entries()).sort((i, s) => s[1] - i[1]).slice(0, t).map(([i]) => i);
   }
   /**
    * 生成 Fingerprint（SimHash）
@@ -1542,9 +1542,9 @@ class S {
   generateFingerprint(e, t = 64) {
     const n = this.extractKeywords(e, 50), o = new Array(t).fill(0);
     for (const i of n) {
-      const r = this.simpleHash(i, t);
-      for (let s = 0; s < t; s++)
-        r[s] === 1 ? o[s]++ : o[s]--;
+      const s = this.simpleHash(i, t);
+      for (let r = 0; r < t; r++)
+        s[r] === 1 ? o[r]++ : o[r]--;
     }
     return o.map((i) => i > 0 ? 1 : 0);
   }
@@ -1561,28 +1561,35 @@ class S {
     return o;
   }
 }
-class C {
+class S {
   /**
-   * 設置配置（為了兼容性）
+   * 設置資料庫配置
    */
   static setConfig(e) {
-    this.baseUrl = "/api/lens";
+    this.dbConfig = { ...this.dbConfig, ...e }, console.log("Database config set:", this.dbConfig);
   }
   /**
-   * 執行SQL查詢（通過Next.js API Routes）
+   * 執行SQL查詢（使用模擬數據）
    */
   static async query(e, t = []) {
     try {
-      const o = await (await fetch(`${this.baseUrl}/query`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ sql: e, params: t })
-      })).json();
-      if (!o.success)
-        throw new Error(o.error || "Database query failed");
-      return o.data;
+      console.log("Executing SQL:", e, "with params:", t);
+      const n = e.toLowerCase().trim();
+      if (n.includes("select * from settings"))
+        return this.mockData.settings;
+      if (n.includes("select * from admin_users") || n.includes("select id, username, email"))
+        return this.mockData.admin_users.map((o) => ({
+          id: o.id,
+          username: o.username,
+          email: o.email,
+          created_at: o.created_at,
+          updated_at: o.updated_at
+        }));
+      if (n.includes("select id, username, email from admin_users where username")) {
+        const o = t[0], i = t[1], s = this.mockData.admin_users.find((r) => r.username === o && r.password === i);
+        return s ? [{ id: s.id, username: s.username, email: s.email }] : [];
+      }
+      return n.includes("select * from manual_indexes") || n.includes("from manual_indexes") ? this.mockData.manual_indexes : [];
     } catch (n) {
       throw console.error("Database query error:", n), n;
     }
@@ -1591,90 +1598,38 @@ class C {
    * 系統設定相關方法
    */
   static async getSettings() {
-    try {
-      const t = await (await fetch(`${this.baseUrl}/settings`)).json();
-      if (!t.success)
-        throw new Error(t.error || "Failed to fetch settings");
-      return t.data;
-    } catch (e) {
-      throw console.error("Get settings error:", e), e;
-    }
+    return this.query("SELECT * FROM settings ORDER BY id");
   }
   static async updateSetting(e, t) {
-    try {
-      const o = await (await fetch(`${this.baseUrl}/settings/${e}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ value: t })
-      })).json();
-      if (!o.success)
-        throw new Error(o.error || "Failed to update setting");
-      return o.data;
-    } catch (n) {
-      throw console.error("Update setting error:", n), n;
-    }
+    return (await this.query(`
+      UPDATE settings SET value = $1, updated_at = NOW() WHERE key = $2 RETURNING *;
+      INSERT INTO settings (key, value) SELECT $2, $1 WHERE NOT EXISTS (SELECT 1 FROM settings WHERE key = $2) RETURNING *;
+    `, [t, e]))[0];
   }
   /**
    * 管理員用戶相關方法
    */
   static async getAdminUsers() {
-    try {
-      const t = await (await fetch(`${this.baseUrl}/admin-users`)).json();
-      if (!t.success)
-        throw new Error(t.error || "Failed to fetch admin users");
-      return t.data;
-    } catch (e) {
-      throw console.error("Get admin users error:", e), e;
-    }
+    return this.query("SELECT id, username, email, created_at, updated_at FROM admin_users ORDER BY id");
   }
   static async createAdminUser(e, t, n) {
-    try {
-      const i = await (await fetch(`${this.baseUrl}/admin-users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ username: e, password: t, email: n })
-      })).json();
-      if (!i.success)
-        throw new Error(i.error || "Failed to create admin user");
-      return i.data;
-    } catch (o) {
-      throw console.error("Create admin user error:", o), o;
-    }
+    return (await this.query(`
+      INSERT INTO admin_users (username, password, email, created_at, updated_at)
+      VALUES ($1, $2, $3, NOW(), NOW())
+      RETURNING id, username, email, created_at, updated_at
+    `, [e, t, n]))[0];
   }
   static async deleteAdminUser(e) {
-    try {
-      const n = await (await fetch(`${this.baseUrl}/admin-users/${e}`, {
-        method: "DELETE"
-      })).json();
-      if (!n.success)
-        throw new Error(n.error || "Failed to delete admin user");
-      return n.data;
-    } catch (t) {
-      throw console.error("Delete admin user error:", t), t;
-    }
+    return (await this.query("DELETE FROM admin_users WHERE id = $1 RETURNING id, username, email", [e]))[0];
   }
   /**
    * 登入驗證
    */
   static async login(e, t) {
-    try {
-      const o = await (await fetch(`${this.baseUrl}/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ username: e, password: t })
-      })).json();
-      if (!o.success)
-        throw new Error(o.error || "Login failed");
-      return o.data;
-    } catch (n) {
-      throw console.error("Login error:", n), n;
-    }
+    const o = await this.query("SELECT id, username, email FROM admin_users WHERE username = $1 AND password = $2", [e, t]);
+    if (o.length === 0)
+      throw new Error("Invalid username or password");
+    return o[0];
   }
   /**
    * 手動索引相關方法
@@ -1729,16 +1684,35 @@ class C {
    */
   static async healthCheck() {
     try {
-      return (await (await fetch(`${this.baseUrl.replace("/api", "")}/health`)).json()).status === "healthy";
+      return await this.query("SELECT 1 as test"), !0;
     } catch (e) {
       return console.error("Health check failed:", e), !1;
     }
   }
 }
-d(C, "baseUrl", "/api/lens");
+d(S, "dbConfig", {
+  host: "localhost",
+  port: 5432,
+  database: "lens_service",
+  user: "lens_user",
+  password: "lens123"
+}), // 模擬資料存儲
+d(S, "mockData", {
+  settings: [
+    { id: 1, key: "system_prompt", value: "你是一個專業的客服助理，請友善地回答用戶問題。", created_at: /* @__PURE__ */ new Date(), updated_at: /* @__PURE__ */ new Date() },
+    { id: 2, key: "default_reply", value: "抱歉，我無法回答這個問題，請聯繫人工客服。", created_at: /* @__PURE__ */ new Date(), updated_at: /* @__PURE__ */ new Date() }
+  ],
+  admin_users: [
+    { id: 1, username: "admin", password: "admin123", email: "admin@lens-service.com", created_at: /* @__PURE__ */ new Date(), updated_at: /* @__PURE__ */ new Date() },
+    { id: 2, username: "manager", password: "manager456", email: "manager@lens-service.com", created_at: /* @__PURE__ */ new Date(), updated_at: /* @__PURE__ */ new Date() }
+  ],
+  manual_indexes: [
+    { id: 1, name: "產品說明", description: "產品相關說明", content: "我們的產品提供 AI 客服功能，可以自動回答用戶問題並提供專業的客戶服務。", created_at: /* @__PURE__ */ new Date(), updated_at: /* @__PURE__ */ new Date() }
+  ]
+});
 const I = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
-  DatabaseService: C
+  DatabaseService: S
 }, Symbol.toStringTag, { value: "Module" }));
 class x {
   /**
@@ -1752,7 +1726,7 @@ class x {
    */
   static async getAll() {
     try {
-      return await C.getManualIndexes();
+      return await S.getManualIndexes();
     } catch (e) {
       return console.error("Failed to get manual indexes:", e), [];
     }
@@ -1767,7 +1741,7 @@ class x {
    * 創建新索引
    */
   static async create(e) {
-    const t = new S(), n = t.extractKeywords(e.content), o = t.generateFingerprint(e.content);
+    const t = new E(), n = t.extractKeywords(e.content), o = t.generateFingerprint(e.content);
     let i;
     if (this.openAIService)
       try {
@@ -1776,7 +1750,7 @@ class x {
       } catch (a) {
         console.warn("Failed to generate embedding:", a);
       }
-    const r = {
+    const s = {
       id: this.generateId(),
       name: e.name,
       description: e.description,
@@ -1788,8 +1762,8 @@ class x {
       metadata: e.metadata || {},
       createdAt: Date.now(),
       updatedAt: Date.now()
-    }, s = await this.getAll();
-    return s.push(r), await this.saveAll(s), console.log("Created manual index:", r.id), r;
+    }, r = await this.getAll();
+    return r.push(s), await this.saveAll(r), console.log("Created manual index:", s.id), s;
   }
   /**
    * 更新索引
@@ -1799,13 +1773,13 @@ class x {
     if (!o) return null;
     if (t.name !== void 0 && (o.name = t.name), t.description !== void 0 && (o.description = t.description), t.metadata !== void 0 && (o.metadata = t.metadata), t.content !== void 0) {
       o.content = t.content;
-      const i = new S();
+      const i = new E();
       if (o.keywords = i.extractKeywords(t.content), o.fingerprint = i.generateFingerprint(t.content), this.openAIService)
         try {
-          const r = `${o.name} ${o.description} ${t.content}`;
-          o.embedding = await this.openAIService.generateEmbedding(r), console.log("Updated embedding for manual index:", o.name);
-        } catch (r) {
-          console.warn("Failed to update embedding:", r);
+          const s = `${o.name} ${o.description} ${t.content}`;
+          o.embedding = await this.openAIService.generateEmbedding(s), console.log("Updated embedding for manual index:", o.name);
+        } catch (s) {
+          console.warn("Failed to update embedding:", s);
         }
     }
     return o.updatedAt = Date.now(), await this.saveAll(n), console.log("Updated manual index:", e), o;
@@ -1815,7 +1789,7 @@ class x {
    */
   static async delete(e) {
     const t = await this.getAll();
-    return t.filter((o) => o.id !== e).length === t.length ? !1 : (await C.deleteManualIndex(e), console.log("Deleted manual index:", e), !0);
+    return t.filter((o) => o.id !== e).length === t.length ? !1 : (await S.deleteManualIndex(e), console.log("Deleted manual index:", e), !0);
   }
   /**
    * 搜尋索引（混合搜索：BM25 + Vector Search）
@@ -1823,23 +1797,23 @@ class x {
   static async search(e, t = 5) {
     const n = await this.getAll();
     if (n.length === 0) return [];
-    const o = new S(), i = o.extractKeywords(e), r = o.generateFingerprint(e);
-    let s = null;
+    const o = new E(), i = o.extractKeywords(e), s = o.generateFingerprint(e);
+    let r = null;
     if (this.openAIService)
       try {
-        s = await this.openAIService.generateEmbedding(e);
+        r = await this.openAIService.generateEmbedding(e);
       } catch (l) {
         console.warn("Failed to generate query embedding:", l);
       }
     return n.map((l) => {
-      const c = this.calculateBM25Score(i, l), p = this.calculateFingerprintScore(r, l.fingerprint), h = s && l.embedding ? this.calculateCosineSimilarity(s, l.embedding) : 0;
-      let u;
-      return h > 0 ? u = c * 0.4 + h * 0.4 + p * 0.2 : u = c * 0.6 + p * 0.4, {
+      const c = this.calculateBM25Score(i, l), p = this.calculateFingerprintScore(s, l.fingerprint), u = r && l.embedding ? this.calculateCosineSimilarity(r, l.embedding) : 0;
+      let h;
+      return u > 0 ? h = c * 0.4 + u * 0.4 + p * 0.2 : h = c * 0.6 + p * 0.4, {
         index: l,
-        score: u,
+        score: h,
         breakdown: {
           bm25Score: c,
-          vectorScore: h,
+          vectorScore: u,
           fingerprintScore: p
         }
       };
@@ -1850,15 +1824,15 @@ class x {
    */
   static calculateBM25Score(e, t) {
     if (e.length === 0 || t.keywords.length === 0) return 0;
-    const n = 1.2, o = 0.75, i = t.content.length, r = 1e3;
-    let s = 0;
+    const n = 1.2, o = 0.75, i = t.content.length, s = 1e3;
+    let r = 0;
     for (const a of e) {
-      const l = t.keywords.filter((u) => u === a).length;
+      const l = t.keywords.filter((h) => h === a).length;
       if (l === 0) continue;
-      const c = Math.log(10 / 2), p = l * (n + 1), h = l + n * (1 - o + o * (i / r));
-      s += c * (p / h);
+      const c = Math.log(10 / 2), p = l * (n + 1), u = l + n * (1 - o + o * (i / s));
+      r += c * (p / u);
     }
-    return Math.min(s / e.length, 1);
+    return Math.min(r / e.length, 1);
   }
   /**
    * 計算餘弦相似度
@@ -1866,8 +1840,8 @@ class x {
   static calculateCosineSimilarity(e, t) {
     if (e.length !== t.length) return 0;
     let n = 0, o = 0, i = 0;
-    for (let r = 0; r < e.length; r++)
-      n += e[r] * t[r], o += e[r] * e[r], i += t[r] * t[r];
+    for (let s = 0; s < e.length; s++)
+      n += e[s] * t[s], o += e[s] * e[s], i += t[s] * t[s];
     return o === 0 || i === 0 ? 0 : n / (Math.sqrt(o) * Math.sqrt(i));
   }
   /**
@@ -1883,8 +1857,8 @@ class x {
     if (e.length === 0 || t.length === 0) return 0;
     let n = 0, o = 0;
     for (let i = 0; i < Math.max(e.length, t.length); i++) {
-      const r = e[i] || 0, s = t[i] || 0;
-      r === 1 && s === 1 && n++, (r === 1 || s === 1) && o++;
+      const s = e[i] || 0, r = t[i] || 0;
+      s === 1 && r === 1 && n++, (s === 1 || r === 1) && o++;
     }
     return o > 0 ? n / o : 0;
   }
@@ -1893,7 +1867,7 @@ class x {
    */
   static async saveAll(e) {
     for (const t of e)
-      await C.saveManualIndex(t);
+      await S.saveManualIndex(t);
   }
   /**
    * 生成 ID
@@ -1907,7 +1881,7 @@ class x {
   static async clearAll() {
     const e = await this.getAll();
     for (const t of e)
-      await C.deleteManualIndex(t.id);
+      await S.deleteManualIndex(t.id);
   }
   /**
    * 匯出索引（JSON）
@@ -2035,7 +2009,7 @@ class A {
     if (!o || !o.enabled)
       return [];
     try {
-      const i = o.queryTemplate.replace(/\{\{query\}\}/g, t), s = await (await fetch(`${n}/sql/query`, {
+      const i = o.queryTemplate.replace(/\{\{query\}\}/g, t), r = await (await fetch(`${n}/sql/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2044,9 +2018,9 @@ class A {
           sql: i
         })
       })).json();
-      if (!s.success || !s.rows)
-        throw new Error(s.error || "Query failed");
-      return s.rows.map((a) => ({
+      if (!r.success || !r.rows)
+        throw new Error(r.error || "Query failed");
+      return r.rows.map((a) => ({
         title: a[o.resultMapping.titleField] || "",
         content: a[o.resultMapping.contentField] || "",
         url: o.resultMapping.urlField ? a[o.resultMapping.urlField] : void 0
@@ -2059,21 +2033,21 @@ class A {
    * 搜尋（通過所有啟用的連接）
    */
   static async search(e, t, n, o = 5) {
-    const i = this.getAll().filter((a) => a.enabled), r = n && n.length > 0 ? i.filter((a) => n.includes(a.id)) : i;
-    if (r.length === 0) return [];
-    const s = [];
-    for (const a of r)
+    const i = this.getAll().filter((a) => a.enabled), s = n && n.length > 0 ? i.filter((a) => n.includes(a.id)) : i;
+    if (s.length === 0) return [];
+    const r = [];
+    for (const a of s)
       try {
         const l = await this.query(a.id, e, t);
         for (const c of l)
-          s.push({
+          r.push({
             ...c,
             connectionName: a.name
           });
       } catch (l) {
         console.error(`Failed to search connection ${a.name}:`, l);
       }
-    return s.slice(0, o);
+    return r.slice(0, o);
   }
   /**
    * 獲取連接統計
@@ -2113,7 +2087,7 @@ class A {
   }
 }
 d(A, "STORAGE_KEY", "sm_sql_connections");
-class W {
+class Y {
   constructor() {
     d(this, "container", null);
     d(this, "isOpen", !1);
@@ -2297,26 +2271,26 @@ class W {
         align-items: center;
         z-index: 10000;
       `;
-      const r = n ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit;">${t}</textarea>` : `<input type="text" id="edit-input" value="${t}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;">`;
+      const s = n ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit;">${t}</textarea>` : `<input type="text" id="edit-input" value="${t}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;">`;
       i.innerHTML = `
         <div style="background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%;">
           <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1f2937;">${e}</h3>
-          ${r}
+          ${s}
           <div style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 16px;">
             <button id="cancel-btn" style="padding: 8px 16px; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; cursor: pointer;">取消</button>
             <button id="save-btn" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">儲存</button>
           </div>
         </div>
       `, document.body.appendChild(i);
-      const s = i.querySelector("#edit-input"), a = i.querySelector("#cancel-btn"), l = i.querySelector("#save-btn");
-      s.focus(), s instanceof HTMLInputElement ? s.select() : s.setSelectionRange(0, s.value.length), a == null || a.addEventListener("click", () => {
+      const r = i.querySelector("#edit-input"), a = i.querySelector("#cancel-btn"), l = i.querySelector("#save-btn");
+      r.focus(), r instanceof HTMLInputElement ? r.select() : r.setSelectionRange(0, r.value.length), a == null || a.addEventListener("click", () => {
         document.body.removeChild(i), o(null);
       }), l == null || l.addEventListener("click", () => {
-        const c = s.value.trim();
+        const c = r.value.trim();
         document.body.removeChild(i), o(c);
-      }), s instanceof HTMLInputElement && s.addEventListener("keydown", (c) => {
+      }), r instanceof HTMLInputElement && r.addEventListener("keydown", (c) => {
         if (c.key === "Enter") {
-          const p = s.value.trim();
+          const p = r.value.trim();
           document.body.removeChild(i), o(p);
         }
       }), i.addEventListener("click", (c) => {
@@ -2329,7 +2303,7 @@ class W {
    */
   showConfirmDialog(e) {
     return new Promise((t) => {
-      var r, s;
+      var s, r;
       const n = document.createElement("div");
       n.style.cssText = `
         position: fixed;
@@ -2361,7 +2335,7 @@ class W {
       const i = (a) => {
         document.body.removeChild(n), t(a);
       };
-      (r = o.querySelector("#confirm-ok")) == null || r.addEventListener("click", () => i(!0)), (s = o.querySelector("#confirm-cancel")) == null || s.addEventListener("click", () => i(!1)), n.addEventListener("click", (a) => {
+      (s = o.querySelector("#confirm-ok")) == null || s.addEventListener("click", () => i(!0)), (r = o.querySelector("#confirm-cancel")) == null || r.addEventListener("click", () => i(!1)), n.addEventListener("click", (a) => {
         a.target === n && i(!1);
       });
     });
@@ -2371,7 +2345,7 @@ class W {
    */
   showAlertDialog(e) {
     return new Promise((t) => {
-      var r;
+      var s;
       const n = document.createElement("div");
       n.style.cssText = `
         position: fixed;
@@ -2402,9 +2376,19 @@ class W {
       const i = () => {
         document.body.removeChild(n), t();
       };
-      (r = o.querySelector("#alert-ok")) == null || r.addEventListener("click", i), n.addEventListener("click", (s) => {
-        s.target === n && i();
+      (s = o.querySelector("#alert-ok")) == null || s.addEventListener("click", i), n.addEventListener("click", (r) => {
+        r.target === n && i();
       });
+    });
+  }
+  /**
+   * 更新導航高亮
+   */
+  updateNavHighlight() {
+    if (!this.container) return;
+    this.container.querySelectorAll(".nav-item").forEach((t) => {
+      const n = t;
+      n.dataset.page === this.currentPage ? n.classList.add("active") : n.classList.remove("active");
     });
   }
   /**
@@ -2414,16 +2398,16 @@ class W {
     if (!this.container) return;
     const e = this.container.querySelector("#admin-login-form");
     if (e) {
-      e.addEventListener("submit", async (h) => {
-        h.preventDefault(), h.stopPropagation();
-        const u = this.container.querySelector("#admin-username"), m = this.container.querySelector("#admin-password"), y = (u == null ? void 0 : u.value) || "", v = (m == null ? void 0 : m.value) || "";
+      e.addEventListener("submit", async (u) => {
+        u.preventDefault(), u.stopPropagation();
+        const h = this.container.querySelector("#admin-username"), g = this.container.querySelector("#admin-password"), y = (h == null ? void 0 : h.value) || "", v = (g == null ? void 0 : g.value) || "";
         console.log("Login attempt with username:", y);
         try {
           const { DatabaseService: w } = await Promise.resolve().then(() => I), z = await w.login(y, v);
           console.log("Login successful (database auth)"), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), await this.updatePageContent(), this.bindEvents();
         } catch (w) {
           console.error("Login error:", w), this.showAlertDialog("登入時發生錯誤，請稍後再試").then(() => {
-            m.value = "", m.focus();
+            g.value = "", g.focus();
           });
         }
       });
@@ -2438,12 +2422,12 @@ class W {
         console.warn("Nav items not found, retrying..."), setTimeout(() => this.bindEvents(), 100);
         return;
       }
-      p.forEach((h, u) => {
-        console.log(`Binding nav item ${u}:`, h.dataset.page);
-        const m = h.cloneNode(!0);
-        h.parentNode.replaceChild(m, h), m.addEventListener("click", async () => {
-          const y = m.dataset.page;
-          console.log("Nav item clicked:", y), y && (this.currentPage = y, this.container.innerHTML = this.renderAdminUI(), await this.updatePageContent(), this.bindEvents());
+      p.forEach((u, h) => {
+        console.log(`Binding nav item ${h}:`, u.dataset.page);
+        const g = u.cloneNode(!0);
+        u.parentNode.replaceChild(g, u), g.addEventListener("click", async () => {
+          const y = g.dataset.page;
+          console.log("Nav item clicked:", y), y && y !== this.currentPage && (this.currentPage = y, await this.updatePageContent(), this.updateNavHighlight());
         });
       });
     }, 50);
@@ -2454,41 +2438,41 @@ class W {
     const n = this.container.querySelector("#telegram-settings-form");
     n && n.addEventListener("submit", async (p) => {
       p.preventDefault(), p.stopPropagation();
-      const h = this.container.querySelector("#telegram-enabled"), u = (h == null ? void 0 : h.checked) || !1;
-      this.setTelegramEnabled(u), alert(`Telegram 通知已${u ? "啟用" : "停用"}`), await this.updatePageContent();
+      const u = this.container.querySelector("#telegram-enabled"), h = (u == null ? void 0 : u.checked) || !1;
+      this.setTelegramEnabled(h), alert(`Telegram 通知已${h ? "啟用" : "停用"}`), await this.updatePageContent();
     });
     const o = this.container.querySelector("#change-password-form");
     o && o.addEventListener("submit", async (p) => {
       p.preventDefault(), p.stopPropagation();
-      const h = this.container.querySelector("#new-password"), u = (h == null ? void 0 : h.value) || "";
-      if (u.length < 4) {
+      const u = this.container.querySelector("#new-password"), h = (u == null ? void 0 : u.value) || "";
+      if (h.length < 4) {
         alert("密碼長度至少 4 個字元");
         return;
       }
-      b.saveAdminPassword(u), alert("密碼已更新"), await this.updatePageContent();
+      b.saveAdminPassword(h), alert("密碼已更新"), await this.updatePageContent();
     });
     const i = this.container.querySelector("#ip-whitelist-form");
     i && i.addEventListener("submit", async (p) => {
       p.preventDefault(), p.stopPropagation();
-      const h = this.container.querySelector("#ip-list"), m = ((h == null ? void 0 : h.value) || "").split(`
+      const u = this.container.querySelector("#ip-list"), g = ((u == null ? void 0 : u.value) || "").split(`
 `).map((y) => y.trim()).filter((y) => y.length > 0);
-      this.saveIPWhitelist(m), alert(`已更新 IP 白名單（${m.length} 個 IP）`), await this.updatePageContent();
+      this.saveIPWhitelist(g), alert(`已更新 IP 白名單（${g.length} 個 IP）`), await this.updatePageContent();
     });
-    const r = this.container.querySelector("#api-config-form");
-    r && r.addEventListener("submit", (p) => {
-      var L, q, k, $, T, P;
+    const s = this.container.querySelector("#api-config-form");
+    s && s.addEventListener("submit", (p) => {
+      var q, M, k, $, T, L;
       p.preventDefault(), p.stopPropagation();
-      const h = ((L = this.container.querySelector("#llm-endpoint")) == null ? void 0 : L.value) || "", u = ((q = this.container.querySelector("#llm-api-key")) == null ? void 0 : q.value) || "", m = ((k = this.container.querySelector("#llm-deployment")) == null ? void 0 : k.value) || "", y = (($ = this.container.querySelector("#embed-endpoint")) == null ? void 0 : $.value) || "", v = ((T = this.container.querySelector("#embed-api-key")) == null ? void 0 : T.value) || "", w = ((P = this.container.querySelector("#embed-deployment")) == null ? void 0 : P.value) || "", z = {
+      const u = ((q = this.container.querySelector("#llm-endpoint")) == null ? void 0 : q.value) || "", h = ((M = this.container.querySelector("#llm-api-key")) == null ? void 0 : M.value) || "", g = ((k = this.container.querySelector("#llm-deployment")) == null ? void 0 : k.value) || "", y = (($ = this.container.querySelector("#embed-endpoint")) == null ? void 0 : $.value) || "", v = ((T = this.container.querySelector("#embed-api-key")) == null ? void 0 : T.value) || "", w = ((L = this.container.querySelector("#embed-deployment")) == null ? void 0 : L.value) || "", z = {
         azureOpenAI: {
-          endpoint: h,
-          apiKey: u,
-          deployment: m,
+          endpoint: u,
+          apiKey: h,
+          deployment: g,
           embeddingDeployment: w
         },
         llmAPI: {
-          endpoint: h,
-          apiKey: u,
-          deployment: m
+          endpoint: u,
+          apiKey: h,
+          deployment: g
         },
         embeddingAPI: {
           endpoint: y,
@@ -2498,42 +2482,42 @@ class W {
       };
       b.saveConfig(z), alert("API 設定已儲存");
     });
-    const s = this.container.querySelector("#agent-tool-config-form");
-    s && s.addEventListener("submit", async (p) => {
+    const r = this.container.querySelector("#agent-tool-config-form");
+    r && r.addEventListener("submit", async (p) => {
       var y, v;
       p.preventDefault(), p.stopPropagation();
-      const h = ((y = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : y.checked) || !1, u = ((v = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : v.checked) || !1, m = b.loadAgentToolConfig();
-      m && (m.manualIndex.enabled = h, m.frontendPages.enabled = u, b.saveAgentToolConfig(m), alert("Agent 設定已儲存"), await this.updatePageContent());
+      const u = ((y = this.container.querySelector("#manual-index-enabled")) == null ? void 0 : y.checked) || !1, h = ((v = this.container.querySelector("#frontend-pages-enabled")) == null ? void 0 : v.checked) || !1, g = b.loadAgentToolConfig();
+      g && (g.manualIndex.enabled = u, g.frontendPages.enabled = h, b.saveAgentToolConfig(g), alert("Agent 設定已儲存"), await this.updatePageContent());
     });
     const a = this.container.querySelector("#sql-plugin-config-form");
     a && a.addEventListener("submit", async (p) => {
-      var k, $, T, P, D, O, _, R;
+      var k, $, T, L, _, R, O, N;
       p.preventDefault(), p.stopPropagation();
-      const h = ((k = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : k.checked) || !1, u = parseInt((($ = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : $.value) || "5"), m = ((T = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : T.value) || "", y = ((P = this.container.querySelector("#sql-connection-id")) == null ? void 0 : P.value) || "", v = ((D = this.container.querySelector("#sql-search-table")) == null ? void 0 : D.value) || "knowledge_base", w = ((O = this.container.querySelector("#sql-title-column")) == null ? void 0 : O.value) || "title", z = ((_ = this.container.querySelector("#sql-content-column")) == null ? void 0 : _.value) || "content", L = ((R = this.container.querySelector("#sql-url-column")) == null ? void 0 : R.value) || "url", q = {
-        enabled: h,
-        priority: u,
-        apiEndpoint: m,
+      const u = ((k = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : k.checked) || !1, h = parseInt((($ = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : $.value) || "5"), g = ((T = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : T.value) || "", y = ((L = this.container.querySelector("#sql-connection-id")) == null ? void 0 : L.value) || "", v = ((_ = this.container.querySelector("#sql-search-table")) == null ? void 0 : _.value) || "knowledge_base", w = ((R = this.container.querySelector("#sql-title-column")) == null ? void 0 : R.value) || "title", z = ((O = this.container.querySelector("#sql-content-column")) == null ? void 0 : O.value) || "content", q = ((N = this.container.querySelector("#sql-url-column")) == null ? void 0 : N.value) || "url", M = {
+        enabled: u,
+        priority: h,
+        apiEndpoint: g,
         connectionId: y,
         searchTable: v,
         titleColumn: w,
         contentColumn: z,
-        urlColumn: L
+        urlColumn: q
       };
-      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(q)), alert("SQL Plugin 設定已儲存"), await this.updatePageContent();
+      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(M)), alert("SQL Plugin 設定已儲存"), await this.updatePageContent();
     });
     const l = this.container.querySelector("#sql-connection-form");
     l && l.addEventListener("submit", async (p) => {
-      var m, y;
+      var g, y;
       p.preventDefault(), p.stopPropagation();
-      const h = ((m = this.container.querySelector("#sql-conn-name")) == null ? void 0 : m.value) || "", u = (y = this.container.querySelector("#sql-conn-type")) == null ? void 0 : y.value;
-      if (!h) {
+      const u = ((g = this.container.querySelector("#sql-conn-name")) == null ? void 0 : g.value) || "", h = (y = this.container.querySelector("#sql-conn-type")) == null ? void 0 : y.value;
+      if (!u) {
         alert("請輸入連接名稱");
         return;
       }
       try {
         A.create({
-          name: h,
-          type: u,
+          name: u,
+          type: h,
           host: "localhost",
           port: 3306,
           database: "mydb",
@@ -2551,12 +2535,12 @@ class W {
       }
     }), this.container.querySelectorAll(".delete-sql-connection").forEach((p) => {
       p.addEventListener("click", async () => {
-        const h = p.dataset.id;
-        if (h && confirm("確定要刪除這個連接嗎？"))
+        const u = p.dataset.id;
+        if (u && confirm("確定要刪除這個連接嗎？"))
           try {
-            A.delete(h), alert("連接已刪除"), await this.updatePageContent();
-          } catch (u) {
-            console.error("Error deleting SQL connection:", u), alert("刪除失敗");
+            A.delete(u), alert("連接已刪除"), await this.updatePageContent();
+          } catch (h) {
+            console.error("Error deleting SQL connection:", h), alert("刪除失敗");
           }
       });
     });
@@ -2668,8 +2652,8 @@ class W {
       try {
         const i = t;
         i.disabled = !0, i.textContent = "生成中...";
-        const r = await x.generateEmbeddingsForAll();
-        await this.showAlertDialog(`成功為 ${r} 個索引生成了向量嵌入`), await this.updatePageContent();
+        const s = await x.generateEmbeddingsForAll();
+        await this.showAlertDialog(`成功為 ${s} 個索引生成了向量嵌入`), await this.updatePageContent();
       } catch (i) {
         await this.showAlertDialog(`生成失敗：${i instanceof Error ? i.message : "未知錯誤"}`);
       } finally {
@@ -2678,13 +2662,13 @@ class W {
       }
     }), this.container.querySelectorAll(".edit-index-btn").forEach((i) => {
       i.addEventListener("click", async () => {
-        const r = i.dataset.id;
-        r && await this.showEditIndexModal(r);
+        const s = i.dataset.id;
+        s && await this.showEditIndexModal(s);
       });
     }), this.container.querySelectorAll(".delete-index-btn").forEach((i) => {
       i.addEventListener("click", async () => {
-        const r = i.dataset.id;
-        r && await this.showDeleteConfirmDialog(r);
+        const s = i.dataset.id;
+        s && await this.showDeleteConfirmDialog(s);
       });
     });
   }
@@ -2697,16 +2681,16 @@ class W {
       await this.updatePageContent();
     }), this.container.querySelectorAll(".view-conversation-btn").forEach((o) => {
       o.addEventListener("click", async (i) => {
-        const r = i.target.getAttribute("data-id");
-        r && await this.showConversationModal(r);
+        const s = i.target.getAttribute("data-id");
+        s && await this.showConversationModal(s);
       });
     }), this.container.querySelectorAll(".delete-conversation-btn").forEach((o) => {
       o.addEventListener("click", async (i) => {
-        const r = i.target.getAttribute("data-id");
-        if (r && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
+        const s = i.target.getAttribute("data-id");
+        if (s && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
           try {
             const { CustomerServiceManager: a } = await import("./CustomerServiceManager-CDEnprzI.mjs");
-            await a.deleteConversation(r), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
+            await a.deleteConversation(s), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
           } catch (a) {
             await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
           }
@@ -2724,22 +2708,22 @@ class W {
   bindSystemSettingsEvents() {
     const e = this.container.querySelector("#edit-default-reply-btn");
     e && e.addEventListener("click", async () => {
-      const i = this.container.querySelector("#default-reply-display"), r = i.textContent || "", s = await this.showEditDialog("編輯預設回覆", r, !0);
-      if (s !== null)
+      const i = this.container.querySelector("#default-reply-display"), s = i.textContent || "", r = await this.showEditDialog("編輯預設回覆", s, !0);
+      if (r !== null)
         try {
           const { DatabaseService: a } = await Promise.resolve().then(() => I);
-          await a.updateSetting("default_reply", s), i.textContent = s, await this.showAlertDialog("預設回覆已更新");
+          await a.updateSetting("default_reply", r), i.textContent = r, await this.showAlertDialog("預設回覆已更新");
         } catch (a) {
           console.error("Failed to save default reply:", a), await this.showAlertDialog("儲存失敗，請稍後再試");
         }
     });
     const t = this.container.querySelector("#edit-system-prompt-btn");
     t && t.addEventListener("click", async () => {
-      const i = this.container.querySelector("#system-prompt-display"), r = i.textContent || "", s = await this.showEditDialog("編輯系統提示詞", r, !0);
-      if (s !== null)
+      const i = this.container.querySelector("#system-prompt-display"), s = i.textContent || "", r = await this.showEditDialog("編輯系統提示詞", s, !0);
+      if (r !== null)
         try {
           const { DatabaseService: a } = await Promise.resolve().then(() => I);
-          await a.updateSetting("system_prompt", s), i.textContent = s, await this.showAlertDialog("系統提示詞已更新");
+          await a.updateSetting("system_prompt", r), i.textContent = r, await this.showAlertDialog("系統提示詞已更新");
         } catch (a) {
           console.error("Failed to save system prompt:", a), await this.showAlertDialog("儲存失敗，請稍後再試");
         }
@@ -2749,11 +2733,11 @@ class W {
       await this.showAddAdminUserModal();
     }), this.container.querySelectorAll(".delete-admin-user-btn").forEach((i) => {
       i.addEventListener("click", async () => {
-        const r = i.dataset.id;
-        if (r && await this.showConfirmDialog("確定要刪除此管理員帳號嗎？此操作無法復原。"))
+        const s = i.dataset.id;
+        if (s && await this.showConfirmDialog("確定要刪除此管理員帳號嗎？此操作無法復原。"))
           try {
             const { DatabaseService: a } = await Promise.resolve().then(() => I);
-            await a.deleteAdminUser(r), await this.showAlertDialog("管理員帳號已刪除"), await this.updatePageContent();
+            await a.deleteAdminUser(s), await this.showAlertDialog("管理員帳號已刪除"), await this.updatePageContent();
           } catch (a) {
             console.error("Failed to delete admin user:", a), await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
           }
@@ -3101,7 +3085,7 @@ class W {
    * 渲染 Agent & API 設定頁面（合併）
    */
   renderAgentAndAPI() {
-    var n, o, i, r, s, a, l, c, p, h, u, m;
+    var n, o, i, s, r, a, l, c, p, u, h, g;
     const e = b.loadConfig() || {}, t = b.loadAgentToolConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">Agent & API 設定</h2>
@@ -3134,7 +3118,7 @@ class W {
                 id="llm-api-key"
                 name="llmApiKey"
                 placeholder="your-api-key"
-                value="${((i = e.azureOpenAI) == null ? void 0 : i.apiKey) || ((r = e.llmAPI) == null ? void 0 : r.apiKey) || ""}"
+                value="${((i = e.azureOpenAI) == null ? void 0 : i.apiKey) || ((s = e.llmAPI) == null ? void 0 : s.apiKey) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -3146,7 +3130,7 @@ class W {
                 id="llm-deployment"
                 name="llmDeployment"
                 placeholder="gpt-4"
-                value="${((s = e.azureOpenAI) == null ? void 0 : s.deployment) || ((a = e.llmAPI) == null ? void 0 : a.deployment) || ""}"
+                value="${((r = e.azureOpenAI) == null ? void 0 : r.deployment) || ((a = e.llmAPI) == null ? void 0 : a.deployment) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -3175,7 +3159,7 @@ class W {
                 id="embed-api-key"
                 name="embedApiKey"
                 placeholder="your-api-key"
-                value="${((p = e.embeddingAPI) == null ? void 0 : p.apiKey) || ((h = e.azureOpenAI) == null ? void 0 : h.apiKey) || ""}"
+                value="${((p = e.embeddingAPI) == null ? void 0 : p.apiKey) || ((u = e.azureOpenAI) == null ? void 0 : u.apiKey) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -3187,7 +3171,7 @@ class W {
                 id="embed-deployment"
                 name="embedDeployment"
                 placeholder="text-embedding-3-small"
-                value="${((u = e.embeddingAPI) == null ? void 0 : u.deployment) || ((m = e.azureOpenAI) == null ? void 0 : m.embeddingDeployment) || ""}"
+                value="${((h = e.embeddingAPI) == null ? void 0 : h.deployment) || ((g = e.azureOpenAI) == null ? void 0 : g.embeddingDeployment) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -3347,22 +3331,22 @@ class W {
       </div>
     `, document.body.appendChild(n);
     const o = n.querySelector("#edit-index-form"), i = n.querySelector("#cancel-edit-btn");
-    o.addEventListener("submit", async (r) => {
-      r.preventDefault();
-      const s = n.querySelector("#edit-index-name").value, a = n.querySelector("#edit-index-description").value, l = n.querySelector("#edit-index-content").value;
-      if (!s || !l) {
+    o.addEventListener("submit", async (s) => {
+      s.preventDefault();
+      const r = n.querySelector("#edit-index-name").value, a = n.querySelector("#edit-index-description").value, l = n.querySelector("#edit-index-content").value;
+      if (!r || !l) {
         await this.showAlertDialog("請填寫名稱和內容");
         return;
       }
       try {
-        await x.update(e, { name: s, description: a, content: l }), await this.showAlertDialog("索引已更新"), document.body.removeChild(n), await this.updatePageContent();
+        await x.update(e, { name: r, description: a, content: l }), await this.showAlertDialog("索引已更新"), document.body.removeChild(n), await this.updatePageContent();
       } catch (c) {
         await this.showAlertDialog(`更新失敗：${c instanceof Error ? c.message : "未知錯誤"}`);
       }
     }), i.addEventListener("click", () => {
       document.body.removeChild(n);
-    }), n.addEventListener("click", (r) => {
-      r.target === n && document.body.removeChild(n);
+    }), n.addEventListener("click", (s) => {
+      s.target === n && document.body.removeChild(n);
     });
   }
   /**
@@ -3449,13 +3433,13 @@ class W {
     const t = e.querySelector("#add-index-form"), n = e.querySelector("#cancel-add-btn");
     t.addEventListener("submit", async (o) => {
       o.preventDefault();
-      const i = e.querySelector("#add-index-name").value, r = e.querySelector("#add-index-description").value, s = e.querySelector("#add-index-url").value, a = e.querySelector("#add-index-content").value;
+      const i = e.querySelector("#add-index-name").value, s = e.querySelector("#add-index-description").value, r = e.querySelector("#add-index-url").value, a = e.querySelector("#add-index-content").value;
       if (!i || !a) {
         await this.showAlertDialog("請填寫名稱和內容");
         return;
       }
       try {
-        await x.create({ name: i, description: r, content: a, url: s || void 0 }), await this.showAlertDialog("索引已新增"), document.body.removeChild(e), await this.updatePageContent();
+        await x.create({ name: i, description: s, content: a, url: r || void 0 }), await this.showAlertDialog("索引已新增"), document.body.removeChild(e), await this.updatePageContent();
       } catch (l) {
         await this.showAlertDialog(`新增失敗：${l instanceof Error ? l.message : "未知錯誤"}`);
       }
@@ -3685,18 +3669,18 @@ class W {
    * 渲染系統設定頁面
    */
   async renderSystemSettings() {
-    var i, r;
+    var i, s;
     let e = [], t = [];
     try {
-      const { DatabaseService: s } = await Promise.resolve().then(() => I), [a, l] = await Promise.all([
-        s.getSettings().catch(() => []),
-        s.getAdminUsers().catch(() => [])
+      const { DatabaseService: r } = await Promise.resolve().then(() => I), [a, l] = await Promise.all([
+        r.getSettings().catch(() => []),
+        r.getAdminUsers().catch(() => [])
       ]);
       e = a, t = l;
-    } catch (s) {
-      console.error("Failed to load system settings:", s);
+    } catch (r) {
+      console.error("Failed to load system settings:", r);
     }
-    const n = ((i = e.find((s) => s.key === "default_reply")) == null ? void 0 : i.value) || "", o = ((r = e.find((s) => s.key === "system_prompt")) == null ? void 0 : r.value) || "";
+    const n = ((i = e.find((r) => r.key === "default_reply")) == null ? void 0 : i.value) || "", o = ((s = e.find((r) => r.key === "system_prompt")) == null ? void 0 : s.value) || "";
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
 
@@ -3759,20 +3743,20 @@ class W {
           <p style="color: #9ca3af; text-align: center; padding: 32px 0;">尚無管理員帳號</p>
         ` : `
           <div style="display: flex; flex-direction: column; gap: 12px;">
-            ${t.map((s) => `
+            ${t.map((r) => `
               <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <div>
-                    <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">${s.username}</h4>
-                    <p style="font-size: 14px; color: #6b7280; margin: 0;">${s.email || "無Email"}</p>
+                    <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">${r.username}</h4>
+                    <p style="font-size: 14px; color: #6b7280; margin: 0;">${r.email || "無Email"}</p>
                     <p style="font-size: 12px; color: #9ca3af; margin: 4px 0 0 0;">
-                      建立時間：${new Date(s.createdAt).toLocaleString("zh-TW")}
+                      建立時間：${new Date(r.createdAt).toLocaleString("zh-TW")}
                     </p>
                   </div>
                   <div style="display: flex; gap: 8px;">
                     <button
                       class="delete-admin-user-btn"
-                      data-id="${s.id}"
+                      data-id="${r.id}"
                       style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
                     >
                       刪除
@@ -3852,10 +3836,10 @@ class W {
     const t = e.querySelector("#add-admin-user-form"), n = e.querySelector("#cancel-add-admin-btn");
     t.addEventListener("submit", async (o) => {
       o.preventDefault();
-      const i = e.querySelector("#add-admin-username").value, r = e.querySelector("#add-admin-password").value, s = e.querySelector("#add-admin-email").value;
+      const i = e.querySelector("#add-admin-username").value, s = e.querySelector("#add-admin-password").value, r = e.querySelector("#add-admin-email").value;
       try {
         const { DatabaseService: a } = await Promise.resolve().then(() => I);
-        await a.createAdminUser(i, r, s), document.body.removeChild(e), await this.showAlertDialog("管理員帳號已新增"), await this.updatePageContent();
+        await a.createAdminUser(i, s, r), document.body.removeChild(e), await this.showAlertDialog("管理員帳號已新增"), await this.updatePageContent();
       } catch (a) {
         await this.showAlertDialog(`新增失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
       }
@@ -3954,10 +3938,10 @@ class W {
           </div>
         </div>
       `, document.body.appendChild(i);
-      const r = i.querySelector("#close-conversation-modal"), s = i.querySelector("#close-conversation-modal-btn"), a = () => {
+      const s = i.querySelector("#close-conversation-modal"), r = i.querySelector("#close-conversation-modal-btn"), a = () => {
         document.body.removeChild(i);
       };
-      r == null || r.addEventListener("click", a), s == null || s.addEventListener("click", a), i.addEventListener("click", (l) => {
+      s == null || s.addEventListener("click", a), r == null || r.addEventListener("click", a), i.addEventListener("click", (l) => {
         l.target === i && a();
       });
     } catch (n) {
@@ -3965,7 +3949,7 @@ class W {
     }
   }
 }
-class M {
+class D {
   /**
    * 獲取或創建當前用戶
    */
@@ -4044,8 +4028,8 @@ class M {
     return this.getCurrentUser().sessionId;
   }
 }
-d(M, "USER_KEY", "sm_user"), d(M, "SESSION_KEY", "sm_session");
-class Y {
+d(D, "USER_KEY", "sm_user"), d(D, "SESSION_KEY", "sm_session");
+class G {
   constructor() {
     d(this, "plugins", /* @__PURE__ */ new Map());
   }
@@ -4105,28 +4089,28 @@ class Y {
     const n = await this.getEnabledPlugins();
     if (n.length === 0)
       return console.warn("No enabled plugins available for search"), [];
-    console.log(`🔍 Searching with ${n.length} plugins:`, n.map((r) => r.name));
+    console.log(`🔍 Searching with ${n.length} plugins:`, n.map((s) => s.name));
     const i = (await Promise.all(
-      n.map(async (r) => {
+      n.map(async (s) => {
         try {
-          return (await r.search(e, t)).map((a) => ({
+          return (await s.search(e, t)).map((a) => ({
             ...a,
             metadata: {
               ...a.metadata,
-              pluginId: r.id,
-              pluginName: r.name,
-              priority: r.priority
+              pluginId: s.id,
+              pluginName: s.name,
+              priority: s.priority
             }
           }));
-        } catch (s) {
-          return console.error(`Error searching with plugin ${r.name}:`, s), [];
+        } catch (r) {
+          return console.error(`Error searching with plugin ${s.name}:`, r), [];
         }
       })
     )).flat();
-    return i.sort((r, s) => {
+    return i.sort((s, r) => {
       var c, p;
-      const a = ((c = r.metadata) == null ? void 0 : c.priority) || 0, l = ((p = s.metadata) == null ? void 0 : p.priority) || 0;
-      return a !== l ? l - a : (s.score || 0) - (r.score || 0);
+      const a = ((c = s.metadata) == null ? void 0 : c.priority) || 0, l = ((p = r.metadata) == null ? void 0 : p.priority) || 0;
+      return a !== l ? l - a : (r.score || 0) - (s.score || 0);
     }), i.slice(0, t);
   }
   /**
@@ -4136,7 +4120,7 @@ class Y {
     this.plugins.forEach((e) => e.dispose()), this.plugins.clear(), console.log("🧹 All plugins disposed");
   }
 }
-class G {
+class V {
   constructor() {
     d(this, "id", "manual-index");
     d(this, "name", "手動索引");
@@ -4150,7 +4134,7 @@ class G {
   }
   async search(e, t = 5) {
     try {
-      return (await x.search(e, t)).map(({ index: o, score: i, breakdown: r }) => ({
+      return (await x.search(e, t)).map(({ index: o, score: i, breakdown: s }) => ({
         type: "manual-index",
         title: o.name,
         snippet: o.content.substring(0, 200),
@@ -4162,7 +4146,7 @@ class G {
           createdAt: o.createdAt,
           indexId: o.id,
           hasEmbedding: !!o.embedding,
-          scoreBreakdown: r
+          scoreBreakdown: s
         }
       }));
     } catch (n) {
@@ -4186,7 +4170,7 @@ class G {
   dispose() {
   }
 }
-class V {
+class X {
   constructor() {
     d(this, "id", "frontend-pages");
     d(this, "name", "前端頁面");
@@ -4194,7 +4178,7 @@ class V {
     d(this, "priority", 8);
     d(this, "enabled", !0);
     d(this, "extractor");
-    this.extractor = new S();
+    this.extractor = new E();
   }
   async initialize() {
     const e = b.loadIndexedPages();
@@ -4206,21 +4190,21 @@ class V {
       if (n.length === 0)
         return [];
       const o = this.extractor.extractKeywords(e);
-      return n.map((r) => {
-        const s = `${r.title} ${r.snippet}`.toLowerCase(), l = o.filter(
-          (c) => s.includes(c.toLowerCase())
+      return n.map((s) => {
+        const r = `${s.title} ${s.snippet}`.toLowerCase(), l = o.filter(
+          (c) => r.includes(c.toLowerCase())
         ).length / o.length;
-        return { page: r, score: l };
-      }).filter((r) => r.score > 0).sort((r, s) => s.score - r.score).slice(0, t).map(({ page: r, score: s }) => ({
+        return { page: s, score: l };
+      }).filter((s) => s.score > 0).sort((s, r) => r.score - s.score).slice(0, t).map(({ page: s, score: r }) => ({
         type: "frontend-page",
-        title: r.title,
-        snippet: r.snippet,
-        content: r.snippet,
-        url: r.url,
-        score: s,
+        title: s.title,
+        snippet: s.snippet,
+        content: s.snippet,
+        url: s.url,
+        score: r,
         metadata: {
-          keywords: r.keywords,
-          pageId: r.id
+          keywords: s.keywords,
+          pageId: s.id
         }
       }));
     } catch (n) {
@@ -4243,7 +4227,7 @@ class V {
   dispose() {
   }
 }
-class E {
+class C {
   /**
    * 獲取所有 Sitemap 配置
    */
@@ -4302,19 +4286,19 @@ class E {
       throw new Error("Sitemap config not found");
     console.log("Crawling sitemap:", t.sitemapUrl);
     try {
-      const o = await (await fetch(t.sitemapUrl)).text(), r = new DOMParser().parseFromString(o, "text/xml"), s = Array.from(r.querySelectorAll("url loc")).map((u) => u.textContent || "");
-      console.log(`Found ${s.length} URLs in sitemap`);
-      const l = s.slice(0, 50), c = [];
-      for (const u of l)
+      const o = await (await fetch(t.sitemapUrl)).text(), s = new DOMParser().parseFromString(o, "text/xml"), r = Array.from(s.querySelectorAll("url loc")).map((h) => h.textContent || "");
+      console.log(`Found ${r.length} URLs in sitemap`);
+      const l = r.slice(0, 50), c = [];
+      for (const h of l)
         try {
-          const m = await this.crawlPage(u);
-          m && c.push(m);
-        } catch (m) {
-          console.error(`Failed to crawl ${u}:`, m);
+          const g = await this.crawlPage(h);
+          g && c.push(g);
+        } catch (g) {
+          console.error(`Failed to crawl ${h}:`, g);
         }
       t.pages = c, t.lastUpdated = Date.now();
-      const p = this.getAll(), h = p.findIndex((u) => u.id === e);
-      h >= 0 && (p[h] = t, this.saveAll(p)), console.log(`Crawled ${c.length} pages successfully`);
+      const p = this.getAll(), u = p.findIndex((h) => h.id === e);
+      u >= 0 && (p[u] = t, this.saveAll(p)), console.log(`Crawled ${c.length} pages successfully`);
     } catch (n) {
       throw console.error("Failed to crawl sitemap:", n), n;
     }
@@ -4325,10 +4309,10 @@ class E {
   static async crawlPage(e) {
     var t;
     try {
-      const o = await (await fetch(e)).text(), r = new DOMParser().parseFromString(o, "text/html"), s = ((t = r.querySelector("title")) == null ? void 0 : t.textContent) || e, a = new S(), l = a.extractText(r.body), c = a.extractKeywords(l), p = a.generateFingerprint(l);
+      const o = await (await fetch(e)).text(), s = new DOMParser().parseFromString(o, "text/html"), r = ((t = s.querySelector("title")) == null ? void 0 : t.textContent) || e, a = new E(), l = a.extractText(s.body), c = a.extractKeywords(l), p = a.generateFingerprint(l);
       return {
         url: e,
-        title: s,
+        title: r,
         content: l.substring(0, 5e3),
         // 限制長度
         keywords: c,
@@ -4345,16 +4329,16 @@ class E {
   static search(e, t, n = 5) {
     const o = this.getAll().filter((c) => c.enabled), i = t && t.length > 0 ? o.filter((c) => t.includes(c.domain)) : o;
     if (i.length === 0) return [];
-    const r = new S(), s = r.extractKeywords(e), a = r.generateFingerprint(e), l = [];
+    const s = new E(), r = s.extractKeywords(e), a = s.generateFingerprint(e), l = [];
     for (const c of i)
       for (const p of c.pages) {
-        const h = this.calculateSimilarity(
-          s,
+        const u = this.calculateSimilarity(
+          r,
           a,
           p.keywords,
           p.fingerprint
         );
-        h > 0 && l.push({ page: p, domain: c.domain, score: h });
+        u > 0 && l.push({ page: p, domain: c.domain, score: u });
       }
     return l.sort((c, p) => p.score - c.score).slice(0, n);
   }
@@ -4362,8 +4346,8 @@ class E {
    * 計算相似度
    */
   static calculateSimilarity(e, t, n, o) {
-    const i = this.calculateKeywordScore(e, n), r = this.calculateFingerprintScore(t, o);
-    return i * 0.5 + r * 0.5;
+    const i = this.calculateKeywordScore(e, n), s = this.calculateFingerprintScore(t, o);
+    return i * 0.5 + s * 0.5;
   }
   static calculateKeywordScore(e, t) {
     return e.length === 0 || t.length === 0 ? 0 : e.filter((o) => t.includes(o)).length / Math.max(e.length, t.length);
@@ -4372,8 +4356,8 @@ class E {
     if (e.length === 0 || t.length === 0) return 0;
     let n = 0, o = 0;
     for (let i = 0; i < Math.max(e.length, t.length); i++) {
-      const r = e[i] || 0, s = t[i] || 0;
-      r === 1 && s === 1 && n++, (r === 1 || s === 1) && o++;
+      const s = e[i] || 0, r = t[i] || 0;
+      s === 1 && r === 1 && n++, (s === 1 || r === 1) && o++;
     }
     return o > 0 ? n / o : 0;
   }
@@ -4415,8 +4399,8 @@ class E {
     this.updateTimers.forEach((e) => clearInterval(e)), this.updateTimers.clear(), localStorage.removeItem(this.STORAGE_KEY);
   }
 }
-d(E, "STORAGE_KEY", "sm_sitemap_configs"), d(E, "updateTimers", /* @__PURE__ */ new Map());
-class X {
+d(C, "STORAGE_KEY", "sm_sitemap_configs"), d(C, "updateTimers", /* @__PURE__ */ new Map());
+class Z {
   constructor() {
     d(this, "id", "sitemap");
     d(this, "name", "Sitemap 索引");
@@ -4425,22 +4409,22 @@ class X {
     d(this, "enabled", !1);
     // 預設關閉，需要配置 Sitemap 後才啟用
     d(this, "extractor");
-    this.extractor = new S();
+    this.extractor = new E();
   }
   async initialize() {
-    const e = E.getAll();
+    const e = C.getAll();
     console.log(`🗺️ Sitemap Plugin: ${e.length} sitemaps loaded`), e.length > 0 && (this.enabled = !0);
   }
   async search(e, t = 5) {
     try {
-      const n = E.getAll();
+      const n = C.getAll();
       if (n.length === 0)
         return [];
       const o = [], i = this.extractor.extractKeywords(e);
-      for (const r of n)
+      for (const s of n)
         try {
-          const s = await E.search(r.id, i, 3);
-          o.push(...s.map(({ page: a, score: l }) => ({
+          const r = await C.search(s.id, i, 3);
+          o.push(...r.map(({ page: a, score: l }) => ({
             type: "sitemap",
             title: a.title,
             snippet: a.content.substring(0, 200),
@@ -4448,27 +4432,27 @@ class X {
             url: a.url,
             score: l,
             metadata: {
-              domain: r.domain,
-              lastUpdated: r.lastUpdated,
-              sitemapId: r.id
+              domain: s.domain,
+              lastUpdated: s.lastUpdated,
+              sitemapId: s.id
             }
           })));
-        } catch (s) {
-          console.error(`Error searching sitemap ${r.domain}:`, s);
+        } catch (r) {
+          console.error(`Error searching sitemap ${s.domain}:`, r);
         }
-      return o.sort((r, s) => (s.score || 0) - (r.score || 0)).slice(0, t);
+      return o.sort((s, r) => (r.score || 0) - (s.score || 0)).slice(0, t);
     } catch (n) {
       return console.error("Error in SitemapPlugin.search:", n), [];
     }
   }
   isAvailable() {
-    return E.getAll().length > 0;
+    return C.getAll().length > 0;
   }
   getConfig() {
     return {
       enabled: this.enabled,
       priority: this.priority,
-      sitemapCount: E.getAll().length
+      sitemapCount: C.getAll().length
     };
   }
   updateConfig(e) {
@@ -4477,7 +4461,7 @@ class X {
   dispose() {
   }
 }
-class Z {
+class ee {
   constructor(e) {
     d(this, "id", "sql-database");
     d(this, "name", "SQL 資料庫");
@@ -4496,7 +4480,7 @@ class Z {
       contentColumn: "content",
       urlColumn: "url",
       ...e
-    }, this.enabled = this.config.enabled, this.priority = this.config.priority, this.extractor = new S();
+    }, this.enabled = this.config.enabled, this.priority = this.config.priority, this.extractor = new E();
   }
   async initialize() {
     if (!this.config.connectionId) {
@@ -4542,12 +4526,12 @@ class Z {
    * 構建搜尋 SQL 查詢
    */
   buildSearchQuery(e, t) {
-    const { searchTable: n, searchColumns: o, titleColumn: i, contentColumn: r, urlColumn: s } = this.config, a = o.map((l) => e.map((c) => `${l} LIKE '%${c}%'`).join(" OR ")).join(" OR ");
+    const { searchTable: n, searchColumns: o, titleColumn: i, contentColumn: s, urlColumn: r } = this.config, a = o.map((l) => e.map((c) => `${l} LIKE '%${c}%'`).join(" OR ")).join(" OR ");
     return `
       SELECT 
         ${i} as title,
-        ${r} as content,
-        ${s} as url
+        ${s} as content,
+        ${r} as url
       FROM ${n}
       WHERE ${a}
       LIMIT ${t}
@@ -4587,28 +4571,29 @@ class Z {
     this.enabled = !1;
   }
 }
-function ee() {
-  const g = localStorage.getItem("sm_sql_plugin_config"), e = g ? JSON.parse(g) : {};
-  return new Z(e);
-}
 function te() {
-  const g = new Y();
-  return g.register(new G()), g.register(new V()), g.register(new X()), g.register(ee()), g;
+  const m = localStorage.getItem("sm_sql_plugin_config"), e = m ? JSON.parse(m) : {};
+  return new ee(e);
 }
-function ne(g) {
+function ne() {
+  const m = new G();
+  return m.register(new V()), m.register(new X()), m.register(new Z()), m.register(te()), m;
+}
+function oe(m) {
   const e = localStorage.getItem("sm_plugin_configs");
   if (e)
     try {
       const t = JSON.parse(e);
       Object.keys(t).forEach((n) => {
-        const o = g.getPlugin(n);
+        const o = m.getPlugin(n);
         o && o.updateConfig(t[n]);
       }), console.log("✅ Plugin configs loaded from localStorage");
     } catch (t) {
       console.error("Error loading plugin configs:", t);
     }
 }
-class oe {
+var P = {};
+class ie {
   constructor() {
     d(this, "config");
     d(this, "openAI");
@@ -4644,36 +4629,42 @@ class oe {
    * 初始化 Widget
    */
   async init(e) {
-    var o, i, r, s;
+    var o, i, s, r, a, l, c, p, u;
     if (this.initialized) {
       console.warn("ServiceModuler already initialized");
       return;
     }
-    this.config = e, M.getCurrentUser(), console.log("User ID:", M.getUserId()), this.pluginManager = te(), ne(this.pluginManager), this.pluginManager.initializeAll().then(() => {
+    this.config = e, D.getCurrentUser(), console.log("User ID:", D.getUserId()), this.pluginManager = ne(), oe(this.pluginManager), this.pluginManager.initializeAll().then(() => {
       console.log("✅ All plugins initialized");
-    }).catch((a) => {
-      console.error("❌ Plugin initialization error:", a);
-    }), this.openAI = new j(e.azureOpenAI || e.llmAPI), this.indexing = new H(this.openAI, e.siteConfig), x.setOpenAIService(this.openAI), C.setConfig({});
+    }).catch((h) => {
+      console.error("❌ Plugin initialization error:", h);
+    }), this.openAI = new B(e.azureOpenAI || e.llmAPI), this.indexing = new j(this.openAI, e.siteConfig), x.setOpenAIService(this.openAI), S.setConfig({
+      host: ((o = e.database) == null ? void 0 : o.host) || P.DB_HOST || "localhost",
+      port: ((i = e.database) == null ? void 0 : i.port) || parseInt(P.DB_PORT || "5432"),
+      database: ((s = e.database) == null ? void 0 : s.database) || P.DB_NAME || "lens_service",
+      user: ((r = e.database) == null ? void 0 : r.user) || P.DB_USER || "lens_user",
+      password: ((a = e.database) == null ? void 0 : a.password) || P.DB_PASSWORD || "lens123"
+    });
     const t = e.telegram && e.telegram.botToken && e.telegram.chatId ? e.telegram : void 0;
     window.SM_TELEGRAM_CONFIG = t;
     const n = await this.loadRulesFromSQL();
-    this.agent = new B(
+    this.agent = new K(
       this.openAI,
       this.pluginManager,
       n,
       t
-    ), this.capture = new J(), this.panel = new Q(
-      ((o = e.ui) == null ? void 0 : o.width) || "33.33%",
-      ((i = e.ui) == null ? void 0 : i.position) || "right"
+    ), this.capture = new J(), this.panel = new W(
+      ((l = e.ui) == null ? void 0 : l.width) || "33.33%",
+      ((c = e.ui) == null ? void 0 : c.position) || "right"
     ), this.panel.setCallbacks({
-      onSendMessage: (a, l) => this.handleSendMessage(a, l),
-      onSelectRule: (a) => this.handleSelectRule(a),
+      onSendMessage: (h, g) => this.handleSendMessage(h, g),
+      onSelectRule: (h) => this.handleSelectRule(h),
       onClose: () => this.handleClose(),
       onOpen: () => this.handleOpen()
     }), this.loadConversationState(), this.agent && this.panel.setRules(
       this.agent.getRules(),
-      (r = this.agent.getCurrentRule()) == null ? void 0 : r.id
-    ), this.adminPanel || (this.adminPanel = new W()), window.location.pathname === "/lens-service" && this.openAdminPanel(), this.bindGlobalKeyboardShortcuts(), ((s = e.ui) == null ? void 0 : s.iconPosition) !== !1 && this.createFloatingIcon(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
+      (p = this.agent.getCurrentRule()) == null ? void 0 : p.id
+    ), this.adminPanel || (this.adminPanel = new Y()), window.location.pathname === "/lens-service" && this.openAdminPanel(), this.bindGlobalKeyboardShortcuts(), ((u = e.ui) == null ? void 0 : u.iconPosition) !== !1 && !this.isAdminPage() && this.createFloatingIcon(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
   }
   /**
    * 綁定全局快捷鍵
@@ -4711,7 +4702,7 @@ class oe {
    * 發送訊息
    */
   async sendMessage(e, t) {
-    var o, i, r, s, a;
+    var o, i, s, r, a;
     if (!this.initialized || !this.agent || !this.panel || !this.openAI) {
       console.error("ServiceModuler not initialized");
       return;
@@ -4724,30 +4715,30 @@ class oe {
     (o = this.conversationState) == null || o.messages.push(n), this.panel.addMessage(n), this.saveConversationState();
     try {
       let l, c, p = !1;
-      const h = ((i = this.conversationState) == null ? void 0 : i.sessionId) || this.generateSessionId(), u = localStorage.getItem("lens_service_user_id") || "default_user";
+      const u = ((i = this.conversationState) == null ? void 0 : i.sessionId) || this.generateSessionId(), h = localStorage.getItem("lens_service_user_id") || "default_user";
       if (t)
         l = await this.openAI.chatCompletionWithImage(
           e || "請分析這張圖片並回答問題",
           t,
-          ((r = this.conversationState) == null ? void 0 : r.messages.slice(0, -1)) || []
+          ((s = this.conversationState) == null ? void 0 : s.messages.slice(0, -1)) || []
           // 不包含剛添加的用戶訊息
         );
       else {
         const y = await this.agent.processMessage(
           e,
-          ((s = this.conversationState) == null ? void 0 : s.messages) || [],
-          h,
-          u
+          ((r = this.conversationState) == null ? void 0 : r.messages) || [],
+          u,
+          h
         );
         l = y.response, c = y.sources, p = y.needsHumanReply;
       }
-      const m = {
+      const g = {
         role: "assistant",
         content: l,
         timestamp: Date.now(),
         sources: c
       };
-      (a = this.conversationState) == null || a.messages.push(m), this.panel.addMessage(m), this.saveConversationState(), await this.saveConversationToDatabase(h, u);
+      (a = this.conversationState) == null || a.messages.push(g), this.panel.addMessage(g), this.saveConversationState(), await this.saveConversationToDatabase(u, h);
     } catch (l) {
       console.error("Error processing message:", l);
       const c = {
@@ -4831,7 +4822,7 @@ class oe {
    * 搜尋當前頁面內容
    */
   searchCurrentPage(e) {
-    return N.searchInCurrentPage(e).map((n) => ({
+    return F.searchInCurrentPage(e).map((n) => ({
       text: n.text,
       context: n.context
     }));
@@ -4840,7 +4831,7 @@ class oe {
    * 獲取當前頁面內容
    */
   getCurrentPageContent() {
-    return N.extractCurrentPageContent();
+    return F.extractCurrentPageContent();
   }
   /**
    * 清除對話
@@ -4913,6 +4904,12 @@ class oe {
     this.conversationState && b.saveConversation(this.conversationState);
   }
   /**
+   * 檢查是否在管理後台頁面
+   */
+  isAdminPage() {
+    return window.location.pathname.includes("/lens-service");
+  }
+  /**
    * 創建浮動圖標
    */
   createFloatingIcon() {
@@ -4956,7 +4953,7 @@ class oe {
       justify-content: center;
       transition: all 0.3s ease;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      ${Object.entries(t).map(([r, s]) => `${r}: ${s}`).join("; ")};
+      ${Object.entries(t).map(([s, r]) => `${s}: ${r}`).join("; ")};
     `;
     this.floatingIcon.style.cssText = n, this.floatingIcon.addEventListener("mouseenter", () => {
       this.floatingIcon.style.transform = "scale(1.1)", this.floatingIcon.style.boxShadow = "0 6px 25px rgba(0, 0, 0, 0.2)";
@@ -5043,7 +5040,7 @@ class oe {
     try {
       console.log("📸 Capturing screenshot of element:", e), window.html2canvas || await this.loadHtml2Canvas();
       const n = window.html2canvas, o = e.style.cssText;
-      e.style.cssText += "; outline: 3px solid #007bff; outline-offset: 2px;", await new Promise((s) => setTimeout(s, 100));
+      e.style.cssText += "; outline: 3px solid #007bff; outline-offset: 2px;", await new Promise((r) => setTimeout(r, 100));
       const i = await n(e, {
         backgroundColor: "#ffffff",
         scale: 1,
@@ -5052,8 +5049,8 @@ class oe {
         allowTaint: !0
       });
       e.style.cssText = o;
-      const r = i.toDataURL("image/png");
-      this.panel && this.panel.setScreenshotInInput(r), console.log("✅ Screenshot captured and added to input");
+      const s = i.toDataURL("image/png");
+      this.panel && this.panel.setScreenshotInInput(s), console.log("✅ Screenshot captured and added to input");
     } catch (n) {
       console.error("❌ Failed to capture screenshot:", n), (t = this.panel) == null || t.addMessage({
         id: Date.now().toString(),
@@ -5082,24 +5079,24 @@ class oe {
     try {
       if (!this.openAI)
         throw new Error("OpenAI service not initialized");
-      const r = {
+      const s = {
         tagName: t.tagName,
         className: t.className,
         id: t.id,
         textContent: ((n = t.textContent) == null ? void 0 : n.substring(0, 200)) || "",
         attributes: Array.from(t.attributes).map((l) => `${l.name}="${l.value}"`).join(" ")
-      }, s = `
+      }, r = `
 用戶截取了網頁上的一個元素，請分析這個截圖並提供相關說明。
 
 元素信息：
-- 標籤：${r.tagName}
-- 類名：${r.className}
-- ID：${r.id}
-- 文本內容：${r.textContent}
-- 屬性：${r.attributes}
+- 標籤：${s.tagName}
+- 類名：${s.className}
+- ID：${s.id}
+- 文本內容：${s.textContent}
+- 屬性：${s.attributes}
 
 請分析截圖內容並提供有用的信息或建議。
-      `.trim(), a = await this.openAI.sendVisionMessage(s, e);
+      `.trim(), a = await this.openAI.sendVisionMessage(r, e);
       (o = this.panel) == null || o.addMessage({
         id: Date.now().toString(),
         content: `📸 **截圖分析結果：**
@@ -5108,8 +5105,8 @@ ${a}`,
         role: "assistant",
         timestamp: Date.now()
       });
-    } catch (r) {
-      console.error("❌ Failed to send screenshot to AI:", r), (i = this.panel) == null || i.addMessage({
+    } catch (s) {
+      console.error("❌ Failed to send screenshot to AI:", s), (i = this.panel) == null || i.addMessage({
         id: Date.now().toString(),
         content: "截圖分析失敗，請檢查 AI 服務配置。",
         role: "assistant",
@@ -5124,8 +5121,8 @@ ${a}`,
     return `sm_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 }
-const ie = new oe();
-typeof window < "u" && (window.LensService = ie);
+const se = new ie();
+typeof window < "u" && (window.LensService = se);
 export {
-  ie as default
+  se as default
 };

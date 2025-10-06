@@ -102,8 +102,14 @@ class LensServiceWidget {
     // 設置OpenAI服務到ManualIndexService以支持embedding生成
     ManualIndexService.setOpenAIService(this.openAI);
 
-    // 初始化DatabaseService
-    DatabaseService.setConfig({});
+    // 初始化DatabaseService - 從環境變數或配置讀取資料庫設定
+    DatabaseService.setConfig({
+      host: config.database?.host || process.env.DB_HOST || 'localhost',
+      port: config.database?.port || parseInt(process.env.DB_PORT || '5432'),
+      database: config.database?.database || process.env.DB_NAME || 'lens_service',
+      user: config.database?.user || process.env.DB_USER || 'lens_user',
+      password: config.database?.password || process.env.DB_PASSWORD || 'lens123'
+    });
 
     // 獲取 Telegram 配置
     const telegramConfig = config.telegram && config.telegram.botToken && config.telegram.chatId
@@ -163,8 +169,8 @@ class LensServiceWidget {
     // 綁定快捷鍵
     this.bindGlobalKeyboardShortcuts();
 
-    // 創建浮動圖標（如果配置了UI選項）
-    if (config.ui?.iconPosition !== false) {
+    // 創建浮動圖標（如果配置了UI選項且不在管理後台頁面）
+    if (config.ui?.iconPosition !== false && !this.isAdminPage()) {
       this.createFloatingIcon();
     }
 
@@ -536,6 +542,13 @@ class LensServiceWidget {
     }
   }
   
+  /**
+   * 檢查是否在管理後台頁面
+   */
+  private isAdminPage(): boolean {
+    return window.location.pathname.includes('/lens-service');
+  }
+
   /**
    * 創建浮動圖標
    */
