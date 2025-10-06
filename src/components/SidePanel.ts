@@ -341,20 +341,17 @@ export class SidePanel {
    */
   private showHistoryView(conversations: any[]): void {
     const chatView = this.panel.querySelector('#sm-chat-view') as HTMLElement;
-    const chatTab = this.panel.querySelector('#sm-chat-tab') as HTMLElement;
 
     console.log('📋 showHistoryView called with', conversations.length, 'conversations');
     console.log('📋 chatView:', chatView);
-    console.log('📋 chatTab:', chatTab);
 
-    if (!chatView || !chatTab) {
-      console.error('❌ chatView or chatTab not found');
+    if (!chatView) {
+      console.error('❌ chatView not found');
       return;
     }
 
     // 隱藏聊天視圖
     chatView.style.display = 'none';
-    chatTab.style.cssText = styles.tabButton;
 
     // 創建或獲取歷史記錄視圖
     let historyView = this.panel.querySelector('#sm-history-view') as HTMLElement;
@@ -463,8 +460,11 @@ export class SidePanel {
     // 綁定返回按鈕事件
     const backButton = historyView.querySelector('#sm-back-to-chat');
     backButton?.addEventListener('click', () => {
-      this.showView('chat');
+      // 隱藏歷史記錄視圖
       historyView.style.display = 'none';
+      // 顯示聊天視圖
+      chatView.style.display = 'flex';
+      console.log('✅ Returned to chat view');
     });
 
     // 綁定歷史記錄項目點擊事件
@@ -503,10 +503,14 @@ export class SidePanel {
 
       // 切換回聊天視圖
       const historyView = this.panel.querySelector('#sm-history-view') as HTMLElement;
+      const chatView = this.panel.querySelector('#sm-chat-view') as HTMLElement;
       if (historyView) {
         historyView.style.display = 'none';
       }
-      this.showView('chat');
+      if (chatView) {
+        chatView.style.display = 'flex';
+      }
+      console.log('✅ Loaded conversation and returned to chat view');
 
       // 通知主應用程式載入了新對話
       if ((window as any).LensService) {

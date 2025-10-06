@@ -343,25 +343,25 @@ class O {
    * 顯示歷史記錄視圖
    */
   showHistoryView(e) {
-    const t = this.panel.querySelector("#sm-chat-view"), o = this.panel.querySelector("#sm-chat-tab");
-    if (console.log("📋 showHistoryView called with", e.length, "conversations"), console.log("📋 chatView:", t), console.log("📋 chatTab:", o), !t || !o) {
-      console.error("❌ chatView or chatTab not found");
+    const t = this.panel.querySelector("#sm-chat-view");
+    if (console.log("📋 showHistoryView called with", e.length, "conversations"), console.log("📋 chatView:", t), !t) {
+      console.error("❌ chatView not found");
       return;
     }
-    t.style.display = "none", o.style.cssText = y.tabButton;
-    let i = this.panel.querySelector("#sm-history-view");
-    if (!i) {
-      i = document.createElement("div"), i.id = "sm-history-view", i.style.cssText = y.chatView;
-      const s = t.parentElement;
-      if (console.log("📋 parent element:", s), s)
-        s.appendChild(i), console.log("✅ History view created and appended");
+    t.style.display = "none";
+    let o = this.panel.querySelector("#sm-history-view");
+    if (!o) {
+      o = document.createElement("div"), o.id = "sm-history-view", o.style.cssText = y.chatView;
+      const r = t.parentElement;
+      if (console.log("📋 parent element:", r), r)
+        r.appendChild(o), console.log("✅ History view created and appended");
       else {
         console.error("❌ Parent element not found");
         return;
       }
     }
-    if (i.style.display = "flex", i.style.flexDirection = "column", console.log("✅ History view display set to flex"), !Array.isArray(e) || e.length === 0)
-      i.innerHTML = `
+    if (o.style.display = "flex", o.style.flexDirection = "column", console.log("✅ History view display set to flex"), !Array.isArray(e) || e.length === 0)
+      o.innerHTML = `
         <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: #6b7280;">
           <p style="font-size: 14px;">目前沒有對話記錄</p>
         </div>
@@ -379,44 +379,44 @@ class O {
         </div>
       `;
     else {
-      const s = e.map((a) => {
-        let c = [];
+      const r = e.map((s) => {
+        let a = [];
         try {
-          c = typeof a.messages == "string" ? JSON.parse(a.messages) : a.messages;
+          a = typeof s.messages == "string" ? JSON.parse(s.messages) : s.messages;
         } catch {
-          c = [];
+          a = [];
         }
-        const h = Array.isArray(c) ? c.length : 0, l = new Date(a.created_at).toLocaleString("zh-TW", {
+        const c = Array.isArray(a) ? a.length : 0, h = new Date(s.created_at).toLocaleString("zh-TW", {
           year: "numeric",
           month: "2-digit",
           day: "2-digit",
           hour: "2-digit",
           minute: "2-digit"
-        }), d = a.conversation_id || a.id || "unknown", p = d.toString().slice(-8);
+        }), l = s.conversation_id || s.id || "unknown", d = l.toString().slice(-8);
         return `
-          <div class="history-item" data-conversation-id="${d}" style="
+          <div class="history-item" data-conversation-id="${l}" style="
             padding: 16px;
             border-bottom: 1px solid #e5e7eb;
             cursor: pointer;
             transition: background-color 0.2s;
           " onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='white'">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-              <div style="font-weight: 600; color: #1f2937; font-size: 14px;">對話 #${p}</div>
-              <div style="font-size: 12px; color: #6b7280;">${l}</div>
+              <div style="font-weight: 600; color: #1f2937; font-size: 14px;">對話 #${d}</div>
+              <div style="font-size: 12px; color: #6b7280;">${h}</div>
             </div>
             <div style="font-size: 12px; color: #6b7280;">
-              訊息數: ${h} | 用戶: ${a.user_id || "unknown"}
+              訊息數: ${c} | 用戶: ${s.user_id || "unknown"}
             </div>
           </div>
         `;
       }).join("");
-      i.innerHTML = `
+      o.innerHTML = `
         <div style="flex: 1; overflow-y: auto;">
           <div style="padding: 16px; border-bottom: 2px solid #e5e7eb; background: #f9fafb;">
             <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;">對話歷史記錄</h3>
             <p style="margin: 8px 0 0 0; font-size: 12px; color: #6b7280;">點擊對話以查看詳情</p>
           </div>
-          ${s}
+          ${r}
         </div>
         <div style="padding: 16px; border-top: 1px solid #e5e7eb;">
           <button id="sm-back-to-chat" style="
@@ -432,13 +432,13 @@ class O {
         </div>
       `;
     }
-    const n = i.querySelector("#sm-back-to-chat");
-    n == null || n.addEventListener("click", () => {
-      this.showView("chat"), i.style.display = "none";
-    }), i.querySelectorAll(".history-item").forEach((s) => {
-      s.addEventListener("click", async () => {
-        const a = s.getAttribute("data-conversation-id");
-        a && await this.loadConversation(a);
+    const i = o.querySelector("#sm-back-to-chat");
+    i == null || i.addEventListener("click", () => {
+      o.style.display = "none", t.style.display = "flex", console.log("✅ Returned to chat view");
+    }), o.querySelectorAll(".history-item").forEach((r) => {
+      r.addEventListener("click", async () => {
+        const s = r.getAttribute("data-conversation-id");
+        s && await this.loadConversation(s);
       });
     });
   }
@@ -452,11 +452,11 @@ class O {
         alert("無法載入對話");
         return;
       }
-      this.clearMessages(), (Array.isArray(o.messages) ? o.messages : []).forEach((r) => {
-        this.addMessage(r);
+      this.clearMessages(), (Array.isArray(o.messages) ? o.messages : []).forEach((s) => {
+        this.addMessage(s);
       });
-      const n = this.panel.querySelector("#sm-history-view");
-      n && (n.style.display = "none"), this.showView("chat"), window.LensService && window.LensService.setConversationId(e);
+      const n = this.panel.querySelector("#sm-history-view"), r = this.panel.querySelector("#sm-chat-view");
+      n && (n.style.display = "none"), r && (r.style.display = "flex"), console.log("✅ Loaded conversation and returned to chat view"), window.LensService && window.LensService.setConversationId(e);
     } catch (t) {
       console.error("Failed to load conversation:", t), alert("載入對話失敗");
     }
@@ -1299,7 +1299,7 @@ class j {
         const r = n.target.getAttribute("data-id");
         if (r && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
           try {
-            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-Cf-kWWC-.mjs");
+            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-D4ePxgJC.mjs");
             await a.deleteConversation(r), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
           } catch (a) {
             await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
@@ -2084,7 +2084,7 @@ class j {
    */
   async renderConversations() {
     try {
-      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-Cf-kWWC-.mjs"), t = await e.getAllConversations();
+      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-D4ePxgJC.mjs"), t = await e.getAllConversations();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">客服對話管理</h2>
@@ -2182,7 +2182,7 @@ class j {
    */
   async renderAdminUsers() {
     try {
-      const { AdminUserManager: e } = await import("./AdminUserManager-2vaaQUuh.mjs"), t = await e.getAllAdminUsers();
+      const { AdminUserManager: e } = await import("./AdminUserManager-C2cmliQL.mjs"), t = await e.getAllAdminUsers();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">管理員帳號管理</h2>
@@ -2473,7 +2473,7 @@ class j {
    */
   async showConversationModal(e) {
     try {
-      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-Cf-kWWC-.mjs"), o = await t.getConversationById(e);
+      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-D4ePxgJC.mjs"), o = await t.getConversationById(e);
       if (!o) {
         await this.showAlertDialog("找不到該對話記錄");
         return;
@@ -2590,7 +2590,7 @@ class j {
           return;
         }
         try {
-          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-Cf-kWWC-.mjs");
+          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-D4ePxgJC.mjs");
           await x.addCustomerServiceReply(
             e,
             m,
@@ -2607,7 +2607,7 @@ class j {
     }
   }
 }
-class B {
+class R {
   constructor() {
     b(this, "config");
     b(this, "panel");
@@ -3253,10 +3253,10 @@ ${p}
     this.conversationState && (this.conversationState.sessionId = e);
   }
 }
-const R = new B();
-typeof window < "u" && (window.LensService = R);
+const B = new R();
+typeof window < "u" && (window.LensService = B);
 export {
   z as D,
-  R as L,
+  B as L,
   v as a
 };
