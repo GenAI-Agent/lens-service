@@ -249,7 +249,14 @@ export class AdminPanel {
    */
   private showEditDialog(title: string, currentValue: string, isTextarea: boolean = false): Promise<string | null> {
     return new Promise((resolve) => {
+      console.log('🔧 showEditDialog called:', { title, currentValue, isTextarea });
+
+      // 移除任何現有的編輯對話框
+      const existingModals = document.querySelectorAll('[data-edit-modal="true"]');
+      existingModals.forEach(modal => modal.remove());
+
       const modal = document.createElement('div');
+      modal.setAttribute('data-edit-modal', 'true');
       modal.style.cssText = `
         position: fixed;
         top: 0;
@@ -279,10 +286,13 @@ export class AdminPanel {
       `;
 
       document.body.appendChild(modal);
+      console.log('🔧 Modal appended to body');
 
       const input = modal.querySelector('#edit-input') as HTMLInputElement | HTMLTextAreaElement;
-      const cancelBtn = modal.querySelector('#cancel-btn');
-      const saveBtn = modal.querySelector('#save-btn');
+      const cancelBtn = modal.querySelector('#cancel-btn') as HTMLButtonElement;
+      const saveBtn = modal.querySelector('#save-btn') as HTMLButtonElement;
+
+      console.log('🔧 Elements found:', { input: !!input, cancelBtn: !!cancelBtn, saveBtn: !!saveBtn });
 
       // 自動選中文本
       input.focus();
@@ -292,14 +302,23 @@ export class AdminPanel {
         input.setSelectionRange(0, input.value.length);
       }
 
+      const cleanup = () => {
+        if (modal.parentNode) {
+          document.body.removeChild(modal);
+        }
+      };
+
       cancelBtn?.addEventListener('click', () => {
-        document.body.removeChild(modal);
+        console.log('🔧 Cancel button clicked');
+        cleanup();
         resolve(null);
       });
 
       saveBtn?.addEventListener('click', () => {
+        console.log('🔧 Save button clicked');
         const value = input.value.trim();
-        document.body.removeChild(modal);
+        console.log('🔧 Saving value:', value);
+        cleanup();
         resolve(value);
       });
 
@@ -307,8 +326,9 @@ export class AdminPanel {
       if (input instanceof HTMLInputElement) {
         input.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') {
+            console.log('🔧 Enter key pressed');
             const value = input.value.trim();
-            document.body.removeChild(modal);
+            cleanup();
             resolve(value);
           }
         });
@@ -317,7 +337,8 @@ export class AdminPanel {
       // 點擊背景關閉
       modal.addEventListener('click', (e) => {
         if (e.target === modal) {
-          document.body.removeChild(modal);
+          console.log('🔧 Background clicked');
+          cleanup();
           resolve(null);
         }
       });

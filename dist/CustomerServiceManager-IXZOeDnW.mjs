@@ -4,7 +4,7 @@ class c {
    */
   static async getAllConversations() {
     try {
-      const { DatabaseService: e } = await import("./index-CMxHYDsL.mjs").then((a) => a.a);
+      const { DatabaseService: e } = await import("./index-CrbqMu4c.mjs").then((a) => a.a);
       await e.initializePool();
       const t = await e.getConversations();
       return Array.isArray(t) ? t : [];
@@ -17,7 +17,7 @@ class c {
    */
   static async getConversationById(e) {
     try {
-      const { DatabaseService: t } = await import("./index-CMxHYDsL.mjs").then((a) => a.a);
+      const { DatabaseService: t } = await import("./index-CrbqMu4c.mjs").then((a) => a.a);
       return await t.initializePool(), await t.getConversation(e);
     } catch (t) {
       return console.error("Failed to load conversation:", t), null;
@@ -28,7 +28,7 @@ class c {
    */
   static async addCustomerServiceReply(e, t, a = "客服") {
     try {
-      const { DatabaseService: r } = await import("./index-CMxHYDsL.mjs").then((s) => s.a);
+      const { DatabaseService: r } = await import("./index-CrbqMu4c.mjs").then((s) => s.a);
       await r.initializePool();
       const o = await r.getConversation(e);
       if (!o)
