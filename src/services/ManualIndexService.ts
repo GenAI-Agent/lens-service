@@ -62,7 +62,12 @@ export class ManualIndexService {
       const indexes = await this.getAll();
       if (!query.trim()) return indexes;
       const queryLower = query.toLowerCase();
-      return indexes.filter(index => index.title.toLowerCase().includes(queryLower) || index.content.toLowerCase().includes(queryLower));
+      return indexes.filter(index => {
+        const title = (index.title || index.name || '').toLowerCase();
+        const description = (index.description || '').toLowerCase();
+        const content = (index.content || '').toLowerCase();
+        return title.includes(queryLower) || description.includes(queryLower) || content.includes(queryLower);
+      });
     } catch (error) {
       console.error('Failed to search manual indexes:', error);
       return [];

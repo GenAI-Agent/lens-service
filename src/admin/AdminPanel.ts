@@ -354,9 +354,9 @@ export class AdminPanel {
       `;
 
       dialog.innerHTML = `
-        <p style="margin: 0 0 20px 0; font-size: 16px;">${message}</p>
+        <p style="margin: 0 0 20px 0; font-size: 16px; color: #1f2937;">${message}</p>
         <div style="display: flex; gap: 10px; justify-content: flex-end;">
-          <button id="confirm-cancel" style="padding: 8px 16px; border: 1px solid #ccc; background: white; border-radius: 4px; cursor: pointer;">取消</button>
+          <button id="confirm-cancel" style="padding: 8px 16px; border: 1px solid #ccc; background: white; color: #1f2937; border-radius: 4px; cursor: pointer;">取消</button>
           <button id="confirm-ok" style="padding: 8px 16px; border: none; background: #007cff; color: white; border-radius: 4px; cursor: pointer;">確定</button>
         </div>
       `;
@@ -407,7 +407,7 @@ export class AdminPanel {
       `;
 
       dialog.innerHTML = `
-        <p style="margin: 0 0 20px 0; font-size: 16px;">${message}</p>
+        <p style="margin: 0 0 20px 0; font-size: 16px; color: #1f2937;">${message}</p>
         <div style="display: flex; justify-content: flex-end;">
           <button id="alert-ok" style="padding: 8px 16px; border: none; background: #007cff; color: white; border-radius: 4px; cursor: pointer;">確定</button>
         </div>

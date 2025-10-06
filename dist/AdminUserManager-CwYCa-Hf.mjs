@@ -1,4 +1,4 @@
-import { D as a } from "./index-CUoik7uZ.mjs";
+import { D as a } from "./index-g211uT6Y.mjs";
 class o {
   /**
    * 獲取所有管理員用戶

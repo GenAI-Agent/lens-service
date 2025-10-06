@@ -96,24 +96,27 @@ export class LlmsTxtService {
 
     // 將查詢轉換為小寫以進行不區分大小寫的搜索
     const queryLower = query.toLowerCase();
-    const queryWords = queryLower.split(/\s+/).filter(w => w.length > 1);
+    // 提取中文字符和英文單詞
+    const chineseChars = queryLower.match(/[\u4e00-\u9fa5]/g) || [];
+    const englishWords = queryLower.match(/[a-z]+/g) || [];
+    const allKeywords = [...chineseChars, ...englishWords.filter(w => w.length > 1)];
 
     // 搜索每個 chunk
     chunks.forEach((chunk, index) => {
       const chunkLower = chunk.toLowerCase();
-      
+
       // 計算相關度分數
       let score = 0;
-      
+
       // 完整查詢匹配
       if (chunkLower.includes(queryLower)) {
-        score += 10;
+        score += 20;
       }
-      
-      // 單詞匹配
-      queryWords.forEach(word => {
-        if (chunkLower.includes(word)) {
-          score += 1;
+
+      // 關鍵字匹配（中文字符和英文單詞）
+      allKeywords.forEach(keyword => {
+        if (chunkLower.includes(keyword)) {
+          score += 2;
         }
       });
 
@@ -128,24 +131,24 @@ export class LlmsTxtService {
 
     // 取前 5 個結果，並添加前後文
     const topResults = results.slice(0, 5);
-    
+
     // 為每個結果添加前後文（前一個和後一個 chunk）
     topResults.forEach(result => {
       const contextChunks: string[] = [];
-      
+
       // 添加前一個 chunk
       if (result.index > 0) {
         contextChunks.push(chunks[result.index - 1]);
       }
-      
+
       // 添加當前 chunk
       contextChunks.push(result.chunk);
-      
+
       // 添加後一個 chunk
       if (result.index < chunks.length - 1) {
         contextChunks.push(chunks[result.index + 1]);
       }
-      
+
       result.context = contextChunks.join('\n...\n');
     });
 

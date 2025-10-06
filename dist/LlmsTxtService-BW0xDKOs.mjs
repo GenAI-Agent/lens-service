@@ -1,15 +1,15 @@
-var C = Object.defineProperty;
-var k = (i, t, n) => t in i ? C(i, t, { enumerable: !0, configurable: !0, writable: !0, value: n }) : i[t] = n;
-var l = (i, t, n) => k(i, typeof t != "symbol" ? t + "" : t, n);
-import { D as p } from "./index-CUoik7uZ.mjs";
-class a {
+var m = Object.defineProperty;
+var p = (i, t, n) => t in i ? m(i, t, { enumerable: !0, configurable: !0, writable: !0, value: n }) : i[t] = n;
+var a = (i, t, n) => p(i, typeof t != "symbol" ? t + "" : t, n);
+import { D as x } from "./index-g211uT6Y.mjs";
+class r {
   // chunk 之間的重疊字符數
   /**
    * 獲取並處理 llms.txt 內容
    */
   static async getLlmsTxtChunks() {
     try {
-      const t = await p.getSetting("llms_txt_url");
+      const t = await x.getSetting("llms_txt_url");
       if (!t)
         return console.log("No llms.txt URL configured"), [];
       const n = Date.now();
@@ -51,13 +51,13 @@ class a {
     const n = await this.getLlmsTxtChunks();
     if (n.length === 0)
       return [];
-    const c = [], e = t.toLowerCase(), h = e.split(/\s+/).filter((s) => s.length > 1);
+    const c = [], e = t.toLowerCase(), h = e.match(/[\u4e00-\u9fa5]/g) || [], f = e.match(/[a-z]+/g) || [], C = [...h, ...f.filter((s) => s.length > 1)];
     n.forEach((s, o) => {
       const g = s.toLowerCase();
-      let r = 0;
-      g.includes(e) && (r += 10), h.forEach((f) => {
-        g.includes(f) && (r += 1);
-      }), r > 0 && c.push({ chunk: s, context: "", score: r, index: o });
+      let l = 0;
+      g.includes(e) && (l += 20), C.forEach((k) => {
+        g.includes(k) && (l += 2);
+      }), l > 0 && c.push({ chunk: s, context: "", score: l, index: o });
     }), c.sort((s, o) => o.score - s.score);
     const u = c.slice(0, 5);
     return u.forEach((s) => {
@@ -74,9 +74,9 @@ class a {
     this.cache = null;
   }
 }
-l(a, "cache", null), l(a, "CACHE_DURATION", 36e5), // 1 小時
-l(a, "CHUNK_SIZE", 500), // 每個 chunk 的字符數
-l(a, "CHUNK_OVERLAP", 100);
+a(r, "cache", null), a(r, "CACHE_DURATION", 36e5), // 1 小時
+a(r, "CHUNK_SIZE", 500), // 每個 chunk 的字符數
+a(r, "CHUNK_OVERLAP", 100);
 export {
-  a as LlmsTxtService
+  r as LlmsTxtService
 };
