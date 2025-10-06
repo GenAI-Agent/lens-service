@@ -59,15 +59,26 @@ export class ManualIndexService {
   
   static async search(query: string): Promise<any[]> {
     try {
+      console.log('🔍 ManualIndexService.search() called with query:', query);
       const indexes = await this.getAll();
+      console.log('🔍 ManualIndexService.getAll() returned:', indexes.length, 'indexes');
+      if (indexes.length > 0) {
+        console.log('🔍 First index:', indexes[0]);
+      }
       if (!query.trim()) return indexes;
       const queryLower = query.toLowerCase();
-      return indexes.filter(index => {
+      const results = indexes.filter(index => {
         const title = (index.title || index.name || '').toLowerCase();
         const description = (index.description || '').toLowerCase();
         const content = (index.content || '').toLowerCase();
-        return title.includes(queryLower) || description.includes(queryLower) || content.includes(queryLower);
+        const matches = title.includes(queryLower) || description.includes(queryLower) || content.includes(queryLower);
+        if (matches) {
+          console.log('🔍 Match found:', { title, description: description.substring(0, 50) });
+        }
+        return matches;
       });
+      console.log('🔍 ManualIndexService.search() returning:', results.length, 'results');
+      return results;
     } catch (error) {
       console.error('Failed to search manual indexes:', error);
       return [];

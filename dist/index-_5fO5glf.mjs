@@ -1,6 +1,6 @@
 var D = Object.defineProperty;
-var T = (S, e, o) => e in S ? D(S, e, { enumerable: !0, configurable: !0, writable: !0, value: o }) : S[e] = o;
-var b = (S, e, o) => T(S, typeof e != "symbol" ? e + "" : e, o);
+var T = (S, e, t) => e in S ? D(S, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : S[e] = t;
+var b = (S, e, t) => T(S, typeof e != "symbol" ? e + "" : e, t);
 const y = {
   container: `
     position: fixed;
@@ -161,7 +161,7 @@ const y = {
   `
 };
 class _ {
-  constructor(e = "33.33%", o = "right") {
+  constructor(e = "33.33%", t = "right") {
     b(this, "container");
     b(this, "overlay");
     b(this, "panel");
@@ -175,7 +175,7 @@ class _ {
     b(this, "onSelectRule");
     b(this, "onClose");
     b(this, "onOpen");
-    this.width = e, this.position = o, this.container = this.createContainer(), this.overlay = this.createOverlay(), this.panel = this.createPanel();
+    this.width = e, this.position = t, this.container = this.createContainer(), this.overlay = this.createOverlay(), this.panel = this.createPanel();
   }
   /**
    * 創建容器
@@ -257,22 +257,22 @@ class _ {
     (n = e.querySelector("#sm-close-btn")) == null || n.addEventListener("click", () => {
       this.close();
     });
-    const o = e.querySelector("#sm-send-btn");
-    o ? (console.log("✅ Send button found, binding click event"), o.addEventListener("click", (d) => {
+    const t = e.querySelector("#sm-send-btn");
+    t ? (console.log("✅ Send button found, binding click event"), t.addEventListener("click", (d) => {
       console.log("🔥 Send button clicked via addEventListener!"), d.preventDefault(), d.stopPropagation(), this.handleSend();
-    }), o.onclick = (d) => {
+    }), t.onclick = (d) => {
       console.log("🔥 Send button clicked via onclick!"), d.preventDefault(), d.stopPropagation(), this.handleSend();
     }, e.addEventListener("click", (d) => {
       (d.target.id === "sm-send-btn" || d.target.closest("#sm-send-btn")) && (console.log("🔥 Send button clicked via delegation!"), d.preventDefault(), d.stopPropagation(), this.handleSend());
     })) : console.error("❌ Send button not found!");
-    const t = e.querySelector("#sm-input");
-    t ? (console.log("✅ Input field found, binding events"), t.addEventListener("keypress", (d) => {
+    const o = e.querySelector("#sm-input");
+    o ? (console.log("✅ Input field found, binding events"), o.addEventListener("keypress", (d) => {
       d.key === "Enter" && (console.log("🔥 Enter key pressed in input"), this.handleSend());
-    }), t.addEventListener("input", (d) => {
+    }), o.addEventListener("input", (d) => {
       console.log("🔥 Input event:", d.target.value);
-    }), t.addEventListener("focus", () => {
+    }), o.addEventListener("focus", () => {
       console.log("🔥 Input focused");
-    }), t.addEventListener("blur", () => {
+    }), o.addEventListener("blur", () => {
       console.log("🔥 Input blurred");
     })) : console.error("❌ Input field not found!"), (s = e.querySelector("#sm-chat-tab")) == null || s.addEventListener("click", () => {
       this.showView("chat");
@@ -288,38 +288,38 @@ class _ {
    * 處理發送訊息
    */
   handleSend() {
-    const e = this.panel.querySelector("#sm-input"), o = e.value.trim();
-    (o || this.capturedImage) && this.onSendMessage && (this.onSendMessage(o, this.capturedImage || void 0, this.capturedText || void 0), e.value = "", this.clearCapturedImage());
+    const e = this.panel.querySelector("#sm-input"), t = e.value.trim();
+    (t || this.capturedImage) && this.onSendMessage && (this.onSendMessage(t, this.capturedImage || void 0, this.capturedText || void 0), e.value = "", this.clearCapturedImage());
   }
   /**
    * 顯示視圖
    */
   showView(e) {
-    const o = this.panel.querySelector("#sm-chat-view"), t = this.panel.querySelector("#sm-chat-tab");
-    e === "chat" && (o.style.display = "flex", t.style.cssText = y.tabButton + "; " + y.tabButtonActive);
+    const t = this.panel.querySelector("#sm-chat-view"), o = this.panel.querySelector("#sm-chat-tab");
+    e === "chat" && (t.style.display = "flex", o.style.cssText = y.tabButton + "; " + y.tabButtonActive);
   }
   /**
    * 添加訊息
    */
   addMessage(e) {
-    const o = this.panel.querySelector("#sm-messages");
-    if (!o) return;
-    const t = document.createElement("div");
-    if (t.style.cssText = e.role === "user" ? y.userMessage : y.assistantMessage, e.role === "assistant" ? t.innerHTML = e.content : t.textContent = e.content, e.sources && e.sources.length > 0) {
+    const t = this.panel.querySelector("#sm-messages");
+    if (!t) return;
+    const o = document.createElement("div");
+    if (o.style.cssText = e.role === "user" ? y.userMessage : y.assistantMessage, e.role === "assistant" ? o.innerHTML = e.content : o.textContent = e.content, e.sources && e.sources.length > 0) {
       const n = document.createElement("div");
       n.style.cssText = y.sources, n.innerHTML = "<strong>參考來源：</strong><br>", e.sources.forEach((s, i) => {
         const r = document.createElement("a");
         r.href = s.url, r.target = "_blank", r.textContent = `[${i + 1}] ${s.title}`, r.style.cssText = y.sourceLink, n.appendChild(r), n.appendChild(document.createElement("br"));
-      }), t.appendChild(n);
+      }), o.appendChild(n);
     }
-    o.appendChild(t), setTimeout(() => {
-      o.scrollTop = o.scrollHeight;
+    t.appendChild(o), setTimeout(() => {
+      t.scrollTop = t.scrollHeight;
     }, 10);
   }
   /**
    * 設置規則列表 (已移除規則功能)
    */
-  setRules(e, o) {
+  setRules(e, t) {
   }
   /**
    * 清除訊息
@@ -333,8 +333,8 @@ class _ {
    */
   async showHistory() {
     try {
-      const { DatabaseService: e } = await Promise.resolve().then(() => v), o = await e.getConversations();
-      this.showHistoryView(o);
+      const { DatabaseService: e } = await Promise.resolve().then(() => v), t = await e.getConversations();
+      this.showHistoryView(t);
     } catch (e) {
       console.error("Failed to load history:", e), alert("載入歷史記錄失敗");
     }
@@ -343,25 +343,25 @@ class _ {
    * 顯示歷史記錄視圖
    */
   showHistoryView(e) {
-    const o = this.panel.querySelector("#sm-chat-view");
-    if (console.log("📋 showHistoryView called with", e.length, "conversations"), console.log("📋 chatView:", o), !o) {
+    const t = this.panel.querySelector("#sm-chat-view");
+    if (console.log("📋 showHistoryView called with", e.length, "conversations"), console.log("📋 chatView:", t), !t) {
       console.error("❌ chatView not found");
       return;
     }
-    o.style.display = "none";
-    let t = this.panel.querySelector("#sm-history-view");
-    if (!t) {
-      t = document.createElement("div"), t.id = "sm-history-view", t.style.cssText = y.chatView;
-      const i = o.parentElement;
+    t.style.display = "none";
+    let o = this.panel.querySelector("#sm-history-view");
+    if (!o) {
+      o = document.createElement("div"), o.id = "sm-history-view", o.style.cssText = y.chatView;
+      const i = t.parentElement;
       if (console.log("📋 parent element:", i), i)
-        i.appendChild(t), console.log("✅ History view created and appended");
+        i.appendChild(o), console.log("✅ History view created and appended");
       else {
         console.error("❌ Parent element not found");
         return;
       }
     }
-    if (t.style.display = "flex", t.style.flexDirection = "column", console.log("✅ History view display set to flex"), !Array.isArray(e) || e.length === 0)
-      t.innerHTML = `
+    if (o.style.display = "flex", o.style.flexDirection = "column", console.log("✅ History view display set to flex"), !Array.isArray(e) || e.length === 0)
+      o.innerHTML = `
         <div style="flex: 1; display: flex; align-items: center; justify-content: center; color: #6b7280;">
           <p style="font-size: 14px;">目前沒有對話記錄</p>
         </div>
@@ -410,7 +410,7 @@ class _ {
           </div>
         `;
       }).join("");
-      t.innerHTML = `
+      o.innerHTML = `
         <div style="flex: 1; overflow-y: auto;">
           <div style="padding: 16px; border-bottom: 2px solid #e5e7eb; background: #f9fafb;">
             <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;">對話歷史記錄</h3>
@@ -432,10 +432,10 @@ class _ {
         </div>
       `;
     }
-    const n = t.querySelector("#sm-back-to-chat");
+    const n = o.querySelector("#sm-back-to-chat");
     n == null || n.addEventListener("click", () => {
-      t.style.display = "none", o.style.display = "flex", console.log("✅ Returned to chat view");
-    }), t.querySelectorAll(".history-item").forEach((i) => {
+      o.style.display = "none", t.style.display = "flex", console.log("✅ Returned to chat view");
+    }), o.querySelectorAll(".history-item").forEach((i) => {
       i.addEventListener("click", async () => {
         const r = i.getAttribute("data-conversation-id");
         r && await this.loadConversation(r);
@@ -447,18 +447,18 @@ class _ {
    */
   async loadConversation(e) {
     try {
-      const { DatabaseService: o } = await Promise.resolve().then(() => v), t = await o.getConversation(e);
-      if (!t) {
+      const { DatabaseService: t } = await Promise.resolve().then(() => v), o = await t.getConversation(e);
+      if (!o) {
         alert("無法載入對話");
         return;
       }
-      this.clearMessages(), (Array.isArray(t.messages) ? t.messages : []).forEach((r) => {
+      this.clearMessages(), (Array.isArray(o.messages) ? o.messages : []).forEach((r) => {
         this.addMessage(r);
       });
       const s = this.panel.querySelector("#sm-history-view"), i = this.panel.querySelector("#sm-chat-view");
       s && (s.style.display = "none"), i && (i.style.display = "flex"), console.log("✅ Loaded conversation and returned to chat view"), window.LensService && window.LensService.setConversationId(e);
-    } catch (o) {
-      console.error("Failed to load conversation:", o), alert("載入對話失敗");
+    } catch (t) {
+      console.error("Failed to load conversation:", t), alert("載入對話失敗");
     }
   }
   /**
@@ -487,8 +487,8 @@ class _ {
    * 推動頁面內容
    */
   pushPageContent() {
-    const e = document.body, o = parseFloat(this.width.replace("%", "")), t = 100 - o;
-    this.position === "right" ? (e.style.transform = "translateX(0)", e.style.width = `${t}%`, e.style.marginLeft = "0", e.style.marginRight = "0") : (e.style.transform = `translateX(${o}%)`, e.style.width = `${t}%`, e.style.marginLeft = "0", e.style.marginRight = "0"), e.style.transition = "transform 0.3s ease, width 0.3s ease", e.style.boxSizing = "border-box";
+    const e = document.body, t = parseFloat(this.width.replace("%", "")), o = 100 - t;
+    this.position === "right" ? (e.style.transform = "translateX(0)", e.style.width = `${o}%`, e.style.marginLeft = "0", e.style.marginRight = "0") : (e.style.transform = `translateX(${t}%)`, e.style.width = `${o}%`, e.style.marginLeft = "0", e.style.marginRight = "0"), e.style.transition = "transform 0.3s ease, width 0.3s ease", e.style.boxSizing = "border-box";
   }
   /**
    * 恢復頁面內容
@@ -500,10 +500,10 @@ class _ {
   /**
    * 設置捕獲的圖片
    */
-  setCapturedImage(e, o) {
-    this.capturedImage = e, this.capturedText = o;
-    const t = this.panel.querySelector("#sm-image-preview"), n = this.panel.querySelector("#sm-preview-img"), s = this.panel.querySelector("#sm-image-context");
-    t && n && s && (t.style.display = "flex", n.src = e, s.textContent = o.substring(0, 100) + (o.length > 100 ? "..." : ""));
+  setCapturedImage(e, t) {
+    this.capturedImage = e, this.capturedText = t;
+    const o = this.panel.querySelector("#sm-image-preview"), n = this.panel.querySelector("#sm-preview-img"), s = this.panel.querySelector("#sm-image-context");
+    o && n && s && (o.style.display = "flex", n.src = e, s.textContent = t.substring(0, 100) + (t.length > 100 ? "..." : ""));
     const i = this.panel.querySelector("#sm-input");
     i && i.focus();
   }
@@ -520,8 +520,8 @@ class _ {
    */
   setScreenshotInInput(e) {
     this.capturedImage = e;
-    const o = this.panel.querySelector("#sm-image-preview"), t = this.panel.querySelector("#sm-preview-img");
-    o && t && (t.src = e, o.style.display = "block"), this.isOpen || this.open();
+    const t = this.panel.querySelector("#sm-image-preview"), o = this.panel.querySelector("#sm-preview-img");
+    t && o && (o.src = e, t.style.display = "block"), this.isOpen || this.open();
     const n = this.panel.querySelector("#sm-input");
     n && n.focus();
   }
@@ -543,31 +543,31 @@ class C {
   static async initializePool() {
     this.initialized || (console.log("✅ Database service initialized (API mode)"), this.initialized = !0);
   }
-  static async query(e, o = []) {
+  static async query(e, t = []) {
     try {
-      return console.log("🔍 Mock query:", e, o), [];
-    } catch (t) {
-      throw console.error("❌ Database query error:", t), t;
+      return console.log("🔍 Mock query:", e, t), [];
+    } catch (o) {
+      throw console.error("❌ Database query error:", o), o;
     }
   }
   static async initializeTables() {
     console.log("✅ Tables already initialized in PostgreSQL");
   }
   // Helper method for API calls
-  static async apiCall(e, o = {}) {
+  static async apiCall(e, t = {}) {
     try {
-      const t = await fetch(`${O}${e}`, {
-        ...o,
+      const o = await fetch(`${O}${e}`, {
+        ...t,
         headers: {
           "Content-Type": "application/json",
-          ...o.headers
+          ...t.headers
         }
       });
-      if (!t.ok)
-        throw new Error(`API call failed: ${t.statusText}`);
-      return await t.json();
-    } catch (t) {
-      throw console.error(`❌ API call failed for ${e}:`, t), t;
+      if (!o.ok)
+        throw new Error(`API call failed: ${o.statusText}`);
+      return await o.json();
+    } catch (o) {
+      throw console.error(`❌ API call failed for ${e}:`, o), o;
     }
   }
   // ==================== Settings API ====================
@@ -577,34 +577,34 @@ class C {
   static async getSetting(e) {
     try {
       return (await this.apiCall(`/settings/${e}`)).value;
-    } catch (o) {
-      return console.error(`Failed to get setting ${e}:`, o), null;
+    } catch (t) {
+      return console.error(`Failed to get setting ${e}:`, t), null;
     }
   }
-  static async setSetting(e, o) {
+  static async setSetting(e, t) {
     await this.apiCall(`/settings/${e}`, {
       method: "PUT",
-      body: JSON.stringify({ value: o })
+      body: JSON.stringify({ value: t })
     });
   }
   // ==================== Admin Users API ====================
   static async getAdminUsers() {
     return await this.apiCall("/admin-users");
   }
-  static async validateAdmin(e, o) {
+  static async validateAdmin(e, t) {
     try {
       return await this.apiCall("/admin-users/login", {
         method: "POST",
-        body: JSON.stringify({ username: e, password: o })
+        body: JSON.stringify({ username: e, password: t })
       });
-    } catch (t) {
-      return console.error("Admin validation failed:", t), null;
+    } catch (o) {
+      return console.error("Admin validation failed:", o), null;
     }
   }
-  static async createAdminUser(e, o, t) {
+  static async createAdminUser(e, t, o) {
     await this.apiCall("/admin-users", {
       method: "POST",
-      body: JSON.stringify({ username: e, password: o, email: t })
+      body: JSON.stringify({ username: e, password: t, email: o })
     });
   }
   static async deleteAdminUser(e) {
@@ -616,15 +616,15 @@ class C {
   static async getManualIndexes() {
     return await this.apiCall("/manual-indexes");
   }
-  static async createManualIndex(e, o, t, n, s) {
+  static async createManualIndex(e, t, o, n, s) {
     const i = `fp-${Date.now()}`;
     await this.apiCall("/manual-indexes", {
       method: "POST",
       body: JSON.stringify({
         id: crypto.randomUUID(),
         name: e,
-        description: o,
-        content: t,
+        description: t,
+        content: o,
         url: n || "",
         keywords: s || [],
         fingerprint: i,
@@ -633,12 +633,12 @@ class C {
       })
     });
   }
-  static async updateManualIndex(e, o, t, n, s, i) {
+  static async updateManualIndex(e, t, o, n, s, i) {
     await this.apiCall(`/manual-indexes/${e}`, {
       method: "PUT",
       body: JSON.stringify({
-        name: o,
-        description: t,
+        name: t,
+        description: o,
         content: n,
         url: s || "",
         keywords: i || []
@@ -651,21 +651,21 @@ class C {
     });
   }
   // ==================== Conversations API ====================
-  static async saveConversation(e, o, t) {
+  static async saveConversation(e, t, o) {
     await this.apiCall("/conversations", {
       method: "POST",
       body: JSON.stringify({
-        user_id: o,
+        user_id: t,
         conversation_id: e,
-        messages: t
+        messages: o
       })
     }), console.log("✅ Conversation saved to database:", e);
   }
   static async getConversation(e) {
     try {
       return await this.apiCall(`/conversations/${e}`);
-    } catch (o) {
-      return console.error("Failed to get conversation:", o), null;
+    } catch (t) {
+      return console.error("Failed to get conversation:", t), null;
     }
   }
   static async getAllConversations() {
@@ -694,48 +694,49 @@ class z {
     }
   }
   static async getById(e) {
-    return (await this.getAll()).find((t) => t.id.toString() === e) || null;
+    return (await this.getAll()).find((o) => o.id.toString() === e) || null;
   }
   static async create(e) {
     try {
       return await C.createManualIndex(e.title, e.description || "", e.content, e.url || "", []), console.log("Created manual index:", e.title), { success: !0 };
-    } catch (o) {
-      throw console.error("Failed to create manual index:", o), o;
+    } catch (t) {
+      throw console.error("Failed to create manual index:", t), t;
     }
   }
-  static async update(e, o) {
+  static async update(e, t) {
     try {
-      const t = await this.getById(e);
-      return t ? (await C.updateManualIndex(
+      const o = await this.getById(e);
+      return o ? (await C.updateManualIndex(
         e,
-        o.title || t.name,
-        o.description !== void 0 ? o.description : t.description || "",
-        o.content || t.content,
-        o.url !== void 0 ? o.url : t.url,
+        t.title || o.name,
+        t.description !== void 0 ? t.description : o.description || "",
+        t.content || o.content,
+        t.url !== void 0 ? t.url : o.url,
         []
       ), console.log("Updated manual index:", e), { success: !0 }) : null;
-    } catch (t) {
-      return console.error("Failed to update manual index:", t), null;
+    } catch (o) {
+      return console.error("Failed to update manual index:", o), null;
     }
   }
   static async delete(e) {
     try {
       return await C.deleteManualIndex(e), console.log("Deleted manual index:", e), !0;
-    } catch (o) {
-      return console.error("Failed to delete manual index:", o), !1;
+    } catch (t) {
+      return console.error("Failed to delete manual index:", t), !1;
     }
   }
   static async search(e) {
     try {
-      const o = await this.getAll();
-      if (!e.trim()) return o;
-      const t = e.toLowerCase();
-      return o.filter((n) => {
-        const s = (n.title || n.name || "").toLowerCase(), i = (n.description || "").toLowerCase(), r = (n.content || "").toLowerCase();
-        return s.includes(t) || i.includes(t) || r.includes(t);
+      console.log("🔍 ManualIndexService.search() called with query:", e);
+      const t = await this.getAll();
+      if (console.log("🔍 ManualIndexService.getAll() returned:", t.length, "indexes"), t.length > 0 && console.log("🔍 First index:", t[0]), !e.trim()) return t;
+      const o = e.toLowerCase(), n = t.filter((s) => {
+        const i = (s.title || s.name || "").toLowerCase(), r = (s.description || "").toLowerCase(), a = (s.content || "").toLowerCase(), d = i.includes(o) || r.includes(o) || a.includes(o);
+        return d && console.log("🔍 Match found:", { title: i, description: r.substring(0, 50) }), d;
       });
-    } catch (o) {
-      return console.error("Failed to search manual indexes:", o), [];
+      return console.log("🔍 ManualIndexService.search() returning:", n.length, "results"), n;
+    } catch (t) {
+      return console.error("Failed to search manual indexes:", t), [];
     }
   }
 }
@@ -761,11 +762,11 @@ class j {
    * 攔截 History API
    */
   interceptHistory() {
-    const e = history.pushState, o = history.replaceState;
-    history.pushState = (...t) => {
-      e.apply(history, t), this.handleRouteChange();
-    }, history.replaceState = (...t) => {
-      o.apply(history, t), this.handleRouteChange();
+    const e = history.pushState, t = history.replaceState;
+    history.pushState = (...o) => {
+      e.apply(history, o), this.handleRouteChange();
+    }, history.replaceState = (...o) => {
+      t.apply(history, o), this.handleRouteChange();
     };
   }
   /**
@@ -912,7 +913,7 @@ class j {
   /**
    * 顯示編輯對話框
    */
-  showEditDialog(e, o, t = !1) {
+  showEditDialog(e, t, o = !1) {
     return new Promise((n) => {
       const s = document.createElement("div");
       s.style.cssText = `
@@ -927,7 +928,7 @@ class j {
         align-items: center;
         z-index: 1000000;
       `;
-      const i = t ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit; color: #1f2937; background: #ffffff;">${o}</textarea>` : `<input type="text" id="edit-input" value="${o}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #1f2937; background: #ffffff;">`;
+      const i = o ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit; color: #1f2937; background: #ffffff;">${t}</textarea>` : `<input type="text" id="edit-input" value="${t}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #1f2937; background: #ffffff;">`;
       s.innerHTML = `
         <div style="background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%;">
           <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1f2937;">${e}</h3>
@@ -958,10 +959,10 @@ class j {
    * 顯示自定義確認對話框
    */
   showConfirmDialog(e) {
-    return new Promise((o) => {
+    return new Promise((t) => {
       var i, r;
-      const t = document.createElement("div");
-      t.style.cssText = `
+      const o = document.createElement("div");
+      o.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
@@ -987,12 +988,12 @@ class j {
           <button id="confirm-cancel" style="padding: 8px 16px; border: 1px solid #ccc; background: white; color: #1f2937; border-radius: 4px; cursor: pointer;">取消</button>
           <button id="confirm-ok" style="padding: 8px 16px; border: none; background: #007cff; color: white; border-radius: 4px; cursor: pointer;">確定</button>
         </div>
-      `, t.appendChild(n), document.body.appendChild(t);
+      `, o.appendChild(n), document.body.appendChild(o);
       const s = (a) => {
-        document.body.removeChild(t), o(a);
+        document.body.removeChild(o), t(a);
       };
-      (i = n.querySelector("#confirm-ok")) == null || i.addEventListener("click", () => s(!0)), (r = n.querySelector("#confirm-cancel")) == null || r.addEventListener("click", () => s(!1)), t.addEventListener("click", (a) => {
-        a.target === t && s(!1);
+      (i = n.querySelector("#confirm-ok")) == null || i.addEventListener("click", () => s(!0)), (r = n.querySelector("#confirm-cancel")) == null || r.addEventListener("click", () => s(!1)), o.addEventListener("click", (a) => {
+        a.target === o && s(!1);
       });
     });
   }
@@ -1000,10 +1001,10 @@ class j {
    * 顯示自定義提示對話框
    */
   showAlertDialog(e) {
-    return new Promise((o) => {
+    return new Promise((t) => {
       var i;
-      const t = document.createElement("div");
-      t.style.cssText = `
+      const o = document.createElement("div");
+      o.style.cssText = `
         position: fixed;
         top: 0;
         left: 0;
@@ -1028,12 +1029,12 @@ class j {
         <div style="display: flex; justify-content: flex-end;">
           <button id="alert-ok" style="padding: 8px 16px; border: none; background: #007cff; color: white; border-radius: 4px; cursor: pointer;">確定</button>
         </div>
-      `, t.appendChild(n), document.body.appendChild(t);
+      `, o.appendChild(n), document.body.appendChild(o);
       const s = () => {
-        document.body.removeChild(t), o();
+        document.body.removeChild(o), t();
       };
-      (i = n.querySelector("#alert-ok")) == null || i.addEventListener("click", s), t.addEventListener("click", (r) => {
-        r.target === t && s();
+      (i = n.querySelector("#alert-ok")) == null || i.addEventListener("click", s), o.addEventListener("click", (r) => {
+        r.target === o && s();
       });
     });
   }
@@ -1042,9 +1043,9 @@ class j {
    */
   updateNavHighlight() {
     if (!this.container) return;
-    this.container.querySelectorAll(".nav-item").forEach((o) => {
-      const t = o, n = t.dataset.page === this.currentPage;
-      t.style.background = n ? "#ede9fe" : "transparent", t.style.color = n ? "#7c3aed" : "#4b5563", t.style.fontWeight = n ? "600" : "500", n ? t.classList.add("active") : t.classList.remove("active");
+    this.container.querySelectorAll(".nav-item").forEach((t) => {
+      const o = t, n = o.dataset.page === this.currentPage;
+      o.style.background = n ? "#ede9fe" : "transparent", o.style.color = n ? "#7c3aed" : "#4b5563", o.style.fontWeight = n ? "600" : "500", n ? o.classList.add("active") : o.classList.remove("active");
     });
   }
   /**
@@ -1087,12 +1088,12 @@ class j {
         });
       });
     }, 50);
-    const o = this.container.querySelector("#admin-logout");
-    o && o.addEventListener("click", () => {
+    const t = this.container.querySelector("#admin-logout");
+    t && t.addEventListener("click", () => {
       this.isAuthenticated = !1, this.container.innerHTML = this.renderLoginUI(), this.bindEvents();
     });
-    const t = this.container.querySelector("#telegram-settings-form");
-    t && t.addEventListener("submit", async (l) => {
+    const o = this.container.querySelector("#telegram-settings-form");
+    o && o.addEventListener("submit", async (l) => {
       l.preventDefault(), l.stopPropagation();
       const c = this.container.querySelector("#telegram-enabled"), p = (c == null ? void 0 : c.checked) || !1;
       this.setTelegramEnabled(p), alert(`Telegram 通知已${p ? "啟用" : "停用"}`), await this.updatePageContent();
@@ -1204,8 +1205,8 @@ class j {
   /**
    * 渲染導航項目（無 icon）
    */
-  renderNavItem(e, o) {
-    const t = this.currentPage === e;
+  renderNavItem(e, t) {
+    const o = this.currentPage === e;
     return `
       <button
         class="nav-item"
@@ -1214,18 +1215,18 @@ class j {
           width: 100%;
           padding: 12px 16px;
           margin-bottom: 4px;
-          background: ${t ? "#ede9fe" : "transparent"};
+          background: ${o ? "#ede9fe" : "transparent"};
           border: none;
           border-radius: 8px;
-          color: ${t ? "#7c3aed" : "#6b7280"};
+          color: ${o ? "#7c3aed" : "#6b7280"};
           font-size: 14px;
-          font-weight: ${t ? "600" : "500"};
+          font-weight: ${o ? "600" : "500"};
           text-align: left;
           cursor: pointer;
           transition: all 0.2s;
         "
       >
-        ${o}
+        ${t}
       </button>
     `;
   }
@@ -1267,17 +1268,17 @@ class j {
     e && e.addEventListener("click", async () => {
       await this.showAddIndexModal();
     });
-    const o = this.container.querySelector("#generate-embeddings-btn");
-    o && o.addEventListener("click", async () => {
+    const t = this.container.querySelector("#generate-embeddings-btn");
+    t && t.addEventListener("click", async () => {
       try {
-        const s = o;
+        const s = t;
         s.disabled = !0, s.textContent = "生成中...";
         const r = (await z.getAll()).length;
         await this.showAlertDialog(`成功為 ${r} 個索引生成了向量嵌入`), await this.updatePageContent();
       } catch (s) {
         await this.showAlertDialog(`生成失敗：${s instanceof Error ? s.message : "未知錯誤"}`);
       } finally {
-        const s = o;
+        const s = t;
         s.disabled = !1, s.textContent = "生成所有Embeddings";
       }
     }), this.container.querySelectorAll(".edit-index-btn").forEach((s) => {
@@ -1309,7 +1310,7 @@ class j {
         const i = s.target.getAttribute("data-id");
         if (i && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
           try {
-            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-Cu1W2XmO.mjs");
+            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-DwjrsSlV.mjs");
             await a.deleteConversation(i), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
           } catch (a) {
             await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
@@ -1337,8 +1338,8 @@ class j {
           console.error("Failed to save default reply:", d), await this.showAlertDialog("儲存失敗，請稍後再試");
         }
     });
-    const o = this.container.querySelector("#edit-system-prompt-btn");
-    o && o.addEventListener("click", async () => {
+    const t = this.container.querySelector("#edit-system-prompt-btn");
+    t && t.addEventListener("click", async () => {
       const i = this.container.querySelector("#system-prompt-display"), r = i.textContent || "", a = await this.showEditDialog("編輯系統提示詞", r, !0);
       if (a !== null)
         try {
@@ -1348,8 +1349,8 @@ class j {
           console.error("Failed to save system prompt:", d), await this.showAlertDialog("儲存失敗，請稍後再試");
         }
     });
-    const t = this.container.querySelector("#edit-llms-txt-url-btn");
-    t && t.addEventListener("click", async () => {
+    const o = this.container.querySelector("#edit-llms-txt-url-btn");
+    o && o.addEventListener("click", async () => {
       const i = this.container.querySelector("#llms-txt-url-display");
       if (i) {
         const r = i.textContent === "未設定" ? "" : i.textContent || "", a = await this.showEditDialog("編輯 LLMs.txt 網址", r, !1);
@@ -1382,13 +1383,13 @@ class j {
    * 渲染儀表板
    */
   async renderDashboard() {
-    let e = [], o = [], t = "連接失敗";
+    let e = [], t = [], o = "連接失敗";
     try {
       const [n, s] = await Promise.all([
         fetch("http://localhost:3002/conversations").catch(() => null),
         fetch("http://localhost:3002/manual-indexes").catch(() => null)
       ]);
-      n != null && n.ok && (e = await n.json(), t = "正常連接"), s != null && s.ok && (o = await s.json());
+      n != null && n.ok && (e = await n.json(), o = "正常連接"), s != null && s.ok && (t = await s.json());
     } catch (n) {
       console.error("Failed to load dashboard data:", n);
     }
@@ -1397,7 +1398,7 @@ class j {
 
       <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; margin-bottom: 32px;">
         ${this.renderStatCard("💬", "對話總數", e.length.toString())}
-        ${this.renderStatCard("📝", "手動索引", o.length.toString())}
+        ${this.renderStatCard("📝", "手動索引", t.length.toString())}
       </div>
 
       <!-- 系統狀態 -->
@@ -1410,8 +1411,8 @@ class j {
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px;">
             <span style="font-size: 14px; color: #374151;">數據庫連接:</span>
-            <span style="font-size: 14px; color: ${t === "正常連接" ? "#059669" : "#dc2626"}; font-weight: 500;">
-              ${t === "正常連接" ? "✅" : "❌"} ${t}
+            <span style="font-size: 14px; color: ${o === "正常連接" ? "#059669" : "#dc2626"}; font-weight: 500;">
+              ${o === "正常連接" ? "✅" : "❌"} ${o}
             </span>
           </div>
         </div>
@@ -1421,12 +1422,12 @@ class j {
   /**
    * 渲染統計卡片
    */
-  renderStatCard(e, o, t) {
+  renderStatCard(e, t, o) {
     return `
       <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
         <div style="font-size: 32px; margin-bottom: 8px;">${e}</div>
-        <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">${o}</div>
-        <div style="font-size: 28px; font-weight: 700; color: #1f2937;">${t}</div>
+        <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">${t}</div>
+        <div style="font-size: 28px; font-weight: 700; color: #1f2937;">${o}</div>
       </div>
     `;
   }
@@ -1465,30 +1466,30 @@ class j {
           <p style="color: #9ca3af; text-align: center; padding: 32px 0;">尚無索引</p>
         ` : `
           <div style="display: flex; flex-direction: column; gap: 12px;">
-            ${e.map((o) => `
+            ${e.map((t) => `
               <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: start;">
                   <div style="flex: 1;">
-                    <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">${o.title || o.name || "未命名"}</h4>
-                    <p style="font-size: 14px; color: #6b7280; margin: 0 0 8px 0;">${o.description || "無描述"}</p>
-                    ${o.url ? `<p style="font-size: 12px; color: #3b82f6; margin: 0 0 8px 0; font-family: monospace;"><a href="${o.url}" target="_blank" style="color: inherit; text-decoration: none;">${o.url}</a></p>` : ""}
-                    ${o.embedding ? '<span style="font-size: 11px; background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; display: inline-block;">✓ 已生成向量</span>' : '<span style="font-size: 11px; background: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; display: inline-block;">⚠ 未生成向量</span>'}
+                    <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">${t.title || t.name || "未命名"}</h4>
+                    <p style="font-size: 14px; color: #6b7280; margin: 0 0 8px 0;">${t.description || "無描述"}</p>
+                    ${t.url ? `<p style="font-size: 12px; color: #3b82f6; margin: 0 0 8px 0; font-family: monospace;"><a href="${t.url}" target="_blank" style="color: inherit; text-decoration: none;">${t.url}</a></p>` : ""}
+                    ${t.embedding ? '<span style="font-size: 11px; background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; display: inline-block;">✓ 已生成向量</span>' : '<span style="font-size: 11px; background: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; display: inline-block;">⚠ 未生成向量</span>'}
                     <p style="font-size: 12px; color: #9ca3af; margin: 8px 0 0 0;">
-                      建立時間：${o.created_at ? new Date(o.created_at).toLocaleString("zh-TW") : "未知"}
-                      ${o.updated_at && o.updated_at !== o.created_at ? ` | 更新時間：${new Date(o.updated_at).toLocaleString("zh-TW")}` : ""}
+                      建立時間：${t.created_at ? new Date(t.created_at).toLocaleString("zh-TW") : "未知"}
+                      ${t.updated_at && t.updated_at !== t.created_at ? ` | 更新時間：${new Date(t.updated_at).toLocaleString("zh-TW")}` : ""}
                     </p>
                   </div>
                   <div style="display: flex; gap: 8px;">
                     <button
                       class="edit-index-btn"
-                      data-id="${o.id}"
+                      data-id="${t.id}"
                       style="padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
                     >
                       編輯
                     </button>
                     <button
                       class="delete-index-btn"
-                      data-id="${o.id}"
+                      data-id="${t.id}"
                       style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
                     >
                       刪除
@@ -1519,7 +1520,7 @@ class j {
    * 渲染 SQL 資料庫頁面
    */
   renderSQL() {
-    const e = [], o = this.loadSQLPluginConfig();
+    const e = [], t = this.loadSQLPluginConfig();
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">SQL 資料庫</h2>
       <p style="color: #6b7280; margin-bottom: 24px;">連接 SQL 資料庫作為搜尋來源</p>
@@ -1531,7 +1532,7 @@ class j {
         <form id="sql-plugin-config-form">
           <div style="margin-bottom: 16px;">
             <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">
-              <input type="checkbox" id="sql-plugin-enabled" ${o.enabled ? "checked" : ""} style="margin-right: 8px;">
+              <input type="checkbox" id="sql-plugin-enabled" ${t.enabled ? "checked" : ""} style="margin-right: 8px;">
               啟用 SQL 搜尋
             </label>
           </div>
@@ -1541,7 +1542,7 @@ class j {
             <input
               type="number"
               id="sql-plugin-priority"
-              value="${o.priority || 5}"
+              value="${t.priority || 5}"
               min="1"
               max="10"
               style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
@@ -1554,7 +1555,7 @@ class j {
             <input
               type="text"
               id="sql-api-endpoint"
-              value="${o.apiEndpoint || ""}"
+              value="${t.apiEndpoint || ""}"
               placeholder="https://your-api.com/sql/query"
               style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
             >
@@ -1568,9 +1569,9 @@ class j {
               style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
             >
               <option value="">選擇連接...</option>
-              ${e.map((t) => `
-                <option value="${t.id}" ${o.connectionId === t.id ? "selected" : ""}>
-                  ${t.name} (${t.type})
+              ${e.map((o) => `
+                <option value="${o.id}" ${t.connectionId === o.id ? "selected" : ""}>
+                  ${o.name} (${o.type})
                 </option>
               `).join("")}
             </select>
@@ -1581,7 +1582,7 @@ class j {
             <input
               type="text"
               id="sql-search-table"
-              value="${o.searchTable || "knowledge_base"}"
+              value="${t.searchTable || "knowledge_base"}"
               placeholder="knowledge_base"
               style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
             >
@@ -1592,7 +1593,7 @@ class j {
             <input
               type="text"
               id="sql-title-column"
-              value="${o.titleColumn || "title"}"
+              value="${t.titleColumn || "title"}"
               placeholder="title"
               style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
             >
@@ -1603,7 +1604,7 @@ class j {
             <input
               type="text"
               id="sql-content-column"
-              value="${o.contentColumn || "content"}"
+              value="${t.contentColumn || "content"}"
               placeholder="content"
               style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
             >
@@ -1614,7 +1615,7 @@ class j {
             <input
               type="text"
               id="sql-url-column"
-              value="${o.urlColumn || "url"}"
+              value="${t.urlColumn || "url"}"
               placeholder="url"
               style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
             >
@@ -1672,17 +1673,17 @@ class j {
         <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
           <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">已建立的連接</h3>
           <div style="display: grid; gap: 16px;">
-            ${e.map((t) => `
+            ${e.map((o) => `
               <div style="padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px;">
                 <div style="display: flex; justify-content: space-between; align-items: start;">
                   <div>
-                    <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 8px 0; color: #1f2937;">${t.name}</h4>
-                    <p style="color: #6b7280; font-size: 14px; margin: 0;">類型：${t.type}</p>
-                    <p style="color: #6b7280; font-size: 12px; margin: 4px 0 0 0;">建立時間：${new Date(t.createdAt).toLocaleString("zh-TW")}</p>
+                    <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 8px 0; color: #1f2937;">${o.name}</h4>
+                    <p style="color: #6b7280; font-size: 14px; margin: 0;">類型：${o.type}</p>
+                    <p style="color: #6b7280; font-size: 12px; margin: 4px 0 0 0;">建立時間：${new Date(o.createdAt).toLocaleString("zh-TW")}</p>
                   </div>
                   <button
                     class="delete-sql-connection"
-                    data-id="${t.id}"
+                    data-id="${o.id}"
                     style="padding: 8px 16px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 14px; cursor: pointer;"
                   >
                     刪除
@@ -1703,8 +1704,8 @@ class j {
     if (e)
       try {
         return JSON.parse(e);
-      } catch (o) {
-        console.error("Failed to parse SQL plugin config:", o);
+      } catch (t) {
+        console.error("Failed to parse SQL plugin config:", t);
       }
     return {
       enabled: !1,
@@ -1719,8 +1720,8 @@ class j {
    * 渲染 Agent & API 設定頁面（合併）
    */
   renderAgentAndAPI() {
-    var t, n, s, i, r, a, d, h, l, c, p, u;
-    const e = {}, o = {};
+    var o, n, s, i, r, a, d, h, l, c, p, u;
+    const e = {}, t = {};
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">Agent & API 設定</h2>
 
@@ -1740,7 +1741,7 @@ class j {
                 id="llm-endpoint"
                 name="llmEndpoint"
                 placeholder="https://your-resource.openai.azure.com/"
-                value="${((t = e.azureOpenAI) == null ? void 0 : t.endpoint) || ((n = e.llmAPI) == null ? void 0 : n.endpoint) || ""}"
+                value="${((o = e.azureOpenAI) == null ? void 0 : o.endpoint) || ((n = e.llmAPI) == null ? void 0 : n.endpoint) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -1828,7 +1829,7 @@ class j {
         <form id="agent-tool-config-form">
           <div style="display: flex; flex-direction: column; gap: 16px;">
             <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
-              <input type="checkbox" name="manualIndex" ${o != null && o.manualIndex.enabled ? "checked" : ""} style="width: 18px; height: 18px; cursor: pointer;" />
+              <input type="checkbox" name="manualIndex" ${t != null && t.manualIndex.enabled ? "checked" : ""} style="width: 18px; height: 18px; cursor: pointer;" />
               <div>
                 <div style="font-weight: 500; color: #1f2937;">手動索引</div>
                 <div style="font-size: 13px; color: #6b7280;">搜尋手動新增的索引內容</div>
@@ -1836,7 +1837,7 @@ class j {
             </label>
 
             <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
-              <input type="checkbox" name="frontendPages" ${o != null && o.frontendPages.enabled ? "checked" : ""} style="width: 18px; height: 18px; cursor: pointer;" />
+              <input type="checkbox" name="frontendPages" ${t != null && t.frontendPages.enabled ? "checked" : ""} style="width: 18px; height: 18px; cursor: pointer;" />
               <div>
                 <div style="font-weight: 500; color: #1f2937;">前端頁面</div>
                 <div style="font-size: 13px; color: #6b7280;">搜尋當前網站的頁面內容</div>
@@ -1844,7 +1845,7 @@ class j {
             </label>
 
             <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
-              <input type="checkbox" name="sitemap" ${o != null && o.sitemap.enabled ? "checked" : ""} style="width: 18px; height: 18px; cursor: pointer;" />
+              <input type="checkbox" name="sitemap" ${t != null && t.sitemap.enabled ? "checked" : ""} style="width: 18px; height: 18px; cursor: pointer;" />
               <div>
                 <div style="font-weight: 500; color: #1f2937;">Sitemap 索引</div>
                 <div style="font-size: 13px; color: #6b7280;">搜尋外部網站的 Sitemap 內容</div>
@@ -1852,7 +1853,7 @@ class j {
             </label>
 
             <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; cursor: pointer;">
-              <input type="checkbox" name="sqlDatabase" ${o != null && o.sqlDatabase.enabled ? "checked" : ""} style="width: 18px; height: 18px; cursor: pointer;" />
+              <input type="checkbox" name="sqlDatabase" ${t != null && t.sqlDatabase.enabled ? "checked" : ""} style="width: 18px; height: 18px; cursor: pointer;" />
               <div>
                 <div style="font-weight: 500; color: #1f2937;">SQL 資料庫</div>
                 <div style="font-size: 13px; color: #6b7280;">查詢 SQL 資料庫內容</div>
@@ -1893,13 +1894,13 @@ class j {
    * 顯示編輯索引模態框
    */
   async showEditIndexModal(e) {
-    const o = await z.getById(e);
-    if (!o) {
+    const t = await z.getById(e);
+    if (!t) {
       await this.showAlertDialog("找不到該索引");
       return;
     }
-    const t = document.createElement("div");
-    t.style.cssText = `
+    const o = document.createElement("div");
+    o.style.cssText = `
       position: fixed;
       top: 0;
       left: 0;
@@ -1910,7 +1911,7 @@ class j {
       align-items: center;
       justify-content: center;
       z-index: 1000000;
-    `, t.innerHTML = `
+    `, o.innerHTML = `
       <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
         <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">編輯索引</h3>
 
@@ -1920,7 +1921,7 @@ class j {
             <input
               type="text"
               id="edit-index-name"
-              value="${o.title || o.name || ""}"
+              value="${t.title || t.name || ""}"
               required
               style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
@@ -1931,7 +1932,7 @@ class j {
             <input
               type="text"
               id="edit-index-description"
-              value="${o.description || ""}"
+              value="${t.description || ""}"
               style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
           </div>
@@ -1943,7 +1944,7 @@ class j {
               rows="8"
               required
               style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical; color: #1f2937; background: #ffffff;"
-            >${o.content}</textarea>
+            >${t.content}</textarea>
           </div>
 
           <div style="display: flex; gap: 12px; justify-content: flex-end;">
@@ -1963,24 +1964,24 @@ class j {
           </div>
         </form>
       </div>
-    `, document.body.appendChild(t);
-    const n = t.querySelector("#edit-index-form"), s = t.querySelector("#cancel-edit-btn");
+    `, document.body.appendChild(o);
+    const n = o.querySelector("#edit-index-form"), s = o.querySelector("#cancel-edit-btn");
     n.addEventListener("submit", async (i) => {
       i.preventDefault();
-      const r = t.querySelector("#edit-index-name").value, a = t.querySelector("#edit-index-description").value, d = t.querySelector("#edit-index-content").value;
+      const r = o.querySelector("#edit-index-name").value, a = o.querySelector("#edit-index-description").value, d = o.querySelector("#edit-index-content").value;
       if (!r || !d) {
         await this.showAlertDialog("請填寫名稱和內容");
         return;
       }
       try {
-        await z.update(e, { title: r, description: a, content: d, url: "" }), await this.showAlertDialog("索引已更新"), document.body.removeChild(t), await this.updatePageContent();
+        await z.update(e, { title: r, description: a, content: d, url: "" }), await this.showAlertDialog("索引已更新"), document.body.removeChild(o), await this.updatePageContent();
       } catch (h) {
         await this.showAlertDialog(`更新失敗：${h instanceof Error ? h.message : "未知錯誤"}`);
       }
     }), s.addEventListener("click", () => {
-      document.body.removeChild(t);
-    }), t.addEventListener("click", (i) => {
-      i.target === t && document.body.removeChild(t);
+      document.body.removeChild(o);
+    }), o.addEventListener("click", (i) => {
+      i.target === o && document.body.removeChild(o);
     });
   }
   /**
@@ -2064,8 +2065,8 @@ class j {
         </form>
       </div>
     `, document.body.appendChild(e);
-    const o = e.querySelector("#add-index-form"), t = e.querySelector("#cancel-add-btn");
-    o.addEventListener("submit", async (n) => {
+    const t = e.querySelector("#add-index-form"), o = e.querySelector("#cancel-add-btn");
+    t.addEventListener("submit", async (n) => {
       n.preventDefault();
       const s = e.querySelector("#add-index-name").value, i = e.querySelector("#add-index-description").value, r = e.querySelector("#add-index-url").value, a = e.querySelector("#add-index-content").value;
       if (!s || !a) {
@@ -2077,7 +2078,7 @@ class j {
       } catch (d) {
         await this.showAlertDialog(`新增失敗：${d instanceof Error ? d.message : "未知錯誤"}`);
       }
-    }), t.addEventListener("click", () => {
+    }), o.addEventListener("click", () => {
       document.body.removeChild(e);
     }), e.addEventListener("click", (n) => {
       n.target === e && document.body.removeChild(e);
@@ -2087,12 +2088,12 @@ class j {
    * 顯示刪除確認對話框
    */
   async showDeleteConfirmDialog(e) {
-    const o = await z.getById(e);
-    if (!o) {
+    const t = await z.getById(e);
+    if (!t) {
       await this.showAlertDialog("找不到該索引");
       return;
     }
-    if (await this.showConfirmDialog(`確定要刪除索引「${o.title || o.name || "未命名"}」嗎？此操作無法復原。`))
+    if (await this.showConfirmDialog(`確定要刪除索引「${t.title || t.name || "未命名"}」嗎？此操作無法復原。`))
       try {
         await z.delete(e), await this.showAlertDialog("索引已刪除"), await this.updatePageContent();
       } catch (n) {
@@ -2104,7 +2105,7 @@ class j {
    */
   async renderConversations() {
     try {
-      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-Cu1W2XmO.mjs"), o = await e.getAllConversations();
+      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-DwjrsSlV.mjs"), t = await e.getAllConversations();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">客服對話管理</h2>
@@ -2122,7 +2123,7 @@ class j {
         </div>
 
         <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
-          ${o.length === 0 ? `
+          ${t.length === 0 ? `
             <div style="padding: 48px; text-align: center; color: #6b7280;">
               <p style="font-size: 16px; margin: 0;">目前沒有對話記錄</p>
             </div>
@@ -2140,8 +2141,8 @@ class j {
                   </tr>
                 </thead>
                 <tbody>
-                  ${o.slice().reverse().map((t) => {
-        const n = t.conversation_id || t.conversationId || t.id, s = t.user_id || t.userId || "undefined", i = Array.isArray(t.messages) ? t.messages : [], r = t.status || "active", a = t.created_at || t.createdAt || t.startedAt;
+                  ${t.slice().reverse().map((o) => {
+        const n = o.conversation_id || o.conversationId || o.id, s = o.user_id || o.userId || "undefined", i = Array.isArray(o.messages) ? o.messages : [], r = o.status || "active", a = o.created_at || o.createdAt || o.startedAt;
         return `
                     <tr style="border-bottom: 1px solid #f1f5f9;">
                       <td style="padding: 16px; color: #1f2937; font-family: monospace; font-size: 12px;">${n.substring(0, 8)}...</td>
@@ -2202,7 +2203,7 @@ class j {
    */
   async renderAdminUsers() {
     try {
-      const { AdminUserManager: e } = await import("./AdminUserManager-CwYCa-Hf.mjs"), o = await e.getAllAdminUsers();
+      const { AdminUserManager: e } = await import("./AdminUserManager-CvpBCsGf.mjs"), t = await e.getAllAdminUsers();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">管理員帳號管理</h2>
@@ -2219,7 +2220,7 @@ class j {
         </div>
 
         <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
-          ${o.length === 0 ? `
+          ${t.length === 0 ? `
             <div style="padding: 48px; text-align: center; color: #6b7280;">
               <p style="font-size: 16px; margin: 0;">目前沒有管理員帳號</p>
             </div>
@@ -2237,18 +2238,18 @@ class j {
                   </tr>
                 </thead>
                 <tbody>
-                  ${o.map((t) => `
+                  ${t.map((o) => `
                     <tr style="border-bottom: 1px solid #f1f5f9;">
-                      <td style="padding: 16px; color: #1f2937; font-weight: 500;">${t.username}</td>
+                      <td style="padding: 16px; color: #1f2937; font-weight: 500;">${o.username}</td>
                       <td style="padding: 16px;">
                         <span style="
                           padding: 4px 8px;
                           border-radius: 4px;
                           font-size: 12px;
                           font-weight: 500;
-                          background: ${t.username === "admin" ? "#fef3c7" : "#dbeafe"};
-                          color: ${t.username === "admin" ? "#92400e" : "#1e40af"};
-                        ">${t.username === "admin" ? "超級管理員" : "管理員"}</span>
+                          background: ${o.username === "admin" ? "#fef3c7" : "#dbeafe"};
+                          color: ${o.username === "admin" ? "#92400e" : "#1e40af"};
+                        ">${o.username === "admin" ? "超級管理員" : "管理員"}</span>
                       </td>
                       <td style="padding: 16px;">
                         <span style="
@@ -2256,15 +2257,15 @@ class j {
                           border-radius: 4px;
                           font-size: 12px;
                           font-weight: 500;
-                          background: ${t.is_active ? "#dcfce7" : "#fee2e2"};
-                          color: ${t.is_active ? "#166534" : "#dc2626"};
-                        ">${t.is_active ? "啟用" : "停用"}</span>
+                          background: ${o.is_active ? "#dcfce7" : "#fee2e2"};
+                          color: ${o.is_active ? "#166534" : "#dc2626"};
+                        ">${o.is_active ? "啟用" : "停用"}</span>
                       </td>
-                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${new Date(t.created_at).toLocaleString()}</td>
-                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${t.last_login ? new Date(t.last_login).toLocaleString() : "從未登錄"}</td>
+                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${new Date(o.created_at).toLocaleString()}</td>
+                      <td style="padding: 16px; color: #6b7280; font-size: 14px;">${o.last_login ? new Date(o.last_login).toLocaleString() : "從未登錄"}</td>
                       <td style="padding: 16px;">
                         <div style="display: flex; gap: 8px;">
-                          <button class="edit-admin-user-btn" data-id="${t.id}" style="
+                          <button class="edit-admin-user-btn" data-id="${o.id}" style="
                             padding: 6px 12px;
                             background: #3b82f6;
                             color: white;
@@ -2273,8 +2274,8 @@ class j {
                             font-size: 12px;
                             cursor: pointer;
                           ">編輯</button>
-                          ${t.username !== "lens" ? `
-                            <button class="delete-admin-user-btn" data-id="${t.id}" style="
+                          ${o.username !== "lens" ? `
+                            <button class="delete-admin-user-btn" data-id="${o.id}" style="
                               padding: 6px 12px;
                               background: #ef4444;
                               color: white;
@@ -2306,17 +2307,17 @@ class j {
    * 渲染系統設定頁面
    */
   async renderSystemSettings() {
-    let e = {}, o = [];
+    let e = {}, t = [];
     try {
       const { DatabaseService: i } = await Promise.resolve().then(() => v), [r, a] = await Promise.all([
         i.getSettings().catch(() => ({})),
         i.getAdminUsers().catch(() => [])
       ]);
-      e = r, o = a;
+      e = r, t = a;
     } catch (i) {
       console.error("Failed to load system settings:", i);
     }
-    const t = e.default_reply || "", n = e.system_prompt || "", s = e.llms_txt_url || "";
+    const o = e.default_reply || "", n = e.system_prompt || "", s = e.llms_txt_url || "";
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
 
@@ -2341,7 +2342,7 @@ class j {
             <div
               id="default-reply-display"
               style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 60px; white-space: pre-wrap;"
-            >${t}</div>
+            >${o}</div>
           </div>
 
           <div style="margin-bottom: 24px;">
@@ -2387,7 +2388,7 @@ class j {
       <!-- 管理員帳號 -->
       <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="font-size: 18px; font-weight: 600; margin: 0; color: #1f2937;">管理員帳號（${o.length}）</h3>
+          <h3 style="font-size: 18px; font-weight: 600; margin: 0; color: #1f2937;">管理員帳號（${t.length}）</h3>
           <button
             id="add-admin-user-btn"
             style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
@@ -2396,11 +2397,11 @@ class j {
           </button>
         </div>
 
-        ${o.length === 0 ? `
+        ${t.length === 0 ? `
           <p style="color: #9ca3af; text-align: center; padding: 32px 0;">尚無管理員帳號</p>
         ` : `
           <div style="display: flex; flex-direction: column; gap: 12px;">
-            ${o.map((i) => `
+            ${t.map((i) => `
               <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <div>
@@ -2490,8 +2491,8 @@ class j {
         </form>
       </div>
     `, document.body.appendChild(e);
-    const o = e.querySelector("#add-admin-user-form"), t = e.querySelector("#cancel-add-admin-btn");
-    o.addEventListener("submit", async (n) => {
+    const t = e.querySelector("#add-admin-user-form"), o = e.querySelector("#cancel-add-admin-btn");
+    t.addEventListener("submit", async (n) => {
       n.preventDefault();
       const s = e.querySelector("#add-admin-username").value, i = e.querySelector("#add-admin-password").value, r = e.querySelector("#add-admin-email").value;
       try {
@@ -2500,7 +2501,7 @@ class j {
       } catch (a) {
         await this.showAlertDialog(`新增失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
       }
-    }), t.addEventListener("click", () => {
+    }), o.addEventListener("click", () => {
       document.body.removeChild(e);
     }), e.addEventListener("click", (n) => {
       n.target === e && document.body.removeChild(e);
@@ -2511,21 +2512,21 @@ class j {
    */
   async showConversationModal(e) {
     try {
-      const { CustomerServiceManager: o } = await import("./CustomerServiceManager-Cu1W2XmO.mjs"), t = await o.getConversationById(e);
-      if (!t) {
+      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-DwjrsSlV.mjs"), o = await t.getConversationById(e);
+      if (!o) {
         await this.showAlertDialog("找不到該對話記錄");
         return;
       }
-      const n = t.conversation_id || t.conversationId || t.id, s = t.user_id || t.userId || "undefined";
+      const n = o.conversation_id || o.conversationId || o.id, s = o.user_id || o.userId || "undefined";
       let i = [];
-      if (typeof t.messages == "string")
+      if (typeof o.messages == "string")
         try {
-          i = JSON.parse(t.messages);
+          i = JSON.parse(o.messages);
         } catch (m) {
           console.error("Failed to parse messages:", m), i = [];
         }
-      else Array.isArray(t.messages) && (i = t.messages);
-      const r = t.status || "active", a = t.created_at || t.createdAt, d = t.updated_at || t.updatedAt, h = document.createElement("div");
+      else Array.isArray(o.messages) && (i = o.messages);
+      const r = o.status || "active", a = o.created_at || o.createdAt, d = o.updated_at || o.updatedAt, h = document.createElement("div");
       h.style.cssText = `
         position: fixed;
         top: 0;
@@ -2639,7 +2640,7 @@ class j {
           return;
         }
         try {
-          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-Cu1W2XmO.mjs");
+          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-DwjrsSlV.mjs");
           await x.addCustomerServiceReply(
             e,
             m,
@@ -2651,12 +2652,12 @@ class j {
       }), h.addEventListener("click", (m) => {
         m.target === h && g();
       });
-    } catch (o) {
-      console.error("Error showing conversation modal:", o), await this.showAlertDialog("載入對話詳情失敗");
+    } catch (t) {
+      console.error("Error showing conversation modal:", t), await this.showAlertDialog("載入對話詳情失敗");
     }
   }
 }
-class R {
+class F {
   constructor() {
     b(this, "config");
     b(this, "panel");
@@ -2677,8 +2678,8 @@ class R {
       const e = await fetch("http://localhost:3002/rules");
       if (!e.ok)
         return console.log("No rules found in database, using empty array"), [];
-      const o = await e.json();
-      return Array.isArray(o) ? o : [];
+      const t = await e.json();
+      return Array.isArray(t) ? t : [];
     } catch (e) {
       return console.error("Failed to load rules from SQL:", e), [];
     }
@@ -2687,15 +2688,15 @@ class R {
    * 初始化 Widget
    */
   async init(e) {
-    var t, n, s;
+    var o, n, s;
     if (this.initialized) {
       console.warn("ServiceModuler already initialized");
       return;
     }
     this.config = e, console.log("✅ Widget initializing");
-    const o = e.telegram && e.telegram.botToken && e.telegram.chatId ? e.telegram : void 0;
-    window.SM_TELEGRAM_CONFIG = o, await this.loadRulesFromSQL(), this.panel = new _(
-      ((t = e.ui) == null ? void 0 : t.width) || "33.33%",
+    const t = e.telegram && e.telegram.botToken && e.telegram.chatId ? e.telegram : void 0;
+    window.SM_TELEGRAM_CONFIG = t, await this.loadRulesFromSQL(), this.panel = new _(
+      ((o = e.ui) == null ? void 0 : o.width) || "33.33%",
       ((n = e.ui) == null ? void 0 : n.position) || "right"
     ), this.panel.setCallbacks({
       onSendMessage: (i, r) => this.handleSendMessage(i, r),
@@ -2709,13 +2710,13 @@ class R {
    */
   bindGlobalKeyboardShortcuts() {
     document.addEventListener("keydown", (e) => {
-      var o, t;
-      e.key && e.key.toLowerCase() === "q" && ((o = this.panel) != null && o.isPanelOpen()) ? (console.log("🎯 Q key pressed, panel is open, enabling screenshot mode"), this.enableScreenshotMode()) : e.key && e.key.toLowerCase() === "q" && console.log("🎯 Q key pressed, but panel is not open:", (t = this.panel) == null ? void 0 : t.isPanelOpen());
+      var t, o;
+      e.key && e.key.toLowerCase() === "q" && ((t = this.panel) != null && t.isPanelOpen()) ? (console.log("🎯 Q key pressed, panel is open, enabling screenshot mode"), this.enableScreenshotMode()) : e.key && e.key.toLowerCase() === "q" && console.log("🎯 Q key pressed, but panel is not open:", (o = this.panel) == null ? void 0 : o.isPanelOpen());
     }), document.addEventListener("keyup", (e) => {
       e.key && e.key.toLowerCase() === "q" && this.disableScreenshotMode();
     }), document.addEventListener("click", (e) => {
-      var o;
-      this.screenshotMode && ((o = this.panel) != null && o.isPanelOpen()) && (console.log("📸 Screenshot click detected"), e.preventDefault(), e.stopPropagation(), this.captureElementScreenshot(e.target));
+      var t;
+      this.screenshotMode && ((t = this.panel) != null && t.isPanelOpen()) && (console.log("📸 Screenshot click detected"), e.preventDefault(), e.stopPropagation(), this.captureElementScreenshot(e.target));
     }, !0);
   }
   /**
@@ -2739,23 +2740,23 @@ class R {
   /**
    * 發送訊息
    */
-  async sendMessage(e, o) {
+  async sendMessage(e, t) {
     var n, s, i;
     if (!this.initialized || !this.panel) {
       console.error("ServiceModuler not initialized");
       return;
     }
-    const t = {
+    const o = {
       role: "user",
       content: e || "請分析這張圖片",
       timestamp: Date.now()
     };
-    (n = this.conversationState) == null || n.messages.push(t), this.panel.addMessage(t), this.saveConversationState();
+    (n = this.conversationState) == null || n.messages.push(o), this.panel.addMessage(o), this.saveConversationState();
     try {
       let r, a, d = !1;
       const h = ((s = this.conversationState) == null ? void 0 : s.sessionId) || this.generateSessionId(), l = localStorage.getItem("lens_service_user_id") || "default_user";
-      if (o)
-        r = await this.processImageMessage(e, o);
+      if (t)
+        r = await this.processImageMessage(e, t);
       else {
         const p = await this.processTextMessage(e, h, l);
         r = p.response, a = p.sources, d = p.needsHumanReply, d && await this.sendTelegramNotification(e, h);
@@ -2780,14 +2781,14 @@ class R {
   /**
    * 處理文字訊息
    */
-  async processTextMessage(e, o, t) {
+  async processTextMessage(e, t, o) {
     var n, s, i, r;
     try {
       const { DatabaseService: a } = await Promise.resolve().then(() => v);
       await a.initializePool();
       const d = await a.getSetting("system_prompt") || "你是一個專業的客服助手，請用繁體中文回答問題。", h = await a.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。", { ManualIndexService: l } = await Promise.resolve().then(() => H), c = await l.search(e);
       console.log("🔍 Manual index search results:", c);
-      const { LlmsTxtService: p } = await import("./LlmsTxtService-BW0xDKOs.mjs"), u = await p.searchChunks(e);
+      const { LlmsTxtService: p } = await import("./LlmsTxtService-adzgex40.mjs"), u = await p.searchChunks(e);
       console.log("🔍 LLMs.txt search results:", u);
       const g = [
         ...c.map((f) => ({
@@ -2861,10 +2862,10 @@ ${m}
   /**
    * 處理圖片訊息
    */
-  async processImageMessage(e, o) {
-    var t, n, s, i;
+  async processImageMessage(e, t) {
+    var o, n, s, i;
     try {
-      return !((n = (t = this.config) == null ? void 0 : t.azureOpenAI) != null && n.endpoint) || !((i = (s = this.config) == null ? void 0 : s.azureOpenAI) != null && i.apiKey) ? "圖片分析功能需要配置 Azure OpenAI 服務。" : await this.callAzureOpenAIVision(e, o);
+      return !((n = (o = this.config) == null ? void 0 : o.azureOpenAI) != null && n.endpoint) || !((i = (s = this.config) == null ? void 0 : s.azureOpenAI) != null && i.apiKey) ? "圖片分析功能需要配置 Azure OpenAI 服務。" : await this.callAzureOpenAIVision(e, t);
     } catch (r) {
       return console.error("Error processing image message:", r), "圖片分析失敗，請重試或聯繫客服。";
     }
@@ -2872,9 +2873,9 @@ ${m}
   /**
    * 調用 Azure OpenAI API
    */
-  async callAzureOpenAI(e, o) {
+  async callAzureOpenAI(e, t) {
     var h, l, c, p, u, g, m, x, w, k;
-    const t = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, n = (p = (c = this.config) == null ? void 0 : c.azureOpenAI) == null ? void 0 : p.apiKey, s = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, i = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, r = `${t}openai/deployments/${s}/chat/completions?api-version=${i}`, a = await fetch(r, {
+    const o = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, n = (p = (c = this.config) == null ? void 0 : c.azureOpenAI) == null ? void 0 : p.apiKey, s = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, i = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, r = `${o}openai/deployments/${s}/chat/completions?api-version=${i}`, a = await fetch(r, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2882,7 +2883,7 @@ ${m}
       },
       body: JSON.stringify({
         messages: [
-          { role: "system", content: o },
+          { role: "system", content: t },
           { role: "user", content: e }
         ],
         max_tokens: 1e3,
@@ -2896,9 +2897,9 @@ ${m}
   /**
    * 調用 Azure OpenAI Vision API
    */
-  async callAzureOpenAIVision(e, o) {
+  async callAzureOpenAIVision(e, t) {
     var h, l, c, p, u, g, m, x, w, k;
-    const t = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, n = (p = (c = this.config) == null ? void 0 : c.azureOpenAI) == null ? void 0 : p.apiKey, s = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, i = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, r = `${t}openai/deployments/${s}/chat/completions?api-version=${i}`, a = await fetch(r, {
+    const o = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, n = (p = (c = this.config) == null ? void 0 : c.azureOpenAI) == null ? void 0 : p.apiKey, s = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, i = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, r = `${o}openai/deployments/${s}/chat/completions?api-version=${i}`, a = await fetch(r, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2910,7 +2911,7 @@ ${m}
             role: "user",
             content: [
               { type: "text", text: e || "請分析這張圖片" },
-              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${o}` } }
+              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${t}` } }
             ]
           }
         ],
@@ -2925,17 +2926,17 @@ ${m}
   /**
    * 發送 Telegram 通知
    */
-  async sendTelegramNotification(e, o) {
-    var t, n, s, i;
+  async sendTelegramNotification(e, t) {
+    var o, n, s, i;
     try {
-      const r = (n = (t = this.config) == null ? void 0 : t.telegram) == null ? void 0 : n.botToken, a = (i = (s = this.config) == null ? void 0 : s.telegram) == null ? void 0 : i.chatId;
+      const r = (n = (o = this.config) == null ? void 0 : o.telegram) == null ? void 0 : n.botToken, a = (i = (s = this.config) == null ? void 0 : s.telegram) == null ? void 0 : i.chatId;
       if (!r || !a) {
         console.warn("Telegram not configured, skipping notification");
         return;
       }
       const d = `🔔 新的客服訊息需要人工回覆
 
-會話ID: ${o}
+會話ID: ${t}
 用戶訊息: ${e}
 時間: ${(/* @__PURE__ */ new Date()).toLocaleString("zh-TW")}`, h = `https://api.telegram.org/bot${r}/sendMessage`;
       await fetch(h, {
@@ -2956,13 +2957,13 @@ ${m}
   /**
    * 保存對話記錄到資料庫
    */
-  async saveConversationToDatabase(e, o) {
+  async saveConversationToDatabase(e, t) {
     if (this.conversationState)
       try {
-        const { DatabaseService: t } = await Promise.resolve().then(() => v);
-        await t.saveConversation(e, o, this.conversationState.messages), console.log("✅ Conversation saved to database");
-      } catch (t) {
-        console.error("Failed to save conversation to database:", t);
+        const { DatabaseService: o } = await Promise.resolve().then(() => v);
+        await o.saveConversation(e, t, this.conversationState.messages), console.log("✅ Conversation saved to database");
+      } catch (o) {
+        console.error("Failed to save conversation to database:", o);
       }
   }
   /**
@@ -2980,7 +2981,7 @@ ${m}
    * 開始索引網站
    * @param mode 'local' = 索引本地專案, 'domain' = 爬取域名（默認）
    */
-  async indexSite(e, o = "domain", t) {
+  async indexSite(e, t = "domain", o) {
     console.log("Site indexing disabled");
   }
   /**
@@ -3032,14 +3033,14 @@ ${m}
    * 銷毀 Widget
    */
   destroy() {
-    var e, o;
-    (e = this.panel) == null || e.destroy(), (o = this.adminPanel) == null || o.close(), this.initialized = !1;
+    var e, t;
+    (e = this.panel) == null || e.destroy(), (t = this.adminPanel) == null || t.close(), this.initialized = !1;
   }
   /**
    * 處理發送訊息
    */
-  handleSendMessage(e, o) {
-    this.sendMessage(e, o);
+  handleSendMessage(e, t) {
+    this.sendMessage(e, t);
   }
   /**
    * 處理選擇規則
@@ -3070,22 +3071,22 @@ ${m}
     try {
       const { DatabaseService: e } = await Promise.resolve().then(() => v);
       await e.initializePool();
-      const o = await e.getConversations();
-      let t = null;
-      if (o.length > 0) {
-        const n = o.sort(
+      const t = await e.getConversations();
+      let o = null;
+      if (t.length > 0) {
+        const n = t.sort(
           (s, i) => new Date(i.created_at || 0).getTime() - new Date(s.created_at || 0).getTime()
         )[0];
-        t = {
+        o = {
           sessionId: n.session_id,
           messages: n.messages || []
-        }, console.log(`✅ Loaded conversation with ${t.messages.length} messages`);
+        }, console.log(`✅ Loaded conversation with ${o.messages.length} messages`);
       } else
-        t = {
+        o = {
           sessionId: this.generateSessionId(),
           messages: []
         }, console.log("✅ Created new conversation session");
-      this.conversationState = t, this.panel && t.messages.length > 0 && (this.panel.clearMessages(), t.messages.forEach((n) => {
+      this.conversationState = o, this.panel && o.messages.length > 0 && (this.panel.clearMessages(), o.messages.forEach((n) => {
         this.panel.addMessage(n);
       }));
     } catch (e) {
@@ -3114,28 +3115,28 @@ ${m}
     var n, s;
     this.floatingIcon && this.floatingIcon.remove();
     const e = (s = (n = this.config) == null ? void 0 : n.ui) == null ? void 0 : s.iconPosition;
-    let o = { bottom: "20px", right: "20px" };
+    let t = { bottom: "20px", right: "20px" };
     if (typeof e == "string")
       switch (e) {
         case "bottom-left":
-          o = { bottom: "20px", left: "20px" };
+          t = { bottom: "20px", left: "20px" };
           break;
         case "top-right":
-          o = { top: "20px", right: "20px" };
+          t = { top: "20px", right: "20px" };
           break;
         case "top-left":
-          o = { top: "20px", left: "20px" };
+          t = { top: "20px", left: "20px" };
           break;
         default:
-          o = { top: "20px", right: "20px" };
+          t = { top: "20px", right: "20px" };
       }
-    else e && typeof e == "object" && (o = e);
+    else e && typeof e == "object" && (t = e);
     this.floatingIcon = document.createElement("button"), this.floatingIcon.id = "lens-service-floating-icon", this.floatingIcon.innerHTML = `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
       </svg>
     `;
-    const t = `
+    const o = `
       position: fixed;
       z-index: 999999;
       width: 56px;
@@ -3151,9 +3152,9 @@ ${m}
       justify-content: center;
       transition: all 0.3s ease;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      ${Object.entries(o).map(([i, r]) => `${i}: ${r}`).join("; ")};
+      ${Object.entries(t).map(([i, r]) => `${i}: ${r}`).join("; ")};
     `;
-    this.floatingIcon.style.cssText = t, this.floatingIcon.addEventListener("mouseenter", () => {
+    this.floatingIcon.style.cssText = o, this.floatingIcon.addEventListener("mouseenter", () => {
       this.floatingIcon.style.transform = "scale(1.1)", this.floatingIcon.style.boxShadow = "0 6px 25px rgba(0, 0, 0, 0.2)";
     }), this.floatingIcon.addEventListener("mouseleave", () => {
       this.floatingIcon.style.transform = "scale(1)", this.floatingIcon.style.boxShadow = "0 4px 20px rgba(0, 0, 0, 0.15)";
@@ -3201,15 +3202,15 @@ ${m}
   addHoverHighlight() {
     if (this.removeHoverHighlight(), this.hoverHandler = (e) => {
       if (!this.screenshotMode) return;
-      const o = e.target;
-      if (!o || o.closest("#lens-service-panel") || o.closest("#lens-service-admin"))
+      const t = e.target;
+      if (!t || t.closest("#lens-service-panel") || t.closest("#lens-service-admin"))
         return;
-      const t = document.querySelector(".lens-hover-highlight");
-      t && t.classList.remove("lens-hover-highlight"), o.classList.add("lens-hover-highlight");
+      const o = document.querySelector(".lens-hover-highlight");
+      o && o.classList.remove("lens-hover-highlight"), t.classList.add("lens-hover-highlight");
     }, this.mouseLeaveHandler = (e) => {
       if (!this.screenshotMode) return;
-      const o = e.target;
-      o && o.classList.remove("lens-hover-highlight");
+      const t = e.target;
+      t && t.classList.remove("lens-hover-highlight");
     }, !document.getElementById("lens-hover-styles")) {
       const e = document.createElement("style");
       e.id = "lens-hover-styles", e.textContent = `
@@ -3226,20 +3227,20 @@ ${m}
    * 移除hover高亮效果
    */
   removeHoverHighlight() {
-    this.hoverHandler && (document.removeEventListener("mouseover", this.hoverHandler), this.hoverHandler = null), this.mouseLeaveHandler && (document.removeEventListener("mouseleave", this.mouseLeaveHandler), this.mouseLeaveHandler = null), document.querySelectorAll(".lens-hover-highlight").forEach((t) => t.classList.remove("lens-hover-highlight"));
-    const o = document.getElementById("lens-hover-styles");
-    o && o.remove();
+    this.hoverHandler && (document.removeEventListener("mouseover", this.hoverHandler), this.hoverHandler = null), this.mouseLeaveHandler && (document.removeEventListener("mouseleave", this.mouseLeaveHandler), this.mouseLeaveHandler = null), document.querySelectorAll(".lens-hover-highlight").forEach((o) => o.classList.remove("lens-hover-highlight"));
+    const t = document.getElementById("lens-hover-styles");
+    t && t.remove();
   }
   /**
    * 捕獲元素截圖
    */
   async captureElementScreenshot(e) {
-    var o;
+    var t;
     try {
       console.log("📸 Capturing screenshot of element:", e), window.html2canvas || await this.loadHtml2Canvas();
-      const t = window.html2canvas, n = e.style.cssText;
+      const o = window.html2canvas, n = e.style.cssText;
       e.style.cssText += "; outline: 3px solid #007bff; outline-offset: 2px;", await new Promise((r) => setTimeout(r, 100));
-      const s = await t(e, {
+      const s = await o(e, {
         backgroundColor: "#ffffff",
         scale: 1,
         logging: !1,
@@ -3249,8 +3250,8 @@ ${m}
       e.style.cssText = n;
       const i = s.toDataURL("image/png");
       this.panel && this.panel.setScreenshotInInput(i), console.log("✅ Screenshot captured and added to input");
-    } catch (t) {
-      console.error("❌ Failed to capture screenshot:", t), (o = this.panel) == null || o.addMessage({
+    } catch (o) {
+      console.error("❌ Failed to capture screenshot:", o), (t = this.panel) == null || t.addMessage({
         id: Date.now().toString(),
         content: "截圖失敗，請重試。",
         role: "assistant",
@@ -3264,24 +3265,24 @@ ${m}
    * 載入 html2canvas 庫
    */
   async loadHtml2Canvas() {
-    return new Promise((e, o) => {
-      const t = document.createElement("script");
-      t.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", t.onload = () => e(), t.onerror = () => o(new Error("Failed to load html2canvas")), document.head.appendChild(t);
+    return new Promise((e, t) => {
+      const o = document.createElement("script");
+      o.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", o.onload = () => e(), o.onerror = () => t(new Error("Failed to load html2canvas")), document.head.appendChild(o);
     });
   }
   /**
    * 發送截圖到 AI 進行分析
    */
-  async sendScreenshotToAI(e, o) {
-    var t, n, s;
+  async sendScreenshotToAI(e, t) {
+    var o, n, s;
     try {
       console.log("Screenshot analysis disabled");
       const i = {
-        tagName: o.tagName,
-        className: o.className,
-        id: o.id,
-        textContent: ((t = o.textContent) == null ? void 0 : t.substring(0, 200)) || "",
-        attributes: Array.from(o.attributes).map((d) => `${d.name}="${d.value}"`).join(" ")
+        tagName: t.tagName,
+        className: t.className,
+        id: t.id,
+        textContent: ((o = t.textContent) == null ? void 0 : o.substring(0, 200)) || "",
+        attributes: Array.from(t.attributes).map((d) => `${d.name}="${d.value}"`).join(" ")
       }, r = `
 用戶截取了網頁上的一個元素，請分析這個截圖並提供相關說明。
 
@@ -3324,10 +3325,10 @@ ${m}
     this.conversationState && (this.conversationState.sessionId = e);
   }
 }
-const F = new R();
-typeof window < "u" && (window.LensService = F);
+const R = new F();
+typeof window < "u" && (window.LensService = R);
 export {
   C as D,
-  F as L,
+  R as L,
   v as a
 };
