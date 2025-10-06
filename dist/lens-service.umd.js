@@ -1207,7 +1207,7 @@
             </div>
             <div
               id="default-reply-display"
-              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 60px; white-space: pre-wrap;"
+              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 60px; white-space: pre-wrap; color: #1f2937;"
             >${o}</div>
           </div>
 
@@ -1226,7 +1226,7 @@
             </div>
             <div
               id="system-prompt-display"
-              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 80px; white-space: pre-wrap;"
+              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 80px; white-space: pre-wrap; color: #1f2937;"
             >${n}</div>
           </div>
 
@@ -1245,7 +1245,7 @@
             </div>
             <div
               id="llms-txt-url-display"
-              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 40px; word-break: break-all;"
+              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 40px; word-break: break-all; color: #1f2937;"
             >${s||"未設定"}</div>
           </div>
         </form>
