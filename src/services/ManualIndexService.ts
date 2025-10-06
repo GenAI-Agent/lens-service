@@ -67,11 +67,17 @@ export class ManualIndexService {
       }
       if (!query.trim()) return indexes;
       const queryLower = query.toLowerCase();
+      console.log('🔍 Query (lowercase):', queryLower);
       const results = indexes.filter(index => {
         const title = (index.title || index.name || '').toLowerCase();
         const description = (index.description || '').toLowerCase();
         const content = (index.content || '').toLowerCase();
+        console.log('🔍 Checking index:', { title, description: description.substring(0, 30), content: content.substring(0, 30) });
+        console.log('🔍 title.includes(queryLower):', title.includes(queryLower));
+        console.log('🔍 description.includes(queryLower):', description.includes(queryLower));
+        console.log('🔍 content.includes(queryLower):', content.includes(queryLower));
         const matches = title.includes(queryLower) || description.includes(queryLower) || content.includes(queryLower);
+        console.log('🔍 Matches:', matches);
         if (matches) {
           console.log('🔍 Match found:', { title, description: description.substring(0, 50) });
         }
