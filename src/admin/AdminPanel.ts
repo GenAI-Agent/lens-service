@@ -260,7 +260,7 @@ export class AdminPanel {
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 10000;
+        z-index: 1000000;
       `;
 
       const inputElement = isTextarea
@@ -1637,7 +1637,7 @@ export class AdminPanel {
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10000;
+      z-index: 1000000;
     `;
 
     modal.innerHTML = `
@@ -1755,7 +1755,7 @@ export class AdminPanel {
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10000;
+      z-index: 1000000;
     `;
 
     modal.innerHTML = `
@@ -2238,7 +2238,7 @@ export class AdminPanel {
     const modal = document.createElement('div');
     modal.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000000;
     `;
 
     modal.innerHTML = `
@@ -2366,7 +2366,7 @@ export class AdminPanel {
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 10000;
+        z-index: 1000000;
       `;
 
       modal.innerHTML = `

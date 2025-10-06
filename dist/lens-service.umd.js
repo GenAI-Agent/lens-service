@@ -336,7 +336,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 10000;
+        z-index: 1000000;
       `;const s=o?`<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit;">${t}</textarea>`:`<input type="text" id="edit-input" value="${t}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;">`;i.innerHTML=`
         <div style="background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%;">
           <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1f2937;">${e}</h3>
@@ -877,7 +877,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10000;
+      z-index: 1000000;
     `,o.innerHTML=`
       <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
         <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">編輯索引</h3>
@@ -941,7 +941,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10000;
+      z-index: 1000000;
     `,e.innerHTML=`
       <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
         <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">新增索引</h3>
@@ -1275,7 +1275,7 @@
       </div>
     `}async showAddAdminUserModal(){const e=document.createElement("div");e.style.cssText=`
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000000;
     `,e.innerHTML=`
       <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
         <h3 style="margin: 0 0 16px 0; color: #1f2937;">新增管理員</h3>
@@ -1340,7 +1340,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 10000;
+        z-index: 1000000;
       `,h.innerHTML=`
         <div style="
           background: white;

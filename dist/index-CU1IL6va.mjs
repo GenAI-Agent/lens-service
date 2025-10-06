@@ -915,7 +915,7 @@ class j {
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 10000;
+        z-index: 1000000;
       `;
       const s = o ? `<textarea id="edit-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 120px; resize: vertical; font-family: inherit;">${t}</textarea>` : `<input type="text" id="edit-input" value="${t}" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;">`;
       i.innerHTML = `
@@ -1299,7 +1299,7 @@ class j {
         const s = i.target.getAttribute("data-id");
         if (s && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
           try {
-            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-DgTUvm0s.mjs");
+            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-DJm8WnJD.mjs");
             await a.deleteConversation(s), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
           } catch (a) {
             await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
@@ -1885,7 +1885,7 @@ class j {
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10000;
+      z-index: 1000000;
     `, o.innerHTML = `
       <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
         <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">編輯索引</h3>
@@ -1976,7 +1976,7 @@ class j {
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10000;
+      z-index: 1000000;
     `, e.innerHTML = `
       <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
         <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">新增索引</h3>
@@ -2084,7 +2084,7 @@ class j {
    */
   async renderConversations() {
     try {
-      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-DgTUvm0s.mjs"), t = await e.getAllConversations();
+      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-DJm8WnJD.mjs"), t = await e.getAllConversations();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">客服對話管理</h2>
@@ -2182,7 +2182,7 @@ class j {
    */
   async renderAdminUsers() {
     try {
-      const { AdminUserManager: e } = await import("./AdminUserManager-DqqP0ARp.mjs"), t = await e.getAllAdminUsers();
+      const { AdminUserManager: e } = await import("./AdminUserManager-CBdXCIeW.mjs"), t = await e.getAllAdminUsers();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">管理員帳號管理</h2>
@@ -2395,7 +2395,7 @@ class j {
     const e = document.createElement("div");
     e.style.cssText = `
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 10000;
+      background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000000;
     `, e.innerHTML = `
       <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px; max-height: 80vh; overflow-y: auto;">
         <h3 style="margin: 0 0 16px 0; color: #1f2937;">新增管理員</h3>
@@ -2472,7 +2472,7 @@ class j {
    */
   async showConversationModal(e) {
     try {
-      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-DgTUvm0s.mjs"), o = await t.getConversationById(e);
+      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-DJm8WnJD.mjs"), o = await t.getConversationById(e);
       if (!o) {
         await this.showAlertDialog("找不到該對話記錄");
         return;
@@ -2488,7 +2488,7 @@ class j {
         display: flex;
         justify-content: center;
         align-items: center;
-        z-index: 10000;
+        z-index: 1000000;
       `, h.innerHTML = `
         <div style="
           background: white;
@@ -2589,7 +2589,7 @@ class j {
           return;
         }
         try {
-          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-DgTUvm0s.mjs");
+          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-DJm8WnJD.mjs");
           await x.addCustomerServiceReply(
             e,
             m,
