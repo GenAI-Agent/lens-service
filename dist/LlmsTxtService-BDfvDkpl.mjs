@@ -1,7 +1,7 @@
 var f = Object.defineProperty;
 var C = (r, t, s) => t in r ? f(r, t, { enumerable: !0, configurable: !0, writable: !0, value: s }) : r[t] = s;
 var a = (r, t, s) => C(r, typeof t != "symbol" ? t + "" : t, s);
-import { D as d } from "./index-Diqxx1Dy.mjs";
+import { D as d } from "./index-BA0MUUOJ.mjs";
 class u {
   // chunk 之間的重疊字符數
   /**

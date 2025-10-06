@@ -1357,7 +1357,7 @@ class j {
         const i = r.target.getAttribute("data-id");
         if (i && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
           try {
-            const { CustomerServiceManager: s } = await import("./CustomerServiceManager-BjX-ivP4.mjs");
+            const { CustomerServiceManager: s } = await import("./CustomerServiceManager-LpGdQTYG.mjs");
             await s.deleteConversation(i), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
           } catch (s) {
             await this.showAlertDialog(`刪除失敗：${s instanceof Error ? s.message : "未知錯誤"}`);
@@ -2152,7 +2152,7 @@ class j {
    */
   async renderConversations() {
     try {
-      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-BjX-ivP4.mjs"), t = await e.getAllConversations();
+      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-LpGdQTYG.mjs"), t = await e.getAllConversations();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">客服對話管理</h2>
@@ -2250,7 +2250,7 @@ class j {
    */
   async renderAdminUsers() {
     try {
-      const { AdminUserManager: e } = await import("./AdminUserManager-CTBNuRJl.mjs"), t = await e.getAllAdminUsers();
+      const { AdminUserManager: e } = await import("./AdminUserManager-34t_lgkU.mjs"), t = await e.getAllAdminUsers();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">管理員帳號管理</h2>
@@ -2559,7 +2559,7 @@ class j {
    */
   async showConversationModal(e) {
     try {
-      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-BjX-ivP4.mjs"), o = await t.getConversationById(e);
+      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-LpGdQTYG.mjs"), o = await t.getConversationById(e);
       if (!o) {
         await this.showAlertDialog("找不到該對話記錄");
         return;
@@ -2687,7 +2687,7 @@ class j {
           return;
         }
         try {
-          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-BjX-ivP4.mjs");
+          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-LpGdQTYG.mjs");
           await x.addCustomerServiceReply(
             e,
             b,
@@ -2835,7 +2835,7 @@ class B {
       await s.initializePool();
       const d = await s.getSetting("system_prompt") || "你是一個專業的客服助手，請用繁體中文回答問題。", p = await s.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。", { ManualIndexService: c } = await Promise.resolve().then(() => H), l = await c.search(e);
       console.log("🔍 Manual index search results:", l);
-      const { LlmsTxtService: h } = await import("./LlmsTxtService-BFey5tH3.mjs"), u = await h.searchChunks(e);
+      const { LlmsTxtService: h } = await import("./LlmsTxtService-BDfvDkpl.mjs"), u = await h.searchChunks(e);
       console.log("🔍 LLMs.txt search results:", u);
       const g = [
         ...l.map((f) => ({

@@ -53,6 +53,19 @@ export class CustomerServiceManager {
         return false;
       }
 
+      // 確保 messages 是陣列
+      let messages: Message[] = [];
+      if (typeof conversation.messages === 'string') {
+        try {
+          messages = JSON.parse(conversation.messages);
+        } catch (e) {
+          console.error('Failed to parse messages:', e);
+          messages = [];
+        }
+      } else if (Array.isArray(conversation.messages)) {
+        messages = conversation.messages;
+      }
+
       // 添加客服回覆訊息
       const message: Message = {
         id: Date.now().toString(),
@@ -65,10 +78,10 @@ export class CustomerServiceManager {
         }
       };
 
-      conversation.messages.push(message);
+      messages.push(message);
 
       // 保存更新的對話
-      await DatabaseService.saveConversation(conversationId, conversation.user_id || 'unknown', conversation.messages);
+      await DatabaseService.saveConversation(conversationId, conversation.user_id || 'unknown', messages);
       return true;
     } catch (error) {
       console.error('Failed to add customer service reply:', error);
