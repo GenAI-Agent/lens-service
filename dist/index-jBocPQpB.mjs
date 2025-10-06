@@ -1,6 +1,6 @@
-var M = Object.defineProperty;
-var T = (v, e, t) => e in v ? M(v, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : v[e] = t;
-var b = (v, e, t) => T(v, typeof e != "symbol" ? e + "" : e, t);
+var D = Object.defineProperty;
+var T = (w, e, t) => e in w ? D(w, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : w[e] = t;
+var b = (w, e, t) => T(w, typeof e != "symbol" ? e + "" : e, t);
 const y = {
   container: `
     position: fixed;
@@ -331,7 +331,7 @@ class O {
    */
   async showHistory() {
     try {
-      const { DatabaseService: e } = await Promise.resolve().then(() => f), t = await e.getConversations();
+      const { DatabaseService: e } = await Promise.resolve().then(() => v), t = await e.getConversations();
       this.showHistoryView(t);
     } catch (e) {
       console.error("Failed to load history:", e), alert("載入歷史記錄失敗");
@@ -372,7 +372,7 @@ class O {
         } catch {
           h = [];
         }
-        const l = Array.isArray(h) ? h.length : 0, c = new Date(d.created_at).toLocaleString("zh-TW", {
+        const c = Array.isArray(h) ? h.length : 0, l = new Date(d.created_at).toLocaleString("zh-TW", {
           year: "numeric",
           month: "2-digit",
           day: "2-digit",
@@ -388,10 +388,10 @@ class O {
           " onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='white'">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
               <div style="font-weight: 600; color: #1f2937; font-size: 14px;">對話 #${d.conversation_id.slice(-8)}</div>
-              <div style="font-size: 12px; color: #6b7280;">${c}</div>
+              <div style="font-size: 12px; color: #6b7280;">${l}</div>
             </div>
             <div style="font-size: 12px; color: #6b7280;">
-              訊息數: ${l} | 用戶: ${d.user_id || "unknown"}
+              訊息數: ${c} | 用戶: ${d.user_id || "unknown"}
             </div>
           </div>
         `;
@@ -433,7 +433,7 @@ class O {
    */
   async loadConversation(e) {
     try {
-      const { DatabaseService: t } = await Promise.resolve().then(() => f), i = await t.getConversation(e);
+      const { DatabaseService: t } = await Promise.resolve().then(() => v), i = await t.getConversation(e);
       if (!i) {
         alert("無法載入對話");
         return;
@@ -667,11 +667,11 @@ class z {
   }
 }
 b(z, "initialized", !1);
-const f = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+const v = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
   __proto__: null,
   DatabaseService: z
 }, Symbol.toStringTag, { value: "Module" }));
-class k {
+class S {
   static async getAll() {
     try {
       return await z.getManualIndexes();
@@ -715,7 +715,11 @@ class k {
     }
   }
 }
-class j {
+const j = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  ManualIndexService: S
+}, Symbol.toStringTag, { value: "Module" }));
+class H {
   constructor() {
     b(this, "container", null);
     b(this, "isOpen", !1);
@@ -918,8 +922,8 @@ class j {
         document.body.removeChild(n), o(h);
       }), s instanceof HTMLInputElement && s.addEventListener("keydown", (h) => {
         if (h.key === "Enter") {
-          const l = s.value.trim();
-          document.body.removeChild(n), o(l);
+          const c = s.value.trim();
+          document.body.removeChild(n), o(c);
         }
       }), n.addEventListener("click", (h) => {
         h.target === n && (document.body.removeChild(n), o(null));
@@ -1026,12 +1030,12 @@ class j {
     if (!this.container) return;
     const e = this.container.querySelector("#admin-login-form");
     if (e) {
-      e.addEventListener("submit", async (c) => {
-        c.preventDefault(), c.stopPropagation();
+      e.addEventListener("submit", async (l) => {
+        l.preventDefault(), l.stopPropagation();
         const p = this.container.querySelector("#admin-username"), u = this.container.querySelector("#admin-password"), g = (p == null ? void 0 : p.value) || "", m = (u == null ? void 0 : u.value) || "";
         console.log("Login attempt with username:", g);
         try {
-          const { DatabaseService: x } = await Promise.resolve().then(() => f), w = await x.validateAdmin(g, m);
+          const { DatabaseService: x } = await Promise.resolve().then(() => v), f = await x.validateAdmin(g, m);
           console.log("Login successful (database auth)"), this.isAuthenticated = !0, this.container.innerHTML = this.renderAdminUI(), await this.updatePageContent(), this.bindEvents();
         } catch (x) {
           console.error("Login error:", x), this.showAlertDialog("登入時發生錯誤，請稍後再試").then(() => {
@@ -1039,21 +1043,21 @@ class j {
           });
         }
       });
-      const l = this.container.querySelector("#admin-username");
-      l && setTimeout(() => {
-        l.focus();
+      const c = this.container.querySelector("#admin-username");
+      c && setTimeout(() => {
+        c.focus();
       }, 100);
     }
     setTimeout(() => {
-      const l = this.container.querySelectorAll(".nav-item");
-      if (console.log("Binding nav items, found:", l.length), l.length === 0 && this.isAuthenticated) {
+      const c = this.container.querySelectorAll(".nav-item");
+      if (console.log("Binding nav items, found:", c.length), c.length === 0 && this.isAuthenticated) {
         console.warn("Nav items not found, retrying..."), setTimeout(() => this.bindEvents(), 100);
         return;
       }
-      l.forEach((c, p) => {
-        console.log(`Binding nav item ${p}:`, c.dataset.page);
-        const u = c.cloneNode(!0);
-        c.parentNode.replaceChild(u, c), u.addEventListener("click", async () => {
+      c.forEach((l, p) => {
+        console.log(`Binding nav item ${p}:`, l.dataset.page);
+        const u = l.cloneNode(!0);
+        l.parentNode.replaceChild(u, l), u.addEventListener("click", async () => {
           const g = u.dataset.page;
           console.log("Nav item clicked:", g), g && g !== this.currentPage && (this.currentPage = g, await this.updatePageContent(), this.updateNavHighlight());
         });
@@ -1064,60 +1068,60 @@ class j {
       this.isAuthenticated = !1, this.container.innerHTML = this.renderLoginUI(), this.bindEvents();
     });
     const i = this.container.querySelector("#telegram-settings-form");
-    i && i.addEventListener("submit", async (l) => {
-      l.preventDefault(), l.stopPropagation();
-      const c = this.container.querySelector("#telegram-enabled"), p = (c == null ? void 0 : c.checked) || !1;
+    i && i.addEventListener("submit", async (c) => {
+      c.preventDefault(), c.stopPropagation();
+      const l = this.container.querySelector("#telegram-enabled"), p = (l == null ? void 0 : l.checked) || !1;
       this.setTelegramEnabled(p), alert(`Telegram 通知已${p ? "啟用" : "停用"}`), await this.updatePageContent();
     });
     const o = this.container.querySelector("#change-password-form");
-    o && o.addEventListener("submit", async (l) => {
-      l.preventDefault(), l.stopPropagation();
-      const c = this.container.querySelector("#new-password");
-      if (((c == null ? void 0 : c.value) || "").length < 4) {
+    o && o.addEventListener("submit", async (c) => {
+      c.preventDefault(), c.stopPropagation();
+      const l = this.container.querySelector("#new-password");
+      if (((l == null ? void 0 : l.value) || "").length < 4) {
         alert("密碼長度至少 4 個字元");
         return;
       }
       alert("密碼已更新"), await this.updatePageContent();
     });
     const n = this.container.querySelector("#ip-whitelist-form");
-    n && n.addEventListener("submit", async (l) => {
-      l.preventDefault(), l.stopPropagation();
-      const c = this.container.querySelector("#ip-list"), u = ((c == null ? void 0 : c.value) || "").split(`
+    n && n.addEventListener("submit", async (c) => {
+      c.preventDefault(), c.stopPropagation();
+      const l = this.container.querySelector("#ip-list"), u = ((l == null ? void 0 : l.value) || "").split(`
 `).map((g) => g.trim()).filter((g) => g.length > 0);
       this.saveIPWhitelist(u), alert(`已更新 IP 白名單（${u.length} 個 IP）`), await this.updatePageContent();
     });
     const r = this.container.querySelector("#api-config-form");
-    r && r.addEventListener("submit", (l) => {
-      var c, p, u, g, m, x;
-      l.preventDefault(), l.stopPropagation(), (c = this.container.querySelector("#llm-endpoint")) != null && c.value, (p = this.container.querySelector("#llm-api-key")) != null && p.value, (u = this.container.querySelector("#llm-deployment")) != null && u.value, (g = this.container.querySelector("#embed-endpoint")) != null && g.value, (m = this.container.querySelector("#embed-api-key")) != null && m.value, (x = this.container.querySelector("#embed-deployment")) != null && x.value, alert("API 設定已儲存");
+    r && r.addEventListener("submit", (c) => {
+      var l, p, u, g, m, x;
+      c.preventDefault(), c.stopPropagation(), (l = this.container.querySelector("#llm-endpoint")) != null && l.value, (p = this.container.querySelector("#llm-api-key")) != null && p.value, (u = this.container.querySelector("#llm-deployment")) != null && u.value, (g = this.container.querySelector("#embed-endpoint")) != null && g.value, (m = this.container.querySelector("#embed-api-key")) != null && m.value, (x = this.container.querySelector("#embed-deployment")) != null && x.value, alert("API 設定已儲存");
     });
     const s = this.container.querySelector("#agent-tool-config-form");
-    s && s.addEventListener("submit", async (l) => {
-      var c, p;
-      l.preventDefault(), l.stopPropagation(), (c = this.container.querySelector("#manual-index-enabled")) != null && c.checked, (p = this.container.querySelector("#frontend-pages-enabled")) != null && p.checked, alert("Agent 設定已儲存"), await this.updatePageContent();
+    s && s.addEventListener("submit", async (c) => {
+      var l, p;
+      c.preventDefault(), c.stopPropagation(), (l = this.container.querySelector("#manual-index-enabled")) != null && l.checked, (p = this.container.querySelector("#frontend-pages-enabled")) != null && p.checked, alert("Agent 設定已儲存"), await this.updatePageContent();
     });
     const a = this.container.querySelector("#sql-plugin-config-form");
-    a && a.addEventListener("submit", async (l) => {
-      var C, I, $, E, A, L, P, q;
-      l.preventDefault(), l.stopPropagation();
-      const c = ((C = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : C.checked) || !1, p = parseInt(((I = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : I.value) || "5"), u = (($ = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : $.value) || "", g = ((E = this.container.querySelector("#sql-connection-id")) == null ? void 0 : E.value) || "", m = ((A = this.container.querySelector("#sql-search-table")) == null ? void 0 : A.value) || "knowledge_base", x = ((L = this.container.querySelector("#sql-title-column")) == null ? void 0 : L.value) || "title", w = ((P = this.container.querySelector("#sql-content-column")) == null ? void 0 : P.value) || "content", S = ((q = this.container.querySelector("#sql-url-column")) == null ? void 0 : q.value) || "url", D = {
-        enabled: c,
+    a && a.addEventListener("submit", async (c) => {
+      var C, I, $, A, E, L, P, q;
+      c.preventDefault(), c.stopPropagation();
+      const l = ((C = this.container.querySelector("#sql-plugin-enabled")) == null ? void 0 : C.checked) || !1, p = parseInt(((I = this.container.querySelector("#sql-plugin-priority")) == null ? void 0 : I.value) || "5"), u = (($ = this.container.querySelector("#sql-api-endpoint")) == null ? void 0 : $.value) || "", g = ((A = this.container.querySelector("#sql-connection-id")) == null ? void 0 : A.value) || "", m = ((E = this.container.querySelector("#sql-search-table")) == null ? void 0 : E.value) || "knowledge_base", x = ((L = this.container.querySelector("#sql-title-column")) == null ? void 0 : L.value) || "title", f = ((P = this.container.querySelector("#sql-content-column")) == null ? void 0 : P.value) || "content", k = ((q = this.container.querySelector("#sql-url-column")) == null ? void 0 : q.value) || "url", M = {
+        enabled: l,
         priority: p,
         apiEndpoint: u,
         connectionId: g,
         searchTable: m,
         titleColumn: x,
-        contentColumn: w,
-        urlColumn: S
+        contentColumn: f,
+        urlColumn: k
       };
-      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(D)), alert("SQL Plugin 設定已儲存"), await this.updatePageContent();
+      localStorage.setItem("sm_sql_plugin_config", JSON.stringify(M)), alert("SQL Plugin 設定已儲存"), await this.updatePageContent();
     });
     const d = this.container.querySelector("#sql-connection-form");
-    d && d.addEventListener("submit", async (l) => {
+    d && d.addEventListener("submit", async (c) => {
       var p, u;
-      l.preventDefault(), l.stopPropagation();
-      const c = ((p = this.container.querySelector("#sql-conn-name")) == null ? void 0 : p.value) || "";
-      if ((u = this.container.querySelector("#sql-conn-type")) == null || u.value, !c) {
+      c.preventDefault(), c.stopPropagation();
+      const l = ((p = this.container.querySelector("#sql-conn-name")) == null ? void 0 : p.value) || "";
+      if ((u = this.container.querySelector("#sql-conn-type")) == null || u.value, !l) {
         alert("請輸入連接名稱");
         return;
       }
@@ -1126,9 +1130,9 @@ class j {
       } catch (g) {
         console.error("Error creating SQL connection:", g), alert("新增失敗");
       }
-    }), this.container.querySelectorAll(".delete-sql-connection").forEach((l) => {
-      l.addEventListener("click", async () => {
-        if (l.dataset.id && confirm("確定要刪除這個連接嗎？"))
+    }), this.container.querySelectorAll(".delete-sql-connection").forEach((c) => {
+      c.addEventListener("click", async () => {
+        if (c.dataset.id && confirm("確定要刪除這個連接嗎？"))
           try {
             alert("連接已刪除"), await this.updatePageContent();
           } catch (p) {
@@ -1244,7 +1248,7 @@ class j {
       try {
         const n = t;
         n.disabled = !0, n.textContent = "生成中...";
-        const s = (await k.getAll()).length;
+        const s = (await S.getAll()).length;
         await this.showAlertDialog(`成功為 ${s} 個索引生成了向量嵌入`), await this.updatePageContent();
       } catch (n) {
         await this.showAlertDialog(`生成失敗：${n instanceof Error ? n.message : "未知錯誤"}`);
@@ -1281,7 +1285,7 @@ class j {
         const r = n.target.getAttribute("data-id");
         if (r && await this.showConfirmDialog("確定要刪除這個對話嗎？此操作無法復原。"))
           try {
-            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-D1SIR64l.mjs");
+            const { CustomerServiceManager: a } = await import("./CustomerServiceManager-_siimfxp.mjs");
             await a.deleteConversation(r), await this.showAlertDialog("對話已刪除"), await this.updatePageContent();
           } catch (a) {
             await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
@@ -1303,7 +1307,7 @@ class j {
       const n = this.container.querySelector("#default-reply-display"), r = n.textContent || "", s = await this.showEditDialog("編輯預設回覆", r, !0);
       if (s !== null)
         try {
-          const { DatabaseService: a } = await Promise.resolve().then(() => f);
+          const { DatabaseService: a } = await Promise.resolve().then(() => v);
           await a.setSetting("default_reply", s), n.textContent = s, await this.showAlertDialog("預設回覆已更新");
         } catch (a) {
           console.error("Failed to save default reply:", a), await this.showAlertDialog("儲存失敗，請稍後再試");
@@ -1314,7 +1318,7 @@ class j {
       const n = this.container.querySelector("#system-prompt-display"), r = n.textContent || "", s = await this.showEditDialog("編輯系統提示詞", r, !0);
       if (s !== null)
         try {
-          const { DatabaseService: a } = await Promise.resolve().then(() => f);
+          const { DatabaseService: a } = await Promise.resolve().then(() => v);
           await a.setSetting("system_prompt", s), n.textContent = s, await this.showAlertDialog("系統提示詞已更新");
         } catch (a) {
           console.error("Failed to save system prompt:", a), await this.showAlertDialog("儲存失敗，請稍後再試");
@@ -1328,7 +1332,7 @@ class j {
         const r = n.dataset.id;
         if (r && await this.showConfirmDialog("確定要刪除此管理員帳號嗎？此操作無法復原。"))
           try {
-            const { DatabaseService: a } = await Promise.resolve().then(() => f);
+            const { DatabaseService: a } = await Promise.resolve().then(() => v);
             await a.deleteAdminUser(r), await this.showAlertDialog("管理員帳號已刪除"), await this.updatePageContent();
           } catch (a) {
             console.error("Failed to delete admin user:", a), await this.showAlertDialog(`刪除失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
@@ -1392,7 +1396,7 @@ class j {
    * 渲染手動索引頁面
    */
   async renderManualIndex() {
-    const e = await k.getAll();
+    const e = await S.getAll();
     return `
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
         <div>
@@ -1677,7 +1681,7 @@ class j {
    * 渲染 Agent & API 設定頁面（合併）
    */
   renderAgentAndAPI() {
-    var i, o, n, r, s, a, d, h, l, c, p, u;
+    var i, o, n, r, s, a, d, h, c, l, p, u;
     const e = {}, t = {};
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">Agent & API 設定</h2>
@@ -1751,7 +1755,7 @@ class j {
                 id="embed-api-key"
                 name="embedApiKey"
                 placeholder="your-api-key"
-                value="${((l = e.embeddingAPI) == null ? void 0 : l.apiKey) || ((c = e.azureOpenAI) == null ? void 0 : c.apiKey) || ""}"
+                value="${((c = e.embeddingAPI) == null ? void 0 : c.apiKey) || ((l = e.azureOpenAI) == null ? void 0 : l.apiKey) || ""}"
                 style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: white; color: #1f2937;"
               />
             </div>
@@ -1851,7 +1855,7 @@ class j {
    * 顯示編輯索引模態框
    */
   async showEditIndexModal(e) {
-    const t = await k.getById(e);
+    const t = await S.getById(e);
     if (!t) {
       await this.showAlertDialog("找不到該索引");
       return;
@@ -1933,7 +1937,7 @@ class j {
         return;
       }
       try {
-        await k.update(e, { title: s, content: a, url: "" }), await this.showAlertDialog("索引已更新"), document.body.removeChild(i), await this.updatePageContent();
+        await S.update(e, { title: s, content: a, url: "" }), await this.showAlertDialog("索引已更新"), document.body.removeChild(i), await this.updatePageContent();
       } catch (d) {
         await this.showAlertDialog(`更新失敗：${d instanceof Error ? d.message : "未知錯誤"}`);
       }
@@ -2035,7 +2039,7 @@ class j {
         return;
       }
       try {
-        await k.create({ title: n, content: s, url: r || void 0 }), await this.showAlertDialog("索引已新增"), document.body.removeChild(e), await this.updatePageContent();
+        await S.create({ title: n, content: s, url: r || void 0 }), await this.showAlertDialog("索引已新增"), document.body.removeChild(e), await this.updatePageContent();
       } catch (a) {
         await this.showAlertDialog(`新增失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
       }
@@ -2049,14 +2053,14 @@ class j {
    * 顯示刪除確認對話框
    */
   async showDeleteConfirmDialog(e) {
-    const t = await k.getById(e);
+    const t = await S.getById(e);
     if (!t) {
       await this.showAlertDialog("找不到該索引");
       return;
     }
     if (await this.showConfirmDialog(`確定要刪除索引「${t.title || t.name || "未命名"}」嗎？此操作無法復原。`))
       try {
-        await k.delete(e), await this.showAlertDialog("索引已刪除"), await this.updatePageContent();
+        await S.delete(e), await this.showAlertDialog("索引已刪除"), await this.updatePageContent();
       } catch (o) {
         await this.showAlertDialog(`刪除失敗：${o instanceof Error ? o.message : "未知錯誤"}`);
       }
@@ -2066,7 +2070,7 @@ class j {
    */
   async renderConversations() {
     try {
-      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-D1SIR64l.mjs"), t = await e.getAllConversations();
+      const { CustomerServiceManager: e } = await import("./CustomerServiceManager-_siimfxp.mjs"), t = await e.getAllConversations();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">客服對話管理</h2>
@@ -2164,7 +2168,7 @@ class j {
    */
   async renderAdminUsers() {
     try {
-      const { AdminUserManager: e } = await import("./AdminUserManager-lBKz250A.mjs"), t = await e.getAllAdminUsers();
+      const { AdminUserManager: e } = await import("./AdminUserManager-AKtmYHqw.mjs"), t = await e.getAllAdminUsers();
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">管理員帳號管理</h2>
@@ -2271,7 +2275,7 @@ class j {
     var n, r;
     let e = [], t = [];
     try {
-      const { DatabaseService: s } = await Promise.resolve().then(() => f), [a, d] = await Promise.all([
+      const { DatabaseService: s } = await Promise.resolve().then(() => v), [a, d] = await Promise.all([
         s.getSettings().catch(() => []),
         s.getAdminUsers().catch(() => [])
       ]);
@@ -2439,7 +2443,7 @@ class j {
       o.preventDefault();
       const n = e.querySelector("#add-admin-username").value, r = e.querySelector("#add-admin-password").value, s = e.querySelector("#add-admin-email").value;
       try {
-        const { DatabaseService: a } = await Promise.resolve().then(() => f);
+        const { DatabaseService: a } = await Promise.resolve().then(() => v);
         await a.createAdminUser(n, r, s), document.body.removeChild(e), await this.showAlertDialog("管理員帳號已新增"), await this.updatePageContent();
       } catch (a) {
         await this.showAlertDialog(`新增失敗：${a instanceof Error ? a.message : "未知錯誤"}`);
@@ -2455,7 +2459,7 @@ class j {
    */
   async showConversationModal(e) {
     try {
-      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-D1SIR64l.mjs"), i = await t.getConversationById(e);
+      const { CustomerServiceManager: t } = await import("./CustomerServiceManager-_siimfxp.mjs"), i = await t.getConversationById(e);
       if (!i) {
         await this.showAlertDialog("找不到該對話記錄");
         return;
@@ -2562,17 +2566,17 @@ class j {
           </div>
         </div>
       `, document.body.appendChild(h);
-      const l = h.querySelector("#close-conversation-modal"), c = h.querySelector("#close-conversation-modal-btn"), p = h.querySelector("#send-customer-service-reply"), u = h.querySelector("#customer-service-reply"), g = () => {
+      const c = h.querySelector("#close-conversation-modal"), l = h.querySelector("#close-conversation-modal-btn"), p = h.querySelector("#send-customer-service-reply"), u = h.querySelector("#customer-service-reply"), g = () => {
         document.body.removeChild(h);
       };
-      l == null || l.addEventListener("click", g), c == null || c.addEventListener("click", g), p == null || p.addEventListener("click", async () => {
+      c == null || c.addEventListener("click", g), l == null || l.addEventListener("click", g), p == null || p.addEventListener("click", async () => {
         const m = u == null ? void 0 : u.value.trim();
         if (!m) {
           await this.showAlertDialog("請輸入回覆內容");
           return;
         }
         try {
-          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-D1SIR64l.mjs");
+          const { CustomerServiceManager: x } = await import("./CustomerServiceManager-_siimfxp.mjs");
           await x.addCustomerServiceReply(
             e,
             m,
@@ -2589,7 +2593,7 @@ class j {
     }
   }
 }
-class H {
+class B {
   constructor() {
     b(this, "config");
     b(this, "panel");
@@ -2635,7 +2639,7 @@ class H {
       onSelectRule: (r) => this.handleSelectRule(r),
       onClose: () => this.handleClose(),
       onOpen: () => this.handleOpen()
-    }), await this.loadConversationState(), this.adminPanel || (this.adminPanel = new j()), window.location.pathname === "/lens-service" && this.openAdminPanel(), this.bindGlobalKeyboardShortcuts(), ((n = e.ui) == null ? void 0 : n.iconPosition) !== !1 && !this.isAdminPage() && this.createFloatingIcon(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
+    }), await this.loadConversationState(), this.adminPanel || (this.adminPanel = new H()), window.location.pathname === "/lens-service" && this.openAdminPanel(), this.bindGlobalKeyboardShortcuts(), ((n = e.ui) == null ? void 0 : n.iconPosition) !== !1 && !this.isAdminPage() && this.createFloatingIcon(), this.initialized = !0, e.debug && console.log("ServiceModuler initialized", e);
   }
   /**
    * 綁定全局快捷鍵
@@ -2686,20 +2690,20 @@ class H {
     (o = this.conversationState) == null || o.messages.push(i), this.panel.addMessage(i), this.saveConversationState();
     try {
       let s, a, d = !1;
-      const h = ((n = this.conversationState) == null ? void 0 : n.sessionId) || this.generateSessionId(), l = localStorage.getItem("lens_service_user_id") || "default_user";
+      const h = ((n = this.conversationState) == null ? void 0 : n.sessionId) || this.generateSessionId(), c = localStorage.getItem("lens_service_user_id") || "default_user";
       if (t)
         s = await this.processImageMessage(e, t);
       else {
-        const p = await this.processTextMessage(e, h, l);
+        const p = await this.processTextMessage(e, h, c);
         s = p.response, a = p.sources, d = p.needsHumanReply, d && await this.sendTelegramNotification(e, h);
       }
-      const c = {
+      const l = {
         role: "assistant",
         content: s,
         timestamp: Date.now(),
         sources: a
       };
-      (r = this.conversationState) == null || r.messages.push(c), this.panel.addMessage(c), this.saveConversationState(), await this.saveConversationToDatabase(h, l);
+      (r = this.conversationState) == null || r.messages.push(l), this.panel.addMessage(l), this.saveConversationState(), await this.saveConversationToDatabase(h, c);
     } catch (s) {
       console.error("Error processing message:", s);
       const a = {
@@ -2716,22 +2720,45 @@ class H {
   async processTextMessage(e, t, i) {
     var o, n, r, s;
     try {
-      const { DatabaseService: a } = await Promise.resolve().then(() => f);
+      const { DatabaseService: a } = await Promise.resolve().then(() => v);
       await a.initializePool();
-      const d = await a.getSetting("system_prompt") || "你是一個專業的客服助手，請用繁體中文回答問題。";
-      return !((n = (o = this.config) == null ? void 0 : o.azureOpenAI) != null && n.endpoint) || !((s = (r = this.config) == null ? void 0 : r.azureOpenAI) != null && s.apiKey) ? (console.warn("Azure OpenAI not configured, using default reply"), {
-        response: await a.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。",
-        sources: [],
+      const d = await a.getSetting("system_prompt") || "你是一個專業的客服助手，請用繁體中文回答問題。", h = await a.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。", { ManualIndexService: c } = await Promise.resolve().then(() => j), l = await c.search(e);
+      if (console.log("🔍 Search results:", l), !l || l.length === 0)
+        return console.log("❌ No relevant content found, using default reply"), {
+          response: h,
+          sources: [],
+          needsHumanReply: !0
+        };
+      if (!((n = (o = this.config) == null ? void 0 : o.azureOpenAI) != null && n.endpoint) || !((s = (r = this.config) == null ? void 0 : r.azureOpenAI) != null && s.apiKey))
+        return console.warn("Azure OpenAI not configured, using default reply"), {
+          response: h,
+          sources: [],
+          needsHumanReply: !0
+        };
+      const p = l.map(
+        (f) => `標題：${f.title || f.name}
+內容：${f.content}`
+      ).join(`
+
+`), u = `${d}
+
+以下是相關的知識庫內容：
+${p}
+
+請根據以上內容回答用戶的問題。如果內容不足以回答問題，請誠實告知。`, g = await this.callAzureOpenAI(e, u);
+      return ["無法回答", "不清楚", "不確定", "沒有相關", "無法提供"].some((f) => g.includes(f)) ? (console.log("❌ LLM cannot answer, using default reply"), {
+        response: h,
+        sources: l,
         needsHumanReply: !0
       }) : {
-        response: await this.callAzureOpenAI(e, d),
-        sources: [],
+        response: g,
+        sources: l,
         needsHumanReply: !1
       };
     } catch (a) {
       console.error("Error processing text message:", a);
       try {
-        const { DatabaseService: d } = await Promise.resolve().then(() => f);
+        const { DatabaseService: d } = await Promise.resolve().then(() => v);
         return {
           response: await d.getSetting("default_reply") || "很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。",
           sources: [],
@@ -2761,8 +2788,8 @@ class H {
    * 調用 Azure OpenAI API
    */
   async callAzureOpenAI(e, t) {
-    var h, l, c, p, u, g, m, x, w, S;
-    const i = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, o = (p = (c = this.config) == null ? void 0 : c.azureOpenAI) == null ? void 0 : p.apiKey, n = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, r = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, s = `${i}openai/deployments/${n}/chat/completions?api-version=${r}`, a = await fetch(s, {
+    var h, c, l, p, u, g, m, x, f, k;
+    const i = (c = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : c.endpoint, o = (p = (l = this.config) == null ? void 0 : l.azureOpenAI) == null ? void 0 : p.apiKey, n = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, r = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, s = `${i}openai/deployments/${n}/chat/completions?api-version=${r}`, a = await fetch(s, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2779,14 +2806,14 @@ class H {
     });
     if (!a.ok)
       throw new Error(`Azure OpenAI API error: ${a.status} ${a.statusText}`);
-    return ((S = (w = (await a.json()).choices[0]) == null ? void 0 : w.message) == null ? void 0 : S.content) || "抱歉，我無法生成回應。";
+    return ((k = (f = (await a.json()).choices[0]) == null ? void 0 : f.message) == null ? void 0 : k.content) || "抱歉，我無法生成回應。";
   }
   /**
    * 調用 Azure OpenAI Vision API
    */
   async callAzureOpenAIVision(e, t) {
-    var h, l, c, p, u, g, m, x, w, S;
-    const i = (l = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : l.endpoint, o = (p = (c = this.config) == null ? void 0 : c.azureOpenAI) == null ? void 0 : p.apiKey, n = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, r = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, s = `${i}openai/deployments/${n}/chat/completions?api-version=${r}`, a = await fetch(s, {
+    var h, c, l, p, u, g, m, x, f, k;
+    const i = (c = (h = this.config) == null ? void 0 : h.azureOpenAI) == null ? void 0 : c.endpoint, o = (p = (l = this.config) == null ? void 0 : l.azureOpenAI) == null ? void 0 : p.apiKey, n = (g = (u = this.config) == null ? void 0 : u.azureOpenAI) == null ? void 0 : g.deployment, r = (x = (m = this.config) == null ? void 0 : m.azureOpenAI) == null ? void 0 : x.apiVersion, s = `${i}openai/deployments/${n}/chat/completions?api-version=${r}`, a = await fetch(s, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -2808,7 +2835,7 @@ class H {
     });
     if (!a.ok)
       throw new Error(`Azure OpenAI Vision API error: ${a.status} ${a.statusText}`);
-    return ((S = (w = (await a.json()).choices[0]) == null ? void 0 : w.message) == null ? void 0 : S.content) || "抱歉，我無法分析這張圖片。";
+    return ((k = (f = (await a.json()).choices[0]) == null ? void 0 : f.message) == null ? void 0 : k.content) || "抱歉，我無法分析這張圖片。";
   }
   /**
    * 發送 Telegram 通知
@@ -2847,7 +2874,7 @@ class H {
   async saveConversationToDatabase(e, t) {
     if (this.conversationState)
       try {
-        const { DatabaseService: i } = await Promise.resolve().then(() => f);
+        const { DatabaseService: i } = await Promise.resolve().then(() => v);
         await i.saveConversation(e, t, this.conversationState.messages), console.log("✅ Conversation saved to database");
       } catch (i) {
         console.error("Failed to save conversation to database:", i);
@@ -2956,7 +2983,7 @@ class H {
    */
   async loadConversationState() {
     try {
-      const { DatabaseService: e } = await Promise.resolve().then(() => f);
+      const { DatabaseService: e } = await Promise.resolve().then(() => v);
       await e.initializePool();
       const t = await e.getConversations();
       let i = null;
@@ -3212,10 +3239,10 @@ class H {
     this.conversationState && (this.conversationState.sessionId = e);
   }
 }
-const B = new H();
-typeof window < "u" && (window.LensService = B);
+const R = new B();
+typeof window < "u" && (window.LensService = R);
 export {
   z as D,
-  B as L,
-  f as a
+  R as L,
+  v as a
 };

@@ -264,18 +264,25 @@ class LensServiceWidget {
     needsHumanReply: boolean;
   }> {
     try {
-      // 從資料庫獲取系統提示詞
+      // 從資料庫獲取系統提示詞和預設回覆
       const { DatabaseService } = await import('./services/DatabaseService');
       await DatabaseService.initializePool();
 
       const systemPrompt = await DatabaseService.getSetting('system_prompt') ||
         '你是一個專業的客服助手，請用繁體中文回答問題。';
+      const defaultReply = await DatabaseService.getSetting('default_reply') ||
+        '很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。';
 
-      // 檢查是否有 Azure OpenAI 配置
-      if (!this.config?.azureOpenAI?.endpoint || !this.config?.azureOpenAI?.apiKey) {
-        console.warn('Azure OpenAI not configured, using default reply');
-        const defaultReply = await DatabaseService.getSetting('default_reply') ||
-          '很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。';
+      // 步驟 1: 搜索手動索引（BM25 + Vector Search）
+      const { ManualIndexService } = await import('./services/ManualIndexService');
+      const searchResults = await ManualIndexService.search(message);
+
+      console.log('🔍 Search results:', searchResults);
+
+      // 步驟 2: 判斷能否回答
+      // 如果沒有搜索結果或相關度太低，直接返回預設回覆並通知 Telegram
+      if (!searchResults || searchResults.length === 0) {
+        console.log('❌ No relevant content found, using default reply');
         return {
           response: defaultReply,
           sources: [],
@@ -283,12 +290,41 @@ class LensServiceWidget {
         };
       }
 
-      // 調用 Azure OpenAI
-      const response = await this.callAzureOpenAI(message, systemPrompt);
+      // 步驟 3: 檢查是否有 Azure OpenAI 配置
+      if (!this.config?.azureOpenAI?.endpoint || !this.config?.azureOpenAI?.apiKey) {
+        console.warn('Azure OpenAI not configured, using default reply');
+        return {
+          response: defaultReply,
+          sources: [],
+          needsHumanReply: true
+        };
+      }
+
+      // 步驟 4: 使用搜索結果作為上下文，調用 LLM 生成回覆
+      const context = searchResults.map((result: any) =>
+        `標題：${result.title || result.name}\n內容：${result.content}`
+      ).join('\n\n');
+
+      const enhancedPrompt = `${systemPrompt}\n\n以下是相關的知識庫內容：\n${context}\n\n請根據以上內容回答用戶的問題。如果內容不足以回答問題，請誠實告知。`;
+
+      const response = await this.callAzureOpenAI(message, enhancedPrompt);
+
+      // 檢查回覆是否表示無法回答
+      const cannotAnswerKeywords = ['無法回答', '不清楚', '不確定', '沒有相關', '無法提供'];
+      const needsHuman = cannotAnswerKeywords.some(keyword => response.includes(keyword));
+
+      if (needsHuman) {
+        console.log('❌ LLM cannot answer, using default reply');
+        return {
+          response: defaultReply,
+          sources: searchResults,
+          needsHumanReply: true
+        };
+      }
 
       return {
         response,
-        sources: [],
+        sources: searchResults,
         needsHumanReply: false
       };
     } catch (error) {
