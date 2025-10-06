@@ -84,7 +84,50 @@ export class LlmsTxtService {
   }
 
   /**
-   * 搜索相關的 chunks（使用簡單的文字匹配）
+   * 提取中文字符和英文單詞作為關鍵字
+   */
+  private static extractKeywords(text: string): string[] {
+    const textLower = text.toLowerCase();
+    // 提取中文字符（單個字符）
+    const chineseChars = textLower.match(/[\u4e00-\u9fa5]/g) || [];
+    // 提取英文單詞（2個字符以上）
+    const englishWords = textLower.match(/[a-z]{2,}/g) || [];
+    // 提取數字
+    const numbers = textLower.match(/\d+/g) || [];
+    return [...chineseChars, ...englishWords, ...numbers];
+  }
+
+  /**
+   * 計算 BM25 分數
+   */
+  private static calculateBM25Score(
+    queryKeywords: string[],
+    docKeywords: string[],
+    avgDocLength: number,
+    k1: number = 1.5,
+    b: number = 0.75
+  ): number {
+    if (docKeywords.length === 0) return 0;
+
+    let score = 0;
+    const docLength = docKeywords.length;
+
+    for (const queryKeyword of queryKeywords) {
+      // 計算詞頻 (term frequency)
+      const tf = docKeywords.filter(k => k === queryKeyword).length;
+      if (tf === 0) continue;
+
+      // BM25 公式
+      const numerator = tf * (k1 + 1);
+      const denominator = tf + k1 * (1 - b + b * (docLength / avgDocLength));
+      score += numerator / denominator;
+    }
+
+    return score;
+  }
+
+  /**
+   * 搜索相關的 chunks（使用 BM25 算法）
    */
   static async searchChunks(query: string): Promise<Array<{ chunk: string; context: string; score: number }>> {
     const chunks = await this.getLlmsTxtChunks();
@@ -92,42 +135,38 @@ export class LlmsTxtService {
       return [];
     }
 
-    const results: Array<{ chunk: string; context: string; score: number; index: number }> = [];
+    console.log('🔍 LlmsTxtService.searchChunks() called with query:', query);
 
-    // 將查詢轉換為小寫以進行不區分大小寫的搜索
-    const queryLower = query.toLowerCase();
-    // 提取中文字符和英文單詞
-    const chineseChars = queryLower.match(/[\u4e00-\u9fa5]/g) || [];
-    const englishWords = queryLower.match(/[a-z]+/g) || [];
-    const allKeywords = [...chineseChars, ...englishWords.filter(w => w.length > 1)];
+    // 提取查詢關鍵字
+    const queryKeywords = this.extractKeywords(query);
+    console.log('🔍 Query keywords:', queryKeywords);
 
-    // 搜索每個 chunk
-    chunks.forEach((chunk, index) => {
-      const chunkLower = chunk.toLowerCase();
+    // 計算平均文檔長度
+    const allChunkKeywords = chunks.map(chunk => this.extractKeywords(chunk));
+    const avgChunkLength = allChunkKeywords.reduce((sum, keywords) => sum + keywords.length, 0) / allChunkKeywords.length;
 
-      // 計算相關度分數
-      let score = 0;
+    // 計算每個 chunk 的分數
+    const scoredChunks = chunks.map((chunk, index) => {
+      const chunkKeywords = allChunkKeywords[index];
+      const bm25Score = this.calculateBM25Score(queryKeywords, chunkKeywords, avgChunkLength);
 
-      // 完整查詢匹配
-      if (chunkLower.includes(queryLower)) {
-        score += 20;
-      }
-
-      // 關鍵字匹配（中文字符和英文單詞）
-      allKeywords.forEach(keyword => {
-        if (chunkLower.includes(keyword)) {
-          score += 2;
-        }
-      });
-
-      // 如果有分數，加入結果
-      if (score > 0) {
-        results.push({ chunk, context: '', score, index });
-      }
+      return {
+        chunk,
+        context: '',
+        score: bm25Score,
+        index
+      };
     });
 
-    // 按分數排序
-    results.sort((a, b) => b.score - a.score);
+    // 過濾出分數 > 0 的結果並排序
+    const results = scoredChunks
+      .filter(item => item.score > 0)
+      .sort((a, b) => b.score - a.score);
+
+    console.log('🔍 LlmsTxtService found', results.length, 'matching chunks');
+    if (results.length > 0) {
+      console.log('🔍 Top chunk score:', results[0].score.toFixed(2));
+    }
 
     // 取前 5 個結果，並添加前後文
     const topResults = results.slice(0, 5);
