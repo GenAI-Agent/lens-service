@@ -415,15 +415,19 @@ export class SidePanel {
           minute: '2-digit'
         });
 
+        // 使用 conversation_id 欄位
+        const conversationId = c.conversation_id || c.id || 'unknown';
+        const displayId = conversationId.toString().slice(-8);
+
         return `
-          <div class="history-item" data-conversation-id="${c.conversation_id}" style="
+          <div class="history-item" data-conversation-id="${conversationId}" style="
             padding: 16px;
             border-bottom: 1px solid #e5e7eb;
             cursor: pointer;
             transition: background-color 0.2s;
           " onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='white'">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-              <div style="font-weight: 600; color: #1f2937; font-size: 14px;">對話 #${c.conversation_id.slice(-8)}</div>
+              <div style="font-weight: 600; color: #1f2937; font-size: 14px;">對話 #${displayId}</div>
               <div style="font-size: 12px; color: #6b7280;">${createdAt}</div>
             </div>
             <div style="font-size: 12px; color: #6b7280;">

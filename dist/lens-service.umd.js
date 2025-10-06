@@ -206,15 +206,15 @@
             cursor: pointer;
           ">返回對話</button>
         </div>
-      `;else{const s=e.map(a=>{let c=[];try{c=typeof a.messages=="string"?JSON.parse(a.messages):a.messages}catch{c=[]}const h=Array.isArray(c)?c.length:0,l=new Date(a.created_at).toLocaleString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"});return`
-          <div class="history-item" data-conversation-id="${a.conversation_id}" style="
+      `;else{const s=e.map(a=>{let c=[];try{c=typeof a.messages=="string"?JSON.parse(a.messages):a.messages}catch{c=[]}const h=Array.isArray(c)?c.length:0,l=new Date(a.created_at).toLocaleString("zh-TW",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}),d=a.conversation_id||a.id||"unknown",p=d.toString().slice(-8);return`
+          <div class="history-item" data-conversation-id="${d}" style="
             padding: 16px;
             border-bottom: 1px solid #e5e7eb;
             cursor: pointer;
             transition: background-color 0.2s;
           " onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='white'">
             <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-              <div style="font-weight: 600; color: #1f2937; font-size: 14px;">對話 #${a.conversation_id.slice(-8)}</div>
+              <div style="font-weight: 600; color: #1f2937; font-size: 14px;">對話 #${p}</div>
               <div style="font-size: 12px; color: #6b7280;">${l}</div>
             </div>
             <div style="font-size: 12px; color: #6b7280;">

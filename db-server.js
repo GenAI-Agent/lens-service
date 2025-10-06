@@ -361,9 +361,9 @@ app.put('/settings/:key', async (req, res) => {
 // 獲取所有管理員
 app.get('/admin-users', async (req, res) => {
   try {
-    const query = `SELECT id, username, email, role, created_at FROM admin_users`;
+    const query = `SELECT id, username, email, created_at FROM admin_users`;
     const result = await executeQuery(query);
-    const rows = parsePostgresOutput(result, ['id', 'username', 'email', 'role', 'created_at']);
+    const rows = parsePostgresOutput(result, ['id', 'username', 'email', 'created_at']);
     res.json(rows);
   } catch (error) {
     console.error('Error fetching admin users:', error);
@@ -377,11 +377,11 @@ app.post('/admin-users/login', async (req, res) => {
     const { username, password } = req.body;
 
     const query = `
-      SELECT id, username, email, role FROM admin_users
-      WHERE username = '${username}' AND password_hash = '${password}'
+      SELECT id, username, email FROM admin_users
+      WHERE username = '${username}' AND password = '${password}'
     `;
     const result = await executeQuery(query);
-    const rows = parsePostgresOutput(result, ['id', 'username', 'email', 'role']);
+    const rows = parsePostgresOutput(result, ['id', 'username', 'email']);
 
     if (rows.length === 0) {
       return res.status(401).json({ error: 'Invalid credentials' });
