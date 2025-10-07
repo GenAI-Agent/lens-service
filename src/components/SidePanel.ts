@@ -484,8 +484,11 @@ export class SidePanel {
    */
   private async loadConversation(conversationId: string): Promise<void> {
     try {
+      console.log('🔄 Loading conversation:', conversationId);
       const { DatabaseService } = await import('../services/DatabaseService');
       const conversation = await DatabaseService.getConversation(conversationId);
+
+      console.log('📦 Received conversation:', conversation);
 
       if (!conversation) {
         alert('無法載入對話');
@@ -495,9 +498,27 @@ export class SidePanel {
       // 清除當前訊息
       this.clearMessages();
 
-      // 載入對話訊息
-      const messages = Array.isArray(conversation.messages) ? conversation.messages : [];
-      messages.forEach((msg: any) => {
+      // 載入對話訊息 - 處理可能是字串的情況
+      let messages = [];
+      if (typeof conversation.messages === 'string') {
+        try {
+          messages = JSON.parse(conversation.messages);
+          console.log('✅ Parsed messages from string:', messages);
+        } catch (e) {
+          console.error('❌ Failed to parse messages:', e);
+          messages = [];
+        }
+      } else if (Array.isArray(conversation.messages)) {
+        messages = conversation.messages;
+        console.log('✅ Messages already array:', messages);
+      } else {
+        console.warn('⚠️ Messages is neither string nor array:', typeof conversation.messages);
+        messages = [];
+      }
+
+      console.log('📝 Loading', messages.length, 'messages into chat view');
+      messages.forEach((msg: any, index: number) => {
+        console.log(`  Message ${index + 1}:`, msg.role, msg.content?.substring(0, 50));
         this.addMessage(msg);
       });
 

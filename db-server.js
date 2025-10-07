@@ -121,7 +121,20 @@ app.get('/conversations/:id', async (req, res) => {
       return res.status(404).json({ error: 'Conversation not found' });
     }
 
-    res.json(rows[0]);
+    // 解析 messages JSON 字串
+    const conversation = rows[0];
+    let messages = [];
+    try {
+      messages = typeof conversation.messages === 'string' ? JSON.parse(conversation.messages) : conversation.messages;
+    } catch (e) {
+      console.error('Error parsing messages JSON:', e);
+      messages = [];
+    }
+
+    res.json({
+      ...conversation,
+      messages: messages
+    });
   } catch (error) {
     console.error('Error fetching conversation:', error);
     res.status(500).json({ error: error.message });
