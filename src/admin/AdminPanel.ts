@@ -967,11 +967,21 @@ export class AdminPanel {
 
     // 查看對話按鈕
     const viewConversationBtns = this.container!.querySelectorAll('.view-conversation-btn');
-    viewConversationBtns.forEach(btn => {
+    console.log('🔧 Binding view conversation buttons, found:', viewConversationBtns.length);
+    viewConversationBtns.forEach((btn, index) => {
+      const conversationId = btn.getAttribute('data-id');
+      console.log(`🔧 Binding button ${index}, conversation ID:`, conversationId);
+
       btn.addEventListener('click', async (e) => {
-        const conversationId = (e.target as HTMLElement).getAttribute('data-id');
-        if (conversationId) {
-          await this.showConversationModal(conversationId);
+        e.preventDefault();
+        e.stopPropagation();
+        const target = e.currentTarget as HTMLElement;
+        const id = target.getAttribute('data-id');
+        console.log('🔧 View conversation button clicked, ID:', id);
+        if (id) {
+          await this.showConversationModal(id);
+        } else {
+          console.error('❌ No conversation ID found on button');
         }
       });
     });
