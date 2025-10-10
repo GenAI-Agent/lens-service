@@ -1,0 +1,14 @@
+{
+  "name": "db-proxy",
+  "version": "1.0.0",
+  "description": "Database proxy for lens service",
+  "main": "db-proxy.js",
+  "scripts": {
+    "start": "node db-proxy.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "pg": "^8.11.3",
+    "cors": "^2.8.5"
+  }
+}
