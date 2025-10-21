@@ -3,6 +3,7 @@ import { ManualIndexService } from '../services/ManualIndexService';
 import { DatabaseService } from '../services/DatabaseService';
 import { ConfigService } from '../services/ConfigService';
 import { AdminUserManager, AdminUser } from '../services/AdminUserManager';
+import { KnowledgeBaseService, KnowledgeFile } from '../services/KnowledgeBaseService';
 
 /**
  * 管理後台面板
@@ -896,6 +897,62 @@ export class AdminPanel {
    * 綁定手動索引相關事件
    */
   private bindManualIndexEvents(): void {
+    // 刷新所有 URL 按鈕
+    const refreshAllUrlsBtn = this.container!.querySelector('#refresh-all-urls-btn');
+    if (refreshAllUrlsBtn) {
+      refreshAllUrlsBtn.addEventListener('click', async () => {
+        const confirmed = await this.showConfirmDialog('確定要刷新所有 URL 索引嗎？這將重新爬取所有 URL 並更新 embedding，可能需要較長時間。');
+        if (!confirmed) return;
+
+        try {
+          const button = refreshAllUrlsBtn as HTMLButtonElement;
+          button.disabled = true;
+          button.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px; animation: spin 1s linear infinite;"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>刷新中...';
+
+          const response = await fetch('/api/widget/manual-indexes/refresh-all-urls', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            await this.showAlertDialog(
+              `刷新完成！\n` +
+              `成功：${data.results.success} 個\n` +
+              `失敗：${data.results.failed} 個\n` +
+              `總計：${data.results.total} 個`
+            );
+            await this.updatePageContent();
+          } else {
+            await this.showAlertDialog(`刷新失敗：${data.error}`);
+          }
+        } catch (error) {
+          await this.showAlertDialog(`刷新失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+        } finally {
+          const button = refreshAllUrlsBtn as HTMLButtonElement;
+          button.disabled = false;
+          button.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>刷新所有 URL';
+        }
+      });
+    }
+
+    // 批量導入 URL 按鈕
+    const importUrlBatchBtn = this.container!.querySelector('#import-url-batch-btn');
+    if (importUrlBatchBtn) {
+      importUrlBatchBtn.addEventListener('click', async () => {
+        await this.showImportUrlModal();
+      });
+    }
+
+    // 新增單個 URL 按鈕
+    const addSingleUrlBtn = this.container!.querySelector('#add-single-url-btn');
+    if (addSingleUrlBtn) {
+      addSingleUrlBtn.addEventListener('click', async () => {
+        await this.showAddSingleUrlModal();
+      });
+    }
+
     // 新增索引按鈕
     const addIndexBtn = this.container!.querySelector('#add-index-btn');
     if (addIndexBtn) {
@@ -904,42 +961,60 @@ export class AdminPanel {
       });
     }
 
-    // 生成所有Embeddings按鈕
-    const generateEmbeddingsBtn = this.container!.querySelector('#generate-embeddings-btn');
-    if (generateEmbeddingsBtn) {
-      generateEmbeddingsBtn.addEventListener('click', async () => {
-        try {
-          const button = generateEmbeddingsBtn as HTMLButtonElement;
-          button.disabled = true;
-          button.textContent = '生成中...';
+    // 重新命名功能已合併到編輯對話框中
 
-          const indexes = await ManualIndexService.getAll();
-          const count = indexes.length;
-          await this.showAlertDialog(`成功為 ${count} 個索引生成了向量嵌入`);
-
-          // 重新渲染頁面
-          await this.updatePageContent();
-        } catch (error) {
-          await this.showAlertDialog(`生成失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
-        } finally {
-          const button = generateEmbeddingsBtn as HTMLButtonElement;
-          button.disabled = false;
-          button.textContent = '生成所有Embeddings';
-        }
-      });
-    }
-
-    // 編輯和刪除按鈕
-    const editButtons = this.container!.querySelectorAll('.edit-index-btn');
-    editButtons.forEach(btn => {
+    // 重新生成 embedding 按鈕
+    const regenerateEmbeddingButtons = this.container!.querySelectorAll('.regenerate-embedding-btn');
+    regenerateEmbeddingButtons.forEach(btn => {
       btn.addEventListener('click', async () => {
         const id = (btn as HTMLElement).dataset.id;
         if (id) {
-          await this.showEditIndexModal(id);
+          await this.regenerateEmbedding(id);
         }
       });
     });
 
+    // 重新爬取 URL 按鈕（URL 層級）
+    const recrawlUrlButtons = this.container!.querySelectorAll('.recrawl-url-btn');
+    recrawlUrlButtons.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation(); // 防止觸發 URL 展開/收起
+        const url = (btn as HTMLElement).dataset.url;
+        const id = (btn as HTMLElement).dataset.id;
+        if (url) {
+          // URL 層級刷新：刷新整個 URL
+          await this.recrawlUrlByUrl(url);
+        } else if (id) {
+          // 單個項目刷新（舊版）
+          await this.recrawlUrl(id);
+        }
+      });
+    });
+
+    // 刪除 URL 按鈕（URL 層級）
+    const deleteUrlButtons = this.container!.querySelectorAll('.delete-url-btn');
+    deleteUrlButtons.forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation(); // 防止觸發 URL 展開/收起
+        const url = (btn as HTMLElement).dataset.url;
+        if (url) {
+          await this.deleteUrlAndAllItems(url);
+        }
+      });
+    });
+
+    // 編輯內容按鈕（知識庫項目）
+    const editContentButtons = this.container!.querySelectorAll('.edit-content-btn');
+    editContentButtons.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = (btn as HTMLElement).dataset.id;
+        if (id) {
+          await this.showEditContentDialog(id);
+        }
+      });
+    });
+
+    // 刪除按鈕（單個項目）
     const deleteButtons = this.container!.querySelectorAll('.delete-index-btn');
     deleteButtons.forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -1065,31 +1140,6 @@ export class AdminPanel {
       });
     }
 
-    // 編輯 LLMs.txt URL 按鈕
-    const editLlmsTxtUrlBtn = this.container!.querySelector('#edit-llms-txt-url-btn');
-    if (editLlmsTxtUrlBtn) {
-      editLlmsTxtUrlBtn.addEventListener('click', async () => {
-        const displayDiv = this.container!.querySelector('#llms-txt-url-display');
-        if (displayDiv) {
-          const currentValue = displayDiv.textContent === '未設定' ? '' : displayDiv.textContent || '';
-          const newValue = await this.showEditDialog('編輯 LLMs.txt 網址', currentValue, false);
-
-          if (newValue !== null) {
-            try {
-              const { DatabaseService } = await import('../services/DatabaseService');
-              await DatabaseService.setSetting('llms_txt_url', newValue);
-
-              displayDiv.textContent = newValue || '未設定';
-              await this.showAlertDialog('LLMs.txt 網址已更新');
-            } catch (error) {
-              console.error('Failed to save llms txt url:', error);
-              await this.showAlertDialog('儲存失敗，請稍後再試');
-            }
-          }
-        }
-      });
-    }
-
     // 新增管理員按鈕
     const addAdminUserBtn = this.container!.querySelector('#add-admin-user-btn');
     if (addAdminUserBtn) {
@@ -1128,24 +1178,25 @@ export class AdminPanel {
   private async renderDashboard(): Promise<string> {
     let conversations: any[] = [];
     let manualIndexes: any[] = [];
-    let dbStatus = '連接失敗';
+    let dbStatus = 'API 連接中...';
 
     try {
-      // 獲取統計數據
-      const [conversationsRes, indexesRes] = await Promise.all([
-        fetch('http://localhost:3002/conversations').catch(() => null),
-        fetch('http://localhost:3002/manual-indexes').catch(() => null)
+      // 使用 DatabaseService 調用 API
+      console.log('Dashboard: Loading data from API...');
+
+      const [conversationsData, indexesData] = await Promise.all([
+        DatabaseService.getConversations().catch(() => []),
+        DatabaseService.getManualIndexes().catch(() => [])
       ]);
 
-      if (conversationsRes?.ok) {
-        conversations = await conversationsRes.json();
-        dbStatus = '正常連接';
-      }
-      if (indexesRes?.ok) {
-        manualIndexes = await indexesRes.json();
-      }
+      conversations = conversationsData || [];
+      manualIndexes = indexesData || [];
+      dbStatus = '正常連接';
+
+      console.log(`Dashboard loaded: ${conversations.length} conversations, ${manualIndexes.length} indexes`);
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
+      dbStatus = '連接失敗';
     }
 
     return `
@@ -1161,13 +1212,13 @@ export class AdminPanel {
         <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">系統狀態</h3>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px;">
-            <span style="font-size: 14px; color: #374151;">Telegram通知:</span>
+            <span style="font-size: 14px; color: #374151;">Telegram 通知:</span>
             <span style="font-size: 14px; color: #059669; font-weight: 500;">✅ 已啟用</span>
           </div>
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px;">
-            <span style="font-size: 14px; color: #374151;">數據庫連接:</span>
+            <span style="font-size: 14px; color: #374151;">資料庫連線:</span>
             <span style="font-size: 14px; color: ${dbStatus === '正常連接' ? '#059669' : '#dc2626'}; font-weight: 500;">
-              ${dbStatus === '正常連接' ? '✅' : '❌'} ${dbStatus}
+              ${dbStatus === '正常連接' ? '✅ 正常連線' : '❌ 連線失敗'}
             </span>
           </div>
         </div>
@@ -1192,76 +1243,269 @@ export class AdminPanel {
    * 渲染手動索引頁面
    */
   private async renderManualIndex(): Promise<string> {
-    const indexes = await ManualIndexService.getAll();
+    const allIndexes = await ManualIndexService.getAll();
+
+    // 分離手動索引和 URL 索引
+    const manualIndexes = allIndexes.filter(idx => !idx.url || idx.type === 'manual');
+    const urlIndexes = allIndexes.filter(idx => idx.url && idx.type !== 'manual');
+
+    // 按 URL 分組
+    const groupedByUrl: { [url: string]: any[] } = {};
+    urlIndexes.forEach(idx => {
+      const url = idx.url!;
+      if (!groupedByUrl[url]) {
+        groupedByUrl[url] = [];
+      }
+      groupedByUrl[url].push(idx);
+    });
 
     return `
+      <style>
+        .index-item { transition: all 0.2s; }
+        .index-item:hover { background: #f9fafb; }
+        .index-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .index-content.expanded { max-height: 2000px; }
+        .url-group-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .url-group-content.expanded { max-height: 5000px; }
+        .icon-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          padding: 6px;
+          border-radius: 4px;
+          transition: background 0.2s;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .icon-btn:hover { background: #f3f4f6; }
+        .status-indicator {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          display: inline-block;
+          margin-right: 8px;
+          cursor: help;
+        }
+        .status-green { background: #10b981; }
+        .status-red { background: #ef4444; }
+        .status-gray { background: #9ca3af; }
+      </style>
+
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
         <div>
-          <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: #1f2937;">手動索引</h2>
-          <p style="color: #6b7280; margin: 0;">手動新增索引內容供 Agent 搜尋</p>
+          <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 8px 0; color: #1f2937;">索引管理</h2>
+          <p style="color: #6b7280; margin: 0;">管理手動索引和知識庫內容</p>
         </div>
-        <button
-          id="add-index-btn"
-          style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
-        >
-          + 新增索引
-        </button>
-      </div>
-
-      <!-- 索引列表 -->
-      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-          <h3 style="font-size: 18px; font-weight: 600; margin: 0; color: #1f2937;">已建立的索引（${indexes.length}）</h3>
+        <div style="display: flex; gap: 12px;">
           <button
-            id="generate-embeddings-btn"
-            style="padding: 8px 16px; background: #10b981; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
+            id="refresh-all-urls-btn"
+            style="padding: 10px 20px; background: #f59e0b; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
+            title="重新爬取所有 URL 並更新 embedding"
           >
-            生成所有Embeddings
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+            </svg>
+            刷新所有 URL
+          </button>
+          <button
+            id="import-url-batch-btn"
+            style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+            批量導入 URL
+          </button>
+          <button
+            id="add-single-url-btn"
+            style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            新增 URL
+          </button>
+          <button
+            id="add-index-btn"
+            style="padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer;"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            新增索引
           </button>
         </div>
+      </div>
 
-        ${indexes.length === 0 ? `
-          <p style="color: #9ca3af; text-align: center; padding: 32px 0;">尚無索引</p>
+      <!-- 知識庫（URL 索引） -->
+      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="font-size: 18px; font-weight: 600; margin: 0; color: #1f2937;">📚 知識庫（${Object.keys(groupedByUrl).length} 個網址，${urlIndexes.length} 個項目）</h3>
+        </div>
+
+        ${Object.keys(groupedByUrl).length === 0 ? `
+          <p style="color: #9ca3af; text-align: center; padding: 32px 0;">尚無知識庫內容</p>
         ` : `
           <div style="display: flex; flex-direction: column; gap: 12px;">
-            ${indexes.map(index => `
-              <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
-                <div style="display: flex; justify-content: space-between; align-items: start;">
-                  <div style="flex: 1;">
-                    <h4 style="font-size: 16px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">${index.title || index.name || '未命名'}</h4>
-                    <p style="font-size: 14px; color: #6b7280; margin: 0 0 8px 0;">${index.description || '無描述'}</p>
-                    ${index.url ? `<p style="font-size: 12px; color: #3b82f6; margin: 0 0 8px 0; font-family: monospace;"><a href="${index.url}" target="_blank" style="color: inherit; text-decoration: none;">${index.url}</a></p>` : ''}
-                    ${index.embedding ?
-                      '<span style="font-size: 11px; background: #10b981; color: white; padding: 2px 6px; border-radius: 4px; display: inline-block;">✓ 已生成向量</span>' :
-                      '<span style="font-size: 11px; background: #f59e0b; color: white; padding: 2px 6px; border-radius: 4px; display: inline-block;">⚠ 未生成向量</span>'
-                    }
-                    <p style="font-size: 12px; color: #9ca3af; margin: 8px 0 0 0;">
-                      建立時間：${index.created_at ? new Date(index.created_at).toLocaleString('zh-TW') : '未知'}
-                      ${(index.updated_at && index.updated_at !== index.created_at) ? ` | 更新時間：${new Date(index.updated_at).toLocaleString('zh-TW')}` : ''}
-                    </p>
+            ${Object.entries(groupedByUrl).map(([url, items]) => `
+              <div style="border: 2px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
+                <!-- URL 標題 -->
+                <div
+                  style="background: #f9fafb; padding: 16px; display: flex; justify-content: space-between; align-items: center;"
+                >
+                  <div style="flex: 1; display: flex; align-items: center; gap: 12px; cursor: pointer;" onclick="adminPanel.toggleUrlGroup('${this.escapeHtml(url)}')">
+                    <span class="status-indicator status-gray" data-url="${url}" title="檢查中..."></span>
+                    <div style="flex: 1;">
+                      <h4 style="font-size: 15px; font-weight: 600; margin: 0 0 4px 0; color: #1f2937;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 6px;">
+                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                          <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                        </svg>
+                        ${this.escapeHtml(url)}
+                      </h4>
+                      <p style="font-size: 12px; color: #6b7280; margin: 0;">包含 ${items.length} 個索引項目</p>
+                    </div>
+                    <svg id="chevron-${this.escapeHtml(url)}" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="transition: transform 0.3s;">
+                      <path d="M6 9l6 6 6-6"/>
+                    </svg>
                   </div>
-                  <div style="display: flex; gap: 8px;">
-                    <button
-                      class="edit-index-btn"
-                      data-id="${index.id}"
-                      style="padding: 6px 12px; background: #3b82f6; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
-                    >
-                      編輯
+                  <div style="display: flex; gap: 4px; align-items: center;">
+                    <button class="icon-btn recrawl-url-btn" data-url="${url}" title="重新爬取此 URL">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/>
+                        <path d="M21 3v5h-5"/>
+                      </svg>
                     </button>
-                    <button
-                      class="delete-index-btn"
-                      data-id="${index.id}"
-                      style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
-                    >
-                      刪除
+                    <button class="icon-btn delete-url-btn" data-url="${url}" title="刪除此 URL 及所有項目">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      </svg>
                     </button>
                   </div>
+                </div>
+
+                <!-- URL 下的所有項目 -->
+                <div id="url-group-${this.escapeHtml(url)}" class="url-group-content" style="background: white;">
+                  ${items.map(index => `
+                    <div class="index-item" style="border-top: 1px solid #e5e7eb; padding: 12px 16px;">
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="flex: 1; cursor: pointer;" onclick="adminPanel.toggleIndexContent('${index.id}')">
+                          <h5 style="font-size: 14px; font-weight: 600; margin: 0; color: #1f2937;">${this.escapeHtml(index.name || '未命名')}</h5>
+                        </div>
+                        <div style="display: flex; gap: 4px; align-items: center;">
+                          <button class="icon-btn edit-content-btn" data-id="${index.id}" title="編輯">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                            </svg>
+                          </button>
+                          <button class="icon-btn regenerate-embedding-btn" data-id="${index.id}" title="重新生成 Embedding">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <circle cx="12" cy="12" r="3"/>
+                              <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                            </svg>
+                          </button>
+                          <button class="icon-btn delete-index-btn" data-id="${index.id}" title="刪除">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      <div id="content-${index.id}" class="index-content" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+                        <p style="font-size: 13px; color: #374151; margin: 0; white-space: pre-wrap; max-height: 300px; overflow-y: auto;"><strong>內容：</strong><br/>${this.escapeHtml(index.content.substring(0, 500))}${index.content.length > 500 ? '...' : ''}</p>
+                        <p style="font-size: 11px; color: #9ca3af; margin: 8px 0 0 0;">
+                          建立時間：${index.created_at ? new Date(index.created_at).toLocaleString('zh-TW') : '未知'}
+                          ${(index.updated_at && index.updated_at !== index.created_at) ? ` | 更新時間：${new Date(index.updated_at).toLocaleString('zh-TW')}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                  `).join('')}
                 </div>
               </div>
             `).join('')}
           </div>
         `}
       </div>
+
+      <!-- 手動索引 -->
+      <div style="background: white; padding: 24px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="font-size: 18px; font-weight: 600; margin: 0; color: #1f2937;">✍️ 手動索引（${manualIndexes.length}）</h3>
+        </div>
+
+        ${manualIndexes.length === 0 ? `
+          <p style="color: #9ca3af; text-align: center; padding: 32px 0;">尚無手動索引</p>
+        ` : `
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            ${manualIndexes.map(index => `
+              <div class="index-item" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <div style="flex: 1; cursor: pointer;" onclick="adminPanel.toggleIndexContent('${index.id}')">
+                    <h4 style="font-size: 15px; font-weight: 600; margin: 0; color: #1f2937;">${this.escapeHtml(index.name || '未命名')}</h4>
+                  </div>
+                  <div style="display: flex; gap: 4px; align-items: center;">
+                    <button class="icon-btn edit-content-btn" data-id="${index.id}" title="編輯">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                    <button class="icon-btn regenerate-embedding-btn" data-id="${index.id}" title="重新生成 Embedding">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6M12 17v6M4.22 4.22l4.24 4.24M15.54 15.54l4.24 4.24M1 12h6M17 12h6M4.22 19.78l4.24-4.24M15.54 8.46l4.24-4.24"/>
+                      </svg>
+                    </button>
+                    <button class="icon-btn delete-index-btn" data-id="${index.id}" title="刪除">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <div id="content-${index.id}" class="index-content" style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+                  ${index.description ? `<p style="font-size: 13px; color: #6b7280; margin: 0 0 8px 0;"><strong>描述：</strong>${this.escapeHtml(index.description)}</p>` : ''}
+                  <p style="font-size: 13px; color: #374151; margin: 0; white-space: pre-wrap; max-height: 300px; overflow-y: auto;"><strong>內容：</strong><br/>${this.escapeHtml(index.content.substring(0, 500))}${index.content.length > 500 ? '...' : ''}</p>
+                  <p style="font-size: 11px; color: #9ca3af; margin: 8px 0 0 0;">
+                    建立時間：${index.created_at ? new Date(index.created_at).toLocaleString('zh-TW') : '未知'}
+                    ${(index.updated_at && index.updated_at !== index.created_at) ? ` | 更新時間：${new Date(index.updated_at).toLocaleString('zh-TW')}` : ''}
+                  </p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `}
+      </div>
+
+      <script>
+        // 檢查所有 URL 狀態
+        (async function() {
+          const indicators = document.querySelectorAll('.status-indicator[data-url]');
+          for (const indicator of indicators) {
+            const url = indicator.getAttribute('data-url');
+            try {
+              const response = await fetch('/api/widget/manual-indexes/check-url', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url })
+              });
+              const data = await response.json();
+              if (data.accessible) {
+                indicator.className = 'status-indicator status-green';
+                indicator.title = 'URL 可訪問 - ' + data.message;
+              } else {
+                indicator.className = 'status-indicator status-red';
+                indicator.title = 'URL 無法訪問 - ' + data.message;
+              }
+            } catch (error) {
+              indicator.className = 'status-indicator status-red';
+              indicator.title = 'URL 檢查失敗';
+            }
+          }
+        })();
+      </script>
     `;
   }
 
@@ -1706,7 +1950,7 @@ export class AdminPanel {
             <input
               type="text"
               id="edit-index-name"
-              value="${index.title || index.name || ''}"
+              value="${index.name || index.name || ''}"
               required
               style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
@@ -1820,7 +2064,9 @@ export class AdminPanel {
 
         <form id="add-index-form">
           <div style="margin-bottom: 16px;">
-            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">名稱</label>
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+              名稱 <span style="color: #ef4444;">*</span>
+            </label>
             <input
               type="text"
               id="add-index-name"
@@ -1831,11 +2077,14 @@ export class AdminPanel {
           </div>
 
           <div style="margin-bottom: 16px;">
-            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">描述</label>
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+              描述 <span style="color: #ef4444;">*</span> <span style="color: #6b7280; font-weight: 400; font-size: 12px;">(AI 搜尋用的)</span>
+            </label>
             <input
               type="text"
               id="add-index-description"
-              placeholder="簡短描述這個索引的內容"
+              placeholder="簡短描述這個索引的內容，用於 AI 向量搜尋"
+              required
               style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
             />
           </div>
@@ -1851,7 +2100,9 @@ export class AdminPanel {
           </div>
 
           <div style="margin-bottom: 16px;">
-            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">內容</label>
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+              內容 <span style="color: #ef4444;">*</span>
+            </label>
             <textarea
               id="add-index-content"
               placeholder="輸入索引內容..."
@@ -1894,8 +2145,8 @@ export class AdminPanel {
       const url = (modal.querySelector('#add-index-url') as HTMLInputElement).value;
       const content = (modal.querySelector('#add-index-content') as HTMLTextAreaElement).value;
 
-      if (!name || !content) {
-        await this.showAlertDialog('請填寫名稱和內容');
+      if (!name || !description || !content) {
+        await this.showAlertDialog('請填寫名稱、描述和內容（必填欄位）');
         return;
       }
 
@@ -1926,6 +2177,189 @@ export class AdminPanel {
   }
 
   /**
+   * 顯示導入 URL 模態框
+   */
+  private async showImportUrlModal(): Promise<void> {
+    // 創建模態框
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000000;
+    `;
+
+    modal.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 600px; max-height: 80vh; overflow-y: auto;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">導入 URL</h3>
+        <p style="font-size: 14px; color: #6b7280; margin: 0 0 16px 0;">
+          上傳包含 URL 列表的 txt 文件（一行一個 URL），系統會自動抓取內容、切分 chunk 並生成 embedding。
+        </p>
+
+        <form id="import-url-form">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+              選擇 URL 文件 <span style="color: #ef4444;">*</span>
+            </label>
+            <input
+              type="file"
+              id="url-file-input"
+              accept=".txt"
+              required
+              style="width: 100%; padding: 10px 14px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; color: #1f2937; background: #ffffff;"
+            />
+            <p style="font-size: 12px; color: #6b7280; margin: 8px 0 0 0;">
+              支持 .txt 文件，每行一個 URL
+            </p>
+          </div>
+
+          <div id="import-progress" style="display: none; margin-bottom: 16px;">
+            <div style="background: #f3f4f6; border-radius: 8px; padding: 16px;">
+              <p style="font-size: 14px; color: #374151; margin: 0 0 8px 0;">
+                正在處理：<span id="progress-text">準備中...</span>
+              </p>
+              <div style="background: #e5e7eb; border-radius: 4px; height: 8px; overflow: hidden;">
+                <div id="progress-bar" style="background: #10b981; height: 100%; width: 0%; transition: width 0.3s;"></div>
+              </div>
+              <p style="font-size: 12px; color: #6b7280; margin: 8px 0 0 0;">
+                <span id="progress-detail"></span>
+              </p>
+            </div>
+          </div>
+
+          <div id="import-result" style="display: none; margin-bottom: 16px;">
+            <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px;">
+              <p style="font-size: 14px; color: #166534; margin: 0; font-weight: 500;">
+                ✅ 導入完成
+              </p>
+              <p style="font-size: 12px; color: #166534; margin: 8px 0 0 0;">
+                <span id="result-detail"></span>
+              </p>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 12px;">
+            <button
+              type="button"
+              id="cancel-import-btn"
+              style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              id="submit-import-btn"
+              style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              開始導入
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    // 綁定事件
+    const form = modal.querySelector('#import-url-form') as HTMLFormElement;
+    const cancelBtn = modal.querySelector('#cancel-import-btn') as HTMLButtonElement;
+    const submitBtn = modal.querySelector('#submit-import-btn') as HTMLButtonElement;
+    const fileInput = modal.querySelector('#url-file-input') as HTMLInputElement;
+    const progressDiv = modal.querySelector('#import-progress') as HTMLDivElement;
+    const progressText = modal.querySelector('#progress-text') as HTMLSpanElement;
+    const progressBar = modal.querySelector('#progress-bar') as HTMLDivElement;
+    const progressDetail = modal.querySelector('#progress-detail') as HTMLSpanElement;
+    const resultDiv = modal.querySelector('#import-result') as HTMLDivElement;
+    const resultDetail = modal.querySelector('#result-detail') as HTMLSpanElement;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const file = fileInput.files?.[0];
+      if (!file) {
+        await this.showAlertDialog('請選擇文件');
+        return;
+      }
+
+      try {
+        // 禁用按鈕
+        submitBtn.disabled = true;
+        submitBtn.textContent = '處理中...';
+        cancelBtn.disabled = true;
+
+        // 顯示進度
+        progressDiv.style.display = 'block';
+        resultDiv.style.display = 'none';
+
+        // 讀取文件
+        progressText.textContent = '讀取文件...';
+        progressBar.style.width = '10%';
+
+        const text = await file.text();
+        const urls = text
+          .split('\n')
+          .map(line => line.trim())
+          .filter(line => line && !line.startsWith('#'));
+
+        if (urls.length === 0) {
+          await this.showAlertDialog('文件中沒有找到有效的 URL');
+          return;
+        }
+
+        progressText.textContent = `找到 ${urls.length} 個 URL，開始處理...`;
+        progressBar.style.width = '20%';
+
+        // 調用 API 批量導入
+        const response = await DatabaseService.importUrlsBatch(urls);
+
+        // 更新進度
+        progressBar.style.width = '100%';
+        progressText.textContent = '處理完成！';
+        progressDetail.textContent = `成功：${response.results.success} | 失敗：${response.results.failed} | 總索引：${response.results.totalIndexes}`;
+
+        // 顯示結果
+        setTimeout(() => {
+          progressDiv.style.display = 'none';
+          resultDiv.style.display = 'block';
+          resultDetail.textContent = `成功處理 ${response.results.success} 個 URL，創建了 ${response.results.totalIndexes} 個索引`;
+
+          // 啟用關閉按鈕
+          cancelBtn.disabled = false;
+          cancelBtn.textContent = '關閉';
+          submitBtn.style.display = 'none';
+
+          // 重新渲染頁面
+          this.updatePageContent();
+        }, 1000);
+
+      } catch (error) {
+        await this.showAlertDialog(`導入失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+        submitBtn.disabled = false;
+        submitBtn.textContent = '開始導入';
+        cancelBtn.disabled = false;
+        progressDiv.style.display = 'none';
+      }
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+
+    // 點擊背景關閉
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal && !cancelBtn.disabled) {
+        document.body.removeChild(modal);
+      }
+    });
+  }
+
+  /**
    * 顯示刪除確認對話框
    */
   private async showDeleteConfirmDialog(id: string): Promise<void> {
@@ -1935,7 +2369,7 @@ export class AdminPanel {
       return;
     }
 
-    const confirmed = await this.showConfirmDialog(`確定要刪除索引「${index.title || index.name || '未命名'}」嗎？此操作無法復原。`);
+    const confirmed = await this.showConfirmDialog(`確定要刪除索引「${index.name || index.name || '未命名'}」嗎？此操作無法復原。`);
     if (confirmed) {
       try {
         await ManualIndexService.delete(id);
@@ -2194,7 +2628,6 @@ export class AdminPanel {
 
     const defaultReply = settings['default_reply'] || '';
     const systemPrompt = settings['system_prompt'] || '';
-    const llmsTxtUrl = settings['llms_txt_url'] || '';
 
     return `
       <h2 style="font-size: 24px; font-weight: 700; margin: 0 0 24px 0; color: #1f2937;">系統設定</h2>
@@ -2242,24 +2675,6 @@ export class AdminPanel {
             >${systemPrompt}</div>
           </div>
 
-          <div style="margin-bottom: 24px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <label style="color: #374151; font-weight: 500;">LLMs.txt 網址</label>
-              <button
-                type="button"
-                id="edit-llms-txt-url-btn"
-                style="background: #3b82f6; color: white; padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;"
-                onmouseover="this.style.background='#2563eb'"
-                onmouseout="this.style.background='#3b82f6'"
-              >
-                編輯
-              </button>
-            </div>
-            <div
-              id="llms-txt-url-display"
-              style="width: 100%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; font-size: 14px; min-height: 40px; word-break: break-all; color: #1f2937;"
-            >${llmsTxtUrl || '未設定'}</div>
-          </div>
         </form>
       </div>
 
@@ -2609,6 +3024,841 @@ export class AdminPanel {
       console.error('Error showing conversation modal:', error);
       await this.showAlertDialog('載入對話詳情失敗');
     }
+  }
+
+  /**
+   * 渲染知識庫管理頁面
+   */
+  private async renderKnowledgeBase(): Promise<string> {
+    try {
+      const files = await KnowledgeBaseService.getFiles();
+
+      return `
+        <div style="padding: 24px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">知識庫管理</h2>
+            <div style="display: flex; gap: 12px;">
+              <button onclick="adminPanel.showAddUrlDialog()" style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                ➕ 新增 URL
+              </button>
+              <button onclick="adminPanel.showBatchImportDialog()" style="padding: 10px 20px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                📋 批次匯入
+              </button>
+              <button onclick="adminPanel.refreshAllKnowledge()" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                🔄 全部更新
+              </button>
+              <button onclick="adminPanel.removeInvalidKnowledge()" style="padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500;">
+                🗑️ 刪除失效
+              </button>
+            </div>
+          </div>
+
+          <div style="background: white; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); overflow: hidden;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <thead>
+                <tr style="background: #f9fafb; border-bottom: 1px solid #e5e7eb;">
+                  <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">名稱</th>
+                  <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">類型</th>
+                  <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">狀態</th>
+                  <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">最後更新</th>
+                  <th style="padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">索引數</th>
+                  <th style="padding: 12px 16px; text-align: center; font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase;">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${files.length === 0 ? `
+                  <tr>
+                    <td colspan="6" style="padding: 48px; text-align: center; color: #9ca3af;">
+                      <div style="font-size: 48px; margin-bottom: 16px;">📚</div>
+                      <div style="font-size: 16px; font-weight: 500; margin-bottom: 8px;">還沒有任何知識來源</div>
+                      <div style="font-size: 14px;">點擊上方按鈕開始新增</div>
+                    </td>
+                  </tr>
+                ` : files.map(file => `
+                  <tr style="border-bottom: 1px solid #e5e7eb;">
+                    <td style="padding: 12px 16px;">
+                      <div style="font-size: 14px; font-weight: 500; color: #1f2937; margin-bottom: 4px;">${this.escapeHtml(file.name)}</div>
+                      ${file.url ? `<div style="font-size: 12px; color: #6b7280; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 300px;">${this.escapeHtml(file.url)}</div>` : ''}
+                    </td>
+                    <td style="padding: 12px 16px; font-size: 14px; color: #4b5563;">
+                      ${KnowledgeBaseService.getFileTypeText(file.file_type)}
+                    </td>
+                    <td style="padding: 12px 16px; font-size: 14px;">
+                      ${KnowledgeBaseService.getStatusText(file.status)}
+                      ${file.metadata?.error ? `<div style="font-size: 12px; color: #ef4444; margin-top: 4px;">${this.escapeHtml(file.metadata?.error)}</div>` : ''}
+                    </td>
+                    <td style="padding: 12px 16px; font-size: 14px; color: #6b7280;">
+                      ${KnowledgeBaseService.formatTime(file.updated_at)}
+                    </td>
+                    <td style="padding: 12px 16px; font-size: 14px; color: #6b7280;">
+                      ${0 || 0}
+                    </td>
+                    <td style="padding: 12px 16px; text-align: center;">
+                      <button onclick="adminPanel.refreshKnowledgeFile('${file.id}')" style="padding: 6px 12px; background: #f3f4f6; color: #374151; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; margin-right: 8px;" title="更新">
+                        🔄
+                      </button>
+                      <button onclick="adminPanel.deleteKnowledgeFile('${file.id}')" style="padding: 6px 12px; background: #fee2e2; color: #dc2626; border: none; border-radius: 6px; cursor: pointer; font-size: 12px;" title="刪除">
+                        🗑️
+                      </button>
+                    </td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    } catch (error) {
+      console.error('Error rendering knowledge base:', error);
+      return `
+        <div style="padding: 24px;">
+          <div style="background: #fee2e2; border: 1px solid #fecaca; border-radius: 8px; padding: 16px; color: #dc2626;">
+            ❌ 載入知識庫失敗：${error instanceof Error ? error.message : '未知錯誤'}
+          </div>
+        </div>
+      `;
+    }
+  }
+
+  /**
+   * 顯示新增 URL 對話框
+   */
+  async showAddUrlDialog(): Promise<void> {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000000;
+    `;
+
+    modal.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 12px; max-width: 500px; width: 90%;">
+        <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1f2937;">新增 URL</h3>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">URL</label>
+          <input type="text" id="url-input" placeholder="https://example.com/document.pdf" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">檔案類型</label>
+          <select id="file-type-input" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;">
+            <option value="">自動偵測</option>
+            <option value="webpage">網頁</option>
+            <option value="pdf">PDF</option>
+            <option value="docx">DOCX</option>
+            <option value="excel">Excel</option>
+            <option value="csv">CSV</option>
+            <option value="image">圖片</option>
+            <option value="text">純文字</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">名稱（選填）</label>
+          <input type="text" id="name-input" placeholder="自動從 URL 提取" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;">
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="cancel-btn" style="padding: 8px 16px; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; cursor: pointer;">取消</button>
+          <button id="add-btn" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer;">新增</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const urlInput = modal.querySelector('#url-input') as HTMLInputElement;
+    const fileTypeInput = modal.querySelector('#file-type-input') as HTMLSelectElement;
+    const nameInput = modal.querySelector('#name-input') as HTMLInputElement;
+    const cancelBtn = modal.querySelector('#cancel-btn') as HTMLButtonElement;
+    const addBtn = modal.querySelector('#add-btn') as HTMLButtonElement;
+
+    urlInput.focus();
+
+    const cleanup = () => {
+      if (modal.parentNode) {
+        document.body.removeChild(modal);
+      }
+    };
+
+    cancelBtn.addEventListener('click', cleanup);
+
+    addBtn.addEventListener('click', async () => {
+      const url = urlInput.value.trim();
+      if (!url) {
+        await this.showAlertDialog('請輸入 URL');
+        return;
+      }
+
+      try {
+        await KnowledgeBaseService.addUrl(
+          url,
+          fileTypeInput.value || undefined,
+          nameInput.value.trim() || undefined
+        );
+        cleanup();
+        await this.showAlertDialog('已新增，正在處理中...');
+        await this.updatePageContent();
+      } catch (error) {
+        await this.showAlertDialog(`新增失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+      }
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        cleanup();
+      }
+    });
+  }
+
+  /**
+   * 顯示批次匯入對話框
+   */
+  async showBatchImportDialog(): Promise<void> {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000000;
+    `;
+
+    modal.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 12px; max-width: 600px; width: 90%;">
+        <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1f2937;">批次匯入 URL</h3>
+
+        <div style="margin-bottom: 16px; padding: 12px; background: #f3f4f6; border-radius: 8px; font-size: 13px; color: #4b5563;">
+          <div style="font-weight: 600; margin-bottom: 8px;">格式說明：</div>
+          <div>• 每行一個 URL</div>
+          <div>• 或使用 Tab 分隔：URL [Tab] 類型 [Tab] 名稱</div>
+          <div style="margin-top: 8px; font-family: monospace; background: white; padding: 8px; border-radius: 4px;">
+            https://example.com/doc1.pdf<br>
+            https://example.com/page.html	webpage	官網首頁
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">URL 列表</label>
+          <textarea id="urls-input" placeholder="貼上 URL 列表..." style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; min-height: 200px; resize: vertical; font-family: monospace; box-sizing: border-box;"></textarea>
+        </div>
+
+        <div style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button id="cancel-btn" style="padding: 8px 16px; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; cursor: pointer;">取消</button>
+          <button id="import-btn" style="padding: 8px 16px; background: #8b5cf6; color: white; border: none; border-radius: 6px; cursor: pointer;">匯入</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const urlsInput = modal.querySelector('#urls-input') as HTMLTextAreaElement;
+    const cancelBtn = modal.querySelector('#cancel-btn') as HTMLButtonElement;
+    const importBtn = modal.querySelector('#import-btn') as HTMLButtonElement;
+
+    urlsInput.focus();
+
+    const cleanup = () => {
+      if (modal.parentNode) {
+        document.body.removeChild(modal);
+      }
+    };
+
+    cancelBtn.addEventListener('click', cleanup);
+
+    importBtn.addEventListener('click', async () => {
+      const text = urlsInput.value.trim();
+      if (!text) {
+        await this.showAlertDialog('請輸入 URL 列表');
+        return;
+      }
+
+      try {
+        const urls = KnowledgeBaseService.parseBatchImportText(text);
+        if (urls.length === 0) {
+          await this.showAlertDialog('沒有找到有效的 URL');
+          return;
+        }
+
+        await KnowledgeBaseService.batchAddUrls(urls);
+        cleanup();
+        await this.showAlertDialog(`已匯入 ${urls.length} 個 URL，正在處理中...`);
+        await this.updatePageContent();
+      } catch (error) {
+        await this.showAlertDialog(`匯入失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+      }
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        cleanup();
+      }
+    });
+  }
+
+  /**
+   * 更新單一知識檔案
+   */
+  async refreshKnowledgeFile(id: string): Promise<void> {
+    try {
+      await KnowledgeBaseService.refreshFile(id);
+      await this.showAlertDialog('已開始重新處理');
+      await this.updatePageContent();
+    } catch (error) {
+      await this.showAlertDialog(`更新失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+    }
+  }
+
+  /**
+   * 刪除知識檔案
+   */
+  async deleteKnowledgeFile(id: string): Promise<void> {
+    const confirmed = await this.showConfirmDialog('確定要刪除這個檔案嗎？');
+    if (!confirmed) return;
+
+    try {
+      await KnowledgeBaseService.deleteFile(id);
+      await this.showAlertDialog('已刪除');
+      await this.updatePageContent();
+    } catch (error) {
+      await this.showAlertDialog(`刪除失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+    }
+  }
+
+  /**
+   * 全部更新
+   */
+  async refreshAllKnowledge(): Promise<void> {
+    const confirmed = await this.showConfirmDialog('確定要重新處理所有檔案嗎？');
+    if (!confirmed) return;
+
+    try {
+      await KnowledgeBaseService.refreshAll();
+      await this.showAlertDialog('已開始重新處理所有檔案');
+      await this.updatePageContent();
+    } catch (error) {
+      await this.showAlertDialog(`更新失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+    }
+  }
+
+  /**
+   * 刪除所有失效的檔案
+   */
+  async removeInvalidKnowledge(): Promise<void> {
+    const confirmed = await this.showConfirmDialog('確定要刪除所有失效的檔案嗎？');
+    if (!confirmed) return;
+
+    try {
+      await KnowledgeBaseService.removeInvalidUrls();
+      await this.showAlertDialog('已刪除所有失效檔案');
+      await this.updatePageContent();
+    } catch (error) {
+      await this.showAlertDialog(`刪除失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+    }
+  }
+
+  /**
+   * Toggle index content visibility
+   */
+  toggleIndexContent(id: string): void {
+    const content = document.getElementById(`content-${id}`);
+    if (content) {
+      content.classList.toggle('expanded');
+    }
+  }
+
+  /**
+   * Toggle URL group visibility
+   */
+  toggleUrlGroup(url: string): void {
+    const content = document.getElementById(`url-group-${url}`);
+    const chevron = document.getElementById(`chevron-${url}`);
+    if (content) {
+      content.classList.toggle('expanded');
+      if (chevron) {
+        if (content.classList.contains('expanded')) {
+          chevron.style.transform = 'rotate(180deg)';
+        } else {
+          chevron.style.transform = 'rotate(0deg)';
+        }
+      }
+    }
+  }
+
+  /**
+   * 顯示新增單個 URL 模態框
+   */
+  private async showAddSingleUrlModal(): Promise<void> {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000000;
+    `;
+
+    modal.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">新增 URL</h3>
+        <form id="add-single-url-form">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">URL</label>
+            <input
+              type="url"
+              id="single-url-input"
+              placeholder="https://example.com"
+              required
+              style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
+            >
+          </div>
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button
+              type="button"
+              id="cancel-single-url-btn"
+              style="padding: 10px 20px; background: #e5e7eb; color: #374151; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              導入
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const form = modal.querySelector('#add-single-url-form') as HTMLFormElement;
+    const cancelBtn = modal.querySelector('#cancel-single-url-btn') as HTMLButtonElement;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const url = (modal.querySelector('#single-url-input') as HTMLInputElement).value;
+
+      if (!url) {
+        await this.showAlertDialog('請輸入 URL');
+        return;
+      }
+
+      try {
+        const submitBtn = form.querySelector('button[type="submit"]') as HTMLButtonElement;
+        submitBtn.disabled = true;
+        submitBtn.textContent = '導入中...';
+
+        const response = await fetch('/api/widget/manual-indexes/import-url', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          await this.showAlertDialog(`成功導入 ${data.chunksCreated} 個 chunks`);
+          document.body.removeChild(modal);
+          await this.updatePageContent();
+        } else {
+          await this.showAlertDialog(`導入失敗：${data.error}`);
+          submitBtn.disabled = false;
+          submitBtn.textContent = '導入';
+        }
+      } catch (error) {
+        await this.showAlertDialog(`導入失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+      }
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+  }
+
+  /**
+   * 顯示重新命名模態框
+   */
+  private async showRenameIndexModal(id: string): Promise<void> {
+    const index = await ManualIndexService.getById(id);
+    if (!index) {
+      await this.showAlertDialog('找不到該索引');
+      return;
+    }
+
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000000;
+    `;
+
+    modal.innerHTML = `
+      <div style="background: white; padding: 24px; border-radius: 12px; width: 90%; max-width: 500px;">
+        <h3 style="font-size: 18px; font-weight: 600; margin: 0 0 16px 0; color: #1f2937;">重新命名</h3>
+        <form id="rename-index-form">
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; color: #374151; font-weight: 500;">名稱</label>
+            <input
+              type="text"
+              id="rename-index-name"
+              value="${this.escapeHtml(index.name)}"
+              required
+              style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px;"
+            >
+          </div>
+          <div style="display: flex; gap: 12px; justify-content: flex-end;">
+            <button
+              type="button"
+              id="cancel-rename-btn"
+              style="padding: 10px 20px; background: #e5e7eb; color: #374151; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              取消
+            </button>
+            <button
+              type="submit"
+              style="padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; cursor: pointer;"
+            >
+              保存
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const form = modal.querySelector('#rename-index-form') as HTMLFormElement;
+    const cancelBtn = modal.querySelector('#cancel-rename-btn') as HTMLButtonElement;
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = (modal.querySelector('#rename-index-name') as HTMLInputElement).value;
+
+      if (!name) {
+        await this.showAlertDialog('請輸入名稱');
+        return;
+      }
+
+      try {
+        await ManualIndexService.update(id, { title: name });
+        await this.showAlertDialog('已更新');
+        document.body.removeChild(modal);
+        await this.updatePageContent();
+      } catch (error) {
+        await this.showAlertDialog(`更新失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+      }
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      document.body.removeChild(modal);
+    });
+
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        document.body.removeChild(modal);
+      }
+    });
+  }
+
+  /**
+   * 重新生成 embedding
+   */
+  private async regenerateEmbedding(id: string): Promise<void> {
+    const confirmed = await this.showConfirmDialog('確定要重新生成 embedding 嗎？');
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('/api/widget/manual-indexes/regenerate-embedding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await this.showAlertDialog('Embedding 已重新生成');
+        await this.updatePageContent();
+      } else {
+        await this.showAlertDialog(`重新生成失敗：${data.error}`);
+      }
+    } catch (error) {
+      await this.showAlertDialog(`重新生成失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+    }
+  }
+
+  /**
+   * 重新爬取 URL（單個項目）
+   */
+  private async recrawlUrl(id: string): Promise<void> {
+    const confirmed = await this.showConfirmDialog('確定要重新爬取這個 URL 嗎？這將刪除現有的所有 chunks 並重新導入。');
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('/api/widget/manual-indexes/recrawl-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await this.showAlertDialog(`重新爬取成功！創建了 ${data.chunksCreated} 個 chunks`);
+        await this.updatePageContent();
+      } else {
+        await this.showAlertDialog(`重新爬取失敗：${data.error}`);
+      }
+    } catch (error) {
+      await this.showAlertDialog(`重新爬取失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+    }
+  }
+
+  /**
+   * 重新爬取 URL（URL 層級 - 刷新整個 URL）
+   */
+  private async recrawlUrlByUrl(url: string): Promise<void> {
+    const confirmed = await this.showConfirmDialog(`確定要重新爬取 "${url}" 嗎？這將刪除該 URL 下的所有項目並重新導入。`);
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('/api/widget/manual-indexes/recrawl-url-by-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await this.showAlertDialog(`重新爬取成功！創建了 ${data.chunksCreated} 個 chunks`);
+        await this.updatePageContent();
+      } else {
+        await this.showAlertDialog(`重新爬取失敗：${data.error}`);
+      }
+    } catch (error) {
+      await this.showAlertDialog(`重新爬取失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+    }
+  }
+
+  /**
+   * 刪除 URL 及其下所有項目
+   */
+  private async deleteUrlAndAllItems(url: string): Promise<void> {
+    const confirmed = await this.showConfirmDialog(`確定要刪除 "${url}" 及其下所有項目嗎？此操作無法復原。`);
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('/api/widget/manual-indexes/delete-by-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await this.showAlertDialog(`成功刪除 ${data.deletedCount} 個項目`);
+        await this.updatePageContent();
+      } else {
+        await this.showAlertDialog(`刪除失敗：${data.error}`);
+      }
+    } catch (error) {
+      await this.showAlertDialog(`刪除失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+    }
+  }
+
+  /**
+   * 顯示編輯對話框（完整編輯：名稱、描述、URL、內容）
+   */
+  private async showEditContentDialog(id: string): Promise<void> {
+    try {
+      // 獲取當前項目
+      const response = await fetch(`/api/widget/manual-indexes/${id}`);
+      const index = await response.json();
+
+      if (!index) {
+        await this.showAlertDialog('找不到該項目');
+        return;
+      }
+
+      const isKnowledgeBase = index.url || index.type === 'url';
+
+      // 創建對話框
+      const dialog = document.createElement('div');
+      dialog.id = 'edit-dialog-overlay';
+      dialog.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 999999;
+      `;
+
+      dialog.innerHTML = `
+        <div style="background: white; border-radius: 8px; padding: 24px; max-width: 800px; width: 90%; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+          <h3 style="margin: 0 0 20px 0; font-size: 18px; font-weight: 600; color: #111827;">編輯索引項目</h3>
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">項目名稱：</label>
+            <input type="text" id="edit-name-input" value="${this.escapeHtml(index.name || '')}" style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px;" />
+          </div>
+
+          ${!isKnowledgeBase ? `
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">描述（用於 Embedding）：</label>
+            <textarea id="edit-description-textarea" style="width: 100%; min-height: 100px; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 14px; resize: vertical;">${this.escapeHtml(index.description || '')}</textarea>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">手動索引使用描述來生成 embedding</p>
+          </div>
+          ` : ''}
+
+          ${isKnowledgeBase && index.url ? `
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">URL：</label>
+            <div style="padding: 10px 12px; background: #f3f4f6; border-radius: 6px; font-size: 14px; color: #6b7280; word-break: break-all;">${this.escapeHtml(index.url)}</div>
+          </div>
+          ` : ''}
+
+          <div style="margin-bottom: 16px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 500; color: #374151;">內容：</label>
+            <textarea id="edit-content-textarea" style="width: 100%; min-height: 300px; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-family: 'Courier New', monospace; font-size: 13px; resize: vertical; line-height: 1.5;">${this.escapeHtml(index.content || '')}</textarea>
+            ${isKnowledgeBase ? `<p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">知識庫使用內容來生成 embedding</p>` : ''}
+          </div>
+
+          <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px;">
+            <button id="cancel-edit-btn" style="padding: 10px 20px; border: 1px solid #d1d5db; background: white; color: #374151; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s;">取消</button>
+            <button id="save-edit-btn" style="padding: 10px 20px; border: none; background: #10b981; color: white; border-radius: 6px; cursor: pointer; font-weight: 500; transition: all 0.2s;">儲存變更</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(dialog);
+
+      // 綁定事件
+      const nameInput = dialog.querySelector('#edit-name-input') as HTMLInputElement;
+      const descriptionTextarea = dialog.querySelector('#edit-description-textarea') as HTMLTextAreaElement;
+      const contentTextarea = dialog.querySelector('#edit-content-textarea') as HTMLTextAreaElement;
+      const cancelBtn = dialog.querySelector('#cancel-edit-btn');
+      const saveBtn = dialog.querySelector('#save-edit-btn');
+
+      // 取消按鈕
+      cancelBtn?.addEventListener('click', () => {
+        const overlay = document.getElementById('edit-dialog-overlay');
+        if (overlay) {
+          document.body.removeChild(overlay);
+        }
+      });
+
+      // 儲存按鈕
+      saveBtn?.addEventListener('click', async () => {
+        const newName = nameInput.value.trim();
+        const newContent = contentTextarea.value.trim();
+        const newDescription = descriptionTextarea ? descriptionTextarea.value.trim() : null;
+
+        if (!newName) {
+          await this.showAlertDialog('項目名稱不能為空');
+          return;
+        }
+
+        if (!newContent) {
+          await this.showAlertDialog('內容不能為空');
+          return;
+        }
+
+        try {
+          const updateData: any = {
+            name: newName,
+            content: newContent,
+          };
+
+          // 手動索引才需要 description
+          if (!isKnowledgeBase && newDescription !== null) {
+            updateData.description = newDescription;
+          }
+
+          const updateResponse = await fetch(`/api/widget/manual-indexes/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updateData),
+          });
+
+          if (updateResponse.ok) {
+            await this.showAlertDialog('更新成功！Embedding 已自動重新生成。');
+            const overlay = document.getElementById('edit-dialog-overlay');
+            if (overlay) {
+              document.body.removeChild(overlay);
+            }
+            await this.updatePageContent();
+          } else {
+            const errorData = await updateResponse.json();
+            await this.showAlertDialog(`更新失敗：${errorData.error || '未知錯誤'}`);
+          }
+        } catch (error) {
+          await this.showAlertDialog(`更新失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+        }
+      });
+
+      // 點擊背景關閉
+      dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) {
+          const overlay = document.getElementById('edit-dialog-overlay');
+          if (overlay) {
+            document.body.removeChild(overlay);
+          }
+        }
+      });
+    } catch (error) {
+      await this.showAlertDialog(`載入項目失敗：${error instanceof Error ? error.message : '未知錯誤'}`);
+    }
+  }
+
+  /**
+   * Escape HTML to prevent XSS
+   */
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 }
 

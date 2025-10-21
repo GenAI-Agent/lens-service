@@ -1,5 +1,6 @@
 import { Conversation, Message } from '../types';
 import { DatabaseService } from './DatabaseService';
+import { UserService } from './UserService';
 
 /**
  * 對話管理服務
@@ -31,7 +32,7 @@ export class ConversationService {
    * 創建新對話
    */
   static async createNewConversation(): Promise<Conversation> {
-    const userId = 'user_' + Date.now();
+    const userId = UserService.getUserId();
     const conversationId = this.generateConversationId();
 
     const conversation: Conversation = {
@@ -116,7 +117,7 @@ export class ConversationService {
       const conversations = await DatabaseService.getConversations();
       return conversations.map(conv => ({
         id: conv.id,
-        userId: 'user',
+        userId: conv.user_id || 'unknown',
         messages: conv.messages || [],
         startedAt: new Date(conv.created_at).getTime(),
         lastMessageAt: new Date(conv.updated_at).getTime(),

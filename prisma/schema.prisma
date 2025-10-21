@@ -1,0 +1,517 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// 對話
+/// 儲存用戶與 AI 的對話記錄
+model Conversation {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String    @db.VarChar(255)
+  conversation_id String    @unique @db.VarChar(255)
+  messages        Json
+  created_at      DateTime? @default(now()) @db.Timestamp(6)
+  updated_at      DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([conversation_id], map: "idx_conversations_conversation_id")
+  @@index([created_at(sort: Desc)], map: "idx_conversations_created_at")
+  @@index([user_id], map: "idx_conversations_user_id")
+  @@map("conversations")
+}
+
+/// 手動索引 & 知識庫
+/// 管理員手動建立的知識庫內容，包含手動索引和 URL 知識庫
+model ManualIndex {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String    @db.VarChar(255)
+  description String?
+  content     String
+  url         String?
+  type        String    @default("manual") @db.VarChar(50) // 'manual' 或 'url'
+  file_type   String?   @db.VarChar(50) // 檔案類型: 'txt', 'pdf', 'html', 'docx', 'csv', 'excel', 'video', 'image'
+  status      String?   @default("active") @db.VarChar(50) // 'active', 'invalid', 'processing', 'error'
+  last_check  DateTime? @db.Timestamp(6) // 最後檢查時間
+  keywords    Json?
+  fingerprint String                                  @unique
+  embedding   Unsupported("vector(1536)")?
+  metadata    Json?                                   @default("{}")
+  created_at  DateTime? @default(now()) @db.Timestamp(6)
+  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([created_at(sort: Desc)], map: "idx_manual_indexes_created_at")
+  @@index([fingerprint], map: "idx_manual_indexes_fingerprint")
+  @@index([type], map: "idx_manual_indexes_type")
+  @@index([status], map: "idx_manual_indexes_status")
+  @@map("manual_indexes")
+}
+
+/// 管理員
+/// 可以登入管理後台的管理員帳號
+model AdminUser {
+  id            String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username      String         @unique @db.VarChar(255)
+  password_hash String
+  email         String?        @db.VarChar(255)
+  role          String?        @default("admin") @db.VarChar(50)
+  is_active     Boolean?       @default(true)
+  created_at    DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at    DateTime?      @default(now()) @db.Timestamp(6)
+  last_login_at DateTime?      @db.Timestamp(6)
+  ip_whitelist  ip_whitelist[]
+
+  @@index([email], map: "idx_admin_users_email")
+  @@index([username], map: "idx_admin_users_username")
+  @@map("admin_users")
+}
+
+/// 系統設定
+/// 儲存系統的全域設定
+model SystemSettings {
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  llm_system_prompt       String?   @default("你是一個專業的客服助理，請根據提供的知識庫內容回答用戶的問題。如果知識庫中沒有相關資訊，請誠實告知用戶。")
+  default_no_answer_reply String?   @default("抱歉，我目前無法回答這個問題。請聯繫我們的客服人員獲得更多幫助。")
+  created_at              DateTime? @default(now()) @db.Timestamp(6)
+  updated_at              DateTime? @default(now()) @db.Timestamp(6)
+
+  @@map("system_settings")
+}
+
+/// Sitemap 配置
+/// 用於自動爬取網站內容
+model SitemapConfig {
+  id                 String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String            @db.VarChar(255)
+  domain             String            @db.VarChar(255)
+  sitemap_url        String
+  enabled            Boolean?          @default(true)
+  auto_update        Boolean?          @default(false)
+  update_interval    Int?              @default(60)
+  last_crawled_at    DateTime?         @db.Timestamp(6)
+  crawl_status       String?           @default("pending") @db.VarChar(50)
+  total_pages        Int?              @default(0)
+  indexed_pages      Int?              @default(0)
+  created_at         DateTime?         @default(now()) @db.Timestamp(6)
+  updated_at         DateTime?         @default(now()) @db.Timestamp(6)
+  sitemap_crawl_logs SitemapCrawlLog[]
+  sitemap_pages      SitemapPage[]
+
+  @@index([domain], map: "idx_sitemap_configs_domain")
+  @@index([enabled], map: "idx_sitemap_configs_enabled")
+  @@map("sitemap_configs")
+}
+
+/// Sitemap 頁面
+/// 從 sitemap 爬取的頁面內容
+model SitemapPage {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sitemap_config_id String?        @db.Uuid
+  url               String         @unique
+  title             String?
+  content           String?
+  meta_description  String?
+  keywords          Json?
+  embedding         String?
+  fingerprint       String?        @db.VarChar(255)
+  last_crawled_at   DateTime?      @db.Timestamp(6)
+  crawl_status      String?        @default("pending") @db.VarChar(50)
+  error_message     String?
+  user_context      Json?
+  created_at        DateTime?      @default(now()) @db.Timestamp(6)
+  updated_at        DateTime?      @default(now()) @db.Timestamp(6)
+  sitemap_configs   SitemapConfig? @relation(fields: [sitemap_config_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([fingerprint], map: "idx_sitemap_pages_fingerprint")
+  @@index([sitemap_config_id], map: "idx_sitemap_pages_sitemap_config_id")
+  @@index([url], map: "idx_sitemap_pages_url")
+  @@map("sitemap_pages")
+}
+
+/// Sitemap 爬取日誌
+/// 記錄每次爬取的結果
+model SitemapCrawlLog {
+  id                String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sitemap_config_id String?        @db.Uuid
+  crawl_type        String         @db.VarChar(50)
+  status            String         @db.VarChar(50)
+  total_urls        Int?           @default(0)
+  processed_urls    Int?           @default(0)
+  successful_urls   Int?           @default(0)
+  failed_urls       Int?           @default(0)
+  error_message     String?
+  started_at        DateTime?      @default(now()) @db.Timestamp(6)
+  completed_at      DateTime?      @db.Timestamp(6)
+  sitemap_configs   SitemapConfig? @relation(fields: [sitemap_config_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sitemap_config_id], map: "idx_sitemap_crawl_logs_sitemap_config_id")
+  @@map("sitemap_crawl_logs")
+}
+
+/// 系統設定
+/// 儲存各種系統設定（key-value）
+model Setting {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  key        String    @unique @db.VarChar(255)
+  value      String
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([key], map: "idx_settings_key")
+  @@map("settings")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now()) @db.Timestamp(6)
+  updatedAt         DateTime @db.Timestamp(6)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model Authenticator {
+  credentialID         String
+  userId               String
+  providerAccountId    String
+  credentialPublicKey  String
+  counter              Int
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+
+  @@ignore
+}
+
+/// Session table for JWT authentication
+model Session {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionToken String   @unique @db.VarChar(255)
+  userId       String   @db.Uuid
+  expires      DateTime @db.Timestamp(6)
+  createdAt    DateTime @default(now()) @db.Timestamp(6)
+  updatedAt    DateTime @default(now()) @db.Timestamp(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+/// User table for authentication
+model User {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String?   @db.VarChar(255)
+  email         String    @unique @db.VarChar(255)
+  emailVerified DateTime? @db.Timestamp(6)
+  password      String    @db.VarChar(255)
+  image         String?   @db.Text
+  createdAt     DateTime  @default(now()) @db.Timestamp(6)
+  updatedAt     DateTime  @default(now()) @db.Timestamp(6)
+  bio           String?   @db.Text
+  coverImage    String?   @db.Text
+  location      String?   @db.VarChar(255)
+  website       String?   @db.VarChar(255)
+  address       String?   @db.Text
+  motto         String?   @db.Text
+
+  sessions Session[]
+
+  @@index([email])
+  @@map("users")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime @db.Timestamp(6)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model credit_packages {
+  id                String
+  name              String
+  credits           Int
+  price             Decimal  @db.Decimal
+  is_active         Boolean  @default(true)
+  description       String?
+  ecpay_product_id  String?
+  stripe_product_id String?
+  stripe_price_id   String?
+  created_at        DateTime @default(now()) @db.Timestamp(6)
+  updated_at        DateTime @db.Timestamp(6)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model credit_purchases {
+  id             String
+  user_id        String
+  package_id     String
+  credits        Int
+  price          Decimal       @db.Decimal
+  payment_method String?
+  payment_id     String?
+  payment_status PaymentStatus @default(PENDING)
+  order_id       String?
+  created_at     DateTime      @default(now()) @db.Timestamp(6)
+  completed_at   DateTime?     @db.Timestamp(6)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model credit_transactions {
+  id            String
+  user_id       String
+  type          CreditTransactionType
+  amount        Int
+  balance_after Int
+  description   String?
+  source_type   String?
+  source_id     String?
+  usage_id      String?
+  admin_user_id String?
+  admin_note    String?
+  created_at    DateTime              @default(now()) @db.Timestamp(6)
+  expires_at    DateTime?             @db.Timestamp(6)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model credit_usage {
+  id              String
+  user_id         String
+  action          String
+  credits_used    Int
+  description     String?
+  session_id      String?
+  feature         String?
+  analysis_type   String?
+  message_count   Int?
+  subscription_id String?
+  metadata        Json?
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+  updated_at      DateTime @db.Timestamp(6)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model eureka_card_redemptions {
+  id                   String
+  user_id              String
+  eureka_card_id       String   @db.Uuid
+  credits_awarded      Int?
+  subscription_awarded String?
+  subscription_days    Int?
+  redeemed_at          DateTime @default(now()) @db.Timestamp(6)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model eureka_card_subscriptions {
+  id                        String
+  eureka_card_id            String   @db.Uuid
+  lens_subscription_plan_id String
+  quantity                  Int      @default(1)
+  created_at                DateTime @default(now()) @db.Timestamp(6)
+  updated_at                DateTime @db.Timestamp(6)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model eureka_cards {
+  id                String     @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  code              String
+  title             String
+  description       String?
+  image_path        String?
+  creator_user_id   String?
+  usable_user_ids   Json?
+  max_uses          Int?
+  used_count        Int        @default(0)
+  is_active         Boolean    @default(true)
+  expires_at        DateTime?  @db.Timestamp(6)
+  created_at        DateTime   @default(now()) @db.Timestamp(6)
+  updated_at        DateTime   @db.Timestamp(6)
+  credit_amount     Int?
+  reward_type       RewardType
+  subscription_days Int?
+
+  @@ignore
+}
+
+model ip_whitelist {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ip_address  String     @db.VarChar(45)
+  description String?
+  is_active   Boolean?   @default(true)
+  created_by  String?    @db.Uuid
+  created_at  DateTime?  @default(now()) @db.Timestamp(6)
+  updated_at  DateTime?  @default(now()) @db.Timestamp(6)
+  admin_users AdminUser? @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([is_active], map: "idx_ip_whitelist_active")
+  @@index([ip_address], map: "idx_ip_whitelist_ip")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model lens_product {
+  id                  String
+  viewId              String
+  name                String?  @default("")
+  description         String?  @default("")
+  image               String?  @default("")
+  createdAt           DateTime @default(now()) @db.Timestamp(6)
+  updatedAt           DateTime @db.Timestamp(6)
+  status              Int      @default(1)
+  lensTypeId          String?  @default("")
+  capabilities        Json?
+  creator_description String?  @default("")
+  knowledge_structure String   @default("")
+  performance         Json?
+  white_paper         String?  @default("")
+  creatorUserId       String?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model lens_subscription_plan {
+  id              String
+  name            String
+  price           Int
+  duration        Int
+  createdAt       DateTime @default(now()) @db.Timestamp(6)
+  updatedAt       DateTime @db.Timestamp(6)
+  currency        String   @default("USD")
+  discountMonthly Int?
+  isPopular       Boolean  @default(false)
+  lensViewId      String
+  type            String
+  viewId          String
+  description     Json?
+  features        Json?
+  status          Int      @default(1)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model orders {
+  id                        String
+  user_id                   String
+  order_type                OrderType
+  totalAmount               Decimal     @db.Decimal
+  originalAmount            Decimal?    @db.Decimal
+  currency                  String      @default("TWD")
+  exchangeRate              Decimal?    @db.Decimal
+  status                    OrderStatus @default(PENDING)
+  merchant_trade_no         String?
+  payment_method            String?
+  payment_details           Json?
+  credit_package_id         String?
+  created_at                DateTime    @default(now()) @db.Timestamp(6)
+  updated_at                DateTime    @db.Timestamp(6)
+  completed_at              DateTime?   @db.Timestamp(6)
+  lens_subscription_plan_id String?
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model user_credits {
+  id              String
+  user_id         String
+  balance         Int      @default(0)
+  lifetime_earned Int      @default(0)
+  lifetime_spent  Int      @default(0)
+  last_updated    DateTime @db.Timestamp(6)
+  created_at      DateTime @default(now()) @db.Timestamp(6)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model user_subscriptions {
+  id                        String
+  user_id                   String
+  status                    SubscriptionStatus @default(ACTIVE)
+  monthly_credits           Int?
+  stripe_customer_id        String?
+  stripe_subscription_id    String?
+  current_period_start      DateTime?          @db.Timestamp(6)
+  current_period_end        DateTime?          @db.Timestamp(6)
+  created_at                DateTime           @default(now()) @db.Timestamp(6)
+  updated_at                DateTime           @db.Timestamp(6)
+  cancelled_at              DateTime?          @db.Timestamp(6)
+  lens_subscription_plan_id String?
+  tier                      String?
+
+  @@ignore
+}
+
+enum CreditTransactionType {
+  EARNED
+  SPENT
+  EXPIRED
+  REFUNDED
+  ADMIN_ADJUSTMENT
+}
+
+enum OrderStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+  REFUNDED
+  PAID
+}
+
+enum OrderType {
+  CREDIT_PURCHASE
+  SUBSCRIPTION_UPGRADE
+  SUBSCRIPTION_RENEWAL
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum RewardType {
+  CREDITS
+  SUBSCRIPTION
+  BOTH
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  EXPIRED
+  PAUSED
+}

@@ -14,7 +14,23 @@ export default defineConfig({
       formats: ['umd', 'es']
     },
     rollupOptions: {
-      external: ['openai', 'html2canvas', 'pg', 'events', 'util', 'net', 'tls', 'crypto', 'dns', 'fs', 'path', 'stream', 'string_decoder'],
+      external: [
+        'openai',
+        'html2canvas',
+        'pg',
+        'events',
+        'util',
+        'net',
+        'tls',
+        'crypto',
+        'dns',
+        'fs',
+        'path',
+        'stream',
+        'string_decoder',
+        '@prisma/client',
+        'prisma'
+      ],
       output: {
         globals: {
           openai: 'OpenAI',
@@ -29,7 +45,9 @@ export default defineConfig({
           fs: 'fs',
           path: 'path',
           stream: 'stream',
-          string_decoder: 'string_decoder'
+          string_decoder: 'string_decoder',
+          '@prisma/client': 'PrismaClient',
+          'prisma': 'Prisma'
         }
       }
     }

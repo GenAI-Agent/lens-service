@@ -5,6 +5,7 @@ import { ConversationService } from './services/ConversationService';
 import { ManualIndexService } from './services/ManualIndexService';
 import { DatabaseService } from './services/DatabaseService';
 import { ConfigService } from './services/ConfigService';
+import { UserService } from './services/UserService';
 
 /**
  * Lens Service - 可嵌入的 AI 客服 Widget
@@ -44,13 +45,18 @@ class LensServiceWidget {
    */
   private async loadRulesFromSQL(): Promise<Rule[]> {
     try {
-      const response = await fetch('http://localhost:3002/rules');
-      if (!response.ok) {
-        console.log('No rules found in database, using empty array');
-        return [];
-      }
-      const rules = await response.json();
-      return Array.isArray(rules) ? rules : [];
+      // 暫時停用規則載入功能
+      // 如果需要使用規則，請啟動 db-server 在 port 3002
+      console.log('Rules loading disabled, using empty array');
+      return [];
+
+      // const response = await fetch('http://localhost:3002/rules');
+      // if (!response.ok) {
+      //   console.log('No rules found in database, using empty array');
+      //   return [];
+      // }
+      // const rules = await response.json();
+      // return Array.isArray(rules) ? rules : [];
     } catch (error) {
       console.error('Failed to load rules from SQL:', error);
       return [];
@@ -67,6 +73,12 @@ class LensServiceWidget {
     }
     
     this.config = config;
+
+    // 設置用戶 ID
+    if (config.userId) {
+      UserService.setUserId(config.userId);
+      console.log('✅ User ID set:', config.userId);
+    }
 
     // 初始化服務
     console.log('✅ Widget initializing');
@@ -191,6 +203,9 @@ class LensServiceWidget {
       return;
     }
 
+    // 移除歡迎畫面
+    this.panel.removeWelcomeScreen();
+
     // 添加用戶訊息
     const userMessage: Message = {
       role: 'user',
@@ -201,6 +216,9 @@ class LensServiceWidget {
     this.conversationState?.messages.push(userMessage);
     this.panel.addMessage(userMessage);
     this.saveConversationState();
+
+    // 顯示搜尋動畫
+    this.panel.showSearchingAnimation();
 
     try {
       let response: string;
@@ -227,7 +245,24 @@ class LensServiceWidget {
         }
       }
 
-      // 添加助手回應
+      // 移除搜尋動畫
+      this.panel.removeSearchingAnimation();
+
+      // 開始流式回覆
+      this.panel.startStreamingMessage();
+
+      // 模擬流式輸出
+      const words = response.split('');
+      for (let i = 0; i < words.length; i++) {
+        this.panel.appendStreamingContent(words[i]);
+        // 每個字符延遲 20ms
+        await new Promise(resolve => setTimeout(resolve, 20));
+      }
+
+      // 完成流式回覆（使用 await 因為需要渲染 Markdown）
+      await this.panel.finishStreamingMessage(sources);
+
+      // 添加助手回應到對話狀態
       const assistantMessage: Message = {
         role: 'assistant',
         content: response,
@@ -236,13 +271,15 @@ class LensServiceWidget {
       };
 
       this.conversationState?.messages.push(assistantMessage);
-      this.panel.addMessage(assistantMessage);
       this.saveConversationState();
 
       // 保存對話記錄到資料庫
       await this.saveConversationToDatabase(sessionId, userId);
     } catch (error) {
       console.error('Error processing message:', error);
+
+      // 移除搜尋動畫
+      this.panel.removeSearchingAnimation();
 
       // 顯示錯誤訊息
       const errorMessage: Message = {
@@ -273,33 +310,84 @@ class LensServiceWidget {
       const defaultReply = await DatabaseService.getSetting('default_reply') ||
         '很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。';
 
-      // 步驟 1: 搜索手動索引（BM25 + Vector Search）
-      const { ManualIndexService } = await import('./services/ManualIndexService');
-      const manualIndexResults = await ManualIndexService.search(message);
+      // 步驟 0: 判斷是否為簡單問候
+      const greetingKeywords = ['你好', '您好', '嗨', 'hi', 'hello', '早安', '午安', '晚安', '哈囉', '安安'];
+      const isSimpleGreeting = greetingKeywords.some(keyword =>
+        message.toLowerCase().trim() === keyword.toLowerCase() ||
+        message.toLowerCase().trim() === keyword.toLowerCase() + '!' ||
+        message.toLowerCase().trim() === keyword.toLowerCase() + '！'
+      );
 
-      console.log('🔍 Manual index search results:', manualIndexResults);
+      if (isSimpleGreeting) {
+        console.log('👋 Simple greeting detected, responding directly');
+        const greetingResponse = '您好！我是客服助手，很高興為您服務。請問有什麼可以幫助您的嗎？';
+        return {
+          response: greetingResponse,
+          sources: [],
+          needsHumanReply: false
+        };
+      }
+
+      // 步驟 1: 搜索手動索引（Hybrid Search with improved settings）
+      const { ManualIndexService } = await import('./services/ManualIndexService');
+      // 限制最多 3 筆結果，設定最低分數 0.15
+      const manualIndexResults = await ManualIndexService.search(message, 3);
+
+      console.log('🔍 Manual index search results:', manualIndexResults.length);
 
       // 步驟 1.5: 搜索 llms.txt（Fingerprint Search with chunks）
       const { LlmsTxtService } = await import('./services/LlmsTxtService');
       const llmsTxtResults = await LlmsTxtService.searchChunks(message);
 
-      console.log('🔍 LLMs.txt search results:', llmsTxtResults);
+      console.log('🔍 LLMs.txt search results:', llmsTxtResults.length);
 
-      // 合併搜索結果
-      const allSources = [
-        ...manualIndexResults.map((r: any) => ({
+      // 步驟 1.6: 搜索訂單和訂閱資訊（從 JWT token 獲取當前用戶）
+      const orders = await DatabaseService.getUserOrders();
+      const subscriptions = await DatabaseService.getUserSubscriptions();
+
+      console.log('🔍 User orders:', orders.length);
+      console.log('🔍 User subscriptions:', subscriptions.length);
+
+      // 合併搜索結果（最多 3 筆知識庫內容）
+      const knowledgeBaseSources = [
+        ...manualIndexResults.slice(0, 3).map((r: any) => ({
           type: 'manual_index',
           title: r.title || r.name,
           content: r.content,
-          description: r.description || ''
+          description: r.description || '',
+          score: r.hybrid_score || 0
         })),
-        ...llmsTxtResults.map(r => ({
+        ...llmsTxtResults.slice(0, Math.max(0, 3 - manualIndexResults.length)).map(r => ({
           type: 'llms_txt',
           title: 'LLMs.txt',
           content: r.context, // 使用包含前後文的內容
           score: r.score
         }))
-      ];
+      ].slice(0, 3); // 確保最多 3 筆
+
+      const allSources = [...knowledgeBaseSources];
+
+      // 添加訂單資訊到 sources（如果有）
+      if (orders.length > 0) {
+        allSources.push({
+          type: 'orders',
+          title: '訂單資訊',
+          content: this.formatOrdersForContext(orders),
+          description: '用戶的訂單記錄'
+        });
+      }
+
+      // 添加訂閱資訊到 sources（如果有）
+      if (subscriptions.length > 0) {
+        allSources.push({
+          type: 'subscriptions',
+          title: '訂閱資訊',
+          content: this.formatSubscriptionsForContext(subscriptions),
+          description: '用戶的訂閱記錄'
+        });
+      }
+
+      console.log(`📊 Total sources: ${allSources.length} (${knowledgeBaseSources.length} knowledge base + ${orders.length > 0 ? 1 : 0} orders + ${subscriptions.length > 0 ? 1 : 0} subscriptions)`);
 
       // 步驟 2: 判斷能否回答
       // 如果沒有搜索結果或相關度太低，直接返回預設回覆並通知 Telegram
@@ -312,26 +400,43 @@ class LensServiceWidget {
         };
       }
 
-      // 步驟 3: 檢查是否有 Azure OpenAI 配置
-      if (!this.config?.azureOpenAI?.endpoint || !this.config?.azureOpenAI?.apiKey) {
-        console.warn('Azure OpenAI not configured, using default reply');
-        return {
-          response: defaultReply,
-          sources: [],
-          needsHumanReply: true
-        };
+      // 步驟 3: 調用後端 API 生成回覆（不再檢查前端配置）
+
+      // 步驟 4: 獲取對話歷史（最近 2 輪對話，僅限當前 session）
+      const currentSessionId = this.conversationState?.sessionId;
+      const conversationHistory = this.conversationState?.messages || [];
+
+      // 只使用當前 session 的對話記錄
+      const sessionMessages = conversationHistory.filter(msg => {
+        // 如果訊息沒有 sessionId，則認為是當前 session 的
+        return true; // conversationState 已經是當前 session 的訊息
+      });
+
+      const recentHistory = sessionMessages.slice(-4); // 最近 2 輪（每輪 2 條：user + assistant）
+
+      let historyContext = '';
+      if (recentHistory.length > 0) {
+        historyContext = '\n\n【對話歷史】\n' + recentHistory.map(msg => {
+          const role = msg.role === 'user' ? '用戶' : '助手';
+          return `${role}：${msg.content}`;
+        }).join('\n');
       }
 
-      // 步驟 4: 使用搜索結果作為上下文，調用 LLM 生成回覆
+      // 步驟 5: 使用搜索結果作為上下文，調用 LLM 生成回覆
       const context = allSources.map((source: any) => {
         if (source.type === 'manual_index') {
-          return `【手動索引】\n標題：${source.title}\n${source.description ? `描述：${source.description}\n` : ''}內容：${source.content}`;
-        } else {
-          return `【網站資訊】\n${source.content}`;
+          return `【手動索引】\n標題：${source.title}\n${source.description ? `描述：${source.description}\n` : ''}內容：${source.content.substring(0, 1000)}${source.content.length > 1000 ? '...' : ''}`;
+        } else if (source.type === 'llms_txt') {
+          return `【網站資訊】\n${source.content.substring(0, 1000)}${source.content.length > 1000 ? '...' : ''}`;
+        } else if (source.type === 'orders') {
+          return `【訂單資訊】\n${source.content}`;
+        } else if (source.type === 'subscriptions') {
+          return `【訂閱資訊】\n${source.content}`;
         }
+        return '';
       }).join('\n\n---\n\n');
 
-      const enhancedPrompt = `${systemPrompt}\n\n以下是相關的知識庫內容：\n\n${context}\n\n請根據以上內容回答用戶的問題。如果內容不足以回答問題，請誠實告知。`;
+      const enhancedPrompt = `${systemPrompt}\n\n以下是相關的知識庫內容和用戶資料：\n\n${context}${historyContext}\n\n請根據以上內容和對話歷史回答用戶的問題。如果內容不足以回答問題，請誠實告知。`;
 
       const response = await this.callAzureOpenAI(message, enhancedPrompt);
 
@@ -377,6 +482,58 @@ class LensServiceWidget {
   }
 
   /**
+   * 格式化訂單資訊為上下文
+   */
+  private formatOrdersForContext(orders: any[]): string {
+    if (orders.length === 0) {
+      return '用戶目前沒有訂單記錄。';
+    }
+
+    const orderTexts = orders.slice(0, 10).map((order, index) => {
+      const orderDate = new Date(order.created_at).toLocaleDateString('zh-TW');
+      const completedDate = order.completed_at ? new Date(order.completed_at).toLocaleDateString('zh-TW') : '未完成';
+
+      return `訂單 ${index + 1}:
+- 訂單編號: ${order.id}
+- 訂單類型: ${order.order_type}
+- 金額: ${order.totalAmount} ${order.currency}
+- 狀態: ${order.status}
+- 付款方式: ${order.payment_method || '未指定'}
+- 建立時間: ${orderDate}
+- 完成時間: ${completedDate}`;
+    });
+
+    return `用戶共有 ${orders.length} 筆訂單記錄（顯示最近 ${Math.min(orders.length, 10)} 筆）：\n\n${orderTexts.join('\n\n')}`;
+  }
+
+  /**
+   * 格式化訂閱資訊為上下文
+   */
+  private formatSubscriptionsForContext(subscriptions: any[]): string {
+    if (subscriptions.length === 0) {
+      return '用戶目前沒有訂閱記錄。';
+    }
+
+    const subTexts = subscriptions.slice(0, 5).map((sub, index) => {
+      const startDate = sub.current_period_start ? new Date(sub.current_period_start).toLocaleDateString('zh-TW') : '未知';
+      const endDate = sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString('zh-TW') : '未知';
+      const planName = sub.plan?.name || '未知方案';
+      const planPrice = sub.plan?.price || '未知';
+
+      return `訂閱 ${index + 1}:
+- 訂閱編號: ${sub.id}
+- 方案名稱: ${planName}
+- 方案價格: ${planPrice}
+- 狀態: ${sub.status}
+- 每月額度: ${sub.monthly_credits || '無限制'}
+- 當前週期: ${startDate} ~ ${endDate}
+- Stripe 訂閱 ID: ${sub.stripe_subscription_id || '無'}`;
+    });
+
+    return `用戶共有 ${subscriptions.length} 筆訂閱記錄（顯示最近 ${Math.min(subscriptions.length, 5)} 筆）：\n\n${subTexts.join('\n\n')}`;
+  }
+
+  /**
    * 處理圖片訊息
    */
   private async processImageMessage(message: string, imageBase64: string): Promise<string> {
@@ -395,78 +552,44 @@ class LensServiceWidget {
   }
 
   /**
-   * 調用 Azure OpenAI API
+   * 調用後端 API 來生成回覆（不直接調用 Azure OpenAI）
    */
   private async callAzureOpenAI(message: string, systemPrompt: string): Promise<string> {
-    const endpoint = this.config?.azureOpenAI?.endpoint;
-    const apiKey = this.config?.azureOpenAI?.apiKey;
-    const deployment = this.config?.azureOpenAI?.deployment;
-    const apiVersion = this.config?.azureOpenAI?.apiVersion;
+    try {
+      // Get JWT token from localStorage
+      const token = localStorage.getItem('auth_token');
 
-    const url = `${endpoint}openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
+      const response = await fetch('/api/widget/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          message,
+          systemPrompt,
+        }),
+      });
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': apiKey!
-      },
-      body: JSON.stringify({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7
-      })
-    });
+      if (!response.ok) {
+        throw new Error(`Chat API error: ${response.status} ${response.statusText}`);
+      }
 
-    if (!response.ok) {
-      throw new Error(`Azure OpenAI API error: ${response.status} ${response.statusText}`);
+      const data = await response.json();
+      return data.reply || '抱歉，我無法生成回應。';
+    } catch (error) {
+      console.error('Failed to call chat API:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.choices[0]?.message?.content || '抱歉，我無法生成回應。';
   }
 
   /**
-   * 調用 Azure OpenAI Vision API
+   * 調用 Azure OpenAI Vision API（暫時保留直接調用，因為需要傳遞圖片）
+   * TODO: 未來可以改為後端 API
    */
   private async callAzureOpenAIVision(message: string, imageBase64: string): Promise<string> {
-    const endpoint = this.config?.azureOpenAI?.endpoint;
-    const apiKey = this.config?.azureOpenAI?.apiKey;
-    const deployment = this.config?.azureOpenAI?.deployment;
-    const apiVersion = this.config?.azureOpenAI?.apiVersion;
-
-    const url = `${endpoint}openai/deployments/${deployment}/chat/completions?api-version=${apiVersion}`;
-
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'api-key': apiKey!
-      },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: 'user',
-            content: [
-              { type: 'text', text: message || '請分析這張圖片' },
-              { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${imageBase64}` } }
-            ]
-          }
-        ],
-        max_tokens: 1000,
-        temperature: 0.7
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Azure OpenAI Vision API error: ${response.status} ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data.choices[0]?.message?.content || '抱歉，我無法分析這張圖片。';
+    // Vision API 暫時不支持，返回預設訊息
+    return '抱歉，圖片分析功能暫時不可用。請聯繫客服獲得幫助。';
   }
 
   /**

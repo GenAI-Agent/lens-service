@@ -1,7 +1,12 @@
 import { Message, Rule } from '../types';
 import { styles } from './styles';
-// import { MarkdownRenderer } from '../utils/markdown';
+import { marked } from 'marked';
 
+// 配置 marked
+marked.setOptions({
+  breaks: true,  // 支援換行
+  gfm: true,     // 支援 GitHub Flavored Markdown
+});
 
 /**
  * 側邊欄面板組件
@@ -22,7 +27,7 @@ export class SidePanel {
   private onSelectRule?: (ruleId: string) => void;
   private onClose?: () => void;
   private onOpen?: () => void;
-  
+
   constructor(
     width: string = '33.33%',
     position: 'left' | 'right' = 'right'
@@ -32,6 +37,20 @@ export class SidePanel {
     this.container = this.createContainer();
     this.overlay = this.createOverlay();
     this.panel = this.createPanel();
+    this.injectMarkdownStyles();
+  }
+
+  /**
+   * 注入 Markdown 樣式
+   */
+  private injectMarkdownStyles(): void {
+    // 檢查是否已經注入過
+    if (document.getElementById('sm-markdown-styles')) return;
+
+    const styleEl = document.createElement('div');
+    styleEl.id = 'sm-markdown-styles';
+    styleEl.innerHTML = styles.markdownStyles;
+    document.head.appendChild(styleEl);
   }
   
   /**
@@ -181,12 +200,14 @@ export class SidePanel {
     if (input) {
       console.log('✅ Input field found, binding events');
 
-      // Enter 鍵發送
-      input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
+      // Enter 鍵發送，Shift+Enter 換行
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault(); // 防止換行
           console.log('🔥 Enter key pressed in input');
           this.handleSend();
         }
+        // Shift+Enter 允許換行（不需要額外處理）
       });
 
       // 輸入事件調試
@@ -262,7 +283,7 @@ export class SidePanel {
   addMessage(message: Message): void {
     const messagesContainer = this.panel.querySelector('#sm-messages');
     if (!messagesContainer) return;
-    
+
     const messageEl = document.createElement('div');
     messageEl.style.cssText = message.role === 'user'
       ? styles.userMessage
@@ -274,13 +295,13 @@ export class SidePanel {
     } else {
       messageEl.textContent = message.content;
     }
-    
+
     // 如果有來源，添加來源連結
     if (message.sources && message.sources.length > 0) {
       const sourcesEl = document.createElement('div');
       sourcesEl.style.cssText = styles.sources;
       sourcesEl.innerHTML = '<strong>參考來源：</strong><br>';
-      
+
       message.sources.forEach((source, index) => {
         const link = document.createElement('a');
         link.href = source.url;
@@ -290,16 +311,203 @@ export class SidePanel {
         sourcesEl.appendChild(link);
         sourcesEl.appendChild(document.createElement('br'));
       });
-      
+
       messageEl.appendChild(sourcesEl);
     }
-    
+
     messagesContainer.appendChild(messageEl);
 
     // 自動滾動到底部，使用 setTimeout 確保 DOM 更新完成
     setTimeout(() => {
       messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }, 10);
+  }
+
+  /**
+   * 顯示搜尋動畫
+   */
+  showSearchingAnimation(): HTMLDivElement {
+    const messagesContainer = this.panel.querySelector('#sm-messages');
+    if (!messagesContainer) return document.createElement('div');
+
+    const searchingEl = document.createElement('div');
+    searchingEl.id = 'searching-animation';
+    searchingEl.style.cssText = `
+      align-self: stretch;
+      padding: 16px 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #6b7280;
+      font-size: 14px;
+    `;
+
+    searchingEl.innerHTML = `
+      <div style="
+        width: 20px;
+        height: 20px;
+        border: 2px solid #e5e7eb;
+        border-top-color: #6366f1;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      "></div>
+      <span>正在搜尋相關資訊...</span>
+      <style>
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      </style>
+    `;
+
+    messagesContainer.appendChild(searchingEl);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    return searchingEl;
+  }
+
+  /**
+   * 移除搜尋動畫
+   */
+  removeSearchingAnimation(): void {
+    const searchingEl = this.panel.querySelector('#searching-animation');
+    if (searchingEl) {
+      searchingEl.remove();
+    }
+  }
+
+  /**
+   * 開始流式回覆
+   */
+  startStreamingMessage(): HTMLDivElement {
+    const messagesContainer = this.panel.querySelector('#sm-messages');
+    if (!messagesContainer) return document.createElement('div');
+
+    const messageEl = document.createElement('div');
+    messageEl.id = 'streaming-message';
+    messageEl.style.cssText = styles.assistantMessage;
+
+    const contentEl = document.createElement('div');
+    contentEl.id = 'streaming-content';
+    messageEl.appendChild(contentEl);
+
+    messagesContainer.appendChild(messageEl);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    return messageEl;
+  }
+
+  /**
+   * 追加流式內容
+   */
+  appendStreamingContent(text: string): void {
+    const contentEl = this.panel.querySelector('#streaming-content');
+    if (contentEl) {
+      contentEl.textContent += text;
+      const messagesContainer = this.panel.querySelector('#sm-messages');
+      if (messagesContainer) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    }
+  }
+
+  /**
+   * 完成流式回覆
+   */
+  async finishStreamingMessage(sources?: any[]): Promise<void> {
+    const messageEl = this.panel.querySelector('#streaming-message');
+    const contentEl = this.panel.querySelector('#streaming-content');
+    if (!messageEl || !contentEl) return;
+
+    // 獲取純文本內容
+    const plainText = contentEl.textContent || '';
+
+    // 使用 marked 渲染 Markdown
+    try {
+      const htmlContent = await marked.parse(plainText);
+      contentEl.innerHTML = htmlContent;
+    } catch (error) {
+      console.error('Failed to render markdown:', error);
+      // 如果渲染失敗，保持純文本
+    }
+
+    // 移除 ID 避免衝突
+    messageEl.removeAttribute('id');
+    contentEl.removeAttribute('id');
+
+    // 如果有來源，添加來源連結
+    if (sources && sources.length > 0) {
+      const sourcesEl = document.createElement('div');
+      sourcesEl.style.cssText = styles.sources;
+      sourcesEl.innerHTML = '<strong>參考來源：</strong><br>';
+
+      sources.forEach((source, index) => {
+        const link = document.createElement('a');
+        link.href = source.url;
+        link.target = '_blank';
+        link.textContent = `[${index + 1}] ${source.title}`;
+        link.style.cssText = styles.sourceLink;
+        sourcesEl.appendChild(link);
+        sourcesEl.appendChild(document.createElement('br'));
+      });
+
+      messageEl.appendChild(sourcesEl);
+    }
+  }
+
+  /**
+   * 顯示歡迎畫面
+   */
+  showWelcomeScreen(): void {
+    const messagesContainer = this.panel.querySelector('#sm-messages');
+    if (!messagesContainer) return;
+
+    const welcomeEl = document.createElement('div');
+    welcomeEl.id = 'welcome-screen';
+    welcomeEl.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      padding: 40px;
+    `;
+
+    welcomeEl.innerHTML = `
+      <div style="
+        font-size: 48px;
+        font-weight: 700;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-bottom: 24px;
+        letter-spacing: 2px;
+      ">ASK LENS</div>
+      <div style="
+        font-size: 18px;
+        color: #4b5563;
+        margin-bottom: 8px;
+        font-weight: 500;
+      ">有什麼可以幫助您的嗎？</div>
+      <div style="
+        font-size: 16px;
+        color: #9ca3af;
+        font-weight: 400;
+      ">How can I help you today?</div>
+    `;
+
+    messagesContainer.appendChild(welcomeEl);
+  }
+
+  /**
+   * 移除歡迎畫面
+   */
+  removeWelcomeScreen(): void {
+    const welcomeEl = this.panel.querySelector('#welcome-screen');
+    if (welcomeEl) {
+      welcomeEl.remove();
+    }
   }
   
   /**
@@ -316,6 +524,8 @@ export class SidePanel {
     const messagesContainer = this.panel.querySelector('#sm-messages');
     if (messagesContainer) {
       messagesContainer.innerHTML = '';
+      // 顯示歡迎畫面
+      this.showWelcomeScreen();
     }
   }
 

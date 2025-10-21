@@ -44,44 +44,29 @@ export class CustomerServiceManager {
     agentName: string = '客服'
   ): Promise<boolean> {
     try {
-      const { DatabaseService } = await import('./DatabaseService');
-      await DatabaseService.initializePool();
+      // 獲取當前登入的管理員 ID
+      const adminId = localStorage.getItem('lens_admin_user_id') || 'admin';
 
-      // 獲取現有對話
-      const conversation = await DatabaseService.getConversation(conversationId);
-      if (!conversation) {
+      // 調用 API 添加回覆
+      const response = await fetch(`http://localhost:3000/api/widget/conversations/${conversationId}/reply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: content,
+          adminId: adminId,
+          adminName: agentName,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to add reply:', await response.text());
         return false;
       }
 
-      // 確保 messages 是陣列
-      let messages: Message[] = [];
-      if (typeof conversation.messages === 'string') {
-        try {
-          messages = JSON.parse(conversation.messages);
-        } catch (e) {
-          console.error('Failed to parse messages:', e);
-          messages = [];
-        }
-      } else if (Array.isArray(conversation.messages)) {
-        messages = conversation.messages;
-      }
-
-      // 添加客服回覆訊息
-      const message: Message = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: content,
-        timestamp: Date.now(),
-        metadata: {
-          isCustomerService: true,
-          agentName: agentName
-        }
-      };
-
-      messages.push(message);
-
-      // 保存更新的對話
-      await DatabaseService.saveConversation(conversationId, conversation.user_id || 'unknown', messages);
+      const result = await response.json();
+      console.log('✅ Admin reply added:', result);
       return true;
     } catch (error) {
       console.error('Failed to add customer service reply:', error);
@@ -94,10 +79,17 @@ export class CustomerServiceManager {
    */
   static async deleteConversation(id: string): Promise<boolean> {
     try {
-      const response = await fetch(`http://localhost:3002/conversations/${id}`, {
+      const response = await fetch(`http://localhost:3000/api/widget/conversations/${id}`, {
         method: 'DELETE'
       });
-      return response.ok;
+
+      if (!response.ok) {
+        console.error('Failed to delete conversation:', await response.text());
+        return false;
+      }
+
+      console.log('✅ Conversation deleted:', id);
+      return true;
     } catch (error) {
       console.error('Failed to delete conversation:', error);
       return false;
@@ -109,8 +101,8 @@ export class CustomerServiceManager {
    */
   static async markConversationAsHandled(id: string): Promise<boolean> {
     try {
-      const response = await fetch(`http://localhost:3002/conversations/${id}`, {
-        method: 'PUT',
+      const response = await fetch(`http://localhost:3000/api/widget/conversations/${id}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
         },
@@ -119,7 +111,14 @@ export class CustomerServiceManager {
           handledAt: Date.now()
         })
       });
-      return response.ok;
+
+      if (!response.ok) {
+        console.error('Failed to mark conversation as handled:', await response.text());
+        return false;
+      }
+
+      console.log('✅ Conversation marked as handled:', id);
+      return true;
     } catch (error) {
       console.error('Failed to mark conversation as handled:', error);
       return false;

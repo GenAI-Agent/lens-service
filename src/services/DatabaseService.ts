@@ -1,7 +1,7 @@
-﻿// Database service using API calls to db-server
-// This service provides a unified interface for accessing PostgreSQL database
+﻿// Database service using API calls to lens-platform
+// This service provides a unified interface for accessing PostgreSQL database via Next.js API routes
 
-const API_BASE_URL = 'http://localhost:3002';
+const API_BASE_URL = '/api/widget'; // lens-platform API routes for widget
 
 export class DatabaseService {
   private static initialized = false;
@@ -17,7 +17,7 @@ export class DatabaseService {
 
   static async query(sql: string, params: any[] = []): Promise<any[]> {
     try {
-      console.log('🔍 Mock query:', sql, params);
+      console.log('🔍 Query (via API):', sql, params);
       return [];
     } catch (error) {
       console.error('❌ Database query error:', error);
@@ -26,68 +26,85 @@ export class DatabaseService {
   }
 
   static async initializeTables(): Promise<void> {
-    // No need to initialize tables - they are already in PostgreSQL
     console.log('✅ Tables already initialized in PostgreSQL');
   }
 
   // Helper method for API calls
   private static async apiCall(endpoint: string, options: RequestInit = {}): Promise<any> {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      // Get JWT token from localStorage
+      const token = localStorage.getItem('auth_token');
+
+      const response = await fetch(API_BASE_URL + endpoint, {
         ...options,
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
           ...options.headers,
         },
       });
 
       if (!response.ok) {
-        throw new Error(`API call failed: ${response.statusText}`);
+        throw new Error('API call failed: ' + response.statusText);
       }
 
       return await response.json();
     } catch (error) {
-      console.error(`❌ API call failed for ${endpoint}:`, error);
+      console.error('❌ API call failed for ' + endpoint + ':', error);
       throw error;
     }
   }
 
-  // ==================== Settings API ====================
+  // ==================== Settings ====================
 
   static async getSettings(): Promise<any> {
-    return await this.apiCall('/settings');
+    try {
+      return await this.apiCall('/settings');
+    } catch (error) {
+      console.error('Failed to get settings:', error);
+      return [];
+    }
   }
 
   static async getSetting(key: string): Promise<string | null> {
     try {
-      const response = await this.apiCall(`/settings/${key}`);
+      const response = await this.apiCall('/settings/' + key);
       return response.value;
     } catch (error) {
-      console.error(`Failed to get setting ${key}:`, error);
+      console.error('Failed to get setting ' + key + ':', error);
       return null;
     }
   }
 
   static async setSetting(key: string, value: string): Promise<void> {
-    await this.apiCall(`/settings/${key}`, {
-      method: 'PUT',
-      body: JSON.stringify({ value }),
-    });
+    try {
+      await this.apiCall('/settings/' + key, {
+        method: 'PUT',
+        body: JSON.stringify({ value }),
+      });
+    } catch (error) {
+      console.error('Failed to set setting ' + key + ':', error);
+      throw error;
+    }
   }
 
-  // ==================== Admin Users API ====================
+  // ==================== Admin Users ====================
 
   static async getAdminUsers(): Promise<any[]> {
-    return await this.apiCall('/admin-users');
+    try {
+      return await this.apiCall('/admin-users');
+    } catch (error) {
+      console.error('Failed to get admin users:', error);
+      return [];
+    }
   }
 
   static async validateAdmin(username: string, password: string): Promise<any | null> {
     try {
-      const response = await this.apiCall('/admin-users/login', {
+      return await this.apiCall('/admin-users/login', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       });
-      return response;
     } catch (error) {
       console.error('Admin validation failed:', error);
       return null;
@@ -102,71 +119,108 @@ export class DatabaseService {
   }
 
   static async deleteAdminUser(id: string): Promise<void> {
-    await this.apiCall(`/admin-users/${id}`, {
+    await this.apiCall('/admin-users/' + id, {
       method: 'DELETE',
     });
   }
 
-  // ==================== Manual Indexes API ====================
+  // ==================== Manual Indexes ====================
 
   static async getManualIndexes(): Promise<any[]> {
-    return await this.apiCall('/manual-indexes');
+    try {
+      return await this.apiCall('/manual-indexes');
+    } catch (error) {
+      console.error('Failed to get manual indexes:', error);
+      return [];
+    }
   }
 
   static async createManualIndex(name: string, description: string, content: string, url?: string, keywords?: string[]): Promise<void> {
-    const fingerprint = `fp-${Date.now()}`;
     await this.apiCall('/manual-indexes', {
       method: 'POST',
-      body: JSON.stringify({
-        id: crypto.randomUUID(),
-        name,
-        description,
-        content,
-        url: url || '',
-        keywords: keywords || [],
-        fingerprint,
-        embedding: null,
-        metadata: {}
-      }),
+      body: JSON.stringify({ name, description, content, url, keywords }),
     });
   }
 
   static async updateManualIndex(id: string, name: string, description: string, content: string, url?: string, keywords?: string[]): Promise<void> {
-    await this.apiCall(`/manual-indexes/${id}`, {
+    await this.apiCall('/manual-indexes/' + id, {
       method: 'PUT',
-      body: JSON.stringify({
-        name,
-        description,
-        content,
-        url: url || '',
-        keywords: keywords || []
-      }),
+      body: JSON.stringify({ name, description, content, url, keywords }),
     });
   }
 
   static async deleteManualIndex(id: string): Promise<void> {
-    await this.apiCall(`/manual-indexes/${id}`, {
+    await this.apiCall('/manual-indexes/' + id, {
       method: 'DELETE',
     });
   }
 
-  // ==================== Conversations API ====================
+  static async generateAllEmbeddings(): Promise<any> {
+    try {
+      return await this.apiCall('/manual-indexes/generate-embeddings', {
+        method: 'POST',
+      });
+    } catch (error) {
+      console.error('Failed to generate embeddings:', error);
+      throw error;
+    }
+  }
+
+  static async importUrlsBatch(urls: string[]): Promise<any> {
+    try {
+      return await this.apiCall('/manual-indexes/import-urls-batch', {
+        method: 'POST',
+        body: JSON.stringify({ urls }),
+      });
+    } catch (error) {
+      console.error('Failed to import URLs:', error);
+      throw error;
+    }
+  }
+
+  // ==================== Orders & Subscriptions ====================
+
+  static async getUserOrders(userId?: string): Promise<any[]> {
+    try {
+      // Use /me endpoint to get current user's orders from JWT token
+      const response = await this.apiCall(`/orders/me`);
+      return response.orders || [];
+    } catch (error) {
+      console.error('Failed to get user orders:', error);
+      return [];
+    }
+  }
+
+  static async getUserSubscriptions(userId?: string): Promise<any[]> {
+    try {
+      // Use /me endpoint to get current user's subscriptions from JWT token
+      const response = await this.apiCall(`/subscriptions/me`);
+      return response.subscriptions || [];
+    } catch (error) {
+      console.error('Failed to get user subscriptions:', error);
+      return [];
+    }
+  }
+
+  // ==================== Conversations ====================
 
   static async saveConversation(conversation_id: string, user_id: string, messages: any[]): Promise<void> {
-    await this.apiCall('/conversations', {
-      method: 'POST',
-      body: JSON.stringify({
-        user_id,
-        conversation_id,
-        messages
-      }),
-    });
-    console.log('✅ Conversation saved to database:', conversation_id);
+    try {
+      // Use /save endpoint which gets user_id from JWT token
+      await this.apiCall('/conversations/save', {
+        method: 'POST',
+        body: JSON.stringify({ conversationId: conversation_id, messages }),
+      });
+      console.log('✅ Conversation saved to database:', conversation_id);
+    } catch (error) {
+      console.error('Failed to save conversation:', error);
+      throw error;
+    }
   }
 
   static async getConversation(conversation_id: string): Promise<any | null> {
     try {
-      return await this.apiCall(`/conversations/${conversation_id}`);
+      return await this.apiCall('/conversations/' + conversation_id);
     } catch (error) {
       console.error('Failed to get conversation:', error);
       return null;
@@ -174,7 +228,12 @@ export class DatabaseService {
   }
 
   static async getAllConversations(): Promise<any[]> {
-    return await this.apiCall('/conversations');
+    try {
+      return await this.apiCall('/conversations');
+    } catch (error) {
+      console.error('Failed to get conversations:', error);
+      return [];
+    }
   }
 
   static async getConversations(): Promise<any[]> {
@@ -182,8 +241,17 @@ export class DatabaseService {
   }
 
   static async deleteConversation(conversation_id: string): Promise<void> {
-    await this.apiCall(`/conversations/${conversation_id}`, {
+    await this.apiCall('/conversations/' + conversation_id, {
       method: 'DELETE',
     });
+  }
+
+  static async getConversationsByUserId(user_id: string): Promise<any[]> {
+    try {
+      return await this.apiCall('/conversations/user/' + user_id);
+    } catch (error) {
+      console.error('Failed to get conversations by user_id:', error);
+      return [];
+    }
   }
 }

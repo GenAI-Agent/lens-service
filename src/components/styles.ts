@@ -108,16 +108,121 @@ export const styles = {
   
   assistantMessage: `
     align-self: stretch;
-    background: #f9fafb;
+    background: transparent;
     color: #1f2937;
-    padding: 16px;
-    border-radius: 12px;
+    padding: 0;
+    border-radius: 0;
     max-width: 100%;
     word-wrap: break-word;
     font-size: 15px;
-    line-height: 1.6;
-    border: 1px solid #e5e7eb;
-    margin-bottom: 16px;
+    line-height: 1.8;
+    border: none;
+    margin-bottom: 24px;
+  `,
+
+  // Markdown 樣式
+  markdownStyles: `
+    <style>
+      #sm-messages h1, #sm-messages h2, #sm-messages h3, #sm-messages h4, #sm-messages h5, #sm-messages h6 {
+        font-weight: 600;
+        margin-top: 16px;
+        margin-bottom: 8px;
+        color: #111827;
+      }
+      #sm-messages h1 { font-size: 24px; }
+      #sm-messages h2 { font-size: 20px; }
+      #sm-messages h3 { font-size: 18px; }
+      #sm-messages h4 { font-size: 16px; }
+      #sm-messages p {
+        margin-bottom: 12px;
+        line-height: 1.8;
+      }
+      #sm-messages ul, #sm-messages ol {
+        margin-left: 24px;
+        margin-bottom: 12px;
+        padding-left: 0;
+      }
+      #sm-messages ul {
+        list-style-type: disc;
+      }
+      #sm-messages ol {
+        list-style-type: decimal;
+      }
+      #sm-messages li {
+        margin-bottom: 6px;
+        line-height: 1.6;
+        display: list-item;
+      }
+      #sm-messages ul ul {
+        list-style-type: circle;
+        margin-top: 6px;
+      }
+      #sm-messages ul ul ul {
+        list-style-type: square;
+      }
+      #sm-messages strong, #sm-messages b {
+        font-weight: 700;
+        color: #111827;
+      }
+      #sm-messages em {
+        font-style: italic;
+      }
+      #sm-messages code {
+        background: #f3f4f6;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        color: #dc2626;
+      }
+      #sm-messages pre {
+        background: #1f2937;
+        color: #f9fafb;
+        padding: 12px;
+        border-radius: 8px;
+        overflow-x: auto;
+        margin-bottom: 12px;
+      }
+      #sm-messages pre code {
+        background: transparent;
+        color: #f9fafb;
+        padding: 0;
+      }
+      #sm-messages blockquote {
+        border-left: 4px solid #6366f1;
+        padding-left: 12px;
+        margin-left: 0;
+        margin-bottom: 12px;
+        color: #6b7280;
+        font-style: italic;
+      }
+      #sm-messages a {
+        color: #6366f1;
+        text-decoration: underline;
+      }
+      #sm-messages a:hover {
+        color: #4f46e5;
+      }
+      #sm-messages hr {
+        border: none;
+        border-top: 1px solid #e5e7eb;
+        margin: 16px 0;
+      }
+      #sm-messages table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-bottom: 12px;
+      }
+      #sm-messages th, #sm-messages td {
+        border: 1px solid #e5e7eb;
+        padding: 8px;
+        text-align: left;
+      }
+      #sm-messages th {
+        background: #f9fafb;
+        font-weight: 600;
+      }
+    </style>
   `,
   
   sources: `

@@ -1,4 +1,7 @@
 export interface ServiceModulerConfig {
+  // 用戶 ID（從登入系統傳入）
+  userId?: string;
+
   // 保持向後兼容
   azureOpenAI?: {
     endpoint: string;
