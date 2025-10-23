@@ -1,9 +1,19 @@
 {
   "name": "lens-service",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Lens Service - Embeddable AI Customer Service Widget",
   "main": "dist/lens-service.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/lens-service.js"
+    },
+    "./server": {
+      "types": "./dist/server.d.ts",
+      "default": "./src/server.ts"
+    }
+  },
   "files": [
     "dist",
     "src",
