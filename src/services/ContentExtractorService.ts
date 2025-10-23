@@ -16,7 +16,7 @@ async function loadPdfParse() {
 
   try {
     // 使用動態 import 而不是 require
-    const pdfParseModule = await import('pdf-parse');
+    const pdfParseModule: any = await import('pdf-parse');
 
     // Handle different module structures
     if (typeof pdfParseModule === 'function') {
