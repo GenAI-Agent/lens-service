@@ -33,6 +33,7 @@
     "build:vite": "vite build",
     "build:check": "tsc && vite build",
     "preview": "vite preview",
+    "prepare": "npm run build",
     "prepublishOnly": "npm run build",
     "server": "node server.js",
     "server:dev": "nodemon server.js",
