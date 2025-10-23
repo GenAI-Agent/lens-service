@@ -630,27 +630,6 @@ class LensServiceWidget {
   }
 
   /**
-   * 啟用元素捕獲模式（Ctrl+Click）
-   */
-  enableCaptureMode(): void {
-    console.log('Capture mode disabled');
-
-    this.captureMode = true;
-
-    // Capture mode disabled
-    console.log('Capture mode would be enabled here');
-
-    console.log('Capture mode enabled. Press Ctrl+Click to capture elements.');
-  }
-
-  /**
-   * 禁用元素捕獲模式
-   */
-  disableCaptureMode(): void {
-    this.captureMode = false;
-  }
-
-  /**
    * 搜尋當前頁面內容
    */
   searchCurrentPage(query: string): Array<{

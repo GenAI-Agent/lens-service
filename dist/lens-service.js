@@ -57156,21 +57156,6 @@ ${subTexts.join("\n\n")}`;
     console.log("Site indexing disabled");
   }
   /**
-   * 啟用元素捕獲模式（Ctrl+Click）
-   */
-  enableCaptureMode() {
-    console.log("Capture mode disabled");
-    this.captureMode = true;
-    console.log("Capture mode would be enabled here");
-    console.log("Capture mode enabled. Press Ctrl+Click to capture elements.");
-  }
-  /**
-   * 禁用元素捕獲模式
-   */
-  disableCaptureMode() {
-    this.captureMode = false;
-  }
-  /**
    * 搜尋當前頁面內容
    */
   searchCurrentPage(query) {
