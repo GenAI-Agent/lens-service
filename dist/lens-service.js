@@ -37605,10 +37605,18 @@ var SidePanel = class {
   /**
    * 追加流式內容
    */
-  appendStreamingContent(text3) {
+  async appendStreamingContent(text3) {
     const contentEl = this.panel.querySelector("#streaming-content");
     if (contentEl) {
-      contentEl.textContent += text3;
+      const currentText = contentEl.getAttribute("data-raw-text") || "";
+      const newText = currentText + text3;
+      contentEl.setAttribute("data-raw-text", newText);
+      try {
+        const htmlContent = await k.parse(newText);
+        contentEl.innerHTML = htmlContent;
+      } catch (error) {
+        contentEl.textContent = newText;
+      }
       const messagesContainer = this.panel.querySelector("#sm-messages");
       if (messagesContainer) {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -37622,13 +37630,7 @@ var SidePanel = class {
     const messageEl = this.panel.querySelector("#streaming-message");
     const contentEl = this.panel.querySelector("#streaming-content");
     if (!messageEl || !contentEl) return;
-    const plainText = contentEl.textContent || "";
-    try {
-      const htmlContent = await k.parse(plainText);
-      contentEl.innerHTML = htmlContent;
-    } catch (error) {
-      console.error("Failed to render markdown:", error);
-    }
+    contentEl.removeAttribute("data-raw-text");
     messageEl.removeAttribute("id");
     contentEl.removeAttribute("id");
     if (sources && sources.length > 0) {
@@ -37706,11 +37708,13 @@ var SidePanel = class {
   /**
    * 清除訊息
    */
-  clearMessages() {
+  clearMessages(showWelcome = true) {
     const messagesContainer = this.panel.querySelector("#sm-messages");
     if (messagesContainer) {
       messagesContainer.innerHTML = "";
-      this.showWelcomeScreen();
+      if (showWelcome) {
+        this.showWelcomeScreen();
+      }
     }
   }
   /**
@@ -37860,7 +37864,7 @@ var SidePanel = class {
         alert("\u7121\u6CD5\u8F09\u5165\u5C0D\u8A71");
         return;
       }
-      this.clearMessages();
+      this.clearMessages(false);
       let messages = [];
       if (typeof conversation.messages === "string") {
         try {
@@ -55832,7 +55836,8 @@ var AdminPanel = class {
         });
         const data2 = await response.json();
         if (data2.success) {
-          await this.showAlertDialog(`\u6210\u529F\u5C0E\u5165 ${data2.chunksCreated} \u500B chunks`);
+          const chunksCreated = data2.indexes?.length || data2.totalChunks || 0;
+          await this.showAlertDialog(`\u6210\u529F\u5C0E\u5165 ${chunksCreated} \u500B chunks`);
           document.body.removeChild(modal);
           await this.updatePageContent();
         } else {
@@ -56817,7 +56822,7 @@ var LensServiceWidget = class {
       this.panel.startStreamingMessage();
       const words = response.split("");
       for (let i = 0; i < words.length; i++) {
-        this.panel.appendStreamingContent(words[i]);
+        await this.panel.appendStreamingContent(words[i]);
         await new Promise((resolve) => setTimeout(resolve, 20));
       }
       await this.panel.finishStreamingMessage(sources);

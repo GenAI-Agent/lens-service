@@ -208,12 +208,12 @@ class LensServiceWidget {
       // 模擬流式輸出
       const words = response.split('');
       for (let i = 0; i < words.length; i++) {
-        this.panel.appendStreamingContent(words[i]);
+        await this.panel.appendStreamingContent(words[i]);
         // 每個字符延遲 20ms
         await new Promise(resolve => setTimeout(resolve, 20));
       }
 
-      // 完成流式回覆（使用 await 因為需要渲染 Markdown）
+      // 完成流式回覆
       await this.panel.finishStreamingMessage(sources);
 
       // 添加助手回應到對話狀態

@@ -399,10 +399,25 @@ export class SidePanel {
   /**
    * 追加流式內容
    */
-  appendStreamingContent(text: string): void {
+  async appendStreamingContent(text: string): Promise<void> {
     const contentEl = this.panel.querySelector('#streaming-content');
     if (contentEl) {
-      contentEl.textContent += text;
+      // 獲取當前的純文本內容
+      const currentText = contentEl.getAttribute('data-raw-text') || '';
+      const newText = currentText + text;
+
+      // 保存原始文本到 data 屬性
+      contentEl.setAttribute('data-raw-text', newText);
+
+      // 即時渲染 Markdown
+      try {
+        const htmlContent = await marked.parse(newText);
+        contentEl.innerHTML = htmlContent;
+      } catch (error) {
+        // 如果渲染失敗，顯示純文本
+        contentEl.textContent = newText;
+      }
+
       const messagesContainer = this.panel.querySelector('#sm-messages');
       if (messagesContainer) {
         messagesContainer.scrollTop = messagesContainer.scrollHeight;
@@ -418,17 +433,8 @@ export class SidePanel {
     const contentEl = this.panel.querySelector('#streaming-content');
     if (!messageEl || !contentEl) return;
 
-    // 獲取純文本內容
-    const plainText = contentEl.textContent || '';
-
-    // 使用 marked 渲染 Markdown
-    try {
-      const htmlContent = await marked.parse(plainText);
-      contentEl.innerHTML = htmlContent;
-    } catch (error) {
-      console.error('Failed to render markdown:', error);
-      // 如果渲染失敗，保持純文本
-    }
+    // 內容已經在 appendStreamingContent 中即時渲染了，這裡只需要清理屬性
+    contentEl.removeAttribute('data-raw-text');
 
     // 移除 ID 避免衝突
     messageEl.removeAttribute('id');
@@ -520,12 +526,14 @@ export class SidePanel {
   /**
    * 清除訊息
    */
-  clearMessages(): void {
+  clearMessages(showWelcome: boolean = true): void {
     const messagesContainer = this.panel.querySelector('#sm-messages');
     if (messagesContainer) {
       messagesContainer.innerHTML = '';
-      // 顯示歡迎畫面
-      this.showWelcomeScreen();
+      // 只有在 showWelcome 為 true 時才顯示歡迎畫面
+      if (showWelcome) {
+        this.showWelcomeScreen();
+      }
     }
   }
 
@@ -705,8 +713,8 @@ export class SidePanel {
         return;
       }
 
-      // 清除當前訊息
-      this.clearMessages();
+      // 清除當前訊息（不顯示歡迎畫面，因為我們要載入歷史訊息）
+      this.clearMessages(false);
 
       // 載入對話訊息 - 處理可能是字串的情況
       let messages = [];

@@ -3478,7 +3478,8 @@ export class AdminPanel {
         const data = await response.json();
 
         if (data.success) {
-          await this.showAlertDialog(`成功導入 ${data.chunksCreated} 個 chunks`);
+          const chunksCreated = data.indexes?.length || data.totalChunks || 0;
+          await this.showAlertDialog(`成功導入 ${chunksCreated} 個 chunks`);
           document.body.removeChild(modal);
           await this.updatePageContent();
         } else {
