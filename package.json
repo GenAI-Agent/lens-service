@@ -11,7 +11,7 @@
     },
     "./server": {
       "types": "./dist/server.d.ts",
-      "default": "./src/server.ts"
+      "default": "./dist/server.js"
     }
   },
   "files": [
@@ -29,7 +29,7 @@
   "homepage": "https://github.com/GenAI-Agent/lens-service#readme",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --emitDeclarationOnly && esbuild src/index.ts --bundle --outfile=dist/lens-service.js --format=esm --external:@prisma/client --external:prisma --external:pg --external:openai",
+    "build": "tsc --emitDeclarationOnly && esbuild src/index.ts --bundle --outfile=dist/lens-service.js --format=esm --external:@prisma/client --external:prisma --external:pg --external:openai && esbuild src/server.ts --bundle --outfile=dist/server.js --format=esm --platform=node --external:@prisma/client --external:prisma --external:pg --external:openai --external:axios --external:cheerio --external:pdf-parse",
     "build:vite": "vite build",
     "build:check": "tsc && vite build",
     "preview": "vite preview",
