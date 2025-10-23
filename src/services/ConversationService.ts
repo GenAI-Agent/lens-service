@@ -32,7 +32,10 @@ export class ConversationService {
    * 創建新對話
    */
   static async createNewConversation(): Promise<Conversation> {
-    const userId = UserService.getUserId();
+    // 從 localStorage 獲取 user_id（由前端設置）
+    const userId = typeof localStorage !== 'undefined'
+      ? localStorage.getItem('lens_service_user_id') || 'anonymous'
+      : 'anonymous';
     const conversationId = this.generateConversationId();
 
     const conversation: Conversation = {
@@ -142,8 +145,21 @@ export class ConversationService {
    * 根據用戶 ID 獲取對話
    */
   static async getConversationsByUserId(userId: string): Promise<Conversation[]> {
-    const conversations = await this.getAllConversations();
-    return conversations.filter(c => c.userId === userId);
+    try {
+      const conversations = await DatabaseService.getConversationsByUserId(userId);
+      return conversations.map(conv => ({
+        id: conv.conversation_id,
+        userId: conv.user_id || 'unknown',
+        messages: conv.messages || [],
+        startedAt: new Date(conv.created_at).getTime(),
+        lastMessageAt: new Date(conv.updated_at).getTime(),
+        status: 'active' as const,
+        metadata: {}
+      }));
+    } catch (e) {
+      console.error('Failed to load conversations by user_id:', e);
+      return [];
+    }
   }
   
   /**

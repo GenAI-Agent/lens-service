@@ -7,30 +7,30 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 
 // PDF 處理（動態導入）
+// 注意：在 Next.js 環境中，pdf-parse 需要在 server-side 使用
 let pdfParse: any = null;
-try {
-  // pdf-parse is a CommonJS module
-  const pdfParseModule = require('pdf-parse');
 
-  // Handle different module structures
-  if (typeof pdfParseModule === 'function') {
-    // Direct function export
-    pdfParse = pdfParseModule;
-  } else if (pdfParseModule.default && typeof pdfParseModule.default === 'function') {
-    // ES module with default export
-    pdfParse = pdfParseModule.default;
-  } else if (pdfParseModule.PDFParse) {
-    // Class-based export
-    const PDFParseClass = pdfParseModule.PDFParse;
-    pdfParse = async (buffer: Buffer) => {
-      const parser = new PDFParseClass();
-      return await parser.parse(buffer);
-    };
-  } else {
-    console.warn('pdf-parse module structure not recognized:', Object.keys(pdfParseModule));
+// 動態導入 pdf-parse（僅在 Node.js 環境中）
+async function loadPdfParse() {
+  if (pdfParse) return pdfParse;
+
+  try {
+    // 使用動態 import 而不是 require
+    const pdfParseModule = await import('pdf-parse');
+
+    // Handle different module structures
+    if (typeof pdfParseModule === 'function') {
+      pdfParse = pdfParseModule;
+    } else if (pdfParseModule.default && typeof pdfParseModule.default === 'function') {
+      pdfParse = pdfParseModule.default;
+    } else {
+      console.warn('pdf-parse module structure not recognized');
+    }
+  } catch (e) {
+    console.warn('pdf-parse not available, PDF processing will be limited:', e);
   }
-} catch (e) {
-  console.warn('pdf-parse not available, PDF processing will be limited:', e);
+
+  return pdfParse;
 }
 
 interface ExtractedContent {
@@ -189,12 +189,15 @@ export class ContentExtractorService {
    * 從 PDF 提取內容
    */
   private async extractFromPDF(buffer: Buffer, url: string): Promise<ExtractedContent> {
-    if (!pdfParse) {
+    // 動態載入 pdf-parse
+    const parser = await loadPdfParse();
+
+    if (!parser) {
       throw new Error('PDF parsing is not available. Please install pdf-parse package.');
     }
 
     try {
-      const data = await pdfParse(buffer);
+      const data = await parser(buffer);
 
       const title = data.info?.Title || 'PDF Document';
       const author = data.info?.Author;

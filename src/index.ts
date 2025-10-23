@@ -32,12 +32,8 @@ class LensServiceWidget {
   private panel?: SidePanel;
   private conversationState?: ConversationState;
   private initialized: boolean = false;
-  private captureMode: boolean = false;
   private adminPanel?: AdminPanel;
   private floatingIcon?: HTMLElement;
-  private screenshotMode: boolean = false;
-  private hoverHandler: ((event: MouseEvent) => void) | null = null;
-  private mouseLeaveHandler: ((event: MouseEvent) => void) | null = null;
   
   /**
    * 從SQL載入規則
@@ -121,9 +117,6 @@ class LensServiceWidget {
       this.openAdminPanel();
     }
 
-    // 綁定快捷鍵
-    this.bindGlobalKeyboardShortcuts();
-
     // 創建浮動圖標（如果配置了UI選項且不在管理後台頁面）
     if (config.ui?.iconPosition !== false && !this.isAdminPage()) {
       this.createFloatingIcon();
@@ -134,38 +127,6 @@ class LensServiceWidget {
     if (config.debug) {
       console.log('ServiceModuler initialized', config);
     }
-  }
-
-  /**
-   * 綁定全局快捷鍵
-   */
-  private bindGlobalKeyboardShortcuts(): void {
-    document.addEventListener('keydown', (event) => {
-      // Q 鍵按下時啟用截圖模式（僅當面板打開時）
-      if (event.key && event.key.toLowerCase() === 'q' && this.panel?.isPanelOpen()) {
-        console.log('🎯 Q key pressed, panel is open, enabling screenshot mode');
-        this.enableScreenshotMode();
-      } else if (event.key && event.key.toLowerCase() === 'q') {
-        console.log('🎯 Q key pressed, but panel is not open:', this.panel?.isPanelOpen());
-      }
-    });
-
-    document.addEventListener('keyup', (event) => {
-      // Q 鍵釋放時禁用截圖模式
-      if (event.key && event.key.toLowerCase() === 'q') {
-        this.disableScreenshotMode();
-      }
-    });
-
-    // 綁定點擊事件用於截圖
-    document.addEventListener('click', (event) => {
-      if (this.screenshotMode && this.panel?.isPanelOpen()) {
-        console.log('📸 Screenshot click detected');
-        event.preventDefault();
-        event.stopPropagation();
-        this.captureElementScreenshot(event.target as HTMLElement);
-      }
-    }, true);
   }
   
   /**
@@ -942,254 +903,7 @@ class LensServiceWidget {
     }
   }
 
-  /**
-   * 啟用截圖模式
-   */
-  private enableScreenshotMode(): void {
-    if (this.screenshotMode) return;
 
-    this.screenshotMode = true;
-    document.body.style.cursor = 'crosshair';
-
-    // 添加視覺提示
-    const overlay = document.createElement('div');
-    overlay.id = 'lens-screenshot-overlay';
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 123, 255, 0.1);
-      z-index: 999998;
-      pointer-events: none;
-      border: 2px dashed #007bff;
-    `;
-    document.body.appendChild(overlay);
-
-    // 添加hover效果來高亮選中的元素
-    this.addHoverHighlight();
-
-    console.log('📸 Screenshot mode enabled - Q+Click to capture elements');
-  }
-
-  /**
-   * 禁用截圖模式
-   */
-  private disableScreenshotMode(): void {
-    if (!this.screenshotMode) return;
-
-    this.screenshotMode = false;
-    document.body.style.cursor = '';
-
-    // 移除視覺提示
-    const overlay = document.getElementById('lens-screenshot-overlay');
-    if (overlay) {
-      overlay.remove();
-    }
-
-    // 移除hover高亮效果
-    this.removeHoverHighlight();
-  }
-
-  /**
-   * 添加hover高亮效果
-   */
-  private addHoverHighlight(): void {
-    // 移除之前的事件監聽器（如果存在）
-    this.removeHoverHighlight();
-
-    this.hoverHandler = (event: MouseEvent) => {
-      if (!this.screenshotMode) return;
-
-      const target = event.target as HTMLElement;
-      if (!target || target.closest('#lens-service-panel') || target.closest('#lens-service-admin')) {
-        return;
-      }
-
-      // 移除之前的高亮
-      const prevHighlight = document.querySelector('.lens-hover-highlight');
-      if (prevHighlight) {
-        prevHighlight.classList.remove('lens-hover-highlight');
-      }
-
-      // 添加高亮樣式
-      target.classList.add('lens-hover-highlight');
-    };
-
-    this.mouseLeaveHandler = (event: MouseEvent) => {
-      if (!this.screenshotMode) return;
-
-      const target = event.target as HTMLElement;
-      if (target) {
-        target.classList.remove('lens-hover-highlight');
-      }
-    };
-
-    // 添加CSS樣式
-    if (!document.getElementById('lens-hover-styles')) {
-      const style = document.createElement('style');
-      style.id = 'lens-hover-styles';
-      style.textContent = `
-        .lens-hover-highlight {
-          outline: 2px solid #007bff !important;
-          outline-offset: 2px !important;
-          background-color: rgba(0, 123, 255, 0.1) !important;
-        }
-      `;
-      document.head.appendChild(style);
-    }
-
-    document.addEventListener('mouseover', this.hoverHandler);
-    document.addEventListener('mouseleave', this.mouseLeaveHandler);
-  }
-
-  /**
-   * 移除hover高亮效果
-   */
-  private removeHoverHighlight(): void {
-    if (this.hoverHandler) {
-      document.removeEventListener('mouseover', this.hoverHandler);
-      this.hoverHandler = null;
-    }
-    if (this.mouseLeaveHandler) {
-      document.removeEventListener('mouseleave', this.mouseLeaveHandler);
-      this.mouseLeaveHandler = null;
-    }
-
-    // 移除所有高亮
-    const highlights = document.querySelectorAll('.lens-hover-highlight');
-    highlights.forEach(el => el.classList.remove('lens-hover-highlight'));
-
-    // 移除樣式
-    const style = document.getElementById('lens-hover-styles');
-    if (style) {
-      style.remove();
-    }
-  }
-
-  /**
-   * 捕獲元素截圖
-   */
-  private async captureElementScreenshot(element: HTMLElement): Promise<void> {
-    try {
-      console.log('📸 Capturing screenshot of element:', element);
-
-      // 動態載入 html2canvas
-      if (!(window as any).html2canvas) {
-        await this.loadHtml2Canvas();
-      }
-
-      const html2canvas = (window as any).html2canvas;
-
-      // 高亮選中的元素
-      const originalStyle = element.style.cssText;
-      element.style.cssText += '; outline: 3px solid #007bff; outline-offset: 2px;';
-
-      // 等待一小段時間讓高亮效果顯示
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // 捕獲元素
-      const canvas = await html2canvas(element, {
-        backgroundColor: '#ffffff',
-        scale: 1,
-        logging: false,
-        useCORS: true,
-        allowTaint: true
-      });
-
-      // 恢復原始樣式
-      element.style.cssText = originalStyle;
-
-      // 轉換為 base64
-      const base64Image = canvas.toDataURL('image/png');
-
-      // 將截圖放入輸入框
-      if (this.panel) {
-        this.panel.setScreenshotInInput(base64Image);
-      }
-
-      console.log('✅ Screenshot captured and added to input');
-
-    } catch (error) {
-      console.error('❌ Failed to capture screenshot:', error);
-
-      // 顯示錯誤提示
-      this.panel?.addMessage({
-        id: Date.now().toString(),
-        content: '截圖失敗，請重試。',
-        role: 'assistant',
-        timestamp: Date.now()
-      });
-    } finally {
-      this.disableScreenshotMode();
-    }
-  }
-
-  /**
-   * 載入 html2canvas 庫
-   */
-  private async loadHtml2Canvas(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
-      script.onload = () => resolve();
-      script.onerror = () => reject(new Error('Failed to load html2canvas'));
-      document.head.appendChild(script);
-    });
-  }
-
-  /**
-   * 發送截圖到 AI 進行分析
-   */
-  private async sendScreenshotToAI(base64Image: string, element: HTMLElement): Promise<void> {
-    try {
-      console.log('Screenshot analysis disabled');
-
-      // 獲取元素的上下文信息
-      const elementInfo = {
-        tagName: element.tagName,
-        className: element.className,
-        id: element.id,
-        textContent: element.textContent?.substring(0, 200) || '',
-        attributes: Array.from(element.attributes).map(attr => `${attr.name}="${attr.value}"`).join(' ')
-      };
-
-      const contextPrompt = `
-用戶截取了網頁上的一個元素，請分析這個截圖並提供相關說明。
-
-元素信息：
-- 標籤：${elementInfo.tagName}
-- 類名：${elementInfo.className}
-- ID：${elementInfo.id}
-- 文本內容：${elementInfo.textContent}
-- 屬性：${elementInfo.attributes}
-
-請分析截圖內容並提供有用的信息或建議。
-      `.trim();
-
-      // 發送到 OpenAI Vision API
-      const response = '截圖分析功能暫時停用';
-
-      // 在面板中顯示結果
-      this.panel?.addMessage({
-        id: Date.now().toString(),
-        content: `📸 **截圖分析結果：**\n\n${response}`,
-        role: 'assistant',
-        timestamp: Date.now()
-      });
-
-    } catch (error) {
-      console.error('❌ Failed to send screenshot to AI:', error);
-
-      this.panel?.addMessage({
-        id: Date.now().toString(),
-        content: '截圖分析失敗，請檢查 AI 服務配置。',
-        role: 'assistant',
-        timestamp: Date.now()
-      });
-    }
-  }
 
   /**
    * 生成 Session ID
@@ -1215,6 +929,13 @@ const LensService = new LensServiceWidget();
 if (typeof window !== 'undefined') {
   (window as any).LensService = LensService;
 }
+
+// 導出服務供外部使用
+export { ContentExtractorService } from './services/ContentExtractorService';
+export { DatabaseService } from './services/DatabaseService';
+export { ManualIndexService } from './services/ManualIndexService';
+export { ConversationService } from './services/ConversationService';
+export { UserService } from './services/UserService';
 
 export default LensService;
 
