@@ -1,9 +1,9 @@
 {
   "name": "lens-service",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Lens Service - Embeddable AI Customer Service Widget",
   "main": "dist/lens-service.js",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
   "files": [
     "dist",
     "src",
@@ -19,7 +19,7 @@
   "homepage": "https://github.com/GenAI-Agent/lens-service#readme",
   "scripts": {
     "dev": "vite",
-    "build": "esbuild src/index.ts --bundle --outfile=dist/lens-service.js --format=esm --external:@prisma/client --external:prisma --external:pg --external:openai",
+    "build": "tsc --emitDeclarationOnly && esbuild src/index.ts --bundle --outfile=dist/lens-service.js --format=esm --external:@prisma/client --external:prisma --external:pg --external:openai",
     "build:vite": "vite build",
     "build:check": "tsc && vite build",
     "preview": "vite preview",

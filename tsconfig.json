@@ -11,16 +11,17 @@
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "emitDeclarationOnly": true,
 
     /* Linting */
     "strict": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noFallthroughCasesInSwitch": true,
-    
+
     "declaration": true,
-    "declarationDir": "./dist"
+    "declarationDir": "./dist",
+    "outDir": "./dist"
   },
   "include": ["src"]
 }
