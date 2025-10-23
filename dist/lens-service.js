@@ -24182,25 +24182,6 @@ var AdminPanel = class {
   }
 };
 
-// src/services/UserService.ts
-var UserService = class {
-  /**
-   * 檢查是否已登入（檢查是否有 JWT token）
-   */
-  static isAuthenticated() {
-    if (typeof localStorage === "undefined") return false;
-    const token = localStorage.getItem("auth_token");
-    return !!token;
-  }
-  /**
-   * 清除認證資訊（登出時調用）
-   */
-  static clearAuth() {
-    if (typeof localStorage === "undefined") return;
-    localStorage.removeItem("auth_token");
-  }
-};
-
 // src/index.ts
 var LensServiceWidget = class {
   config;
@@ -24234,10 +24215,6 @@ var LensServiceWidget = class {
       return;
     }
     this.config = config;
-    if (config.userId) {
-      UserService.setUserId(config.userId);
-      console.log("\u2705 User ID set:", config.userId);
-    }
     console.log("\u2705 Widget initializing");
     const telegramConfig = config.telegram && config.telegram.botToken && config.telegram.chatId ? config.telegram : void 0;
     window.SM_TELEGRAM_CONFIG = telegramConfig;
@@ -24427,7 +24404,9 @@ var LensServiceWidget = class {
           type: "orders",
           title: "\u8A02\u55AE\u8CC7\u8A0A",
           content: this.formatOrdersForContext(orders),
-          description: "\u7528\u6236\u7684\u8A02\u55AE\u8A18\u9304"
+          description: "\u7528\u6236\u7684\u8A02\u55AE\u8A18\u9304",
+          score: 1
+          // 訂單資訊給予最高分數
         });
       }
       if (subscriptions.length > 0) {
@@ -24435,7 +24414,9 @@ var LensServiceWidget = class {
           type: "subscriptions",
           title: "\u8A02\u95B1\u8CC7\u8A0A",
           content: this.formatSubscriptionsForContext(subscriptions),
-          description: "\u7528\u6236\u7684\u8A02\u95B1\u8A18\u9304"
+          description: "\u7528\u6236\u7684\u8A02\u95B1\u8A18\u9304",
+          score: 1
+          // 訂閱資訊給予最高分數
         });
       }
       console.log(`\u{1F4CA} Total sources: ${allSources.length} (${knowledgeBaseSources.length} knowledge base + ${orders.length > 0 ? 1 : 0} orders + ${subscriptions.length > 0 ? 1 : 0} subscriptions)`);

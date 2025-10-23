@@ -5,7 +5,6 @@ import { ConversationService } from './services/ConversationService';
 import { ManualIndexService } from './services/ManualIndexService';
 import { DatabaseService } from './services/DatabaseService';
 import { ConfigService } from './services/ConfigService';
-import { UserService } from './services/UserService';
 
 /**
  * Lens Service - 可嵌入的 AI 客服 Widget
@@ -71,14 +70,8 @@ class LensServiceWidget {
       console.warn('ServiceModuler already initialized');
       return;
     }
-    
-    this.config = config;
 
-    // 設置用戶 ID
-    if (config.userId) {
-      UserService.setUserId(config.userId);
-      console.log('✅ User ID set:', config.userId);
-    }
+    this.config = config;
 
     // 初始化服務
     console.log('✅ Widget initializing');
@@ -373,8 +366,9 @@ class LensServiceWidget {
           type: 'orders',
           title: '訂單資訊',
           content: this.formatOrdersForContext(orders),
-          description: '用戶的訂單記錄'
-        });
+          description: '用戶的訂單記錄',
+          score: 1.0  // 訂單資訊給予最高分數
+        } as any);
       }
 
       // 添加訂閱資訊到 sources（如果有）
@@ -383,8 +377,9 @@ class LensServiceWidget {
           type: 'subscriptions',
           title: '訂閱資訊',
           content: this.formatSubscriptionsForContext(subscriptions),
-          description: '用戶的訂閱記錄'
-        });
+          description: '用戶的訂閱記錄',
+          score: 1.0  // 訂閱資訊給予最高分數
+        } as any);
       }
 
       console.log(`📊 Total sources: ${allSources.length} (${knowledgeBaseSources.length} knowledge base + ${orders.length > 0 ? 1 : 0} orders + ${subscriptions.length > 0 ? 1 : 0} subscriptions)`);
