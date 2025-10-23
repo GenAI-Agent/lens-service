@@ -10,8 +10,6 @@ export declare class SidePanel {
     private isOpen;
     private width;
     private position;
-    private capturedImage;
-    private capturedText;
     private onSendMessage?;
     private onSelectRule?;
     private onClose?;
@@ -117,18 +115,6 @@ export declare class SidePanel {
      * 恢復頁面內容
      */
     private restorePageContent;
-    /**
-     * 設置捕獲的圖片
-     */
-    setCapturedImage(imageBase64: string, text: string): void;
-    /**
-     * 清除捕獲的圖片
-     */
-    clearCapturedImage(): void;
-    /**
-     * 將截圖設置到輸入框
-     */
-    setScreenshotInInput(base64Image: string): void;
     /**
      * 設置回調函數
      */

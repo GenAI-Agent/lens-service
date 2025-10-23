@@ -3523,115 +3523,6 @@ var init_CustomerServiceManager = __esm({
   }
 });
 
-// src/services/AdminUserManager.ts
-var AdminUserManager_exports = {};
-__export(AdminUserManager_exports, {
-  AdminUserManager: () => AdminUserManager
-});
-var AdminUserManager;
-var init_AdminUserManager = __esm({
-  "src/services/AdminUserManager.ts"() {
-    "use strict";
-    init_DatabaseService();
-    AdminUserManager = class {
-      /**
-       * 獲取所有管理員用戶
-       */
-      static async getAllAdminUsers() {
-        try {
-          const users = await DatabaseService.getAdminUsers();
-          return users.map((user) => ({
-            id: user.id.toString(),
-            username: user.username,
-            password: "",
-            // 不返回密碼
-            email: user.email,
-            created_at: new Date(user.created_at).getTime(),
-            is_active: true
-          }));
-        } catch (error) {
-          console.error("Failed to load admin users:", error);
-          return [];
-        }
-      }
-      /**
-       * 創建新的管理員用戶
-       */
-      static async createAdminUser(username, password, email) {
-        try {
-          await DatabaseService.createAdminUser(username, password, email);
-          return true;
-        } catch (error) {
-          console.error("Failed to create admin user:", error);
-          return false;
-        }
-      }
-      /**
-       * 更新管理員用戶
-       */
-      static async updateAdminUser(id, updates) {
-        try {
-          const response = await fetch(`http://localhost:3002/admin-users/${id}`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(updates)
-          });
-          return response.ok;
-        } catch (error) {
-          console.error("Failed to update admin user:", error);
-          return false;
-        }
-      }
-      /**
-       * 刪除管理員用戶
-       */
-      static async deleteAdminUser(id) {
-        try {
-          const response = await fetch(`http://localhost:3002/admin-users/${id}`, {
-            method: "DELETE"
-          });
-          return response.ok;
-        } catch (error) {
-          console.error("Failed to delete admin user:", error);
-          return false;
-        }
-      }
-      /**
-       * 驗證管理員登錄
-       */
-      static async validateAdminLogin(username, password) {
-        try {
-          const user = await DatabaseService.validateAdmin(username, password);
-          if (user) {
-            return {
-              id: user.id.toString(),
-              username: user.username,
-              password: "",
-              // 不返回密碼
-              email: user.email,
-              created_at: Date.now(),
-              last_login: Date.now(),
-              is_active: true
-            };
-          }
-          return null;
-        } catch (error) {
-          console.error("Failed to validate admin login:", error);
-          return null;
-        }
-      }
-      /**
-       * 更改密碼
-       */
-      static async changePassword(id, newPassword) {
-        return await this.updateAdminUser(id, { password: newPassword });
-      }
-    };
-  }
-});
-
 // node_modules/pdf-parse/dist/pdf-parse/web/pdf-parse.es.js
 var pdf_parse_es_exports = {};
 __export(pdf_parse_es_exports, {
@@ -35613,152 +35504,6 @@ ${pageNumber}
   }
 });
 
-// src/services/LlmsTxtService.ts
-var LlmsTxtService_exports = {};
-__export(LlmsTxtService_exports, {
-  LlmsTxtService: () => LlmsTxtService
-});
-var LlmsTxtService;
-var init_LlmsTxtService = __esm({
-  "src/services/LlmsTxtService.ts"() {
-    "use strict";
-    init_DatabaseService();
-    LlmsTxtService = class {
-      static cache = null;
-      static CACHE_DURATION = 36e5;
-      // 1 小時
-      static CHUNK_SIZE = 500;
-      // 每個 chunk 的字符數
-      static CHUNK_OVERLAP = 100;
-      // chunk 之間的重疊字符數
-      /**
-       * 獲取並處理 llms.txt 內容
-       */
-      static async getLlmsTxtChunks() {
-        try {
-          const url = await DatabaseService.getSetting("llms_txt_url");
-          if (!url) {
-            console.log("No llms.txt URL configured");
-            return [];
-          }
-          const now = Date.now();
-          if (this.cache && this.cache.url === url && now - this.cache.timestamp < this.CACHE_DURATION) {
-            console.log("Using cached llms.txt chunks");
-            return this.cache.chunks;
-          }
-          console.log("Fetching llms.txt from:", url);
-          const response = await fetch(url);
-          if (!response.ok) {
-            throw new Error(`Failed to fetch llms.txt: ${response.status}`);
-          }
-          const content = await response.text();
-          console.log("Fetched llms.txt content, length:", content.length);
-          const chunks = this.splitIntoChunks(content);
-          console.log("Split into", chunks.length, "chunks");
-          this.cache = {
-            url,
-            content,
-            chunks,
-            timestamp: now
-          };
-          return chunks;
-        } catch (error) {
-          console.error("Error fetching llms.txt:", error);
-          return [];
-        }
-      }
-      /**
-       * 將文本切分成 chunks（帶重疊）
-       */
-      static splitIntoChunks(text3) {
-        const chunks = [];
-        let start = 0;
-        while (start < text3.length) {
-          const end2 = Math.min(start + this.CHUNK_SIZE, text3.length);
-          const chunk = text3.substring(start, end2);
-          chunks.push(chunk);
-          start += this.CHUNK_SIZE - this.CHUNK_OVERLAP;
-        }
-        return chunks;
-      }
-      /**
-       * 提取中文字符和英文單詞作為關鍵字
-       */
-      static extractKeywords(text3) {
-        const textLower = text3.toLowerCase();
-        const chineseChars = textLower.match(/[\u4e00-\u9fa5]/g) || [];
-        const englishWords = textLower.match(/[a-z]{2,}/g) || [];
-        const numbers = textLower.match(/\d+/g) || [];
-        return [...chineseChars, ...englishWords, ...numbers];
-      }
-      /**
-       * 計算 BM25 分數
-       */
-      static calculateBM25Score(queryKeywords, docKeywords, avgDocLength, k1 = 1.5, b2 = 0.75) {
-        if (docKeywords.length === 0) return 0;
-        let score = 0;
-        const docLength = docKeywords.length;
-        for (const queryKeyword of queryKeywords) {
-          const tf = docKeywords.filter((k2) => k2 === queryKeyword).length;
-          if (tf === 0) continue;
-          const numerator = tf * (k1 + 1);
-          const denominator = tf + k1 * (1 - b2 + b2 * (docLength / avgDocLength));
-          score += numerator / denominator;
-        }
-        return score;
-      }
-      /**
-       * 搜索相關的 chunks（使用 BM25 算法）
-       */
-      static async searchChunks(query) {
-        const chunks = await this.getLlmsTxtChunks();
-        if (chunks.length === 0) {
-          return [];
-        }
-        console.log("\u{1F50D} LlmsTxtService.searchChunks() called with query:", query);
-        const queryKeywords = this.extractKeywords(query);
-        console.log("\u{1F50D} Query keywords:", queryKeywords);
-        const allChunkKeywords = chunks.map((chunk) => this.extractKeywords(chunk));
-        const avgChunkLength = allChunkKeywords.reduce((sum, keywords) => sum + keywords.length, 0) / allChunkKeywords.length;
-        const scoredChunks = chunks.map((chunk, index2) => {
-          const chunkKeywords = allChunkKeywords[index2];
-          const bm25Score = this.calculateBM25Score(queryKeywords, chunkKeywords, avgChunkLength);
-          return {
-            chunk,
-            context: "",
-            score: bm25Score,
-            index: index2
-          };
-        });
-        const results = scoredChunks.filter((item) => item.score > 0).sort((a, b2) => b2.score - a.score);
-        console.log("\u{1F50D} LlmsTxtService found", results.length, "matching chunks");
-        if (results.length > 0) {
-          console.log("\u{1F50D} Top chunk score:", results[0].score.toFixed(2));
-        }
-        const topResults = results.slice(0, 5);
-        topResults.forEach((result) => {
-          const contextChunks = [];
-          if (result.index > 0) {
-            contextChunks.push(chunks[result.index - 1]);
-          }
-          contextChunks.push(result.chunk);
-          if (result.index < chunks.length - 1) {
-            contextChunks.push(chunks[result.index + 1]);
-          }
-          result.context = contextChunks.join("\n...\n");
-        });
-        return topResults.map((r) => ({ chunk: r.chunk, context: r.context, score: r.score }));
-      }
-      /**
-       * 清除緩存
-       */
-      static clearCache() {
-        this.cache = null;
-      }
-    };
-  }
-});
-
 // src/components/styles.ts
 var styles = {
   container: `
@@ -37303,8 +37048,6 @@ var SidePanel = class {
   isOpen = false;
   width;
   position;
-  capturedImage = null;
-  capturedText = null;
   // 回調函數
   onSendMessage;
   onSelectRule;
@@ -37480,9 +37223,6 @@ var SidePanel = class {
     panel.querySelector("#sm-history-btn")?.addEventListener("click", () => {
       this.showHistory();
     });
-    panel.querySelector("#sm-remove-image")?.addEventListener("click", () => {
-      this.clearCapturedImage();
-    });
   }
   /**
    * 處理發送訊息
@@ -37490,10 +37230,9 @@ var SidePanel = class {
   handleSend() {
     const input = this.panel.querySelector("#sm-input");
     const message = input.value.trim();
-    if ((message || this.capturedImage) && this.onSendMessage) {
-      this.onSendMessage(message, this.capturedImage || void 0, this.capturedText || void 0);
+    if (message && this.onSendMessage) {
+      this.onSendMessage(message);
       input.value = "";
-      this.clearCapturedImage();
     }
   }
   /**
@@ -37983,55 +37722,6 @@ var SidePanel = class {
     body.style.boxSizing = "";
     body.style.marginLeft = "";
     body.style.marginRight = "";
-  }
-  /**
-   * 設置捕獲的圖片
-   */
-  setCapturedImage(imageBase64, text3) {
-    this.capturedImage = imageBase64;
-    this.capturedText = text3;
-    const preview = this.panel.querySelector("#sm-image-preview");
-    const img = this.panel.querySelector("#sm-preview-img");
-    const context = this.panel.querySelector("#sm-image-context");
-    if (preview && img && context) {
-      preview.style.display = "flex";
-      img.src = imageBase64;
-      context.textContent = text3.substring(0, 100) + (text3.length > 100 ? "..." : "");
-    }
-    const input = this.panel.querySelector("#sm-input");
-    if (input) {
-      input.focus();
-    }
-  }
-  /**
-   * 清除捕獲的圖片
-   */
-  clearCapturedImage() {
-    this.capturedImage = null;
-    this.capturedText = null;
-    const preview = this.panel.querySelector("#sm-image-preview");
-    if (preview) {
-      preview.style.display = "none";
-    }
-  }
-  /**
-   * 將截圖設置到輸入框
-   */
-  setScreenshotInInput(base64Image) {
-    this.capturedImage = base64Image;
-    const preview = this.panel.querySelector("#sm-image-preview");
-    const img = this.panel.querySelector("#sm-preview-img");
-    if (preview && img) {
-      img.src = base64Image;
-      preview.style.display = "block";
-    }
-    if (!this.isOpen) {
-      this.open();
-    }
-    const input = this.panel.querySelector("#sm-input");
-    if (input) {
-      input.focus();
-    }
   }
   /**
    * 設置回調函數
@@ -54941,12 +54631,11 @@ var AdminPanel = class {
     }
   }
   /**
-   * 渲染管理員用戶頁面
+   * 渲染管理員用戶頁面 (已棄用 - AdminUserManager 已移除)
    */
   async renderAdminUsers() {
     try {
-      const { AdminUserManager: AdminUserManager2 } = await Promise.resolve().then(() => (init_AdminUserManager(), AdminUserManager_exports));
-      const adminUsers = await AdminUserManager2.getAllAdminUsers();
+      const adminUsers = [];
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
           <h2 style="font-size: 24px; font-weight: 700; margin: 0; color: #1f2937;">\u7BA1\u7406\u54E1\u5E33\u865F\u7BA1\u7406</h2>
@@ -56871,29 +56560,17 @@ var LensServiceWidget = class {
       const { ManualIndexService: ManualIndexService2 } = await Promise.resolve().then(() => (init_ManualIndexService(), ManualIndexService_exports));
       const manualIndexResults = await ManualIndexService2.search(message, 3);
       console.log("\u{1F50D} Manual index search results:", manualIndexResults.length);
-      const { LlmsTxtService: LlmsTxtService2 } = await Promise.resolve().then(() => (init_LlmsTxtService(), LlmsTxtService_exports));
-      const llmsTxtResults = await LlmsTxtService2.searchChunks(message);
-      console.log("\u{1F50D} LLMs.txt search results:", llmsTxtResults.length);
       const orders = await DatabaseService2.getUserOrders();
       const subscriptions = await DatabaseService2.getUserSubscriptions();
       console.log("\u{1F50D} User orders:", orders.length);
       console.log("\u{1F50D} User subscriptions:", subscriptions.length);
-      const knowledgeBaseSources = [
-        ...manualIndexResults.slice(0, 3).map((r) => ({
-          type: "manual_index",
-          title: r.title || r.name,
-          content: r.content,
-          description: r.description || "",
-          score: r.hybrid_score || 0
-        })),
-        ...llmsTxtResults.slice(0, Math.max(0, 3 - manualIndexResults.length)).map((r) => ({
-          type: "llms_txt",
-          title: "LLMs.txt",
-          content: r.context,
-          // 使用包含前後文的內容
-          score: r.score
-        }))
-      ].slice(0, 3);
+      const knowledgeBaseSources = manualIndexResults.slice(0, 3).map((r) => ({
+        type: "manual_index",
+        title: r.title || r.name,
+        content: r.content,
+        description: r.description || "",
+        score: r.hybrid_score || 0
+      }));
       const allSources = [...knowledgeBaseSources];
       if (orders.length > 0) {
         allSources.push({

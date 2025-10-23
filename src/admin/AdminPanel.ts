@@ -2,7 +2,6 @@ import { ConversationService } from '../services/ConversationService';
 import { ManualIndexService } from '../services/ManualIndexService';
 import { DatabaseService } from '../services/DatabaseService';
 import { ConfigService } from '../services/ConfigService';
-import { AdminUserManager, AdminUser } from '../services/AdminUserManager';
 import { KnowledgeBaseService, KnowledgeFile } from '../services/KnowledgeBaseService';
 
 /**
@@ -2496,12 +2495,12 @@ export class AdminPanel {
   }
 
   /**
-   * 渲染管理員用戶頁面
+   * 渲染管理員用戶頁面 (已棄用 - AdminUserManager 已移除)
    */
   private async renderAdminUsers(): Promise<string> {
     try {
-      const { AdminUserManager } = await import('../services/AdminUserManager');
-      const adminUsers = await AdminUserManager.getAllAdminUsers();
+      // AdminUserManager has been removed
+      const adminUsers: any[] = [];
 
       return `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
@@ -2537,7 +2536,7 @@ export class AdminPanel {
                   </tr>
                 </thead>
                 <tbody>
-                  ${adminUsers.map(user => `
+                  ${adminUsers.map((user: any) => `
                     <tr style="border-bottom: 1px solid #f1f5f9;">
                       <td style="padding: 16px; color: #1f2937; font-weight: 500;">${user.username}</td>
                       <td style="padding: 16px;">

@@ -162,7 +162,7 @@ export declare class AdminPanel {
      */
     private renderConversations;
     /**
-     * 渲染管理員用戶頁面
+     * 渲染管理員用戶頁面 (已棄用 - AdminUserManager 已移除)
      */
     private renderAdminUsers;
     /**

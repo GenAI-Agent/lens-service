@@ -289,13 +289,7 @@ class LensServiceWidget {
 
       console.log('🔍 Manual index search results:', manualIndexResults.length);
 
-      // 步驟 1.5: 搜索 llms.txt（Fingerprint Search with chunks）
-      const { LlmsTxtService } = await import('./services/LlmsTxtService');
-      const llmsTxtResults = await LlmsTxtService.searchChunks(message);
-
-      console.log('🔍 LLMs.txt search results:', llmsTxtResults.length);
-
-      // 步驟 1.6: 搜索訂單和訂閱資訊（從 JWT token 獲取當前用戶）
+      // 步驟 1.5: 搜索訂單和訂閱資訊（從 JWT token 獲取當前用戶）
       const orders = await DatabaseService.getUserOrders();
       const subscriptions = await DatabaseService.getUserSubscriptions();
 
@@ -303,21 +297,13 @@ class LensServiceWidget {
       console.log('🔍 User subscriptions:', subscriptions.length);
 
       // 合併搜索結果（最多 3 筆知識庫內容）
-      const knowledgeBaseSources = [
-        ...manualIndexResults.slice(0, 3).map((r: any) => ({
-          type: 'manual_index',
-          title: r.title || r.name,
-          content: r.content,
-          description: r.description || '',
-          score: r.hybrid_score || 0
-        })),
-        ...llmsTxtResults.slice(0, Math.max(0, 3 - manualIndexResults.length)).map(r => ({
-          type: 'llms_txt',
-          title: 'LLMs.txt',
-          content: r.context, // 使用包含前後文的內容
-          score: r.score
-        }))
-      ].slice(0, 3); // 確保最多 3 筆
+      const knowledgeBaseSources = manualIndexResults.slice(0, 3).map((r: any) => ({
+        type: 'manual_index',
+        title: r.title || r.name,
+        content: r.content,
+        description: r.description || '',
+        score: r.hybrid_score || 0
+      }));
 
       const allSources = [...knowledgeBaseSources];
 

@@ -19,11 +19,9 @@ export class SidePanel {
   private isOpen: boolean = false;
   private width: string;
   private position: 'left' | 'right';
-  private capturedImage: string | null = null;
-  private capturedText: string | null = null;
 
   // 回調函數
-  private onSendMessage?: (message: string, imageBase64?: string, imageContext?: string) => void;
+  private onSendMessage?: (message: string) => void;
   private onSelectRule?: (ruleId: string) => void;
   private onClose?: () => void;
   private onOpen?: () => void;
@@ -244,10 +242,7 @@ export class SidePanel {
       this.showHistory();
     });
 
-    // 移除圖片按鈕
-    panel.querySelector('#sm-remove-image')?.addEventListener('click', () => {
-      this.clearCapturedImage();
-    });
+
   }
   
   /**
@@ -257,10 +252,9 @@ export class SidePanel {
     const input = this.panel.querySelector('#sm-input') as HTMLInputElement;
     const message = input.value.trim();
 
-    if ((message || this.capturedImage) && this.onSendMessage) {
-      this.onSendMessage(message, this.capturedImage || undefined, this.capturedText || undefined);
+    if (message && this.onSendMessage) {
+      this.onSendMessage(message);
       input.value = '';
-      this.clearCapturedImage();
     }
   }
   
@@ -870,69 +864,7 @@ export class SidePanel {
     body.style.marginRight = '';
   }
 
-  /**
-   * 設置捕獲的圖片
-   */
-  setCapturedImage(imageBase64: string, text: string): void {
-    this.capturedImage = imageBase64;
-    this.capturedText = text;
 
-    const preview = this.panel.querySelector('#sm-image-preview') as HTMLElement;
-    const img = this.panel.querySelector('#sm-preview-img') as HTMLImageElement;
-    const context = this.panel.querySelector('#sm-image-context') as HTMLElement;
-
-    if (preview && img && context) {
-      preview.style.display = 'flex';
-      img.src = imageBase64;
-      context.textContent = text.substring(0, 100) + (text.length > 100 ? '...' : '');
-    }
-
-    // 聚焦輸入框
-    const input = this.panel.querySelector('#sm-input') as HTMLInputElement;
-    if (input) {
-      input.focus();
-    }
-  }
-
-  /**
-   * 清除捕獲的圖片
-   */
-  clearCapturedImage(): void {
-    this.capturedImage = null;
-    this.capturedText = null;
-
-    const preview = this.panel.querySelector('#sm-image-preview') as HTMLElement;
-    if (preview) {
-      preview.style.display = 'none';
-    }
-  }
-
-  /**
-   * 將截圖設置到輸入框
-   */
-  setScreenshotInInput(base64Image: string): void {
-    this.capturedImage = base64Image;
-
-    // 顯示圖片預覽
-    const preview = this.panel.querySelector('#sm-image-preview') as HTMLElement;
-    const img = this.panel.querySelector('#sm-preview-img') as HTMLImageElement;
-
-    if (preview && img) {
-      img.src = base64Image;
-      preview.style.display = 'block';
-    }
-
-    // 自動打開面板如果還沒打開
-    if (!this.isOpen) {
-      this.open();
-    }
-
-    // 聚焦到輸入框
-    const input = this.panel.querySelector('#sm-input') as HTMLInputElement;
-    if (input) {
-      input.focus();
-    }
-  }
 
   /**
    * 設置回調函數
