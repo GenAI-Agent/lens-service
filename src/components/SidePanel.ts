@@ -124,12 +124,15 @@ export class SidePanel {
             </div>
 
             <div style="position: relative; width: 100%;">
-              <input
-                type="text"
+              <!-- Rule autocomplete dropdown -->
+              <div id="sm-rule-dropdown" style="display: none; position: absolute; bottom: 100%; left: 0; right: 0; background: white; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 8px; max-height: 200px; overflow-y: auto; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); z-index: 1000;"></div>
+
+              <textarea
                 id="sm-input"
                 placeholder="輸入訊息..."
-                style="${styles.input}"
-              />
+                rows="1"
+                style="${styles.input}; resize: none; overflow-y: hidden; min-height: 44px; max-height: 132px; padding-top: 12px; padding-bottom: 12px; line-height: 20px;"
+              ></textarea>
               <button id="sm-send-btn" style="${styles.sendIconButton}" title="發送">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
@@ -193,36 +196,197 @@ export class SidePanel {
       console.error('❌ Send button not found!');
     }
     
-    // 輸入框事件
-    const input = panel.querySelector('#sm-input') as HTMLInputElement;
-    if (input) {
-      console.log('✅ Input field found, binding events');
+    // Textarea 事件
+    const textarea = panel.querySelector('#sm-input') as HTMLTextAreaElement;
+    const dropdown = panel.querySelector('#sm-rule-dropdown') as HTMLElement;
+
+    if (textarea && dropdown) {
+      console.log('✅ Textarea field found, binding events');
+
+      let selectedRuleIndex = -1;
+      let availableRules: string[] = [];
+
+      // 自動調整 textarea 高度
+      const autoResize = () => {
+        textarea.style.height = 'auto';
+        const newHeight = Math.min(textarea.scrollHeight, 132); // max 3 lines (44px * 3 = 132px)
+        textarea.style.height = newHeight + 'px';
+        textarea.style.overflowY = newHeight >= 132 ? 'auto' : 'hidden';
+      };
+
+      // 顯示規則下拉選單
+      const showRuleDropdown = async (query: string) => {
+        try {
+          const { RuleParserService } = await import('../services/RuleParserService');
+          const parser = new RuleParserService();
+          availableRules = parser.getAvailableRules();
+
+          if (availableRules.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+          }
+
+          // 過濾符合的規則
+          const filteredRules = query
+            ? availableRules.filter(rule => rule.toLowerCase().includes(query.toLowerCase()))
+            : availableRules;
+
+          if (filteredRules.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+          }
+
+          // 渲染下拉選單
+          dropdown.innerHTML = filteredRules.map((rule, index) => `
+            <div class="rule-item" data-index="${index}" data-rule="${rule}" style="
+              padding: 10px 16px;
+              cursor: pointer;
+              border-bottom: 1px solid #f3f4f6;
+              transition: background-color 0.15s;
+            " onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='white'">
+              <div style="font-weight: 500; font-size: 14px; color: #1f2937;">/${rule}</div>
+            </div>
+          `).join('');
+
+          dropdown.style.display = 'block';
+          selectedRuleIndex = -1;
+
+          // 綁定點擊事件
+          dropdown.querySelectorAll('.rule-item').forEach((item) => {
+            item.addEventListener('click', () => {
+              const ruleName = item.getAttribute('data-rule');
+              if (ruleName) {
+                insertRule(ruleName);
+              }
+            });
+          });
+        } catch (error) {
+          console.error('Failed to load rules:', error);
+        }
+      };
+
+      // 插入規則到 textarea
+      const insertRule = (ruleName: string) => {
+        const currentValue = textarea.value;
+        const cursorPos = textarea.selectionStart;
+
+        // 找到最後一個 / 的位置
+        const lastSlashIndex = currentValue.lastIndexOf('/', cursorPos);
+
+        if (lastSlashIndex !== -1) {
+          // 替換 / 後面的內容為選中的規則
+          const before = currentValue.substring(0, lastSlashIndex);
+          const after = currentValue.substring(cursorPos);
+          textarea.value = before + '/' + ruleName + ' ' + after;
+
+          // 將光標移到規則名稱之後
+          const newCursorPos = lastSlashIndex + ruleName.length + 2;
+          textarea.setSelectionRange(newCursorPos, newCursorPos);
+        }
+
+        dropdown.style.display = 'none';
+        textarea.focus();
+        autoResize();
+      };
+
+      // 隱藏下拉選單
+      const hideDropdown = () => {
+        dropdown.style.display = 'none';
+        selectedRuleIndex = -1;
+      };
 
       // Enter 鍵發送，Shift+Enter 換行
-      input.addEventListener('keydown', (e) => {
+      textarea.addEventListener('keydown', async (e) => {
+        // 如果下拉選單顯示中，處理方向鍵和 Enter
+        if (dropdown.style.display === 'block') {
+          const ruleItems = dropdown.querySelectorAll('.rule-item');
+
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedRuleIndex = Math.min(selectedRuleIndex + 1, ruleItems.length - 1);
+            updateDropdownSelection(ruleItems);
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedRuleIndex = Math.max(selectedRuleIndex - 1, -1);
+            updateDropdownSelection(ruleItems);
+          } else if (e.key === 'Enter' && selectedRuleIndex >= 0) {
+            e.preventDefault();
+            const selectedItem = ruleItems[selectedRuleIndex];
+            const ruleName = selectedItem.getAttribute('data-rule');
+            if (ruleName) {
+              insertRule(ruleName);
+            }
+            return;
+          } else if (e.key === 'Escape') {
+            e.preventDefault();
+            hideDropdown();
+            return;
+          }
+        }
+
+        // 正常的 Enter 和 Shift+Enter 處理
         if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault(); // 防止換行
-          console.log('🔥 Enter key pressed in input');
+          e.preventDefault();
+          console.log('🔥 Enter key pressed in textarea');
           this.handleSend();
         }
-        // Shift+Enter 允許換行（不需要額外處理）
+        // Shift+Enter 允許換行（瀏覽器預設行為）
       });
 
-      // 輸入事件調試
-      input.addEventListener('input', (e) => {
-        console.log('🔥 Input event:', (e.target as HTMLInputElement).value);
+      // 更新下拉選單選中狀態
+      const updateDropdownSelection = (items: NodeListOf<Element>) => {
+        items.forEach((item, index) => {
+          if (index === selectedRuleIndex) {
+            (item as HTMLElement).style.backgroundColor = '#e0e7ff';
+          } else {
+            (item as HTMLElement).style.backgroundColor = 'white';
+          }
+        });
+      };
+
+      // 輸入事件 - 檢測 / 並顯示規則下拉選單
+      textarea.addEventListener('input', (e) => {
+        const value = textarea.value;
+        const cursorPos = textarea.selectionStart;
+
+        // 自動調整高度
+        autoResize();
+
+        // 檢查是否在輸入 /
+        const textBeforeCursor = value.substring(0, cursorPos);
+        const lastSlashIndex = textBeforeCursor.lastIndexOf('/');
+
+        if (lastSlashIndex !== -1) {
+          const textAfterSlash = textBeforeCursor.substring(lastSlashIndex + 1);
+
+          // 如果 / 後面沒有空格，顯示下拉選單
+          if (!textAfterSlash.includes(' ')) {
+            showRuleDropdown(textAfterSlash);
+          } else {
+            hideDropdown();
+          }
+        } else {
+          hideDropdown();
+        }
       });
 
-      // 聚焦事件調試
-      input.addEventListener('focus', () => {
-        console.log('🔥 Input focused');
+      // 點擊外部隱藏下拉選單
+      document.addEventListener('click', (e) => {
+        if (!textarea.contains(e.target as Node) && !dropdown.contains(e.target as Node)) {
+          hideDropdown();
+        }
       });
 
-      input.addEventListener('blur', () => {
-        console.log('🔥 Input blurred');
+      // 聚焦事件
+      textarea.addEventListener('focus', () => {
+        console.log('🔥 Textarea focused');
+      });
+
+      textarea.addEventListener('blur', () => {
+        console.log('🔥 Textarea blurred');
       });
     } else {
-      console.error('❌ Input field not found!');
+      console.error('❌ Textarea or dropdown not found!');
     }
     
     // 標籤切換
@@ -249,12 +413,15 @@ export class SidePanel {
    * 處理發送訊息
    */
   private handleSend(): void {
-    const input = this.panel.querySelector('#sm-input') as HTMLInputElement;
-    const message = input.value.trim();
+    const textarea = this.panel.querySelector('#sm-input') as HTMLTextAreaElement;
+    const message = textarea.value.trim();
 
     if (message && this.onSendMessage) {
       this.onSendMessage(message);
-      input.value = '';
+      textarea.value = '';
+      // 重置高度
+      textarea.style.height = 'auto';
+      textarea.style.overflowY = 'hidden';
     }
   }
   

@@ -794,6 +794,7 @@ export class AdminPanel {
             ${this.renderNavItem('dashboard', '儀表板')}
             ${this.renderNavItem('conversations', '客服對話')}
             ${this.renderNavItem('manual-index', '手動索引')}
+            ${this.renderNavItem('rules', '規則管理')}
             ${this.renderNavItem('system', '系統設定')}
           </nav>
 
@@ -854,6 +855,8 @@ export class AdminPanel {
         return await this.renderManualIndex();
       case 'conversations':
         return await this.renderConversations();
+      case 'rules':
+        return await this.renderRules();
       case 'system':
         return await this.renderSystemSettings();
       default:
@@ -884,6 +887,9 @@ export class AdminPanel {
 
     // 客服對話相關事件
     this.bindCustomerServiceEvents();
+
+    // 規則管理相關事件
+    this.bindRuleManagementEvents();
 
     // 管理員相關事件
     this.bindAdminUserEvents();
@@ -2606,6 +2612,118 @@ export class AdminPanel {
 
 
   /**
+   * 渲染規則管理頁面
+   */
+  private async renderRules(): Promise<string> {
+    const { RuleStorageService } = await import('../services/RuleStorageService');
+    const rules = RuleStorageService.getRules();
+
+    const rulesHTML = rules.length === 0
+      ? '<p style="text-align: center; color: #6b7280; padding: 40px;">目前沒有任何規則</p>'
+      : rules.map(rule => `
+        <div class="rule-card" style="
+          background: white;
+          border: 1px solid #e5e7eb;
+          border-radius: 12px;
+          padding: 20px;
+          margin-bottom: 16px;
+          transition: box-shadow 0.2s;
+        ">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 12px;">
+            <div style="flex: 1;">
+              <h3 style="margin: 0 0 4px 0; font-size: 16px; font-weight: 600; color: #1f2937;">
+                /${rule.name}
+                ${rule.isActive ? '<span style="margin-left: 8px; padding: 2px 8px; background: #10b981; color: white; font-size: 11px; border-radius: 4px; font-weight: 500;">啟用</span>' : '<span style="margin-left: 8px; padding: 2px 8px; background: #6b7280; color: white; font-size: 11px; border-radius: 4px; font-weight: 500;">停用</span>'}
+              </h3>
+              <p style="margin: 0; font-size: 13px; color: #6b7280;">${rule.displayName || '-'}</p>
+            </div>
+            <div style="display: flex; gap: 8px;">
+              <button class="edit-rule-btn" data-rule-id="${rule.id}" style="
+                padding: 6px 12px;
+                background: #3b82f6;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                font-size: 13px;
+                cursor: pointer;
+                transition: background 0.2s;
+              " onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">
+                編輯
+              </button>
+              <button class="delete-rule-btn" data-rule-id="${rule.id}" style="
+                padding: 6px 12px;
+                background: #ef4444;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                font-size: 13px;
+                cursor: pointer;
+                transition: background 0.2s;
+              " onmouseover="this.style.background='#dc2626'" onmouseout="this.style.background='#ef4444'">
+                刪除
+              </button>
+            </div>
+          </div>
+
+          ${rule.description ? `<p style="margin: 0 0 12px 0; font-size: 14px; color: #4b5563;">${rule.description}</p>` : ''}
+
+          <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #f3f4f6;">
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; font-size: 13px;">
+              <div>
+                <span style="color: #6b7280; font-weight: 500;">Temperature:</span>
+                <span style="color: #1f2937; margin-left: 4px;">${rule.temperature || 0.7}</span>
+              </div>
+              <div>
+                <span style="color: #6b7280; font-weight: 500;">Max Tokens:</span>
+                <span style="color: #1f2937; margin-left: 4px;">${rule.maxTokens || 2000}</span>
+              </div>
+            </div>
+
+            ${rule.searchTools && rule.searchTools.length > 0 ? `
+              <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #f3f4f6;">
+                <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 500; color: #6b7280;">搜尋工具 (${rule.searchTools.length})</p>
+                ${rule.searchTools.map(tool => `
+                  <div style="background: #f9fafb; padding: 8px 12px; border-radius: 6px; margin-bottom: 6px;">
+                    <p style="margin: 0; font-size: 13px; font-weight: 500; color: #1f2937;">${tool.name}</p>
+                    <p style="margin: 4px 0 0 0; font-size: 12px; color: #6b7280;">${tool.urls.length} URLs</p>
+                  </div>
+                `).join('')}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+
+    return `
+      <div style="max-width: 1200px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+          <div>
+            <h2 style="margin: 0 0 8px 0; font-size: 24px; font-weight: 700; color: #1f2937;">規則管理</h2>
+            <p style="margin: 0; font-size: 14px; color: #6b7280;">管理 AI 對話規則與搜尋工具配置</p>
+          </div>
+          <button id="add-rule-btn" style="
+            padding: 10px 20px;
+            background: #7c3aed;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+          " onmouseover="this.style.background='#6d28d9'" onmouseout="this.style.background='#7c3aed'">
+            + 新增規則
+          </button>
+        </div>
+
+        <div id="rules-list">
+          ${rulesHTML}
+        </div>
+      </div>
+    `;
+  }
+
+  /**
    * 渲染系統設定頁面
    */
   private async renderSystemSettings(): Promise<string> {
@@ -3859,6 +3977,251 @@ export class AdminPanel {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+
+  /**
+   * 綁定規則管理相關事件
+   */
+  private bindRuleManagementEvents(): void {
+    // 新增規則按鈕
+    const addRuleBtn = this.container!.querySelector('#add-rule-btn');
+    if (addRuleBtn) {
+      addRuleBtn.addEventListener('click', async () => {
+        await this.showRuleModal();
+      });
+    }
+
+    // 編輯規則按鈕
+    const editButtons = this.container!.querySelectorAll('.edit-rule-btn');
+    editButtons.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const ruleId = (btn as HTMLElement).dataset.ruleId;
+        if (ruleId) {
+          await this.showRuleModal(ruleId);
+        }
+      });
+    });
+
+    // 刪除規則按鈕
+    const deleteButtons = this.container!.querySelectorAll('.delete-rule-btn');
+    deleteButtons.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const ruleId = (btn as HTMLElement).dataset.ruleId;
+        if (ruleId) {
+          const confirmed = await this.showConfirmDialog('確定要刪除這個規則嗎？');
+          if (confirmed) {
+            const { RuleStorageService } = await import('../services/RuleStorageService');
+            RuleStorageService.deleteRule(ruleId);
+            await this.updatePageContent();
+          }
+        }
+      });
+    });
+  }
+
+  /**
+   * 顯示規則編輯/新增對話框
+   */
+  private async showRuleModal(ruleId?: string): Promise<void> {
+    const { RuleStorageService } = await import('../services/RuleStorageService');
+
+    // 獲取現有規則（如果是編輯模式）
+    const existingRule = ruleId ? RuleStorageService.getRuleById(ruleId) : null;
+
+    const modalHTML = `
+      <div id="rule-modal" style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000000;
+      ">
+        <div style="
+          background: white;
+          border-radius: 16px;
+          padding: 32px;
+          max-width: 600px;
+          width: 90%;
+          max-height: 90vh;
+          overflow-y: auto;
+        ">
+          <h2 style="margin: 0 0 24px 0; font-size: 20px; font-weight: 700; color: #1f2937;">
+            ${existingRule ? '編輯規則' : '新增規則'}
+          </h2>
+
+          <form id="rule-form">
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+                規則名稱 (用於 /rule_name)
+              </label>
+              <input
+                type="text"
+                id="rule-name"
+                value="${existingRule?.name || ''}"
+                placeholder="例如: financial"
+                style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+                required
+              />
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+                顯示名稱
+              </label>
+              <input
+                type="text"
+                id="rule-display-name"
+                value="${existingRule?.displayName || ''}"
+                placeholder="例如: 財務分析專家"
+                style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+              />
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+                描述
+              </label>
+              <textarea
+                id="rule-description"
+                placeholder="簡短描述這個規則的用途"
+                rows="2"
+                style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;"
+              >${existingRule?.description || ''}</textarea>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+                System Prompt (AI 角色設定)
+              </label>
+              <textarea
+                id="rule-persona"
+                placeholder="例如: 你是一個專業的財務分析師..."
+                rows="4"
+                style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;"
+                required
+              >${existingRule?.persona || ''}</textarea>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+                輸出格式指示
+              </label>
+              <textarea
+                id="rule-output-format"
+                placeholder="例如: 請以條列式回答，包含關鍵數據與分析..."
+                rows="3"
+                style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box; resize: vertical;"
+                required
+              >${existingRule?.outputFormat || ''}</textarea>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+              <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+                  Temperature
+                </label>
+                <input
+                  type="number"
+                  id="rule-temperature"
+                  value="${existingRule?.temperature || 0.7}"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+                />
+              </div>
+              <div>
+                <label style="display: block; font-size: 14px; font-weight: 500; color: #374151; margin-bottom: 8px;">
+                  Max Tokens
+                </label>
+                <input
+                  type="number"
+                  id="rule-max-tokens"
+                  value="${existingRule?.maxTokens || 2000}"
+                  min="100"
+                  max="10000"
+                  step="100"
+                  style="width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; box-sizing: border-box;"
+                />
+              </div>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+              <label style="display: flex; align-items: center; font-size: 14px; font-weight: 500; color: #374151;">
+                <input
+                  type="checkbox"
+                  id="rule-is-active"
+                  ${existingRule?.isActive !== false ? 'checked' : ''}
+                  style="margin-right: 8px; width: 16px; height: 16px;"
+                />
+                啟用此規則
+              </label>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 24px;">
+              <button
+                type="button"
+                id="cancel-rule-btn"
+                style="padding: 10px 20px; background: #f3f4f6; border: none; border-radius: 8px; color: #6b7280; font-size: 14px; font-weight: 500; cursor: pointer;"
+              >
+                取消
+              </button>
+              <button
+                type="submit"
+                style="padding: 10px 20px; background: #7c3aed; border: none; border-radius: 8px; color: white; font-size: 14px; font-weight: 500; cursor: pointer;"
+              >
+                ${existingRule ? '更新' : '建立'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+
+    // 插入模態框到 body
+    const modalContainer = document.createElement('div');
+    modalContainer.innerHTML = modalHTML;
+    document.body.appendChild(modalContainer);
+
+    // 綁定事件
+    const form = document.getElementById('rule-form') as HTMLFormElement;
+    const cancelBtn = document.getElementById('cancel-rule-btn');
+    const modal = document.getElementById('rule-modal');
+
+    cancelBtn?.addEventListener('click', () => {
+      modalContainer.remove();
+    });
+
+    form?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const ruleData = {
+        name: (document.getElementById('rule-name') as HTMLInputElement).value.trim(),
+        displayName: (document.getElementById('rule-display-name') as HTMLInputElement).value.trim(),
+        description: (document.getElementById('rule-description') as HTMLTextAreaElement).value.trim(),
+        persona: (document.getElementById('rule-persona') as HTMLTextAreaElement).value.trim(),
+        outputFormat: (document.getElementById('rule-output-format') as HTMLTextAreaElement).value.trim(),
+        temperature: parseFloat((document.getElementById('rule-temperature') as HTMLInputElement).value),
+        maxTokens: parseInt((document.getElementById('rule-max-tokens') as HTMLInputElement).value),
+        isActive: (document.getElementById('rule-is-active') as HTMLInputElement).checked,
+      };
+
+      if (existingRule) {
+        // 更新現有規則
+        RuleStorageService.updateRule(ruleId!, ruleData);
+      } else {
+        // 創建新規則
+        RuleStorageService.saveRule(ruleData);
+      }
+
+      modalContainer.remove();
+      await this.updatePageContent();
+    });
   }
 }
 

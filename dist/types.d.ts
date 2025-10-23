@@ -248,3 +248,44 @@ export interface SearchSettings {
     refreshInterval: number;
     sitemapUrl?: string;
 }
+export interface RuleConfig {
+    id: string;
+    name: string;
+    displayName: string;
+    description?: string;
+    persona: string;
+    outputFormat: string;
+    temperature?: number;
+    maxTokens?: number;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+    searchTools?: SearchToolConfig[];
+}
+export interface SearchToolConfig {
+    id: string;
+    ruleId: string;
+    name: string;
+    description?: string;
+    urls: string[];
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+export interface ParsedQuery {
+    ruleName?: string;
+    originalQuery: string;
+    cleanQuery: string;
+    ruleConfig?: RuleConfig;
+}
+export interface ScrapedContent {
+    url: string;
+    title: string;
+    content: string;
+    metadata?: {
+        description?: string;
+        keywords?: string[];
+        lastModified?: string;
+    };
+    scrapedAt: Date;
+}

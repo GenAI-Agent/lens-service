@@ -166,6 +166,10 @@ export declare class AdminPanel {
      */
     private renderAdminUsers;
     /**
+     * 渲染規則管理頁面
+     */
+    private renderRules;
+    /**
      * 渲染系統設定頁面
      */
     private renderSystemSettings;
@@ -245,4 +249,12 @@ export declare class AdminPanel {
      * Escape HTML to prevent XSS
      */
     private escapeHtml;
+    /**
+     * 綁定規則管理相關事件
+     */
+    private bindRuleManagementEvents;
+    /**
+     * 顯示規則編輯/新增對話框
+     */
+    private showRuleModal;
 }

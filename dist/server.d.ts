@@ -11,3 +11,5 @@ export { ConfigService } from './services/ConfigService';
 export { HybridSearchService } from './services/HybridSearchService';
 export { KnowledgeBaseService } from './services/KnowledgeBaseService';
 export { CustomerServiceManager } from './services/CustomerServiceManager';
+export { RuleStorageService } from './services/RuleStorageService';
+export { RuleParserService } from './services/RuleParserService';

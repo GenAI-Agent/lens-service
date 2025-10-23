@@ -295,3 +295,50 @@ export interface SearchSettings {
   sitemapUrl?: string;
 }
 
+// ==================== 新增：Rule & Search Tool 管理 ====================
+
+export interface RuleConfig {
+  id: string;
+  name: string; // 用於匹配 /rule_name
+  displayName: string;
+  description?: string;
+  persona: string; // AI 角色設定
+  outputFormat: string; // 輸出格式指示
+  temperature?: number;
+  maxTokens?: number;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  searchTools?: SearchToolConfig[];
+}
+
+export interface SearchToolConfig {
+  id: string;
+  ruleId: string;
+  name: string;
+  description?: string;
+  urls: string[]; // 要爬取的 URL 列表
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ParsedQuery {
+  ruleName?: string; // 解析出的 rule 名稱
+  originalQuery: string; // 原始 query
+  cleanQuery: string; // 移除 /rule_name 後的 query
+  ruleConfig?: RuleConfig; // 對應的 rule 配置
+}
+
+export interface ScrapedContent {
+  url: string;
+  title: string;
+  content: string;
+  metadata?: {
+    description?: string;
+    keywords?: string[];
+    lastModified?: string;
+  };
+  scrapedAt: Date;
+}
+

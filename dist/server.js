@@ -1364,6 +1364,244 @@ var CustomerServiceManager = class {
     }
   }
 };
+
+// src/services/RuleStorageService.ts
+var RuleStorageService = class {
+  static STORAGE_KEY = "lens_service_rules";
+  /**
+   * 獲取所有 Rules
+   */
+  static getRules() {
+    try {
+      const data = localStorage.getItem(this.STORAGE_KEY);
+      if (!data) return [];
+      return JSON.parse(data);
+    } catch (error) {
+      console.error("Failed to get rules from localStorage:", error);
+      return [];
+    }
+  }
+  /**
+   * 根據名稱獲取 Rule
+   */
+  static getRuleByName(name) {
+    const rules = this.getRules();
+    return rules.find((rule) => rule.name === name && rule.isActive) || null;
+  }
+  /**
+   * 根據 ID 獲取 Rule
+   */
+  static getRuleById(id) {
+    const rules = this.getRules();
+    return rules.find((rule) => rule.id === id) || null;
+  }
+  /**
+   * 保存 Rule
+   */
+  static saveRule(rule) {
+    const rules = this.getRules();
+    const newRule = {
+      ...rule,
+      id: this.generateId(),
+      createdAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    };
+    rules.push(newRule);
+    this.saveRules(rules);
+    return newRule;
+  }
+  /**
+   * 更新 Rule
+   */
+  static updateRule(id, updates) {
+    const rules = this.getRules();
+    const index = rules.findIndex((rule) => rule.id === id);
+    if (index === -1) return null;
+    rules[index] = {
+      ...rules[index],
+      ...updates,
+      updatedAt: /* @__PURE__ */ new Date()
+    };
+    this.saveRules(rules);
+    return rules[index];
+  }
+  /**
+   * 刪除 Rule
+   */
+  static deleteRule(id) {
+    const rules = this.getRules();
+    const filteredRules = rules.filter((rule) => rule.id !== id);
+    if (filteredRules.length === rules.length) return false;
+    this.saveRules(filteredRules);
+    return true;
+  }
+  /**
+   * 保存所有 Rules 到 localStorage
+   */
+  static saveRules(rules) {
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(rules));
+    } catch (error) {
+      console.error("Failed to save rules to localStorage:", error);
+    }
+  }
+  /**
+   * 為 Rule 添加 SearchTool
+   */
+  static addSearchTool(ruleId, tool) {
+    const rule = this.getRuleById(ruleId);
+    if (!rule) return null;
+    const newTool = {
+      ...tool,
+      id: this.generateId(),
+      ruleId,
+      createdAt: /* @__PURE__ */ new Date(),
+      updatedAt: /* @__PURE__ */ new Date()
+    };
+    rule.searchTools = rule.searchTools || [];
+    rule.searchTools.push(newTool);
+    rule.updatedAt = /* @__PURE__ */ new Date();
+    this.updateRule(ruleId, { searchTools: rule.searchTools });
+    return newTool;
+  }
+  /**
+   * 更新 SearchTool
+   */
+  static updateSearchTool(ruleId, toolId, updates) {
+    const rule = this.getRuleById(ruleId);
+    if (!rule || !rule.searchTools) return null;
+    const toolIndex = rule.searchTools.findIndex((tool) => tool.id === toolId);
+    if (toolIndex === -1) return null;
+    rule.searchTools[toolIndex] = {
+      ...rule.searchTools[toolIndex],
+      ...updates,
+      updatedAt: /* @__PURE__ */ new Date()
+    };
+    this.updateRule(ruleId, { searchTools: rule.searchTools });
+    return rule.searchTools[toolIndex];
+  }
+  /**
+   * 刪除 SearchTool
+   */
+  static deleteSearchTool(ruleId, toolId) {
+    const rule = this.getRuleById(ruleId);
+    if (!rule || !rule.searchTools) return false;
+    const filteredTools = rule.searchTools.filter((tool) => tool.id !== toolId);
+    if (filteredTools.length === rule.searchTools.length) return false;
+    this.updateRule(ruleId, { searchTools: filteredTools });
+    return true;
+  }
+  /**
+   * 生成唯一 ID
+   */
+  static generateId() {
+    return `rule_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  }
+  /**
+   * 清空所有 Rules（僅用於開發/測試）
+   */
+  static clearAll() {
+    localStorage.removeItem(this.STORAGE_KEY);
+  }
+  /**
+   * 初始化示例數據（僅在首次使用時）
+   */
+  static initializeDefaults() {
+    const existingRules = this.getRules();
+    if (existingRules.length > 0) return;
+    const exampleRule = this.saveRule({
+      name: "financial",
+      displayName: "\u8CA1\u52D9\u5206\u6790\u5E2B",
+      description: "\u5C08\u696D\u7684\u8CA1\u52D9\u5206\u6790\u52A9\u624B",
+      persona: "\u4F60\u662F\u4E00\u4F4D\u7D93\u9A57\u8C50\u5BCC\u7684\u8CA1\u52D9\u5206\u6790\u5E2B\uFF0C\u64C5\u9577\u89E3\u8B80\u8CA1\u52D9\u5831\u8868\u3001\u5206\u6790\u5E02\u5834\u8DA8\u52E2\u548C\u63D0\u4F9B\u6295\u8CC7\u5EFA\u8B70\u3002",
+      outputFormat: "\u8ACB\u4EE5\u5C08\u696D\u4F46\u6613\u61C2\u7684\u65B9\u5F0F\u56DE\u7B54\uFF0C\u5305\u542B\uFF1A\n1. \u6838\u5FC3\u8981\u9EDE\uFF08bullet points\uFF09\n2. \u8A73\u7D30\u5206\u6790\n3. \u5EFA\u8B70\u6216\u7D50\u8AD6",
+      temperature: 0.7,
+      maxTokens: 2e3,
+      isActive: true,
+      searchTools: []
+    });
+    console.log("\u2705 Initialized default rules:", exampleRule);
+  }
+};
+
+// src/services/RuleParserService.ts
+var RuleParserService = class {
+  // 匹配任何位置的 /rule_name（前後可以有其他內容）
+  ruleRegex = /\/([a-zA-Z0-9_-]+)/g;
+  constructor() {
+  }
+  /**
+   * 解析查詢，提取 rule 名稱並獲取對應的配置
+   * 支持在查詢中任何位置出現 /rule_name
+   * @param query - 原始查詢字符串
+   * @returns ParsedQuery 對象
+   */
+  parseQuery(query) {
+    this.ruleRegex.lastIndex = 0;
+    const matches = Array.from(query.matchAll(this.ruleRegex));
+    if (matches.length === 0) {
+      return {
+        originalQuery: query,
+        cleanQuery: query
+      };
+    }
+    const firstMatch = matches[0];
+    const ruleName = firstMatch[1];
+    const cleanQuery = query.replace(this.ruleRegex, "").trim();
+    const ruleConfig = RuleStorageService.getRuleByName(ruleName);
+    return {
+      ruleName,
+      originalQuery: query,
+      cleanQuery,
+      ruleConfig: ruleConfig || void 0
+    };
+  }
+  /**
+   * 獲取所有可用的 rule 名稱（用於自動補全）
+   * @returns Rule 名稱數組
+   */
+  getAvailableRules() {
+    const rules = RuleStorageService.getRules();
+    return rules.filter((rule) => rule.isActive).map((rule) => rule.name);
+  }
+  /**
+   * 構建包含 rule 配置的系統提示詞
+   * @param parsedQuery - 解析後的查詢
+   * @param baseSystemPrompt - 基礎系統提示詞
+   * @returns 增強後的系統提示詞
+   */
+  buildSystemPrompt(parsedQuery, baseSystemPrompt) {
+    if (!parsedQuery.ruleConfig) {
+      return baseSystemPrompt;
+    }
+    const { persona, outputFormat } = parsedQuery.ruleConfig;
+    return `${baseSystemPrompt}
+
+## \u89D2\u8272\u8A2D\u5B9A (Persona)
+${persona}
+
+## \u8F38\u51FA\u683C\u5F0F\u8981\u6C42 (Output Format)
+${outputFormat}`;
+  }
+  /**
+   * 獲取 rule 對應的溫度參數
+   * @param parsedQuery - 解析後的查詢
+   * @param defaultTemperature - 默認溫度
+   * @returns 溫度值
+   */
+  getTemperature(parsedQuery, defaultTemperature = 0.7) {
+    return parsedQuery.ruleConfig?.temperature ?? defaultTemperature;
+  }
+  /**
+   * 獲取 rule 對應的最大 token 數
+   * @param parsedQuery - 解析後的查詢
+   * @param defaultMaxTokens - 默認最大 token 數
+   * @returns 最大 token 數
+   */
+  getMaxTokens(parsedQuery, defaultMaxTokens = 2e3) {
+    return parsedQuery.ruleConfig?.maxTokens ?? defaultMaxTokens;
+  }
+};
 export {
   ConfigService,
   ContentExtractorService,
@@ -1373,5 +1611,7 @@ export {
   HybridSearchService,
   KnowledgeBaseService,
   ManualIndexService,
+  RuleParserService,
+  RuleStorageService,
   UserService
 };
