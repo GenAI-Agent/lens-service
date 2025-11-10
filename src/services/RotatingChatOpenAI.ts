@@ -142,9 +142,20 @@ function parseEndpointURL(endpoint: string): { baseURL: string; deployment: stri
     // 檢查是否是完整的 API URL (包含 /openai/deployments/...)
     const pathMatch = url.pathname.match(/\/openai\/deployments\/([^\/]+)/);
     if (pathMatch) {
-      const deployment = pathMatch[1].replace('/chat/completions', '');
+      const deployment = pathMatch[1];
       const apiVersion = url.searchParams.get('api-version');
-      const baseURL = `${url.protocol}//${url.host}${url.pathname}`;
+
+      // 移除 /chat/completions 部分，因為 OpenAI SDK 會自動添加
+      // 例如: https://xxx.com/openai/deployments/gpt-4.1/chat/completions?api-version=xxx
+      // -> baseURL: https://xxx.com/openai/deployments/gpt-4.1
+      let pathname = url.pathname;
+      if (pathname.endsWith('/chat/completions')) {
+        pathname = pathname.replace('/chat/completions', '');
+      }
+
+      const baseURL = `${url.protocol}//${url.host}${pathname}`;
+
+      console.log(`[Rotating ChatOpenAI] Parsed endpoint - baseURL: ${baseURL}, deployment: ${deployment}, apiVersion: ${apiVersion}`);
 
       return {
         baseURL,

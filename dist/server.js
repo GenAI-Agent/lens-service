@@ -45337,9 +45337,14 @@ function parseEndpointURL(endpoint) {
     const url2 = new URL(endpoint);
     const pathMatch = url2.pathname.match(/\/openai\/deployments\/([^\/]+)/);
     if (pathMatch) {
-      const deployment = pathMatch[1].replace("/chat/completions", "");
+      const deployment = pathMatch[1];
       const apiVersion = url2.searchParams.get("api-version");
-      const baseURL = `${url2.protocol}//${url2.host}${url2.pathname}`;
+      let pathname = url2.pathname;
+      if (pathname.endsWith("/chat/completions")) {
+        pathname = pathname.replace("/chat/completions", "");
+      }
+      const baseURL = `${url2.protocol}//${url2.host}${pathname}`;
+      console.log(`[Rotating ChatOpenAI] Parsed endpoint - baseURL: ${baseURL}, deployment: ${deployment}, apiVersion: ${apiVersion}`);
       return {
         baseURL,
         deployment,
