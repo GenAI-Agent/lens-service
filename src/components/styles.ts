@@ -12,7 +12,7 @@ export const styles = {
     pointer-events: none;
     z-index: 999999;
   `,
-  
+
   overlay: `
     position: fixed;
     top: 0;
@@ -23,7 +23,7 @@ export const styles = {
     pointer-events: auto;
     z-index: 1;
   `,
-  
+
   panel: `
     position: fixed;
     top: 0;
@@ -36,7 +36,7 @@ export const styles = {
     pointer-events: auto;
     z-index: 2;
   `,
-  
+
   panelHeader: `
     padding: 20px;
     border-bottom: 1px solid #e5e7eb;
@@ -46,13 +46,13 @@ export const styles = {
     background: #6366f1;
     color: white;
   `,
-  
+
   panelTitle: `
     margin: 0;
     font-size: 18px;
     font-weight: 600;
   `,
-  
+
   closeButton: `
     background: transparent;
     border: none;
@@ -68,19 +68,19 @@ export const styles = {
     border-radius: 4px;
     transition: background 0.2s;
   `,
-  
+
   viewContainer: `
     flex: 1;
     overflow: hidden;
     position: relative;
   `,
-  
+
   chatView: `
     height: 100%;
     display: flex;
     flex-direction: column;
   `,
-  
+
   messagesContainer: `
     flex: 1;
     overflow-y: auto;
@@ -93,7 +93,7 @@ export const styles = {
     scrollbar-color: #d1d5db #f3f4f6;
     background: #ffffff;
   `,
-  
+
   userMessage: `
     align-self: flex-end;
     background: #6366f1;
@@ -105,7 +105,7 @@ export const styles = {
     font-size: 14px;
     line-height: 1.5;
   `,
-  
+
   assistantMessage: `
     align-self: stretch;
     background: transparent;
@@ -224,21 +224,21 @@ export const styles = {
       }
     </style>
   `,
-  
+
   sources: `
     margin-top: 8px;
     padding-top: 8px;
     border-top: 1px solid rgba(0, 0, 0, 0.1);
     font-size: 12px;
   `,
-  
+
   sourceLink: `
     color: #6366f1;
     text-decoration: none;
     display: inline-block;
     margin-top: 4px;
   `,
-  
+
   inputContainer: `
     padding: 16px;
     border-top: 1px solid #e5e7eb;
@@ -289,7 +289,7 @@ export const styles = {
     color: #6b7280;
     line-height: 1.4;
   `,
-  
+
   input: `
     width: 100%;
     padding: 16px 50px 16px 16px;
@@ -319,14 +319,14 @@ export const styles = {
   sendIconButton: `
     position: absolute;
     right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 36%;
+    transform: translateY(-40%);
     background: #6366f1;
     color: white;
     border: none;
     border-radius: 8px;
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -348,13 +348,13 @@ export const styles = {
     transition: all 0.2s;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   `,
-  
+
   rulesView: `
     height: 100%;
     overflow-y: auto;
     padding: 20px;
   `,
-  
+
   ruleItem: `
     padding: 16px;
     border: 1px solid #e5e7eb;
@@ -364,26 +364,26 @@ export const styles = {
     transition: all 0.2s;
     background: white;
   `,
-  
+
   ruleItemActive: `
     border-color: #6366f1;
     background: #eef2ff;
   `,
-  
+
   ruleTitle: `
     margin: 0 0 8px 0;
     font-size: 16px;
     font-weight: 600;
     color: #1f2937;
   `,
-  
+
   ruleDescription: `
     margin: 0;
     font-size: 14px;
     color: #6b7280;
     line-height: 1.5;
   `,
-  
+
   panelFooter: `
     padding: 12px;
     border-top: 1px solid #e5e7eb;
@@ -391,7 +391,7 @@ export const styles = {
     gap: 8px;
     background: #f9fafb;
   `,
-  
+
   tabButton: `
     flex: 1;
     padding: 10px;
@@ -404,11 +404,10 @@ export const styles = {
     transition: all 0.2s;
     color: #6b7280;
   `,
-  
+
   tabButtonActive: `
     background: #6366f1;
     color: white;
     border-color: #6366f1;
-  `
+  `,
 };
-

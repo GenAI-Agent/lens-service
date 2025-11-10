@@ -4535,13 +4535,16 @@ var HybridSearchService = class {
     const { query, limit = 3, type, minScore = 0.15 } = options;
     try {
       const isBrowser3 = typeof window !== "undefined";
-      const apiUrl = isBrowser3 ? "" : process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-      const response = await axios2.post(`${apiUrl}/api/widget/manual-indexes/search`, {
-        query,
-        limit,
-        type,
-        minScore
-      });
+      const apiUrl = isBrowser3 ? "" : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const response = await axios2.post(
+        `${apiUrl}/api/widget/manual-indexes/search`,
+        {
+          query,
+          limit,
+          type,
+          minScore
+        }
+      );
       if (response.data.success) {
         return response.data.results;
       } else {
@@ -5231,7 +5234,7 @@ var KnowledgeBaseService = class {
 
 // src/services/CustomerServiceManager.ts
 var CustomerServiceManager = class {
-  static baseUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+  static baseUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:8080";
   /**
    * 獲取所有對話列表
    */
@@ -5265,17 +5268,20 @@ var CustomerServiceManager = class {
   static async addCustomerServiceReply(conversationId, content, agentName = "\u5BA2\u670D") {
     try {
       const adminId = localStorage.getItem("lens_admin_user_id") || "admin";
-      const response = await fetch(`${this.baseUrl}/api/widget/conversations/${conversationId}/reply`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          content,
-          adminId,
-          adminName: agentName
-        })
-      });
+      const response = await fetch(
+        `${this.baseUrl}/api/widget/conversations/${conversationId}/reply`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            content,
+            adminId,
+            adminName: agentName
+          })
+        }
+      );
       if (!response.ok) {
         console.error("Failed to add reply:", await response.text());
         return false;
@@ -5293,9 +5299,12 @@ var CustomerServiceManager = class {
    */
   static async deleteConversation(id) {
     try {
-      const response = await fetch(`${this.baseUrl}/api/widget/conversations/${id}`, {
-        method: "DELETE"
-      });
+      const response = await fetch(
+        `${this.baseUrl}/api/widget/conversations/${id}`,
+        {
+          method: "DELETE"
+        }
+      );
       if (!response.ok) {
         console.error("Failed to delete conversation:", await response.text());
         return false;
@@ -5312,18 +5321,24 @@ var CustomerServiceManager = class {
    */
   static async markConversationAsHandled(id) {
     try {
-      const response = await fetch(`${this.baseUrl}/api/widget/conversations/${id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          status: "handled",
-          handledAt: Date.now()
-        })
-      });
+      const response = await fetch(
+        `${this.baseUrl}/api/widget/conversations/${id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            status: "handled",
+            handledAt: Date.now()
+          })
+        }
+      );
       if (!response.ok) {
-        console.error("Failed to mark conversation as handled:", await response.text());
+        console.error(
+          "Failed to mark conversation as handled:",
+          await response.text()
+        );
         return false;
       }
       console.log("\u2705 Conversation marked as handled:", id);
@@ -6013,8 +6028,8 @@ import axios6 from "axios";
 var ImageGenerationService = class {
   baseUrl;
   timeout;
-  constructor(baseUrl = "https://flux.ask-lens.ai/api/v1", timeout = 3e5) {
-    this.baseUrl = baseUrl;
+  constructor(baseUrl3 = "https://flux.ask-lens.ai/api/v1", timeout = 3e5) {
+    this.baseUrl = baseUrl3;
     this.timeout = timeout;
   }
   /**
@@ -6033,69 +6048,69 @@ var ImageGenerationService = class {
     } = options;
     return {
       "6": {
-        "inputs": {
-          "text": prompt,
-          "clip": ["30", 1]
+        inputs: {
+          text: prompt,
+          clip: ["30", 1]
         },
-        "class_type": "CLIPTextEncode"
+        class_type: "CLIPTextEncode"
       },
       "27": {
-        "inputs": {
-          "width": width,
-          "height": height,
-          "batch_size": 1
+        inputs: {
+          width,
+          height,
+          batch_size: 1
         },
-        "class_type": "EmptySD3LatentImage"
+        class_type: "EmptySD3LatentImage"
       },
       "30": {
-        "inputs": {
-          "ckpt_name": "flux1-dev-fp8.safetensors"
+        inputs: {
+          ckpt_name: "flux1-dev-fp8.safetensors"
         },
-        "class_type": "CheckpointLoaderSimple"
+        class_type: "CheckpointLoaderSimple"
       },
       "31": {
-        "inputs": {
-          "seed": seed,
-          "steps": steps,
-          "cfg": 1,
-          "sampler_name": "euler",
-          "scheduler": "simple",
-          "denoise": 1,
-          "model": ["30", 0],
-          "positive": ["35", 0],
-          "negative": ["33", 0],
-          "latent_image": ["27", 0]
+        inputs: {
+          seed,
+          steps,
+          cfg: 1,
+          sampler_name: "euler",
+          scheduler: "simple",
+          denoise: 1,
+          model: ["30", 0],
+          positive: ["35", 0],
+          negative: ["33", 0],
+          latent_image: ["27", 0]
         },
-        "class_type": "KSampler"
+        class_type: "KSampler"
       },
       "33": {
-        "inputs": {
-          "text": "",
-          "clip": ["30", 1]
+        inputs: {
+          text: "",
+          clip: ["30", 1]
         },
-        "class_type": "CLIPTextEncode"
+        class_type: "CLIPTextEncode"
       },
       "35": {
-        "inputs": {
-          "guidance": guidance,
-          "conditioning": ["6", 0]
+        inputs: {
+          guidance,
+          conditioning: ["6", 0]
         },
-        "class_type": "FluxGuidance"
+        class_type: "FluxGuidance"
       },
       "8": {
-        "inputs": {
-          "samples": ["31", 0],
-          "vae": ["30", 2]
+        inputs: {
+          samples: ["31", 0],
+          vae: ["30", 2]
         },
-        "class_type": "VAEDecode"
+        class_type: "VAEDecode"
       },
       "9": {
-        "inputs": {
-          "filename_prefix": filenamePrefix,
-          "extension": "png",
-          "images": ["8", 0]
+        inputs: {
+          filename_prefix: filenamePrefix,
+          extension: "png",
+          images: ["8", 0]
         },
-        "class_type": "SaveImage"
+        class_type: "SaveImage"
       }
     };
   }
@@ -6119,14 +6134,23 @@ var ImageGenerationService = class {
    */
   async generateImage(options) {
     try {
-      console.log(`[Image Generation] Generating image with prompt: ${options.prompt.substring(0, 100)}...`);
+      console.log(
+        `[Image Generation] Generating image with prompt: ${options.prompt.substring(
+          0,
+          100
+        )}...`
+      );
       const workflow = this.createWorkflow(options);
+      const payload = {
+        workflow,
+        wait_for_completion: false,
+        upload_to_s3: true,
+        prompt_input: options.prompt
+      };
+      console.log(`[Image Generation] Payload: ${JSON.stringify(payload)}`);
       const response = await axios6.post(
-        `${this.baseUrl}/generate`,
-        {
-          workflow,
-          wait_for_completion: true
-        },
+        `${this.baseUrl}/optimize_generate`,
+        payload,
         {
           timeout: this.timeout,
           headers: {
@@ -6135,18 +6159,26 @@ var ImageGenerationService = class {
         }
       );
       if (response.status === 200 && response.data) {
-        const { prompt_id, status, images } = response.data;
-        if (status === "completed" && images && images.length > 0) {
-          const imagesWithUrls = images.map((img) => ({
-            ...img,
-            url: `${this.baseUrl}/image/${img.filename}?subfolder=${img.subfolder || ""}&type=${img.type || "output"}`
-          }));
-          console.log(`[Image Generation] Success! Generated ${images.length} image(s)`);
+        const { prompt_id, status, s3_urls } = response.data;
+        if (status === "completed" && s3_urls && s3_urls.length > 0) {
+          console.log(
+            `[Image Generation] Success! Generated ${s3_urls.length} image(s)`
+          );
           return {
             success: true,
             promptId: prompt_id,
             status,
-            images: imagesWithUrls
+            s3_urls
+          };
+        } else if (status === "queued" && s3_urls && s3_urls.length > 0) {
+          console.log(
+            `[Image Generation] Queued! Generated ${s3_urls.length} image(s)`
+          );
+          return {
+            success: true,
+            promptId: prompt_id,
+            status,
+            s3_urls
           };
         } else {
           console.warn(`[Image Generation] Unexpected status: ${status}`);
@@ -6179,13 +6211,19 @@ var ImageGenerationService = class {
    * 批量生成多個書籍封面
    */
   async generateBookCovers(books) {
-    console.log(`[Image Generation] Batch generating ${books.length} book covers`);
+    console.log(
+      `[Image Generation] Batch generating ${books.length} book covers`
+    );
     const results = /* @__PURE__ */ new Map();
     const concurrency = 3;
     for (let i = 0; i < books.length; i += concurrency) {
       const batch = books.slice(i, i + concurrency);
       const promises = batch.map(async (book) => {
-        const prompt = this.createBookCoverPrompt(book.title, book.author, book.description);
+        const prompt = this.createBookCoverPrompt(
+          book.title,
+          book.author,
+          book.description
+        );
         const result = await this.generateImage({
           prompt,
           width: 512,
@@ -6194,10 +6232,12 @@ var ImageGenerationService = class {
           // 快速生成模式
           filenamePrefix: `book_cover/${book.book_id}`
         });
-        if (result.success && result.images && result.images.length > 0) {
-          return { bookId: book.book_id, imageUrl: result.images[0].url };
+        if (result.success && result.s3_urls && result.s3_urls.length > 0) {
+          return { bookId: book.book_id, imageUrl: result.s3_urls[0] };
         } else {
-          console.warn(`[Image Generation] Failed to generate cover for book ${book.book_id}: ${result.error}`);
+          console.warn(
+            `[Image Generation] Failed to generate cover for book ${book.book_id}: ${result.error}`
+          );
           return { bookId: book.book_id, imageUrl: null };
         }
       });
@@ -6211,7 +6251,9 @@ var ImageGenerationService = class {
         await new Promise((resolve2) => setTimeout(resolve2, 1e3));
       }
     }
-    console.log(`[Image Generation] Batch complete: ${results.size}/${books.length} successful`);
+    console.log(
+      `[Image Generation] Batch complete: ${results.size}/${books.length} successful`
+    );
     return results;
   }
   /**
@@ -9103,7 +9145,7 @@ var getDefaultProjectName = () => {
 };
 
 // node_modules/langsmith/dist/index.js
-var __version__ = "0.3.78";
+var __version__ = "0.3.79";
 
 // node_modules/langsmith/dist/utils/env.js
 var globalEnv;
@@ -11285,8 +11327,8 @@ Context: ${context}`);
       if (!run_.app_path) {
         throw new Error(`Run ${runId} has no app_path`);
       }
-      const baseUrl = this.getHostUrl();
-      return `${baseUrl}${run_.app_path}`;
+      const baseUrl3 = this.getHostUrl();
+      return `${baseUrl3}${run_.app_path}`;
     } else {
       throw new Error("Must provide either runId or run");
     }
@@ -13061,9 +13103,9 @@ Message: ${Array.isArray(result.detail) ? result.detail.join("\n") : "Unspecifie
    * @throws {Error} If the run is not found at the given index or for other API-related errors
    */
   async getRunFromAnnotationQueue(queueId, index2) {
-    const baseUrl = `/annotation-queues/${assertUuid(queueId, "queueId")}/run`;
+    const baseUrl3 = `/annotation-queues/${assertUuid(queueId, "queueId")}/run`;
     const response = await this.caller.call(async () => {
-      const res = await this._fetch(`${this.apiUrl}${baseUrl}/${index2}`, {
+      const res = await this._fetch(`${this.apiUrl}${baseUrl3}/${index2}`, {
         method: "GET",
         headers: this.headers,
         signal: AbortSignal.timeout(this.timeout_ms),
@@ -56904,7 +56946,7 @@ function createReactAgent(params) {
 }
 
 // src/agent/AgentService.ts
-import * as fs2 from "fs";
+import * as fs from "fs";
 import * as path2 from "path";
 
 // src/agent/tools/database.ts
@@ -57332,39 +57374,36 @@ var telegramTools = [
 ];
 
 // src/agent/tools/aipage.ts
-import * as fs from "fs/promises";
 import * as path from "path";
+var baseUrl = typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 var aipagesOutputDir = "";
-async function saveAIPage(pageId, title, content) {
-  const now = /* @__PURE__ */ new Date();
+async function saveAIPageToDB(pageId, title, template, books, bannerImageUrl) {
   try {
-    await fs.mkdir(aipagesOutputDir, { recursive: true });
+    console.log("baseUrl", baseUrl);
+    const response = await fetch(`${baseUrl}/api/widget/agenticPage`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        page_id: pageId,
+        title,
+        template,
+        books,
+        banner_image_url: bannerImageUrl
+      })
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API error: ${response.status} - ${errorText}`);
+    }
+    const result = await response.json();
+    console.log(`[AI Page] Saved page ${pageId} to database via API:`, result);
   } catch (error46) {
-    console.error("[AI Page] Failed to create output directory:", error46);
+    console.error("[AI Page] Failed to save page to database:", error46);
     throw error46;
-  }
-  const filePath = path.join(aipagesOutputDir, `${pageId}.html`);
-  try {
-    await fs.writeFile(filePath, content, "utf-8");
-    console.log(`[AI Page] Saved page ${pageId} to file: ${filePath}`);
-  } catch (error46) {
-    console.error("[AI Page] Failed to save page file:", error46);
-    throw error46;
-  }
-  const metadataPath = path.join(aipagesOutputDir, `${pageId}.json`);
-  const metadata = {
-    id: pageId,
-    title,
-    createdAt: now.toISOString()
-  };
-  try {
-    await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2), "utf-8");
-    console.log(`[AI Page] Saved metadata for ${pageId}`);
-  } catch (error46) {
-    console.error("[AI Page] Failed to save metadata:", error46);
   }
 }
-var templateCache = {};
 var templatesDir = "";
 var imageGenerationService = null;
 function initAIPageTools(config2 = {}) {
@@ -57373,22 +57412,11 @@ function initAIPageTools(config2 = {}) {
   const fluxApiUrl = config2.fluxApiUrl || process.env.FLUX_API_URL || "https://flux.ask-lens.ai/api/v1";
   imageGenerationService = new ImageGenerationService(fluxApiUrl);
   console.log("[AI Page Tools] Initialized with templates dir:", templatesDir);
-  console.log("[AI Page Tools] Output directory for AI pages:", aipagesOutputDir);
+  console.log(
+    "[AI Page Tools] Output directory for AI pages:",
+    aipagesOutputDir
+  );
   console.log("[AI Page Tools] Image generation API:", fluxApiUrl);
-}
-async function loadTemplate(templateName) {
-  if (templateCache[templateName]) {
-    return templateCache[templateName];
-  }
-  const templatePath = path.join(templatesDir, `${templateName}.html`);
-  try {
-    const template = await fs.readFile(templatePath, "utf-8");
-    templateCache[templateName] = template;
-    return template;
-  } catch (error46) {
-    console.error(`[AI Page] Failed to load template ${templateName}:`, error46);
-    throw new Error(`Template ${templateName} not found`);
-  }
 }
 var generateAIPageTool = new DynamicStructuredTool({
   name: "generate_ai_page",
@@ -57412,21 +57440,36 @@ This is NOT optional for book recommendations - always generate an AI page along
 
 Workflow: Fetch book data (search_popular_books or scrape_web) \u2192 Generate AI page \u2192 Include page URL in response.`,
   schema: external_exports2.object({
-    title: external_exports2.string().describe("Page title that describes the collection. Example: 'Top Psychology Books for 2024'"),
-    template: external_exports2.enum(["neon-gradient-style", "magazine-style", "social-feed-style", "comic-pop-style"]).describe("Template to use. Choose based on mood: neon-gradient-style for modern/tech, magazine-style for elegant, social-feed-style for casual, comic-pop-style for fun/energetic"),
-    books: external_exports2.array(external_exports2.object({
-      book_id: external_exports2.string().describe("Unique book identifier"),
-      title: external_exports2.string().describe("Book title"),
-      author: external_exports2.string().describe("Author name"),
-      price: external_exports2.string().describe("Price string (e.g., 'NT$ 350')"),
-      description: external_exports2.string().optional().describe("Brief description or why it's recommended"),
-      rating: external_exports2.string().optional().describe("Rating if available"),
-      imageUrl: external_exports2.string().describe("Cover image URL")
-    })).describe("Array of 5-10 books to display. Each book should have complete information for best visual presentation.")
+    title: external_exports2.string().describe(
+      "Page title that describes the collection. Example: 'Top Psychology Books for 2024'"
+    ),
+    template: external_exports2.enum([
+      "neon-gradient-style",
+      "magazine-style",
+      "social-feed-style",
+      "comic-pop-style"
+    ]).describe(
+      "Template to use. Choose based on mood: neon-gradient-style for modern/tech, magazine-style for elegant, social-feed-style for casual, comic-pop-style for fun/energetic"
+    ),
+    books: external_exports2.array(
+      external_exports2.object({
+        book_id: external_exports2.string().describe("Unique book identifier"),
+        title: external_exports2.string().describe("Book title"),
+        author: external_exports2.string().describe("Author name"),
+        price: external_exports2.string().describe("Price string (e.g., 'NT$ 350')"),
+        description: external_exports2.string().optional().describe("Brief description or why it's recommended"),
+        rating: external_exports2.string().optional().describe("Rating if available"),
+        imageUrl: external_exports2.string().describe("Cover image URL")
+      })
+    ).describe(
+      "Array of 5-10 books to display. Each book should have complete information for best visual presentation."
+    )
   }),
   func: async ({ title, template, books }) => {
     try {
-      console.log(`[AI Page] Generating page: ${title} with template: ${template}`);
+      console.log(
+        `[AI Page] Generating page: ${title} with template: ${template}`
+      );
       let bannerImageUrl = null;
       if (imageGenerationService) {
         try {
@@ -57439,30 +57482,23 @@ Workflow: Fetch book data (search_popular_books or scrape_web) \u2192 Generate A
             steps: 20,
             filenamePrefix: `aipage_banner/${Date.now()}`
           });
-          if (result.success && result.images && result.images.length > 0) {
-            bannerImageUrl = result.images[0].url;
-            console.log(`[AI Page] Banner generated successfully: ${bannerImageUrl}`);
+          if (result.success && result.s3_urls && result.s3_urls.length > 0) {
+            bannerImageUrl = result.s3_urls[0];
+            console.log(
+              `[AI Page] Banner generated successfully: ${bannerImageUrl}`
+            );
           }
         } catch (imageError) {
-          console.error("[AI Page] Banner generation failed, continuing without banner:", imageError);
+          console.error(
+            "[AI Page] Banner generation failed, continuing without banner:",
+            imageError
+          );
         }
       }
-      const templateHtml = await loadTemplate(template);
-      let contentHtml = "";
-      if (template === "neon-gradient-style") {
-        contentHtml = generateNeonContent(title, books, bannerImageUrl);
-      } else if (template === "magazine-style") {
-        contentHtml = generateMagazineContent(title, books, bannerImageUrl);
-      } else if (template === "social-feed-style") {
-        contentHtml = generateSocialContent(title, books, bannerImageUrl);
-      } else if (template === "comic-pop-style") {
-        contentHtml = generateComicContent(title, books, bannerImageUrl);
-      }
-      const finalHtml = templateHtml.replace("{{TITLE}}", title).replace("{{CONTENT}}", contentHtml);
       const pageId = `aipage-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      await saveAIPage(pageId, title, finalHtml);
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-      const pageUrl = `${baseUrl}/api/ai-page/${pageId}`;
+      await saveAIPageToDB(pageId, title, template, books, bannerImageUrl);
+      const baseUrl3 = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8080";
+      const pageUrl = `${baseUrl3}/api/ai-page/${pageId}`;
       return JSON.stringify({
         success: true,
         pageId,
@@ -57481,192 +57517,7 @@ Workflow: Fetch book data (search_popular_books or scrape_web) \u2192 Generate A
     }
   }
 });
-function generateNeonContent(title, books, bannerImageUrl) {
-  const bannerHtml = bannerImageUrl ? `
-    <div class="banner-container" style="margin-bottom: 2rem; border-radius: 12px; overflow: hidden;">
-      <img src="${bannerImageUrl}" alt="${title}" style="width: 100%; height: auto; display: block;">
-    </div>
-  ` : "";
-  const heroHtml = `
-    <div class="neon-hero">
-      <h1>${title}</h1>
-      <p class="neon-subtitle">\u7CBE\u9078\u66F8\u7C4D\u63A8\u85A6</p>
-    </div>
-  `;
-  const cardsHtml = books.map((book, index2) => `
-    <div class="glass-card">
-      <div class="card-rank">${index2 + 1}</div>
-      <div class="card-image-wrapper">
-        <div class="card-image-bg"></div>
-        <img src="${book.imageUrl}" alt="${book.title}">
-      </div>
-      <h3 class="card-title">${book.title}</h3>
-      <p class="card-author">${book.author}</p>
-      ${book.description ? `<p class="card-desc">${book.description}</p>` : ""}
-      <div class="card-price-section">
-        <div class="price-neon">${book.price}</div>
-      </div>
-      <button class="btn-neon">\u7ACB\u5373\u8CFC\u8CB7</button>
-    </div>
-  `).join("");
-  return `${bannerHtml}${heroHtml}<div class="cards-container">${cardsHtml}</div>`;
-}
-function generateMagazineContent(title, books, bannerImageUrl) {
-  const bannerHtml = bannerImageUrl ? `
-    <div class="banner-container" style="margin-bottom: 2rem; border-radius: 12px; overflow: hidden;">
-      <img src="${bannerImageUrl}" alt="${title}" style="width: 100%; height: auto; display: block;">
-    </div>
-  ` : "";
-  const featured = books[0];
-  const others = books.slice(1, 5);
-  const featuredHtml = featured ? `
-    <div class="book-featured">
-      <div class="book-image">
-        <img src="${featured.imageUrl}" alt="${featured.title}">
-      </div>
-      <div class="book-content">
-        <span class="book-category">\u7CBE\u9078\u63A8\u85A6</span>
-        <h2 class="book-title-big">${featured.title}</h2>
-        <p class="book-author">${featured.author}</p>
-        ${featured.description ? `<p class="book-desc">${featured.description}</p>` : ""}
-        <div class="book-meta-row">
-          <div class="rating">
-            <span class="stars">\u2B50\u2B50\u2B50\u2B50\u2B50</span>
-          </div>
-          <div>
-            <span class="price-big">${featured.price}</span>
-          </div>
-        </div>
-        <button class="btn-buy-big">\u7ACB\u5373\u8CFC\u8CB7</button>
-      </div>
-    </div>
-  ` : "";
-  const othersHtml = others.map((book) => `
-    <div class="book-small">
-      <img src="${book.imageUrl}" alt="${book.title}">
-      <h3 class="book-title-small">${book.title}</h3>
-      <p class="book-author-small">${book.author}</p>
-      <div class="price-row">
-        <span class="price-small">${book.price}</span>
-        <button class="btn-buy-small">\u8CFC\u8CB7</button>
-      </div>
-    </div>
-  `).join("");
-  return `
-    ${bannerHtml}
-    <div class="mag-header">
-      <div class="mag-title">
-        <h1>${title}</h1>
-        <p class="mag-subtitle">\u7DE8\u8F2F\u7CBE\u9078</p>
-      </div>
-    </div>
-    <div class="mag-grid">
-      ${featuredHtml}
-      ${othersHtml}
-    </div>
-  `;
-}
-function generateSocialContent(title, books, bannerImageUrl) {
-  const bannerHtml = bannerImageUrl ? `
-    <div class="banner-container" style="margin-bottom: 2rem; border-radius: 12px; overflow: hidden;">
-      <img src="${bannerImageUrl}" alt="${title}" style="width: 100%; height: auto; display: block;">
-    </div>
-  ` : "";
-  const postsHtml = books.map((book) => `
-    <div class="post-card">
-      <div class="post-header">
-        <div class="user-info">
-          <div class="avatar">\u{1F4DA}</div>
-          <div>
-            <p class="username">Taaze \u8B80\u518A</p>
-            <p class="post-time">\u525B\u525B</p>
-          </div>
-        </div>
-      </div>
-      <div class="post-image">
-        <img src="${book.imageUrl}" alt="${book.title}">
-      </div>
-      <div class="post-content">
-        <div class="post-actions">
-          <span>\u2764\uFE0F 999</span>
-          <span>\u{1F4AC} 88</span>
-          <span>\u{1F4E4}</span>
-        </div>
-        <h3 class="post-title">${book.title}</h3>
-        <p class="post-author">\u4F5C\u8005\uFF1A${book.author}</p>
-        ${book.description ? `<p class="post-desc">${book.description}</p>` : ""}
-        <div class="post-price">${book.price}</div>
-      </div>
-    </div>
-  `).join("");
-  return `
-    ${bannerHtml}
-    <div class="social-header">
-      <h1>${title}</h1>
-    </div>
-    <div class="social-feed">
-      ${postsHtml}
-    </div>
-  `;
-}
-function generateComicContent(title, books, bannerImageUrl) {
-  const bannerHtml = bannerImageUrl ? `
-    <div class="banner-container" style="margin-bottom: 2rem; border-radius: 12px; overflow: hidden;">
-      <img src="${bannerImageUrl}" alt="${title}" style="width: 100%; height: auto; display: block;">
-    </div>
-  ` : "";
-  const featured = books[0];
-  const others = books.slice(1, 5);
-  const featuredHtml = featured ? `
-    <div class="featured-panel">
-      <div class="featured-image-wrapper">
-        <img src="${featured.imageUrl}" alt="${featured.title}">
-      </div>
-      <div class="featured-content">
-        <span class="badge-new">NEW!</span>
-        <h2 class="featured-title">${featured.title}</h2>
-        <p class="featured-author">${featured.author}</p>
-        ${featured.description ? `<p class="featured-desc">${featured.description}</p>` : ""}
-        <div class="featured-meta">
-          <div class="featured-price">${featured.price}</div>
-          <div class="featured-rating">
-            <span class="stars-big">\u2B50\u2B50\u2B50\u2B50\u2B50</span>
-          </div>
-        </div>
-        <button class="btn-comic">\u7ACB\u5373\u8CFC\u8CB7</button>
-      </div>
-    </div>
-  ` : "";
-  const othersHtml = others.map((book) => `
-    <div class="book-card-comic">
-      <img src="${book.imageUrl}" alt="${book.title}">
-      <h3 class="book-title-comic">${book.title}</h3>
-      <p class="book-author-comic">${book.author}</p>
-      <div class="book-footer-comic">
-        <span class="price-comic">${book.price}</span>
-        <button class="btn-small-comic">\u8CFC\u8CB7</button>
-      </div>
-    </div>
-  `).join("");
-  return `
-    ${bannerHtml}
-    <div class="comic-header">
-      <h1>\u{1F4A5} ${title}</h1>
-      <p class="comic-subtitle">\u8D85\u5F37\u63A8\u85A6\uFF01</p>
-      <div class="explosion explosion-1">HOT</div>
-      <div class="explosion explosion-2">NEW</div>
-    </div>
-    <div class="container">
-      ${featuredHtml}
-      <div class="books-grid">
-        ${othersHtml}
-      </div>
-    </div>
-  `;
-}
-var aipageTools = [
-  generateAIPageTool
-];
+var aipageTools = [generateAIPageTool];
 
 // src/agent/tools/web-scraper.ts
 init_web_scraper_helper();
@@ -58183,9 +58034,9 @@ var AgentService = class {
         path2.resolve(process.cwd(), "./TzAI_web/config/database-schema.json")
       ];
       for (const schemaPath of possiblePaths) {
-        if (fs2.existsSync(schemaPath)) {
+        if (fs.existsSync(schemaPath)) {
           console.log(`[AgentService] Loading database schema from: ${schemaPath}`);
-          const data = fs2.readFileSync(schemaPath, "utf-8");
+          const data = fs.readFileSync(schemaPath, "utf-8");
           return JSON.parse(data);
         }
       }
@@ -58595,7 +58446,7 @@ ${JSON.stringify(dbSchema, null, 2)}
 };
 
 // src/agent/ConfigManager.ts
-import * as fs3 from "fs";
+import * as fs2 from "fs";
 import * as path3 from "path";
 var ConfigManager = class {
   config;
@@ -58675,8 +58526,8 @@ var ConfigManager = class {
    */
   loadConfigFromFile() {
     try {
-      if (fs3.existsSync(this.configFilePath)) {
-        const content = fs3.readFileSync(this.configFilePath, "utf-8");
+      if (fs2.existsSync(this.configFilePath)) {
+        const content = fs2.readFileSync(this.configFilePath, "utf-8");
         const parsed = JSON.parse(content);
         console.log("[ConfigManager] \u5DF2\u8F09\u5165\u672C\u5730\u914D\u7F6E\u6A94\u6848:", this.configFilePath);
         return parsed;
@@ -58693,10 +58544,10 @@ var ConfigManager = class {
     try {
       const configToSave = config2 || this.config;
       const dir = path3.dirname(this.configFilePath);
-      if (!fs3.existsSync(dir)) {
-        fs3.mkdirSync(dir, { recursive: true });
+      if (!fs2.existsSync(dir)) {
+        fs2.mkdirSync(dir, { recursive: true });
       }
-      fs3.writeFileSync(
+      fs2.writeFileSync(
         this.configFilePath,
         JSON.stringify(configToSave, null, 2),
         "utf-8"
@@ -59361,8 +59212,9 @@ var telegramTools2 = [
 ];
 
 // src/agent/tools/aipage-tools.ts
-import * as fs4 from "fs";
+import * as fs3 from "fs";
 import * as path4 from "path";
+var baseUrl2 = typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 var searchIndexService2 = null;
 var embeddingService2 = null;
 var currentConfig6 = null;
@@ -59371,8 +59223,8 @@ var AI_PAGE_STORAGE_DIR = path4.join(process.cwd(), ".ai-pages");
 var AI_PAGE_INDEX_FILE = path4.join(AI_PAGE_STORAGE_DIR, "index.json");
 function initAIPageStorage() {
   try {
-    if (!fs4.existsSync(AI_PAGE_STORAGE_DIR)) {
-      fs4.mkdirSync(AI_PAGE_STORAGE_DIR, { recursive: true });
+    if (!fs3.existsSync(AI_PAGE_STORAGE_DIR)) {
+      fs3.mkdirSync(AI_PAGE_STORAGE_DIR, { recursive: true });
       console.log("[AI Page] Created storage directory:", AI_PAGE_STORAGE_DIR);
     }
   } catch (error46) {
@@ -59381,14 +59233,16 @@ function initAIPageStorage() {
 }
 function loadAIPagesFromDisk() {
   try {
-    if (fs4.existsSync(AI_PAGE_INDEX_FILE)) {
-      const indexData = fs4.readFileSync(AI_PAGE_INDEX_FILE, "utf-8");
+    if (fs3.existsSync(AI_PAGE_INDEX_FILE)) {
+      const indexData = fs3.readFileSync(AI_PAGE_INDEX_FILE, "utf-8");
       const pages = JSON.parse(indexData);
       for (const [pageId, pageInfo] of Object.entries(pages)) {
         const pageData = pageInfo;
         aiPageStore.set(pageId, pageData);
       }
-      console.log(`[AI Page] Loaded ${aiPageStore.size} pages from disk (permanent storage)`);
+      console.log(
+        `[AI Page] Loaded ${aiPageStore.size} pages from disk (permanent storage)`
+      );
     }
   } catch (error46) {
     console.error("[AI Page] Failed to load pages from disk:", error46);
@@ -59397,12 +59251,16 @@ function loadAIPagesFromDisk() {
 function saveAIPageToDisk(pageId, pageData) {
   try {
     let pages = {};
-    if (fs4.existsSync(AI_PAGE_INDEX_FILE)) {
-      const indexData = fs4.readFileSync(AI_PAGE_INDEX_FILE, "utf-8");
+    if (fs3.existsSync(AI_PAGE_INDEX_FILE)) {
+      const indexData = fs3.readFileSync(AI_PAGE_INDEX_FILE, "utf-8");
       pages = JSON.parse(indexData);
     }
     pages[pageId] = pageData;
-    fs4.writeFileSync(AI_PAGE_INDEX_FILE, JSON.stringify(pages, null, 2), "utf-8");
+    fs3.writeFileSync(
+      AI_PAGE_INDEX_FILE,
+      JSON.stringify(pages, null, 2),
+      "utf-8"
+    );
     console.log(`[AI Page] Saved page ${pageId} to disk (permanent)`);
   } catch (error46) {
     console.error("[AI Page] Failed to save page to disk:", error46);
@@ -59410,11 +59268,15 @@ function saveAIPageToDisk(pageId, pageData) {
 }
 function deleteAIPageFromDisk(pageId) {
   try {
-    if (fs4.existsSync(AI_PAGE_INDEX_FILE)) {
-      const indexData = fs4.readFileSync(AI_PAGE_INDEX_FILE, "utf-8");
+    if (fs3.existsSync(AI_PAGE_INDEX_FILE)) {
+      const indexData = fs3.readFileSync(AI_PAGE_INDEX_FILE, "utf-8");
       const pages = JSON.parse(indexData);
       delete pages[pageId];
-      fs4.writeFileSync(AI_PAGE_INDEX_FILE, JSON.stringify(pages, null, 2), "utf-8");
+      fs3.writeFileSync(
+        AI_PAGE_INDEX_FILE,
+        JSON.stringify(pages, null, 2),
+        "utf-8"
+      );
       console.log(`[AI Page] Deleted page ${pageId} from disk`);
     }
   } catch (error46) {
@@ -59438,7 +59300,10 @@ async function initSearchIndexing() {
       );
       console.log("[AI Page] \u2705 Search indexing initialized");
     } catch (error46) {
-      console.error("[AI Page] \u26A0\uFE0F  Failed to initialize search indexing:", error46);
+      console.error(
+        "[AI Page] \u26A0\uFE0F  Failed to initialize search indexing:",
+        error46
+      );
     }
   }
 }
@@ -59565,7 +59430,9 @@ function wrapHTMLContent(content) {
 <body>
   ${content}
   <footer style="margin-top: 3em; padding-top: 1em; border-top: 1px solid #ddd; color: #888; font-size: 0.9em;">
-    <p>\u6B64\u9801\u9762\u7531 AI Agent \u81EA\u52D5\u751F\u6210 | \u751F\u6210\u6642\u9593: ${(/* @__PURE__ */ new Date()).toLocaleString("zh-TW")}</p>
+    <p>\u6B64\u9801\u9762\u7531 AI Agent \u81EA\u52D5\u751F\u6210 | \u751F\u6210\u6642\u9593: ${(/* @__PURE__ */ new Date()).toLocaleString(
+    "zh-TW"
+  )}</p>
   </footer>
 </body>
 </html>`;
@@ -59683,32 +59550,57 @@ var manageAIPageTool = new DynamicStructuredTool({
     });
   }
 });
-function getAIPageContent(pageId) {
+async function getAIPageContent(pageId) {
   try {
-    const aipagesDir = path4.join(process.cwd(), "../TzAI_web/public/aipages");
-    const filePath = path4.join(aipagesDir, `${pageId}.html`);
-    if (fs4.existsSync(filePath)) {
-      const content = fs4.readFileSync(filePath, "utf-8");
-      console.log(`[AI Page] Loaded page ${pageId} from ${filePath}`);
-      return content;
-    } else {
-      console.error(`[AI Page] File not found: ${filePath}`);
-      return null;
+    const response = await fetch(
+      `${baseUrl2}/api/widget/agenticPage/${pageId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json"
+        }
+      }
+    );
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.error(`[AI Page] Page ${pageId} not found`);
+        return null;
+      }
+      const errorText = await response.text();
+      throw new Error(`API error: ${response.status} - ${errorText}`);
     }
+    const page = await response.json();
+    console.log(`[AI Page] Retrieved page ${pageId} from API`);
+    return page;
   } catch (error46) {
-    console.error("[AI Page] Failed to load page from disk:", error46);
+    console.error("[AI Page] Failed to get page from API:", error46);
     return null;
   }
 }
-function listAIPages() {
-  return Array.from(aiPageStore.entries()).map(([pageId, page]) => ({
-    pageId,
-    createdAt: page.createdAt
-  }));
+async function listAIPages() {
+  try {
+    const response = await fetch(`${baseUrl2}/api/widget/agenticPage`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API error: ${response.status} - ${errorText}`);
+    }
+    const pages = await response.json();
+    console.log(`[AI Page] Retrieved ${pages.length} pages from API`);
+    return pages.map((page) => ({
+      pageId: page.page_id,
+      createdAt: page.created_at
+    }));
+  } catch (error46) {
+    console.error("[AI Page] Failed to list pages from API:", error46);
+    return [];
+  }
 }
-var aipageTools2 = [
-  manageAIPageTool
-];
+var aipageTools2 = [manageAIPageTool];
 
 // src/agent/tools/scraper-tool.ts
 import axios8 from "axios";

@@ -14,7 +14,7 @@ export interface SearchResult {
 export interface SearchOptions {
     query: string;
     limit?: number;
-    type?: 'manual' | 'url';
+    type?: "manual" | "url";
     minScore?: number;
 }
 /**

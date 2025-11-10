@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 
 /**
  * ImageGenerationService
@@ -26,6 +26,8 @@ export interface ImageGenerationResult {
     type: string;
     url: string;
   }>;
+  s3_urls?: Array<string>;
+  optimized_prompt?: string;
   error?: string;
 }
 
@@ -33,7 +35,10 @@ export class ImageGenerationService {
   private baseUrl: string;
   private timeout: number;
 
-  constructor(baseUrl: string = 'https://flux.ask-lens.ai/api/v1', timeout: number = 300000) {
+  constructor(
+    baseUrl: string = "https://flux.ask-lens.ai/api/v1",
+    timeout: number = 300000
+  ) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
   }
@@ -50,82 +55,86 @@ export class ImageGenerationService {
       steps = 20,
       seed = Math.floor(Math.random() * 1000000),
       guidance = 3.5,
-      filenamePrefix = 'aipage_book_cover',
+      filenamePrefix = "aipage_book_cover",
     } = options;
 
     return {
       "6": {
-        "inputs": {
-          "text": prompt,
-          "clip": ["30", 1]
+        inputs: {
+          text: prompt,
+          clip: ["30", 1],
         },
-        "class_type": "CLIPTextEncode"
+        class_type: "CLIPTextEncode",
       },
       "27": {
-        "inputs": {
-          "width": width,
-          "height": height,
-          "batch_size": 1
+        inputs: {
+          width: width,
+          height: height,
+          batch_size: 1,
         },
-        "class_type": "EmptySD3LatentImage"
+        class_type: "EmptySD3LatentImage",
       },
       "30": {
-        "inputs": {
-          "ckpt_name": "flux1-dev-fp8.safetensors"
+        inputs: {
+          ckpt_name: "flux1-dev-fp8.safetensors",
         },
-        "class_type": "CheckpointLoaderSimple"
+        class_type: "CheckpointLoaderSimple",
       },
       "31": {
-        "inputs": {
-          "seed": seed,
-          "steps": steps,
-          "cfg": 1.0,
-          "sampler_name": "euler",
-          "scheduler": "simple",
-          "denoise": 1.0,
-          "model": ["30", 0],
-          "positive": ["35", 0],
-          "negative": ["33", 0],
-          "latent_image": ["27", 0]
+        inputs: {
+          seed: seed,
+          steps: steps,
+          cfg: 1.0,
+          sampler_name: "euler",
+          scheduler: "simple",
+          denoise: 1.0,
+          model: ["30", 0],
+          positive: ["35", 0],
+          negative: ["33", 0],
+          latent_image: ["27", 0],
         },
-        "class_type": "KSampler"
+        class_type: "KSampler",
       },
       "33": {
-        "inputs": {
-          "text": "",
-          "clip": ["30", 1]
+        inputs: {
+          text: "",
+          clip: ["30", 1],
         },
-        "class_type": "CLIPTextEncode"
+        class_type: "CLIPTextEncode",
       },
       "35": {
-        "inputs": {
-          "guidance": guidance,
-          "conditioning": ["6", 0]
+        inputs: {
+          guidance: guidance,
+          conditioning: ["6", 0],
         },
-        "class_type": "FluxGuidance"
+        class_type: "FluxGuidance",
       },
       "8": {
-        "inputs": {
-          "samples": ["31", 0],
-          "vae": ["30", 2]
+        inputs: {
+          samples: ["31", 0],
+          vae: ["30", 2],
         },
-        "class_type": "VAEDecode"
+        class_type: "VAEDecode",
       },
       "9": {
-        "inputs": {
-          "filename_prefix": filenamePrefix,
-          "extension": "png",
-          "images": ["8", 0]
+        inputs: {
+          filename_prefix: filenamePrefix,
+          extension: "png",
+          images: ["8", 0],
         },
-        "class_type": "SaveImage"
-      }
+        class_type: "SaveImage",
+      },
     };
   }
 
   /**
    * 生成書籍封面圖片的優化提示詞
    */
-  public createBookCoverPrompt(bookTitle: string, author?: string, description?: string): string {
+  public createBookCoverPrompt(
+    bookTitle: string,
+    author?: string,
+    description?: string
+  ): string {
     let prompt = `Professional book cover design for "${bookTitle}"`;
 
     if (author) {
@@ -138,7 +147,8 @@ export class ImageGenerationService {
       prompt += `, style inspired by: ${styleHint}`;
     }
 
-    prompt += ', elegant typography, high quality, professional publishing design, eye-catching, modern aesthetic';
+    prompt +=
+      ", elegant typography, high quality, professional publishing design, eye-catching, modern aesthetic";
 
     return prompt;
   }
@@ -146,43 +156,59 @@ export class ImageGenerationService {
   /**
    * 生成圖片
    */
-  async generateImage(options: ImageGenerationOptions): Promise<ImageGenerationResult> {
+  async generateImage(
+    options: ImageGenerationOptions
+  ): Promise<ImageGenerationResult> {
     try {
-      console.log(`[Image Generation] Generating image with prompt: ${options.prompt.substring(0, 100)}...`);
+      console.log(
+        `[Image Generation] Generating image with prompt: ${options.prompt.substring(
+          0,
+          100
+        )}...`
+      );
 
       const workflow = this.createWorkflow(options);
-
+      const payload = {
+        workflow,
+        wait_for_completion: false,
+        upload_to_s3: true,
+        prompt_input: options.prompt,
+      };
+      console.log(`[Image Generation] Payload: ${JSON.stringify(payload)}`);
       const response = await axios.post(
-        `${this.baseUrl}/generate`,
-        {
-          workflow,
-          wait_for_completion: true,
-        },
+        `${this.baseUrl}/optimize_generate`,
+        payload,
         {
           timeout: this.timeout,
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
         }
       );
 
       if (response.status === 200 && response.data) {
-        const { prompt_id, status, images } = response.data;
+        const { prompt_id, status, s3_urls } = response.data;
 
-        if (status === 'completed' && images && images.length > 0) {
-          // 為每個圖片生成完整的 URL
-          const imagesWithUrls = images.map((img: any) => ({
-            ...img,
-            url: `${this.baseUrl}/image/${img.filename}?subfolder=${img.subfolder || ''}&type=${img.type || 'output'}`,
-          }));
-
-          console.log(`[Image Generation] Success! Generated ${images.length} image(s)`);
+        if (status === "completed" && s3_urls && s3_urls.length > 0) {
+          console.log(
+            `[Image Generation] Success! Generated ${s3_urls.length} image(s)`
+          );
 
           return {
             success: true,
             promptId: prompt_id,
             status,
-            images: imagesWithUrls,
+            s3_urls,
+          };
+        } else if (status === "queued" && s3_urls && s3_urls.length > 0) {
+          console.log(
+            `[Image Generation] Queued! Generated ${s3_urls.length} image(s)`
+          );
+          return {
+            success: true,
+            promptId: prompt_id,
+            status,
+            s3_urls,
           };
         } else {
           console.warn(`[Image Generation] Unexpected status: ${status}`);
@@ -196,19 +222,19 @@ export class ImageGenerationService {
       } else {
         return {
           success: false,
-          promptId: '',
-          status: 'error',
+          promptId: "",
+          status: "error",
           error: `Unexpected response status: ${response.status}`,
         };
       }
     } catch (error: any) {
-      console.error('[Image Generation] Failed:', error);
+      console.error("[Image Generation] Failed:", error);
 
       return {
         success: false,
-        promptId: '',
-        status: 'error',
-        error: error.response?.data?.detail || error.message || 'Unknown error',
+        promptId: "",
+        status: "error",
+        error: error.response?.data?.detail || error.message || "Unknown error",
       };
     }
   }
@@ -224,7 +250,9 @@ export class ImageGenerationService {
       description?: string;
     }>
   ): Promise<Map<string, string>> {
-    console.log(`[Image Generation] Batch generating ${books.length} book covers`);
+    console.log(
+      `[Image Generation] Batch generating ${books.length} book covers`
+    );
 
     const results = new Map<string, string>();
 
@@ -234,7 +262,11 @@ export class ImageGenerationService {
       const batch = books.slice(i, i + concurrency);
 
       const promises = batch.map(async (book) => {
-        const prompt = this.createBookCoverPrompt(book.title, book.author, book.description);
+        const prompt = this.createBookCoverPrompt(
+          book.title,
+          book.author,
+          book.description
+        );
 
         const result = await this.generateImage({
           prompt,
@@ -244,10 +276,12 @@ export class ImageGenerationService {
           filenamePrefix: `book_cover/${book.book_id}`,
         });
 
-        if (result.success && result.images && result.images.length > 0) {
-          return { bookId: book.book_id, imageUrl: result.images[0].url };
+        if (result.success && result.s3_urls && result.s3_urls.length > 0) {
+          return { bookId: book.book_id, imageUrl: result.s3_urls[0] };
         } else {
-          console.warn(`[Image Generation] Failed to generate cover for book ${book.book_id}: ${result.error}`);
+          console.warn(
+            `[Image Generation] Failed to generate cover for book ${book.book_id}: ${result.error}`
+          );
           return { bookId: book.book_id, imageUrl: null };
         }
       });
@@ -255,18 +289,20 @@ export class ImageGenerationService {
       const batchResults = await Promise.allSettled(promises);
 
       batchResults.forEach((result) => {
-        if (result.status === 'fulfilled' && result.value.imageUrl) {
+        if (result.status === "fulfilled" && result.value.imageUrl) {
           results.set(result.value.bookId, result.value.imageUrl);
         }
       });
 
       // 避免過快請求
       if (i + concurrency < books.length) {
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
       }
     }
 
-    console.log(`[Image Generation] Batch complete: ${results.size}/${books.length} successful`);
+    console.log(
+      `[Image Generation] Batch complete: ${results.size}/${books.length} successful`
+    );
 
     return results;
   }
@@ -282,7 +318,7 @@ export class ImageGenerationService {
 
       return response.status === 200;
     } catch (error) {
-      console.error('[Image Generation] System check failed:', error);
+      console.error("[Image Generation] System check failed:", error);
       return false;
     }
   }

@@ -2,7 +2,7 @@
  * 客服管理服務
  * 用於後台管理客服對話和回覆
  */
-import { Conversation } from '../types';
+import { Conversation } from "../types";
 export declare class CustomerServiceManager {
     private static baseUrl;
     /**

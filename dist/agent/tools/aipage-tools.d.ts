@@ -1,6 +1,6 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
-import type { ServiceModulerConfig } from '../../types';
+import type { ServiceModulerConfig } from "../../types";
 export declare function initAIPageTools(config: ServiceModulerConfig): void;
 /**
  * Tool: 管理 AI Page（生成、更新、刪除）
@@ -31,16 +31,16 @@ export declare const manageAIPageTool: DynamicStructuredTool<z.ZodObject<{
     pageId?: string | undefined;
 }, string>;
 /**
- * 取得 AI Page 內容（供前端使用）
+ * 取得 AI Page 內容（透過 API）
  */
-export declare function getAIPageContent(pageId: string): string | null;
+export declare function getAIPageContent(pageId: string): Promise<any | null>;
 /**
- * 列出所有 AI Page（供前端使用）
+ * 列出所有 AI Page（透過 API）
  */
-export declare function listAIPages(): Array<{
+export declare function listAIPages(): Promise<Array<{
     pageId: string;
-    createdAt: number;
-}>;
+    createdAt: string;
+}>>;
 export declare const aipageTools: DynamicStructuredTool<z.ZodObject<{
     action: z.ZodEnum<{
         delete: "delete";

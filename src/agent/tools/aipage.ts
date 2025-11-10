@@ -5,9 +5,15 @@
 
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
-import * as fs from 'fs/promises';
-import * as path from 'path';
-import { ImageGenerationService } from '../../services/ImageGenerationService';
+import * as fs from "fs/promises";
+import * as path from "path";
+import { ImageGenerationService } from "../../services/ImageGenerationService";
+
+// ==================== Configuration ====================
+const baseUrl =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 // ==================== AI Page Storage Service ====================
 interface AIPageData {
@@ -18,16 +24,20 @@ interface AIPageData {
 }
 
 // 本地儲存目錄
-let aipagesOutputDir = '';
+let aipagesOutputDir = "";
 
-export async function saveAIPage(pageId: string, title: string, content: string): Promise<void> {
+export async function saveAIPage(
+  pageId: string,
+  title: string,
+  content: string
+): Promise<void> {
   const now = new Date();
 
   // 確保輸出目錄存在
   try {
     await fs.mkdir(aipagesOutputDir, { recursive: true });
   } catch (error) {
-    console.error('[AI Page] Failed to create output directory:', error);
+    console.error("[AI Page] Failed to create output directory:", error);
     throw error;
   }
 
@@ -35,10 +45,10 @@ export async function saveAIPage(pageId: string, title: string, content: string)
   const filePath = path.join(aipagesOutputDir, `${pageId}.html`);
 
   try {
-    await fs.writeFile(filePath, content, 'utf-8');
+    await fs.writeFile(filePath, content, "utf-8");
     console.log(`[AI Page] Saved page ${pageId} to file: ${filePath}`);
   } catch (error) {
-    console.error('[AI Page] Failed to save page file:', error);
+    console.error("[AI Page] Failed to save page file:", error);
     throw error;
   }
 
@@ -51,11 +61,91 @@ export async function saveAIPage(pageId: string, title: string, content: string)
   };
 
   try {
-    await fs.writeFile(metadataPath, JSON.stringify(metadata, null, 2), 'utf-8');
+    await fs.writeFile(
+      metadataPath,
+      JSON.stringify(metadata, null, 2),
+      "utf-8"
+    );
     console.log(`[AI Page] Saved metadata for ${pageId}`);
   } catch (error) {
-    console.error('[AI Page] Failed to save metadata:', error);
+    console.error("[AI Page] Failed to save metadata:", error);
     // metadata 失敗不影響主要功能
+  }
+}
+
+// ==================== Database Storage Service (via API) ====================
+/**
+ * 將 AI 頁面資料儲存到資料庫 (透過 API)
+ */
+export async function saveAIPageToDB(
+  pageId: string,
+  title: string,
+  template: string,
+  books: any[],
+  bannerImageUrl: string | null
+): Promise<void> {
+  try {
+    console.log("baseUrl", baseUrl);
+    const response = await fetch(`${baseUrl}/api/widget/agenticPage`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        page_id: pageId,
+        title: title,
+        template: template,
+        books: books,
+        banner_image_url: bannerImageUrl,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API error: ${response.status} - ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log(`[AI Page] Saved page ${pageId} to database via API:`, result);
+  } catch (error) {
+    console.error("[AI Page] Failed to save page to database:", error);
+    throw error;
+  }
+}
+
+/**
+ * 從資料庫讀取 AI 頁面資料 (透過 API)
+ */
+export async function getAIPageFromDB(pageId: string) {
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/widget/agenticPage/${pageId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.log(`[AI Page] Page ${pageId} not found in database`);
+        return null;
+      }
+      const errorText = await response.text();
+      throw new Error(`API error: ${response.status} - ${errorText}`);
+    }
+
+    const page = await response.json();
+    console.log(`[AI Page] Retrieved page ${pageId} from database via API`);
+    return page;
+  } catch (error) {
+    console.error(
+      `[AI Page] Failed to read page ${pageId} from database:`,
+      error
+    );
+    return null;
   }
 }
 
@@ -64,17 +154,17 @@ export async function getAIPage(pageId: string): Promise<AIPageData | null> {
   const metadataPath = path.join(aipagesOutputDir, `${pageId}.json`);
 
   try {
-    const content = await fs.readFile(filePath, 'utf-8');
+    const content = await fs.readFile(filePath, "utf-8");
 
     // 嘗試讀取 metadata
     let metadata = {
       id: pageId,
-      title: 'AI Page',
+      title: "AI Page",
       createdAt: new Date().toISOString(),
     };
 
     try {
-      const metadataContent = await fs.readFile(metadataPath, 'utf-8');
+      const metadataContent = await fs.readFile(metadataPath, "utf-8");
       metadata = JSON.parse(metadataContent);
     } catch (error) {
       // metadata 不存在不影響主要功能
@@ -95,12 +185,12 @@ export async function getAIPage(pageId: string): Promise<AIPageData | null> {
 export async function listAIPages(): Promise<AIPageData[]> {
   try {
     const files = await fs.readdir(aipagesOutputDir);
-    const htmlFiles = files.filter(f => f.endsWith('.html'));
+    const htmlFiles = files.filter((f) => f.endsWith(".html"));
 
     const pages: AIPageData[] = [];
 
     for (const file of htmlFiles) {
-      const pageId = file.replace('.html', '');
+      const pageId = file.replace(".html", "");
       const page = await getAIPage(pageId);
       if (page) {
         pages.push(page);
@@ -109,27 +199,43 @@ export async function listAIPages(): Promise<AIPageData[]> {
 
     return pages;
   } catch (error) {
-    console.error('[AI Page] Failed to list pages:', error);
+    console.error("[AI Page] Failed to list pages:", error);
     return [];
   }
 }
 
 // ==================== Template Management ====================
 let templateCache: { [key: string]: string } = {};
-let templatesDir = '';
+let templatesDir = "";
 let imageGenerationService: ImageGenerationService | null = null;
 
-export function initAIPageTools(config: { templatesDir?: string; fluxApiUrl?: string; aipagesOutputDir?: string } = {}) {
-  templatesDir = config.templatesDir || path.join(process.cwd(), '../TzAI_web/public/aipage-templates');
-  aipagesOutputDir = config.aipagesOutputDir || path.join(process.cwd(), '../TzAI_web/public/aipages');
+export function initAIPageTools(
+  config: {
+    templatesDir?: string;
+    fluxApiUrl?: string;
+    aipagesOutputDir?: string;
+  } = {}
+) {
+  templatesDir =
+    config.templatesDir ||
+    path.join(process.cwd(), "../TzAI_web/public/aipage-templates");
+  aipagesOutputDir =
+    config.aipagesOutputDir ||
+    path.join(process.cwd(), "../TzAI_web/public/aipages");
 
   // 初始化圖片生成服務
-  const fluxApiUrl = config.fluxApiUrl || process.env.FLUX_API_URL || 'https://flux.ask-lens.ai/api/v1';
+  const fluxApiUrl =
+    config.fluxApiUrl ||
+    process.env.FLUX_API_URL ||
+    "https://flux.ask-lens.ai/api/v1";
   imageGenerationService = new ImageGenerationService(fluxApiUrl);
 
-  console.log('[AI Page Tools] Initialized with templates dir:', templatesDir);
-  console.log('[AI Page Tools] Output directory for AI pages:', aipagesOutputDir);
-  console.log('[AI Page Tools] Image generation API:', fluxApiUrl);
+  console.log("[AI Page Tools] Initialized with templates dir:", templatesDir);
+  console.log(
+    "[AI Page Tools] Output directory for AI pages:",
+    aipagesOutputDir
+  );
+  console.log("[AI Page Tools] Image generation API:", fluxApiUrl);
 }
 
 async function loadTemplate(templateName: string): Promise<string> {
@@ -140,7 +246,7 @@ async function loadTemplate(templateName: string): Promise<string> {
   const templatePath = path.join(templatesDir, `${templateName}.html`);
 
   try {
-    const template = await fs.readFile(templatePath, 'utf-8');
+    const template = await fs.readFile(templatePath, "utf-8");
     templateCache[templateName] = template;
     return template;
   } catch (error) {
@@ -153,10 +259,10 @@ async function listTemplates(): Promise<string[]> {
   try {
     const files = await fs.readdir(templatesDir);
     return files
-      .filter(f => f.endsWith('.html'))
-      .map(f => f.replace('.html', ''));
+      .filter((f) => f.endsWith(".html"))
+      .map((f) => f.replace(".html", ""));
   } catch (error) {
-    console.error('[AI Page] Failed to list templates:', error);
+    console.error("[AI Page] Failed to list templates:", error);
     return [];
   }
 }
@@ -181,27 +287,52 @@ This is NOT optional for book recommendations - always generate an AI page along
 - magazine-style: Magazine layout with large featured images
 - social-feed-style: Social media feed style
 - comic-pop-style: Vibrant comic book style
+- love-letter-style: Romantic/sweet
 
 Workflow: Fetch book data (search_popular_books or scrape_web) → Generate AI page → Include page URL in response.`,
 
   schema: z.object({
-    title: z.string().describe("Page title that describes the collection. Example: 'Top Psychology Books for 2024'"),
-    template: z.enum(['neon-gradient-style', 'magazine-style', 'social-feed-style', 'comic-pop-style'])
-      .describe("Template to use. Choose based on mood: neon-gradient-style for modern/tech, magazine-style for elegant, social-feed-style for casual, comic-pop-style for fun/energetic"),
-    books: z.array(z.object({
-      book_id: z.string().describe("Unique book identifier"),
-      title: z.string().describe("Book title"),
-      author: z.string().describe("Author name"),
-      price: z.string().describe("Price string (e.g., 'NT$ 350')"),
-      description: z.string().optional().describe("Brief description or why it's recommended"),
-      rating: z.string().optional().describe("Rating if available"),
-      imageUrl: z.string().describe("Cover image URL"),
-    })).describe("Array of 5-10 books to display. Each book should have complete information for best visual presentation."),
+    title: z
+      .string()
+      .describe(
+        "Page title that describes the collection. Example: 'Top Psychology Books for 2024'"
+      ),
+    template: z
+      .enum([
+        "neon-gradient-style",
+        "magazine-style",
+        "social-feed-style",
+        "comic-pop-style",
+        "love-letter-style",
+      ])
+      .describe(
+        "Template to use. Choose based on mood: neon-gradient-style for modern/tech, magazine-style for elegant, social-feed-style for casual, comic-pop-style for fun/energetic, love-letter-style for romantic/sweet"
+      ),
+    books: z
+      .array(
+        z.object({
+          book_id: z.string().describe("Unique book identifier"),
+          title: z.string().describe("Book title"),
+          author: z.string().describe("Author name"),
+          price: z.string().describe("Price string (e.g., 'NT$ 350')"),
+          description: z
+            .string()
+            .optional()
+            .describe("Brief description or why it's recommended"),
+          rating: z.string().optional().describe("Rating if available"),
+          imageUrl: z.string().describe("Cover image URL"),
+        })
+      )
+      .describe(
+        "Array of 5-10 books to display. Each book should have complete information for best visual presentation."
+      ),
   }),
 
   func: async ({ title, template, books }) => {
     try {
-      console.log(`[AI Page] Generating page: ${title} with template: ${template}`);
+      console.log(
+        `[AI Page] Generating page: ${title} with template: ${template}`
+      );
 
       // ==================== 主題圖片/Banner 生成 ====================
       // 為整個 AI Page 生成主題插圖或 banner
@@ -221,45 +352,58 @@ Workflow: Fetch book data (search_popular_books or scrape_web) → Generate AI p
             filenamePrefix: `aipage_banner/${Date.now()}`,
           });
 
-          if (result.success && result.images && result.images.length > 0) {
-            bannerImageUrl = result.images[0].url;
-            console.log(`[AI Page] Banner generated successfully: ${bannerImageUrl}`);
+          if (result.success && result.s3_urls && result.s3_urls.length > 0) {
+            bannerImageUrl = result.s3_urls[0];
+            console.log(
+              `[AI Page] Banner generated successfully: ${bannerImageUrl}`
+            );
           }
         } catch (imageError) {
-          console.error('[AI Page] Banner generation failed, continuing without banner:', imageError);
+          console.error(
+            "[AI Page] Banner generation failed, continuing without banner:",
+            imageError
+          );
           // 繼續生成頁面，不因 banner 失敗而中斷
         }
       }
 
-      // 載入模板
-      const templateHtml = await loadTemplate(template);
+      // ==================== 註解掉 HTML 生成 ====================
+      // 不再生成實體 HTML 檔案，改為儲存到資料庫
 
-      // 生成內容 HTML
-      let contentHtml = '';
+      // // 載入模板
+      // const templateHtml = await loadTemplate(template);
 
-      if (template === 'neon-gradient-style') {
-        contentHtml = generateNeonContent(title, books, bannerImageUrl);
-      } else if (template === 'magazine-style') {
-        contentHtml = generateMagazineContent(title, books, bannerImageUrl);
-      } else if (template === 'social-feed-style') {
-        contentHtml = generateSocialContent(title, books, bannerImageUrl);
-      } else if (template === 'comic-pop-style') {
-        contentHtml = generateComicContent(title, books, bannerImageUrl);
-      }
+      // // 生成內容 HTML
+      // let contentHtml = "";
 
-      // 替換模板中的占位符
-      const finalHtml = templateHtml
-        .replace('{{TITLE}}', title)
-        .replace('{{CONTENT}}', contentHtml);
+      // if (template === "neon-gradient-style") {
+      //   contentHtml = generateNeonContent(title, books, bannerImageUrl);
+      // } else if (template === "magazine-style") {
+      //   contentHtml = generateMagazineContent(title, books, bannerImageUrl);
+      // } else if (template === "social-feed-style") {
+      //   contentHtml = generateSocialContent(title, books, bannerImageUrl);
+      // } else if (template === "comic-pop-style") {
+      //   contentHtml = generateComicContent(title, books, bannerImageUrl);
+      // } else if (template === "love-letter-style") {
+      //   contentHtml = generateLoveLetterContent(title, books, bannerImageUrl);
+      // }
+
+      // // 替換模板中的占位符
+      // const finalHtml = templateHtml
+      //   .replace("{{TITLE}}", title)
+      //   .replace("{{CONTENT}}", contentHtml);
 
       // 生成唯一 ID
-      const pageId = `aipage-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const pageId = `aipage-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
 
-      // 保存頁面
-      await saveAIPage(pageId, title, finalHtml);
+      // 保存頁面到資料庫
+      await saveAIPageToDB(pageId, title, template, books, bannerImageUrl);
 
       // 從環境變數獲取 BASE_URL，如果沒有則使用預設值
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+      const baseUrl =
+        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8080";
       const pageUrl = `${baseUrl}/api/ai-page/${pageId}`;
 
       return JSON.stringify({
@@ -270,7 +414,7 @@ Workflow: Fetch book data (search_popular_books or scrape_web) → Generate AI p
         message: `✅ 已生成 AI 頁面：${title}\n📄 頁面 ID: ${pageId}\n🔗 訪問連結: ${pageUrl}`,
       });
     } catch (error: any) {
-      console.error('[AI Page] Generation failed:', error);
+      console.error("[AI Page] Generation failed:", error);
       return JSON.stringify({
         success: false,
         error: error.message,
@@ -280,12 +424,18 @@ Workflow: Fetch book data (search_popular_books or scrape_web) → Generate AI p
 });
 
 // ==================== Content Generators ====================
-function generateNeonContent(title: string, books: any[], bannerImageUrl: string | null): string {
-  const bannerHtml = bannerImageUrl ? `
+function generateNeonContent(
+  title: string,
+  books: any[],
+  bannerImageUrl: string | null
+): string {
+  const bannerHtml = bannerImageUrl
+    ? `
     <div class="banner-container" style="margin-bottom: 2rem; border-radius: 12px; overflow: hidden;">
       <img src="${bannerImageUrl}" alt="${title}" style="width: 100%; height: auto; display: block;">
     </div>
-  ` : '';
+  `
+    : "";
 
   const heroHtml = `
     <div class="neon-hero">
@@ -294,7 +444,9 @@ function generateNeonContent(title: string, books: any[], bannerImageUrl: string
     </div>
   `;
 
-  const cardsHtml = books.map((book, index) => `
+  const cardsHtml = books
+    .map(
+      (book, index) => `
     <div class="glass-card">
       <div class="card-rank">${index + 1}</div>
       <div class="card-image-wrapper">
@@ -303,29 +455,38 @@ function generateNeonContent(title: string, books: any[], bannerImageUrl: string
       </div>
       <h3 class="card-title">${book.title}</h3>
       <p class="card-author">${book.author}</p>
-      ${book.description ? `<p class="card-desc">${book.description}</p>` : ''}
+      ${book.description ? `<p class="card-desc">${book.description}</p>` : ""}
       <div class="card-price-section">
         <div class="price-neon">${book.price}</div>
       </div>
       <button class="btn-neon">立即購買</button>
     </div>
-  `).join('');
+  `
+    )
+    .join("");
 
   return `${bannerHtml}${heroHtml}<div class="cards-container">${cardsHtml}</div>`;
 }
 
-function generateMagazineContent(title: string, books: any[], bannerImageUrl: string | null): string {
-  const bannerHtml = bannerImageUrl ? `
+function generateMagazineContent(
+  title: string,
+  books: any[],
+  bannerImageUrl: string | null
+): string {
+  const bannerHtml = bannerImageUrl
+    ? `
     <div class="banner-container" style="margin-bottom: 2rem; border-radius: 12px; overflow: hidden;">
       <img src="${bannerImageUrl}" alt="${title}" style="width: 100%; height: auto; display: block;">
     </div>
-  ` : '';
+  `
+    : "";
 
   // 取第一本作為 featured
   const featured = books[0];
   const others = books.slice(1, 5);
 
-  const featuredHtml = featured ? `
+  const featuredHtml = featured
+    ? `
     <div class="book-featured">
       <div class="book-image">
         <img src="${featured.imageUrl}" alt="${featured.title}">
@@ -334,7 +495,11 @@ function generateMagazineContent(title: string, books: any[], bannerImageUrl: st
         <span class="book-category">精選推薦</span>
         <h2 class="book-title-big">${featured.title}</h2>
         <p class="book-author">${featured.author}</p>
-        ${featured.description ? `<p class="book-desc">${featured.description}</p>` : ''}
+        ${
+          featured.description
+            ? `<p class="book-desc">${featured.description}</p>`
+            : ""
+        }
         <div class="book-meta-row">
           <div class="rating">
             <span class="stars">⭐⭐⭐⭐⭐</span>
@@ -346,9 +511,12 @@ function generateMagazineContent(title: string, books: any[], bannerImageUrl: st
         <button class="btn-buy-big">立即購買</button>
       </div>
     </div>
-  ` : '';
+  `
+    : "";
 
-  const othersHtml = others.map(book => `
+  const othersHtml = others
+    .map(
+      (book) => `
     <div class="book-small">
       <img src="${book.imageUrl}" alt="${book.title}">
       <h3 class="book-title-small">${book.title}</h3>
@@ -358,7 +526,9 @@ function generateMagazineContent(title: string, books: any[], bannerImageUrl: st
         <button class="btn-buy-small">購買</button>
       </div>
     </div>
-  `).join('');
+  `
+    )
+    .join("");
 
   return `
     ${bannerHtml}
@@ -375,14 +545,22 @@ function generateMagazineContent(title: string, books: any[], bannerImageUrl: st
   `;
 }
 
-function generateSocialContent(title: string, books: any[], bannerImageUrl: string | null): string {
-  const bannerHtml = bannerImageUrl ? `
+function generateSocialContent(
+  title: string,
+  books: any[],
+  bannerImageUrl: string | null
+): string {
+  const bannerHtml = bannerImageUrl
+    ? `
     <div class="banner-container" style="margin-bottom: 2rem; border-radius: 12px; overflow: hidden;">
       <img src="${bannerImageUrl}" alt="${title}" style="width: 100%; height: auto; display: block;">
     </div>
-  ` : '';
+  `
+    : "";
 
-  const postsHtml = books.map(book => `
+  const postsHtml = books
+    .map(
+      (book) => `
     <div class="post-card">
       <div class="post-header">
         <div class="user-info">
@@ -404,11 +582,15 @@ function generateSocialContent(title: string, books: any[], bannerImageUrl: stri
         </div>
         <h3 class="post-title">${book.title}</h3>
         <p class="post-author">作者：${book.author}</p>
-        ${book.description ? `<p class="post-desc">${book.description}</p>` : ''}
+        ${
+          book.description ? `<p class="post-desc">${book.description}</p>` : ""
+        }
         <div class="post-price">${book.price}</div>
       </div>
     </div>
-  `).join('');
+  `
+    )
+    .join("");
 
   return `
     ${bannerHtml}
@@ -421,17 +603,24 @@ function generateSocialContent(title: string, books: any[], bannerImageUrl: stri
   `;
 }
 
-function generateComicContent(title: string, books: any[], bannerImageUrl: string | null): string {
-  const bannerHtml = bannerImageUrl ? `
+function generateComicContent(
+  title: string,
+  books: any[],
+  bannerImageUrl: string | null
+): string {
+  const bannerHtml = bannerImageUrl
+    ? `
     <div class="banner-container" style="margin-bottom: 2rem; border-radius: 12px; overflow: hidden;">
       <img src="${bannerImageUrl}" alt="${title}" style="width: 100%; height: auto; display: block;">
     </div>
-  ` : '';
+  `
+    : "";
 
   const featured = books[0];
   const others = books.slice(1, 5);
 
-  const featuredHtml = featured ? `
+  const featuredHtml = featured
+    ? `
     <div class="featured-panel">
       <div class="featured-image-wrapper">
         <img src="${featured.imageUrl}" alt="${featured.title}">
@@ -440,7 +629,11 @@ function generateComicContent(title: string, books: any[], bannerImageUrl: strin
         <span class="badge-new">NEW!</span>
         <h2 class="featured-title">${featured.title}</h2>
         <p class="featured-author">${featured.author}</p>
-        ${featured.description ? `<p class="featured-desc">${featured.description}</p>` : ''}
+        ${
+          featured.description
+            ? `<p class="featured-desc">${featured.description}</p>`
+            : ""
+        }
         <div class="featured-meta">
           <div class="featured-price">${featured.price}</div>
           <div class="featured-rating">
@@ -450,9 +643,12 @@ function generateComicContent(title: string, books: any[], bannerImageUrl: strin
         <button class="btn-comic">立即購買</button>
       </div>
     </div>
-  ` : '';
+  `
+    : "";
 
-  const othersHtml = others.map(book => `
+  const othersHtml = others
+    .map(
+      (book) => `
     <div class="book-card-comic">
       <img src="${book.imageUrl}" alt="${book.title}">
       <h3 class="book-title-comic">${book.title}</h3>
@@ -462,7 +658,9 @@ function generateComicContent(title: string, books: any[], bannerImageUrl: strin
         <button class="btn-small-comic">購買</button>
       </div>
     </div>
-  `).join('');
+  `
+    )
+    .join("");
 
   return `
     ${bannerHtml}
@@ -482,8 +680,6 @@ function generateComicContent(title: string, books: any[], bannerImageUrl: strin
 }
 
 // ==================== Export ====================
-export const aipageTools = [
-  generateAIPageTool,
-];
+export const aipageTools = [generateAIPageTool];
 
 export { getAIPage as getAIPageContent };

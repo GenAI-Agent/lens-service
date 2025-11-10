@@ -27,21 +27,21 @@ model Conversation {
 /// 手動索引 & 知識庫
 /// 管理員手動建立的知識庫內容，包含手動索引和 URL 知識庫
 model ManualIndex {
-  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name        String    @db.VarChar(255)
+  id          String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String                 @db.VarChar(255)
   description String?
   content     String
   url         String?
-  type        String    @default("manual") @db.VarChar(50) // 'manual' 或 'url'
-  file_type   String?   @db.VarChar(50) // 檔案類型: 'txt', 'pdf', 'html', 'docx', 'csv', 'excel', 'video', 'image'
-  status      String?   @default("active") @db.VarChar(50) // 'active', 'invalid', 'processing', 'error'
-  last_check  DateTime? @db.Timestamp(6) // 最後檢查時間
+  type        String                 @default("manual") @db.VarChar(50)
+  file_type   String?                @db.VarChar(50)
+  status      String?                @default("active") @db.VarChar(50)
+  last_check  DateTime?              @db.Timestamp(6)
   keywords    Json?
-  fingerprint String                                  @unique
-  embedding   Unsupported("vector(1536)")?
-  metadata    Json?                                   @default("{}")
-  created_at  DateTime? @default(now()) @db.Timestamp(6)
-  updated_at  DateTime? @default(now()) @db.Timestamp(6)
+  fingerprint String                 @unique
+  embedding   Unsupported("vector")?
+  metadata    Json?                  @default("{}")
+  created_at  DateTime?              @default(now()) @db.Timestamp(6)
+  updated_at  DateTime?              @default(now()) @db.Timestamp(6)
 
   @@index([created_at(sort: Desc)], map: "idx_manual_indexes_created_at")
   @@index([fingerprint], map: "idx_manual_indexes_fingerprint")
@@ -177,189 +177,21 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  createdAt         DateTime @default(now()) @db.Timestamp(6)
-  updatedAt         DateTime @db.Timestamp(6)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime
+  User              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@id([provider, providerAccountId])
   @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model Authenticator {
-  credentialID         String
-  userId               String
-  providerAccountId    String
-  credentialPublicKey  String
-  counter              Int
-  credentialDeviceType String
-  credentialBackedUp   Boolean
-  transports           String?
-
-  @@ignore
-}
-
-/// Session table for JWT authentication
-model Session {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sessionToken String   @unique @db.VarChar(255)
-  userId       String   @db.Uuid
-  expires      DateTime @db.Timestamp(6)
-  createdAt    DateTime @default(now()) @db.Timestamp(6)
-  updatedAt    DateTime @default(now()) @db.Timestamp(6)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@map("sessions")
-}
-
-/// User table for authentication
-model User {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name          String?   @db.VarChar(255)
-  email         String    @unique @db.VarChar(255)
-  emailVerified DateTime? @db.Timestamp(6)
-  password      String    @db.VarChar(255)
-  image         String?   @db.Text
-  createdAt     DateTime  @default(now()) @db.Timestamp(6)
-  updatedAt     DateTime  @default(now()) @db.Timestamp(6)
-  bio           String?   @db.Text
-  coverImage    String?   @db.Text
-  location      String?   @db.VarChar(255)
-  website       String?   @db.VarChar(255)
-  address       String?   @db.Text
-  motto         String?   @db.Text
-
-  sessions Session[]
-
-  @@index([email])
-  @@map("users")
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model VerificationToken {
   identifier String
   token      String
-  expires    DateTime @db.Timestamp(6)
+  expires    DateTime
 
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model credit_packages {
-  id                String
-  name              String
-  credits           Int
-  price             Decimal  @db.Decimal
-  is_active         Boolean  @default(true)
-  description       String?
-  ecpay_product_id  String?
-  stripe_product_id String?
-  stripe_price_id   String?
-  created_at        DateTime @default(now()) @db.Timestamp(6)
-  updated_at        DateTime @db.Timestamp(6)
-
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model credit_purchases {
-  id             String
-  user_id        String
-  package_id     String
-  credits        Int
-  price          Decimal       @db.Decimal
-  payment_method String?
-  payment_id     String?
-  payment_status PaymentStatus @default(PENDING)
-  order_id       String?
-  created_at     DateTime      @default(now()) @db.Timestamp(6)
-  completed_at   DateTime?     @db.Timestamp(6)
-
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model credit_transactions {
-  id            String
-  user_id       String
-  type          CreditTransactionType
-  amount        Int
-  balance_after Int
-  description   String?
-  source_type   String?
-  source_id     String?
-  usage_id      String?
-  admin_user_id String?
-  admin_note    String?
-  created_at    DateTime              @default(now()) @db.Timestamp(6)
-  expires_at    DateTime?             @db.Timestamp(6)
-
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model credit_usage {
-  id              String
-  user_id         String
-  action          String
-  credits_used    Int
-  description     String?
-  session_id      String?
-  feature         String?
-  analysis_type   String?
-  message_count   Int?
-  subscription_id String?
-  metadata        Json?
-  created_at      DateTime @default(now()) @db.Timestamp(6)
-  updated_at      DateTime @db.Timestamp(6)
-
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model eureka_card_redemptions {
-  id                   String
-  user_id              String
-  eureka_card_id       String   @db.Uuid
-  credits_awarded      Int?
-  subscription_awarded String?
-  subscription_days    Int?
-  redeemed_at          DateTime @default(now()) @db.Timestamp(6)
-
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model eureka_card_subscriptions {
-  id                        String
-  eureka_card_id            String   @db.Uuid
-  lens_subscription_plan_id String
-  quantity                  Int      @default(1)
-  created_at                DateTime @default(now()) @db.Timestamp(6)
-  updated_at                DateTime @db.Timestamp(6)
-
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model eureka_cards {
-  id                String     @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  code              String
-  title             String
-  description       String?
-  image_path        String?
-  creator_user_id   String?
-  usable_user_ids   Json?
-  max_uses          Int?
-  used_count        Int        @default(0)
-  is_active         Boolean    @default(true)
-  expires_at        DateTime?  @db.Timestamp(6)
-  created_at        DateTime   @default(now()) @db.Timestamp(6)
-  updated_at        DateTime   @db.Timestamp(6)
-  credit_amount     Int?
-  reward_type       RewardType
-  subscription_days Int?
-
+  @@id([identifier, token])
   @@ignore
 }
 
@@ -375,48 +207,6 @@ model ip_whitelist {
 
   @@index([is_active], map: "idx_ip_whitelist_active")
   @@index([ip_address], map: "idx_ip_whitelist_ip")
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lens_product {
-  id                  String
-  viewId              String
-  name                String?  @default("")
-  description         String?  @default("")
-  image               String?  @default("")
-  createdAt           DateTime @default(now()) @db.Timestamp(6)
-  updatedAt           DateTime @db.Timestamp(6)
-  status              Int      @default(1)
-  lensTypeId          String?  @default("")
-  capabilities        Json?
-  creator_description String?  @default("")
-  knowledge_structure String   @default("")
-  performance         Json?
-  white_paper         String?  @default("")
-  creatorUserId       String?
-
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model lens_subscription_plan {
-  id              String
-  name            String
-  price           Int
-  duration        Int
-  createdAt       DateTime @default(now()) @db.Timestamp(6)
-  updatedAt       DateTime @db.Timestamp(6)
-  currency        String   @default("USD")
-  discountMonthly Int?
-  isPopular       Boolean  @default(false)
-  lensViewId      String
-  type            String
-  viewId          String
-  description     Json?
-  features        Json?
-  status          Int      @default(1)
-
-  @@ignore
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
@@ -442,19 +232,6 @@ model orders {
 }
 
 /// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
-model user_credits {
-  id              String
-  user_id         String
-  balance         Int      @default(0)
-  lifetime_earned Int      @default(0)
-  lifetime_spent  Int      @default(0)
-  last_updated    DateTime @db.Timestamp(6)
-  created_at      DateTime @default(now()) @db.Timestamp(6)
-
-  @@ignore
-}
-
-/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
 model user_subscriptions {
   id                        String
   user_id                   String
@@ -473,12 +250,949 @@ model user_subscriptions {
   @@ignore
 }
 
-enum CreditTransactionType {
-  EARNED
-  SPENT
-  EXPIRED
-  REFUNDED
-  ADMIN_ADJUSTMENT
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime
+  User         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String     @id
+  name          String?
+  email         String     @unique
+  emailVerified DateTime?
+  image         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime
+  Account       Account[]  @ignore
+  Session       Session[]
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model ai_price_record {
+  id                 Int      @id @default(autoincrement())
+  product_id         String   @default("") @db.VarChar(20)
+  ai_predicted_price Decimal  @db.Decimal(10, 2)
+  create_time        DateTime @default(now()) @db.Timestamp(6)
+  update_time        DateTime @default(now()) @db.Timestamp(6)
+  ai_model_version   String   @default("") @db.VarChar(50)
+  confidence         Decimal  @default(0) @db.Decimal(3, 2)
+  status             Int      @default(1) @db.SmallInt
+  view_id            String   @unique @default("") @db.VarChar(16)
+  product_name       String   @default("") @db.VarChar(64)
+
+  @@index([product_id, status], map: "idx_product_id_status")
+}
+
+model alsobuy {
+  cust_id     String   @db.VarChar(255)
+  org_prod_id String   @db.VarChar(255)
+  crt_time    DateTime @db.Timestamp(6)
+
+  @@id([cust_id, org_prod_id, crt_time])
+}
+
+model bestseller_books {
+  id              Int     @id @default(autoincrement())
+  prod_id         String  @unique @db.VarChar(255)
+  org_prod_id     String  @db.VarChar(255)
+  prod_title_main String?
+  main_author     String?
+  publisher_name  String?
+  main_isbn       String? @db.VarChar(255)
+  sale_price      String? @db.VarChar(50)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model bkcom_data {
+  title    String?
+  author   String?
+  discount String? @db.VarChar(10)
+  price    String? @db.VarChar(10)
+  link     String?
+  isbn     String? @db.VarChar(20)
+  rank     String?
+
+  @@ignore
+}
+
+model book_data {
+  prod_id              String    @id @db.VarChar(20)
+  crt_time             DateTime? @db.Timestamp(6)
+  sup_id               String?   @db.VarChar(100)
+  sup_nm_main          String?   @db.VarChar(100)
+  org_prod_id          String?   @db.VarChar(20)
+  prod_title_main      String?
+  prod_title_next      String?
+  logcode              String?   @db.VarChar(50)
+  start_sell_time      DateTime? @db.Timestamp(6)
+  end_sell_time        DateTime? @db.Timestamp(6)
+  stk_flg              String?   @db.Char(1)
+  retn_flg             String?   @db.Char(1)
+  prod_rank            String?   @db.Char(1)
+  prod_sale_price      Decimal?  @db.Decimal(10, 2)
+  prod_wholesale_price Decimal?  @db.Decimal(10, 2)
+  prod_status_flg      String?   @db.Char(1)
+  prod_cat_id          String?   @db.VarChar(20)
+  org_logcode          String?   @db.VarChar(50)
+  eancode              String?   @db.VarChar(50)
+  sup_mode             String?   @db.Char(1)
+  out_of_print         String?   @db.Char(1)
+  copyright            String?   @db.Char(1)
+  stk_sell             String?   @db.Char(1)
+  forsale              String?   @db.Char(1)
+  sale_area            String?   @db.Char(1)
+  main_pub_id          String?   @db.VarChar(20)
+  main_publish_date    String?   @db.VarChar(8)
+  main_issue_date      String?   @db.VarChar(8)
+  main_prod_serialno   String?   @db.VarChar(20)
+  main_cat_id          String?   @db.VarChar(20)
+  main_isbn            String?   @db.VarChar(20)
+  rank                 String?   @db.Char(1)
+  age_begin            String?   @db.VarChar(10)
+  age_end              String?   @db.VarChar(10)
+  unit_id              String?   @db.Char(1)
+  main_list_price      Decimal?  @db.Decimal(10, 2)
+  main_special_price   Decimal?  @db.Decimal(10, 2)
+  main_wholesale_price Decimal?  @db.Decimal(10, 2)
+  main_author          String?
+  sp_rec               String?
+  prod_pf              String?
+  cover_str            String?
+  author_pf            String?
+  translator_pf        String?
+  preface              String?
+  person_guide         String?
+  media_rcm            String?
+  person_rcm           String?
+  award_rec            String?
+  catalogue            String?
+  viewdata             String?
+  add_title            String?
+  add_cte              String?
+  prod_pf_desc         String?
+  prod_pf_pic          String?
+  cat4xsx_cat_id       String?   @db.VarChar(20)
+  cat4xsx_cat_nm       String?   @db.VarChar(100)
+  publisher_name       String?   @db.VarChar(100)
+  bk_tags              Json?
+  bestseller_info      String[]
+  is_podcast_exist     Boolean?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model book_rank_list {
+  id                Int       @id @default(autoincrement())
+  prod_id           String?   @db.VarChar(50)
+  org_prod_id       String?   @db.VarChar(50)
+  prod_title_main   String?   @db.VarChar(255)
+  main_author       String?   @db.VarChar(255)
+  main_list_price   Decimal?  @db.Decimal(10, 2)
+  prod_sale_price   Decimal?  @db.Decimal(10, 2)
+  main_publish_date DateTime? @db.Date
+  crt_time          DateTime? @default(now()) @db.Timestamp(6)
+  rank_tag          String?   @db.VarChar(255)
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model books {
+  book_id          String?  @db.VarChar(20)
+  title            String?
+  description      String?
+  genre            String?  @db.VarChar(100)
+  author           String?
+  publication_date String?  @db.VarChar(8)
+  price            Decimal? @db.Decimal(10, 2)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model cat4xsx {
+  cat_id      String    @db.VarChar(12)
+  prod_cat_id String    @db.Char(2)
+  cat_nm      String?   @db.VarChar(150)
+  cat_level   String?   @db.Char(1)
+  lcat_flg    String?   @default("N") @db.Char(1)
+  status_flg  String?   @default("Y") @db.Char(1)
+  crt_user    String?   @db.VarChar(32)
+  crt_time    DateTime? @db.Timestamp(6)
+  mdf_user    String?   @db.VarChar(32)
+  mdf_time    DateTime? @db.Timestamp(6)
+  del_user    String?   @db.VarChar(32)
+  del_time    DateTime? @db.Timestamp(6)
+  chg_flg     String?   @default("N") @db.Char(1)
+  chg_user    String?   @db.VarChar(32)
+  chg_time    DateTime? @db.Timestamp(6)
+  syn_user    String?   @db.VarChar(32)
+  syn_time    DateTime? @db.Timestamp(6)
+  level_order Decimal?  @default(0) @db.Decimal(6, 0)
+
+  @@ignore
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model collection_data {
+  cust_id           String?   @db.VarChar(100)
+  suuid             String?   @db.VarChar(100)
+  member_suuid      String?   @db.VarChar(100)
+  member_name       String?
+  target            String?   @db.VarChar(50)
+  target_suuid      String?   @db.VarChar(100)
+  target_name       String?
+  status_flg        String?   @db.Char(1)
+  short_description String?
+  description       String?
+  reading_status    String?   @db.VarChar(50)
+  remark            String?
+  stars             String?   @db.VarChar(10)
+  id                String?   @db.VarChar(50)
+  ean               String?   @db.VarChar(20)
+  images            String[]
+  author            String?
+  publisher         String?
+  publishing_date   DateTime? @db.Timestamp(6)
+  cat1              String?   @db.VarChar(50)
+  rank              String?   @db.VarChar(10)
+  productinfo_id    String?   @db.VarChar(50)
+  open              String?   @db.VarChar(10)
+  owned             Boolean?
+  category          String?
+  tag               String?
+  created_at        DateTime? @db.Timestamp(6)
+  updated_at        DateTime? @db.Timestamp(6)
+
+  @@ignore
+}
+
+model marketing_report {
+  id              Int       @id @default(autoincrement())
+  content         String
+  created_at      DateTime? @default(now()) @db.Timestamp(6)
+  books_event     String[]
+  eslite_event    String[]
+  kingstone_event String[]
+}
+
+model oauth_tokens {
+  id            Int       @id @default(autoincrement())
+  user_id       String    @db.VarChar(100)
+  provider      String    @db.VarChar(50)
+  access_token  String
+  refresh_token String?
+  token_type    String    @db.VarChar(50)
+  expires_at    DateTime  @db.Timestamp(6)
+  created_at    DateTime? @default(now()) @db.Timestamp(6)
+  updated_at    DateTime? @default(now()) @db.Timestamp(6)
+  email         String?   @db.VarChar(255)
+
+  @@unique([user_id, provider])
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+model order_item {
+  amount           Decimal?  @default(0) @db.Decimal(10, 2)
+  bf_disc          Decimal?  @default(0) @db.Decimal(5, 2)
+  bonus_fb_flg     String?   @default("N") @db.Char(1)
+  bonus_pct        Decimal?  @default(0) @db.Decimal(6, 0)
+  cat_id           String?   @db.VarChar(12)
+  cost_price       Decimal?  @default(0) @db.Decimal(10, 2)
+  create_date      DateTime  @default(now()) @db.Timestamp(6)
+  cust_csl_no      String?   @db.Char(13)
+  cust_rtn_flg     String?   @default("N") @db.Char(1)
+  cust_rtn_time    DateTime? @db.Timestamp(6)
+  disc             Decimal?  @default(0) @db.Decimal(5, 2)
+  gift_flg         String?   @default("N") @db.Char(1)
+  gift_type        String?   @default("O") @db.Char(1)
+  intosp_crt_time  DateTime? @db.Timestamp(6)
+  inv_no           String?   @db.VarChar(10)
+  inv_time         DateTime? @db.Timestamp(6)
+  item_no          Decimal   @default(0) @db.Decimal(6, 0)
+  joint_flg        String?   @default("N") @db.Char(1)
+  kep_slf_qty      Decimal?  @default(0) @db.Decimal(6, 0)
+  kep_vstk_flg     String?   @default("N") @db.Char(1)
+  kep_vstk_time    DateTime? @db.Timestamp(6)
+  last_modify_date DateTime? @db.Timestamp(6)
+  list_amount      Decimal?  @default(0) @db.Decimal(10, 2)
+  list_price       Decimal?  @default(0) @db.Decimal(10, 2)
+  mall_od_id       String?   @db.VarChar(30)
+  mall_so_no       String?   @db.VarChar(30)
+  mas_no           String    @db.VarChar(16)
+  mas_pk_no        Decimal   @default(0) @db.Decimal(20, 0)
+  mc_code          String?   @db.VarChar(16)
+  mc_pub_pk_no     Decimal?  @db.Decimal(20, 0)
+  net_price        Decimal?  @default(0) @db.Decimal(10, 2)
+  org_prod_id      String?   @db.Char(11)
+  pk_no            Decimal   @db.Decimal(20, 0)
+  present_type     String?   @default("A") @db.Char(1)
+  prod_cat_id      String?   @db.Char(2)
+  prod_id          String    @db.Char(11)
+  prod_price       Decimal?  @default(0) @db.Decimal(10, 2)
+  pub_id           String?   @db.VarChar(16)
+  pub_nm           String?   @db.VarChar(64)
+  rb_set_disc      Decimal?  @default(0) @db.Decimal(5, 2)
+  rebate_amount    Decimal?  @default(0) @db.Decimal(10, 2)
+  remain_stk_qty   Decimal?  @default(-1) @db.Decimal(6, 0)
+  remark           String?   @db.VarChar(256)
+  return_flg       String?   @default("N") @db.Char(1)
+  return_reson     String?   @db.VarChar(256)
+  rg_flg           String?   @db.Char(1)
+  rtdt             String?   @db.VarChar(8)
+  sale_price       Decimal?  @default(0) @db.Decimal(10, 2)
+  snd_disc         Decimal?  @default(0) @db.Decimal(5, 2)
+  so_csl_flg       String?   @default("A") @db.Char(1)
+  sp_act_flg       String?   @default("AA") @db.Char(2)
+  sp_again_flg     String?   @default("A") @db.Char(1)
+  sp_mdf_time      DateTime? @db.Timestamp(6)
+  sp_mdf_user      String?   @db.VarChar(10)
+  sp_no            String?   @db.Char(13)
+  status_flg       String?   @db.Char(1)
+  stk_qty          Decimal?  @default(0) @db.Decimal(6, 0)
+  sum_amount       Decimal?  @default(0) @db.Decimal(10, 2)
+  sup_id           String?   @db.VarChar(168)
+  tax_amt          Decimal?  @default(0) @db.Decimal(10, 2)
+  tax_type         String?   @default("A") @db.Char(1)
+  title_main       String?   @db.VarChar(256)
+  trgdisc          Decimal?  @default(0) @db.Decimal(10, 2)
+  uom              String?   @db.VarChar(8)
+  uom_ratio        Decimal?  @default(0) @db.Decimal(6, 0)
+  vstk_promise     String?   @default("N") @db.Char(1)
+  wh_id            String?   @db.VarChar(10)
+  order_mas        order_mas @relation(fields: [mas_pk_no], references: [pk_no], onDelete: NoAction, onUpdate: NoAction, map: "order_item_fk1")
+
+  @@ignore
+}
+
+model order_mas {
+  account               Decimal?     @default(0) @db.Decimal(12, 2)
+  ap_id                 String?      @db.VarChar(168)
+  ask_pinv_flg          String?      @default("Y") @db.Char(1)
+  ath_es_flg            String?      @default("N") @db.Char(1)
+  atm_code              String?      @db.VarChar(32)
+  atm_expire_time       DateTime?    @db.Timestamp(6)
+  auth_code             String?      @db.VarChar(32)
+  brush_back_flg        String?      @default("A") @db.Char(1)
+  brush_back_remark     String?      @db.VarChar(1000)
+  buyer_address         String?      @db.VarChar(256)
+  buyer_city_id         String?      @db.Char(3)
+  buyer_country_id      String?      @db.Char(2)
+  buyer_mail            String?      @db.VarChar(512)
+  buyer_mobile          String?      @db.VarChar(256)
+  buyer_nm              String?      @db.VarChar(512)
+  buyer_tel_day         String?      @db.VarChar(256)
+  buyer_tel_night       String?      @db.VarChar(256)
+  buyer_town_id         String?      @db.Char(3)
+  buyer_zip             String?      @db.VarChar(10)
+  cancel_flg            String?      @db.Char(1)
+  cnno                  String?      @db.VarChar(3)
+  company_id            String?      @default("TAZ") @db.VarChar(5)
+  credit_code           String?      @db.VarChar(32)
+  credit_part           String?      @db.VarChar(4)
+  crt_inv_flg           String?      @default("Y") @db.Char(1)
+  crt_time              DateTime?    @default(now()) @db.Timestamp(6)
+  cust_id               String       @db.VarChar(512)
+  cust_nm               String?      @db.VarChar(512)
+  dc_no                 String?      @db.VarChar(20)
+  deliver               String?      @default("A") @db.Char(1)
+  deliver_type          String?      @default("A") @db.Char(1)
+  donate_bonus_amt      Decimal?     @default(0) @db.Decimal(10, 0)
+  donate_cust_id        String?      @db.VarChar(168)
+  ec_code               String?      @db.VarChar(64)
+  ec_price              Decimal?     @default(0) @db.Decimal(8, 0)
+  freight               Decimal?     @default(0) @db.Decimal(12, 2)
+  group_name            String?      @db.VarChar(64)
+  group_pk              Decimal?     @default(0) @db.Decimal(20, 0)
+  inmis_flg             String?      @db.Char(1)
+  inv_as_flg            String?      @default("N") @db.Char(1)
+  inv_cht_id            String?      @db.VarChar(7)
+  inv_cr_flg            String?      @default("N") @db.Char(1)
+  inv_cte               String?      @db.VarChar(64)
+  inv_dnt_flg           String?      @default("N") @db.Char(1)
+  inv_owner_flg         String?      @default("A") @db.Char(1)
+  inv_st_flg            String?      @default("N") @db.Char(1)
+  inv_title             String?      @db.VarChar(200)
+  inv_type              String?      @default("A") @db.Char(1)
+  inv_vat_no            String?      @db.VarChar(10)
+  in_bonus_amt          Decimal?     @default(0) @db.Decimal(10, 0)
+  is_draw               String?      @default("N") @db.Char(1)
+  mall_fre_so_no        String?      @db.VarChar(30)
+  mall_od_id            String?      @db.VarChar(30)
+  mas_code              String       @default("SO") @db.VarChar(16)
+  mas_date              DateTime     @db.Timestamp(6)
+  mas_no                String       @db.VarChar(16)
+  mdf_time              DateTime?    @db.Timestamp(6)
+  mdf_user              String?      @db.VarChar(168)
+  once_flg              String?      @default("N") @db.Char(1)
+  once_rsn              String?      @db.Char(1)
+  once_time             DateTime?    @db.Timestamp(6)
+  once_user             String?      @db.VarChar(10)
+  order_type            String       @default("SO") @db.VarChar(16)
+  org_stno              String?      @db.VarChar(7)
+  os_type               String?      @default("A") @db.Char(1)
+  out_bonus_amt         Decimal?     @default(0) @db.Decimal(10, 0)
+  pk_no                 Decimal      @id(map: "order_mas_pk") @default(0) @db.Decimal(20, 0)
+  pm_method             String?      @default("A") @db.Char(1)
+  pm_time               DateTime?    @db.Timestamp(6)
+  present_type          String?      @default("1") @db.VarChar(8)
+  rate_code             String?      @db.VarChar(16)
+  rate_total_sum_amount Decimal?     @default(0) @db.Decimal(12, 2)
+  rate_value            Decimal?     @default(0) @db.Decimal(10, 6)
+  rcv_address           String?      @db.VarChar(256)
+  rcv_area              Decimal?     @default(0) @db.Decimal(3, 0)
+  rcv_city_id           String?      @db.Char(3)
+  rcv_country_id        String?      @db.Char(2)
+  rcv_mail              String?      @db.VarChar(512)
+  rcv_mobile            String?      @db.VarChar(256)
+  rcv_nm                String?      @db.VarChar(512)
+  rcv_note              String?      @db.VarChar(150)
+  rcv_period            String?      @default("D") @db.Char(1)
+  rcv_tel_day           String?      @db.VarChar(256)
+  rcv_tel_night         String?      @db.VarChar(256)
+  rcv_tldate            String?      @db.VarChar(3)
+  rcv_town_id           String?      @db.Char(3)
+  rcv_validate          String?      @db.VarChar(4)
+  rcv_zip               String?      @db.VarChar(10)
+  rec_cr_flg            String?      @default("N") @db.Char(1)
+  ref_id                String?      @db.VarChar(32)
+  ref_status_flg        String?      @default("A") @db.Char(1)
+  remark                String?      @db.VarChar(2000)
+  repackage_flg         String?      @default("N") @db.Char(1)
+  sex                   String?      @db.Char(1)
+  so_csl_no             String?      @db.VarChar(13)
+  so_ttl_acc            Decimal?     @default(0) @db.Decimal(10, 2)
+  so_ttl_emp            Decimal?     @default(0) @db.Decimal(10, 2)
+  so_ttl_oth            Decimal?     @default(0) @db.Decimal(10, 2)
+  so_type               String?      @default("C") @db.Char(1)
+  status_flg            String?      @default("A") @db.Char(1)
+  stnm                  String?      @db.VarChar(64)
+  stno                  String?      @db.VarChar(7)
+  store_id              String?      @db.VarChar(16)
+  tax_amt               Decimal?     @default(0) @db.Decimal(10, 2)
+  total_amount          Decimal?     @default(0) @db.Decimal(12, 2)
+  total_items           Decimal?     @default(0) @db.Decimal(6, 0)
+  total_qty             Decimal?     @default(0) @db.Decimal(6, 0)
+  total_sum_amount      Decimal?     @default(0) @db.Decimal(12, 2)
+  trgdisc_amt           Decimal?     @default(0) @db.Decimal(10, 2)
+  trgdisc_snd_amt       Decimal?     @db.Decimal(10, 2)
+  unionpay_flg          String?      @default("N") @db.Char(1)
+  order_item            order_item[] @ignore
+}
+
+model pages {
+  id               String    @id
+  catch_copy       String?
+  description      String?
+  link             String?
+  meta_description String?
+  path_name        String?   @unique
+  retrieval_1      String?
+  retrieval_2      String?
+  title            String?
+  web_title        String?
+  tag              String?
+  status           Int?
+  post_flg         String?   @db.Char(1)
+  main_author      String?   @db.VarChar(50)
+  book_list        String[]  @default([])
+  crt_time         DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model podcast_audio_segments {
+  id               Int              @id @default(autoincrement())
+  project_uuid     String           @db.Uuid
+  segment_type     String           @db.VarChar(50)
+  music_number     Int?
+  spotify_uri      String?          @db.VarChar(255)
+  s3_key           String?          @db.VarChar(255)
+  duration         Decimal?         @db.Decimal(10, 2)
+  sequence_order   Int?
+  created_at       DateTime?        @default(now()) @db.Timestamptz(6)
+  segment_name     String?          @db.VarChar(255)
+  podcast_projects podcast_projects @relation(fields: [project_uuid], references: [project_uuid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([project_uuid], map: "idx_podcast_segments_project_uuid")
+  @@index([segment_type], map: "idx_podcast_segments_type")
+}
+
+model podcast_playlist_tracks {
+  id                 Int              @id @default(autoincrement())
+  project_uuid       String           @db.Uuid
+  track_order        Int
+  track_name         String           @db.VarChar(255)
+  artist             String?          @db.VarChar(255)
+  spotify_uri        String           @db.VarChar(255)
+  duration_min       Decimal?         @db.Decimal(10, 2)
+  duration_sec       Decimal?         @db.Decimal(10, 2)
+  popularity         Int?
+  album_name         String?          @db.VarChar(255)
+  album_release_date String?          @db.VarChar(50)
+  created_at         DateTime?        @default(now()) @db.Timestamptz(6)
+  podcast_projects   podcast_projects @relation(fields: [project_uuid], references: [project_uuid], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([project_uuid], map: "idx_playlist_tracks_project_uuid")
+}
+
+model podcast_projects {
+  id                      Int                       @id @default(autoincrement())
+  project_uuid            String                    @unique @db.Uuid
+  transcript              Json?
+  status                  String?                   @db.VarChar(50)
+  total_duration          Decimal?                  @db.Decimal(10, 2)
+  music_count             Int?
+  s3_folder_path          String?                   @db.VarChar(255)
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  podcast_audio_segments  podcast_audio_segments[]
+  podcast_playlist_tracks podcast_playlist_tracks[]
+}
+
+model podcast_records {
+  podcast_id Int       @id @default(autoincrement())
+  title      String    @db.VarChar(200)
+  file_path  String    @db.VarChar(255)
+  duration   Int?
+  user_id    String?   @db.VarChar(50)
+  book_id    String?   @db.VarChar(50)
+  transcript String?
+  voice_id   String?   @db.VarChar(50)
+  status     String?   @default("pending") @db.VarChar(20)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([book_id], map: "idx_podcast_book")
+  @@index([status], map: "idx_podcast_status")
+  @@index([user_id], map: "idx_podcast_user")
+}
+
+model posts {
+  id       BigInt   @id @default(autoincrement())
+  user_id  BigInt
+  post_id  BigInt
+  topic    String
+  content  String
+  crt_time DateTime @default(now()) @db.Timestamp(6)
+  post_url String?  @db.VarChar(500)
+}
+
+model pricing_file {
+  uuid        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  prod_ids    Json
+  report_name String    @db.VarChar(255)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at], map: "idx_pricing_file_created_at")
+  @@index([prod_ids], map: "idx_pricing_file_prod_ids", type: Gin)
+  @@index([report_name], map: "idx_pricing_file_report_name")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model pricing_report {
+  prod_id          String    @id @db.VarChar(20)
+  org_prod_id      String    @db.VarChar(20)
+  prod_title_main  String?
+  eslite_prices    Json?     @db.Json
+  shopee_prices    Json?     @db.Json
+  momo_prices      Json?     @db.Json
+  books_prices     Json?     @db.Json
+  market_min_price Decimal?  @db.Decimal(10, 2)
+  org_margin       Decimal?  @db.Decimal(10, 2)
+  margin           Decimal?  @db.Decimal(10, 2)
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+  cost             Decimal?  @db.Decimal(10, 2)
+  special_tag      Int?
+  sale_price       Decimal?  @db.Decimal(10, 2)
+  sale_disc        Decimal?  @db.Decimal
+  pur_disc         Decimal?  @db.Decimal
+  list_price       Decimal?  @db.Decimal
+  supplier_nm      String?   @db.VarChar(255)
+  publisher_nm     String?   @db.VarChar(255)
+  pm_name          String?   @db.VarChar(255)
+  pchome_prices    Json?     @db.Json
+  rakuten_prices   Json?     @db.Json
+  goldstone_prices Json?     @db.Json
+  star_prices      Json?     @db.Json
+  sanmin_prices    Json?     @db.Json
+  tien_prices      Json?     @db.Json
+  iread_prices     Json?     @db.Json
+
+  @@index([created_at], map: "idx_pricing_report_created_at")
+  @@index([org_prod_id], map: "idx_pricing_report_org_prod_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model prod_profile {
+  add_cte       String? @db.VarChar(300)
+  add_title     String? @db.VarChar(256)
+  author_pf     String?
+  award_rec     String?
+  catalogue     String?
+  cover_str     String?
+  media_rcm     String?
+  org_prod_id   String  @id @db.Char(11)
+  person_guide  String?
+  person_rcm    String?
+  preface       String?
+  prod_pf       String?
+  prod_pf_desc  String? @db.VarChar(4000)
+  prod_pf_pic   Bytes?
+  sp_rec        String?
+  translator_pf String?
+  viewdata      String?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model product {
+  prod_id              String    @id @db.Char(11)
+  crt_time             DateTime? @db.Timestamp(6)
+  sup_id               String?   @db.VarChar(168)
+  org_prod_id          String?   @db.Char(11)
+  logcode              String?   @db.VarChar(18)
+  start_sell_time      DateTime? @db.Timestamp(6)
+  end_sell_time        DateTime? @db.Timestamp(6)
+  stk_flg              String?   @db.Char(1)
+  retn_flg             String?   @db.Char(1)
+  prod_rank            String?   @db.Char(1)
+  sale_price           Decimal?  @db.Decimal(10, 2)
+  wholesale_price      Decimal?  @db.Decimal(10, 2)
+  status_flg           String?   @db.Char(1)
+  prod_cat_id          String?   @db.Char(2)
+  org_flg              String?   @db.Char(1)
+  sale_disc            Decimal?  @db.Decimal(5, 2)
+  org_logcode          String?   @db.VarChar(18)
+  sup_nm_main          String?   @db.VarChar(256)
+  eancode              String?   @db.VarChar(18)
+  sup_mode             String?   @db.Char(1)
+  out_of_print         String?   @db.Char(1)
+  copyright            String?   @db.Char(1)
+  stk_sell             String?   @db.Char(1)
+  forsale              String?   @db.Char(1)
+  sale_area            String?   @db.Char(1)
+  main_pub_id          String?   @db.VarChar(16)
+  main_publish_date    String?   @db.Char(8)
+  main_issue_date      String?   @db.Char(8)
+  main_prod_serialno   String?   @db.VarChar(18)
+  main_cat_id          String?   @db.VarChar(12)
+  main_isbn            String?   @db.VarChar(13)
+  rank                 String?   @db.Char(1)
+  age_begin            String?   @db.Char(4)
+  age_end              String?   @db.Char(4)
+  unit_id              String?   @db.Char(1)
+  main_list_price      Decimal?  @db.Decimal(10, 2)
+  main_special_price   Decimal?  @db.Decimal(10, 2)
+  main_wholesale_price Decimal?  @db.Decimal(10, 2)
+  main_author          String?   @db.VarChar(256)
+  cat4xsx_cat_id       String?   @db.VarChar(12)
+  cat4xsx_cat_nm       String?   @db.VarChar(256)
+  publisher_name       String?   @db.VarChar(256)
+  prod_title_main      String?   @db.VarChar(256)
+  prod_title_next      String?   @db.VarChar(256)
+  ai_price             Decimal   @default(0) @db.Decimal(10, 2)
+  is_podcast_exist     Boolean?  @default(false)
+  list_price           Decimal?  @db.Decimal(10, 2)
+  special_price        Decimal?  @db.Decimal(10, 2)
+  pur_disc             Decimal?  @db.Decimal(10, 2)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model search_analytics {
+  id                 Int       @id @default(autoincrement())
+  query              String
+  search_mode        String    @db.VarChar(20)
+  results_count      Int?
+  user_id            String?   @db.VarChar(255)
+  agent_id           String?   @db.VarChar(255)
+  clicked_result_id  String?   @db.VarChar(255)
+  clicked_rank       Int?
+  search_duration_ms Int?
+  created_at         DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([agent_id], map: "idx_search_analytics_agent_id")
+  @@index([created_at(sort: Desc)], map: "idx_search_analytics_created_at")
+  @@index([query], map: "idx_search_analytics_query")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model search_index {
+  id             String                   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  content_id     String                   @unique @db.VarChar(255)
+  content_type   String                   @db.VarChar(50)
+  title          String
+  content        String?
+  summary        String?
+  url            String                   @db.VarChar(500)
+  tags           String[]
+  category       String?                  @db.VarChar(100)
+  title_tsv      Unsupported("tsvector")? @default(dbgenerated("to_tsvector('simple'::regconfig, COALESCE(title, ''::text))"))
+  content_tsv    Unsupported("tsvector")? @default(dbgenerated("to_tsvector('simple'::regconfig, COALESCE(content, ''::text))"))
+  title_vector   Unsupported("vector")?
+  content_vector Unsupported("vector")?
+  metadata       Json?                    @default("{}")
+  created_at     DateTime?                @default(now()) @db.Timestamp(6)
+  updated_at     DateTime?                @default(now()) @db.Timestamp(6)
+  indexed_at     DateTime?                @default(now()) @db.Timestamp(6)
+
+  @@index([category], map: "idx_search_category")
+  @@index([content_id], map: "idx_search_content_id")
+  @@index([content_tsv], map: "idx_search_content_tsv", type: Gin)
+  @@index([content_type], map: "idx_search_content_type")
+  @@index([content_vector], map: "idx_search_content_vector")
+  @@index([created_at(sort: Desc)], map: "idx_search_created_at")
+  @@index([tags], map: "idx_search_tags", type: Gin)
+  @@index([title_tsv], map: "idx_search_title_tsv", type: Gin)
+  @@index([title_vector], map: "idx_search_title_vector")
+  @@index([updated_at(sort: Desc)], map: "idx_search_updated_at")
+  @@index([url], map: "idx_search_url")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model second_hand_request {
+  cust_id     String    @db.VarChar(50)
+  org_prod_id String    @db.VarChar(50)
+  prod_id     String    @db.VarChar(50)
+  type        String    @db.VarChar(20)
+  value       Decimal   @db.Decimal
+  create_time DateTime? @default(now()) @db.Timestamp(6)
+  status      Int?      @default(0) @db.SmallInt
+  user_data   user_data @relation(fields: [cust_id], references: [cust_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([cust_id, org_prod_id])
+}
+
+model service_msg {
+  pk_no          BigInt   @id
+  crt_time       DateTime @db.Timestamp(6)
+  cust_id        String   @db.VarChar(50)
+  last_rpy_uname String?  @db.VarChar(100)
+  msg_content    String
+  msg_mail       String?  @db.VarChar(255)
+  msg_subject    String?  @db.VarChar(255)
+  msg_type       String   @db.Char(1)
+  remark         String?
+  star_flg       String?  @db.Char(1)
+  status_flg     String?  @db.Char(1)
+  msg_attach_pk  BigInt?
+  mas_no         String?  @db.VarChar(64)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model service_msg_attach {
+  mas_pk_no      BigInt  @id
+  attach_name    String? @db.VarChar(64)
+  attach_content Bytes?
+
+  @@index([attach_name], map: "idx_service_msg_attach_name")
+}
+
+model service_msg_reply {
+  id               String    @id @db.VarChar(50)
+  rpy_pk_no        Int
+  subject          String?
+  content          String?
+  fixed_content    String?
+  is_send          String?   @default("N") @db.VarChar(1)
+  send_time        DateTime? @db.Timestamp(6)
+  updated_time     DateTime? @db.Timestamp(6)
+  reviewer_cust_id String?   @db.VarChar(50)
+  reviewer_email   String?   @db.VarChar(100)
+  crt_time         DateTime? @default(now()) @db.Timestamp(6)
+  related_order    String[]  @default([])
+
+  @@index([crt_time], map: "idx_crt_time")
+  @@index([reviewer_cust_id], map: "idx_reviewer_cust_id")
+  @@index([rpy_pk_no], map: "idx_rpy_pk_no")
+}
+
+model shared {
+  id              Int       @id @default(autoincrement())
+  view_id         String    @db.VarChar(100)
+  title           String    @db.VarChar(255)
+  seo_title       String?   @db.VarChar(255)
+  seo_description String?
+  content         String?
+  public          Boolean?  @default(false)
+  status          Int?      @default(1)
+  session_id      String?   @db.VarChar(100)
+  crt_time        DateTime? @default(now()) @db.Timestamp(6)
+  created_by      String?   @db.VarChar(50)
+  tags            String[]  @default([])
+}
+
+model tai_story_house {
+  id          Int       @id @default(autoincrement())
+  title       String?   @db.VarChar(32)
+  content     Json?
+  create_time DateTime? @default(now()) @db.Timestamp(6)
+  status      Int       @default(1) @db.SmallInt
+}
+
+model threads_posts {
+  post_id  BigInt    @id
+  text     String
+  link     String?   @db.VarChar(500)
+  post_url String    @db.VarChar(500)
+  crt_time DateTime? @default(now()) @db.Timestamp(6)
+  web_id   String?
+}
+
+model threads_user_config {
+  id                   Int       @id @default(autoincrement())
+  user_id              String    @unique @db.VarChar(50)
+  user_name            String    @db.VarChar(255)
+  access_token         String
+  token_last_refreshed DateTime? @default(now()) @db.Timestamp(6)
+  post_hour            Int       @default(12)
+  post_minute          Int       @default(0)
+  last_posted          DateTime? @db.Timestamp(6)
+  last_replied         DateTime? @db.Timestamp(6)
+  is_active            Boolean?  @default(true)
+  is_posting_active    Boolean?  @default(true)
+  is_replying_active   Boolean?  @default(true)
+  created_at           DateTime? @default(now()) @db.Timestamp(6)
+  updated_at           DateTime? @default(now()) @db.Timestamp(6)
+  reply_interval       Int?
+}
+
+model topics {
+  id          BigInt   @id @default(autoincrement())
+  user_id     BigInt
+  document_id String
+  post_flg    Boolean  @default(false)
+  crt_time    DateTime @default(now()) @db.Timestamp(6)
+  topic       String?
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model tz_special_books {
+  prod_id              String    @id @db.Char(11)
+  crt_time             DateTime? @db.Timestamp(6)
+  sup_id               String?   @db.VarChar(168)
+  org_prod_id          String?   @db.Char(11)
+  logcode              String?   @db.VarChar(18)
+  start_sell_time      DateTime? @db.Timestamp(6)
+  end_sell_time        DateTime? @db.Timestamp(6)
+  stk_flg              String?   @db.Char(1)
+  retn_flg             String?   @db.Char(1)
+  prod_rank            String?   @db.Char(1)
+  sale_price           Decimal?  @db.Decimal(10, 2)
+  wholesale_price      Decimal?  @db.Decimal(10, 2)
+  status_flg           String?   @db.Char(1)
+  prod_cat_id          String?   @db.Char(2)
+  org_flg              String?   @db.Char(1)
+  sale_disc            Decimal?  @db.Decimal(5, 2)
+  org_logcode          String?   @db.VarChar(18)
+  sup_nm_main          String?   @db.VarChar(256)
+  eancode              String?   @db.VarChar(18)
+  sup_mode             String?   @db.Char(1)
+  out_of_print         String?   @db.Char(1)
+  copyright            String?   @db.Char(1)
+  stk_sell             String?   @db.Char(1)
+  forsale              String?   @db.Char(1)
+  sale_area            String?   @db.Char(1)
+  main_pub_id          String?   @db.VarChar(16)
+  main_publish_date    String?   @db.Char(8)
+  main_issue_date      String?   @db.Char(8)
+  main_prod_serialno   String?   @db.VarChar(18)
+  main_cat_id          String?   @db.VarChar(12)
+  main_isbn            String?   @db.VarChar(13)
+  rank                 String?   @db.Char(1)
+  age_begin            String?   @db.Char(4)
+  age_end              String?   @db.Char(4)
+  unit_id              String?   @db.Char(1)
+  main_list_price      Decimal?  @db.Decimal(10, 2)
+  main_special_price   Decimal?  @db.Decimal(10, 2)
+  main_wholesale_price Decimal?  @db.Decimal(10, 2)
+  main_author          String?   @db.VarChar(256)
+  cat4xsx_cat_id       String?   @db.VarChar(12)
+  cat4xsx_cat_nm       String?   @db.VarChar(256)
+  publisher_name       String?   @db.VarChar(256)
+  prod_title_main      String?   @db.VarChar(256)
+  prod_title_next      String?   @db.VarChar(256)
+  special_tag          Int?
+  prod_pf              String?
+}
+
+model user_data {
+  cust_id             String                @id @db.VarChar(100)
+  nick_name           String?               @db.VarChar(200)
+  birth_date          String?               @db.VarChar(8)
+  maxim               String?               @db.VarChar(500)
+  sex                 String?               @db.Char(1)
+  child_flg           String?               @db.Char(1)
+  cust_nm             String?               @db.VarChar(200)
+  mail_main           String?               @db.VarChar(200)
+  com_city_id         String?               @db.VarChar(3)
+  com_town_id         String?               @db.VarChar(3)
+  lineid              String?               @db.VarChar(255)
+  password_hash       String?               @db.VarChar(255)
+  salt                String?               @db.VarChar(32)
+  created_at          DateTime?             @default(now()) @db.Timestamp(6)
+  last_login          DateTime?             @db.Timestamp(6)
+  emailVerified       DateTime?
+  second_hand_request second_hand_request[]
+  user_event          user_event[]
+}
+
+model user_event {
+  id             Int        @id @default(autoincrement())
+  cust_id        String?    @db.VarChar(50)
+  org_prod_id    String     @db.VarChar(50)
+  prod_id        String     @db.VarChar(50)
+  cat4xsx_cat_id String     @db.VarChar(50)
+  cat4xsx_cat_nm String     @db.VarChar(50)
+  crt_time       DateTime?  @default(now()) @db.Timestamp(6)
+  event_type     String     @db.VarChar(50)
+  user_data      user_data? @relation(fields: [cust_id], references: [cust_id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model user_summary {
+  cust_id      String    @id @db.VarChar(100)
+  crt_time     DateTime? @db.Timestamp(6)
+  buyer_amt    Decimal?  @db.Decimal(10, 2)
+  sale_amt     Decimal?  @db.Decimal(10, 2)
+  min_acc      Int?
+  collect_qty  Int?
+  total_weight Int?
+}
+
+model voice_bank {
+  voice_id         String    @id @db.VarChar(50)
+  voice_name       String    @db.VarChar(100)
+  voice_path       String    @db.VarChar(255)
+  voice_transcript String?
+  created_at       DateTime? @default(now()) @db.Timestamp(6)
+  updated_at       DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([voice_name], map: "idx_voice_name")
+}
+
+model watchlist {
+  id          Int       @id @default(autoincrement())
+  cust_id     String?   @db.VarChar(100)
+  prod_id     String?   @db.VarChar(20)
+  org_prod_id String?   @db.VarChar(20)
+  crt_time    DateTime? @db.Timestamp(6)
+  list_type   String?   @db.Char(1)
+}
+
+/// AI 生成頁面
+/// 儲存 AI 生成的書籍推薦頁面資料
+model AgenticPage {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  page_id          String   @unique @db.VarChar(255)
+  title            String   @db.VarChar(500)
+  template         String   @db.VarChar(100)
+  books            Json
+  banner_image_url String?  @db.Text
+  created_at       DateTime @default(now()) @db.Timestamp(6)
+  updated_at       DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([page_id], map: "idx_agentic_pages_page_id")
+  @@index([created_at(sort: Desc)], map: "idx_agentic_pages_created_at")
+  @@map("agentic_pages")
 }
 
 enum OrderStatus {
@@ -501,12 +1215,6 @@ enum PaymentStatus {
   COMPLETED
   FAILED
   CANCELLED
-}
-
-enum RewardType {
-  CREDITS
-  SUBSCRIPTION
-  BOTH
 }
 
 enum SubscriptionStatus {

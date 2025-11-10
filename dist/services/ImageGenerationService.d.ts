@@ -22,6 +22,8 @@ export interface ImageGenerationResult {
         type: string;
         url: string;
     }>;
+    s3_urls?: Array<string>;
+    optimized_prompt?: string;
     error?: string;
 }
 export declare class ImageGenerationService {

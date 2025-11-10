@@ -8,7 +8,7 @@
  * 2. RuleStorageService: 使用 localStorage 管理 Rule 配置
  * 3. CustomerServiceManager: 客服對話管理（後台）
  */
-import { RuleConfig, SearchToolConfig, ParsedQuery, Conversation, Message } from '../../types';
+import { RuleConfig, SearchToolConfig, ParsedQuery, Conversation, Message } from "../../types";
 /**
  * RuleStorageService
  * 使用 localStorage 管理 Rule 和 SearchTool 配置
@@ -30,11 +30,11 @@ export declare class RuleStorageService {
     /**
      * 保存 Rule
      */
-    static saveRule(rule: Omit<RuleConfig, 'id' | 'createdAt' | 'updatedAt'>): RuleConfig;
+    static saveRule(rule: Omit<RuleConfig, "id" | "createdAt" | "updatedAt">): RuleConfig;
     /**
      * 更新 Rule
      */
-    static updateRule(id: string, updates: Partial<Omit<RuleConfig, 'id' | 'createdAt'>>): RuleConfig | null;
+    static updateRule(id: string, updates: Partial<Omit<RuleConfig, "id" | "createdAt">>): RuleConfig | null;
     /**
      * 刪除 Rule
      */

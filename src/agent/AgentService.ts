@@ -1,22 +1,22 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
-import type { ServiceModulerConfig } from '../types';
-import * as fs from 'fs';
-import * as path from 'path';
+import type { ServiceModulerConfig } from "../types";
+import * as fs from "fs";
+import * as path from "path";
 
 // Import all tools (新整合結構)
-import { databaseTools, initDatabaseTools } from './tools/database';
-import { telegramTools, initTelegramTools } from './tools/telegram';
-import { aipageTools, initAIPageTools } from './tools/aipage';
-import { webScraperTools } from './tools/web-scraper';
-import { searchTools, initSearchTools } from './tools/search';
-import { EmbeddingService } from '../services/EmbeddingService';
-import { RotatingChatOpenAI } from '../services/RotatingChatOpenAI';
-import { getApiKeyRotationService } from '../services/ApiKeyRotationService';
+import { databaseTools, initDatabaseTools } from "./tools/database";
+import { telegramTools, initTelegramTools } from "./tools/telegram";
+import { aipageTools, initAIPageTools } from "./tools/aipage";
+import { webScraperTools } from "./tools/web-scraper";
+import { searchTools, initSearchTools } from "./tools/search";
+import { EmbeddingService } from "../services/EmbeddingService";
+import { RotatingChatOpenAI } from "../services/RotatingChatOpenAI";
+import { getApiKeyRotationService } from "../services/ApiKeyRotationService";
 
 export interface AgentMessage {
-  role: 'user' | 'assistant' | 'system';
+  role: "user" | "assistant" | "system";
   content: string;
   timestamp?: number;
   metadata?: {
@@ -54,7 +54,9 @@ export class AgentService {
     const rotationService = getApiKeyRotationService();
     const availableKeys = rotationService.getTotalCount();
 
-    console.log(`[AgentService] Initializing with ${availableKeys} API key(s) for rotation`);
+    console.log(
+      `[AgentService] Initializing with ${availableKeys} API key(s) for rotation`
+    );
 
     // 使用 RotatingChatOpenAI 來自動處理 API key 輪詢
     this.model = new RotatingChatOpenAI({
@@ -85,11 +87,15 @@ export class AgentService {
     if (agentConfig.enableDatabaseTools && this.config.database) {
       initDatabaseTools(this.config);
       this.enabledTools.push(...databaseTools);
-      console.log('[AgentService] 已啟用資料庫工具，已添加', databaseTools.length, '個工具');
+      console.log(
+        "[AgentService] 已啟用資料庫工具，已添加",
+        databaseTools.length,
+        "個工具"
+      );
     } else {
-      console.log('[AgentService] ⚠️ Database tools NOT enabled:', {
+      console.log("[AgentService] ⚠️ Database tools NOT enabled:", {
         enableDatabaseTools: agentConfig.enableDatabaseTools,
-        hasDatabase: !!this.config.database
+        hasDatabase: !!this.config.database,
       });
     }
 
@@ -109,18 +115,26 @@ export class AgentService {
     if (agentConfig.enableManualIndexSearch !== false) {
       initSearchTools(this.config);
       this.enabledTools.push(...searchTools);
-      console.log('[AgentService] 已啟用內部搜尋工具，已添加', searchTools.length, '個工具');
+      console.log(
+        "[AgentService] 已啟用內部搜尋工具，已添加",
+        searchTools.length,
+        "個工具"
+      );
     }
 
     // 網頁爬取工具（包含通用爬取 + 熱門書籍）
     // 預設關閉，只在明確指定 enableWebScraper=true 或有 Rule 需要時才啟用
     if (agentConfig.enableWebScraper === true) {
       this.enabledTools.push(...webScraperTools);
-      console.log('[AgentService] 已啟用網頁爬取工具（包含通用爬取 + 熱門書籍），已添加', webScraperTools.length, '個工具');
+      console.log(
+        "[AgentService] 已啟用網頁爬取工具（包含通用爬取 + 熱門書籍），已添加",
+        webScraperTools.length,
+        "個工具"
+      );
     }
 
     if (this.enabledTools.length === 0) {
-      console.warn('[AgentService] 沒有啟用任何工具，Agent 將僅能進行對話');
+      console.warn("[AgentService] 沒有啟用任何工具，Agent 將僅能進行對話");
     }
   }
 
@@ -132,25 +146,32 @@ export class AgentService {
       // 從 lens-service 的位置，向上找到 TzAI_web/config/database-schema.json
       const possiblePaths = [
         // 假設 lens-service 和 TzAI_web 在同一層
-        path.resolve(process.cwd(), '../TzAI_web/config/database-schema.json'),
+        path.resolve(process.cwd(), "../TzAI_web/config/database-schema.json"),
         // 或者 lens-service 是在 TzAI_web 內部
-        path.resolve(process.cwd(), './config/database-schema.json'),
+        path.resolve(process.cwd(), "./config/database-schema.json"),
         // 或者從當前工作目錄的相對路徑
-        path.resolve(process.cwd(), './TzAI_web/config/database-schema.json'),
+        path.resolve(process.cwd(), "./TzAI_web/config/database-schema.json"),
       ];
 
       for (const schemaPath of possiblePaths) {
         if (fs.existsSync(schemaPath)) {
-          console.log(`[AgentService] Loading database schema from: ${schemaPath}`);
-          const data = fs.readFileSync(schemaPath, 'utf-8');
+          console.log(
+            `[AgentService] Loading database schema from: ${schemaPath}`
+          );
+          const data = fs.readFileSync(schemaPath, "utf-8");
           return JSON.parse(data);
         }
       }
 
-      console.warn('[AgentService] database-schema.json not found in any expected location');
+      console.warn(
+        "[AgentService] database-schema.json not found in any expected location"
+      );
       return null;
     } catch (error) {
-      console.error('[AgentService] Failed to load database-schema.json:', error);
+      console.error(
+        "[AgentService] Failed to load database-schema.json:",
+        error
+      );
       return null;
     }
   }
@@ -173,14 +194,18 @@ export class AgentService {
       // 🔒 重新初始化資料庫工具，注入當前用戶ID
       const agentConfig = this.config.agent || {};
       if (agentConfig.enableDatabaseTools && this.config.database) {
-        console.log(`[AgentService] 🔒 Re-initializing database tools with userId: ${userId}`);
+        console.log(
+          `[AgentService] 🔒 Re-initializing database tools with userId: ${userId}`
+        );
         initDatabaseTools(this.config, userId);
       }
 
       // 如果有額外的工具，創建臨時 Agent
       let agent = this.agent;
       if (options?.additionalTools && options.additionalTools.length > 0) {
-        console.log(`[AgentService] Creating temporary agent with ${options.additionalTools.length} additional tools`);
+        console.log(
+          `[AgentService] Creating temporary agent with ${options.additionalTools.length} additional tools`
+        );
         const allTools = [...this.enabledTools, ...options.additionalTools];
         agent = createReactAgent({
           llm: this.model,
@@ -201,17 +226,21 @@ export class AgentService {
       const trimmedHistory = await this.getTrimmedConversationHistory(threadId);
 
       // 調用 Agent
-      console.log('[AgentService] 📤 Invoking agent');
-      console.log('[AgentService] 📝 User query:', message);
-      console.log('[AgentService] 🧵 Thread ID:', threadId);
-      console.log('[AgentService] 💬 Using', trimmedHistory.length, 'previous Q&A pairs');
+      console.log("[AgentService] 📤 Invoking agent");
+      console.log("[AgentService] 📝 User query:", message);
+      console.log("[AgentService] 🧵 Thread ID:", threadId);
+      console.log(
+        "[AgentService] 💬 Using",
+        trimmedHistory.length,
+        "previous Q&A pairs"
+      );
 
       const result = await agent.invoke(
         {
           messages: [
             { role: "system", content: systemPrompt },
             ...trimmedHistory,
-            { role: "user", content: message }
+            { role: "user", content: message },
           ],
         },
         {
@@ -222,8 +251,16 @@ export class AgentService {
       );
 
       // 提取完整的執行日誌
-      const executionLog = this.buildExecutionLog(result.messages, message, systemPrompt);
-      console.log('[AgentService] 📋 Execution log created with', executionLog.steps.length, 'steps');
+      const executionLog = this.buildExecutionLog(
+        result.messages,
+        message,
+        systemPrompt
+      );
+      console.log(
+        "[AgentService] 📋 Execution log created with",
+        executionLog.steps.length,
+        "steps"
+      );
 
       // 詳細記錄每個工具調用和結果
       this.logToolCalls(result.messages);
@@ -235,10 +272,13 @@ export class AgentService {
       // 提取 pageId（如果有調用 generate_ai_page 工具）
       const pageId = this.extractPageId(result.messages);
 
-      console.log('[AgentService] ✅ Agent response:', lastMessage.content?.substring(0, 200) + '...');
-      console.log('[AgentService] 🔧 Tools used:', toolsUsed);
+      console.log(
+        "[AgentService] ✅ Agent response:",
+        lastMessage.content?.substring(0, 200) + "..."
+      );
+      console.log("[AgentService] 🔧 Tools used:", toolsUsed);
       if (pageId) {
-        console.log('[AgentService] 📄 AI Page ID:', pageId);
+        console.log("[AgentService] 📄 AI Page ID:", pageId);
       }
 
       return {
@@ -252,7 +292,7 @@ export class AgentService {
         },
       };
     } catch (error: any) {
-      console.error('[AgentService] 處理訊息時發生錯誤:', error);
+      console.error("[AgentService] 處理訊息時發生錯誤:", error);
       return {
         success: false,
         message: "處理您的請求時發生錯誤，請稍後再試。",
@@ -269,17 +309,21 @@ export class AgentService {
 
     // 取得當前時間
     const now = new Date();
-    const taiwanTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-    const currentDateTime = taiwanTime.toLocaleString('zh-TW', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+    const taiwanTime = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Taipei" })
+    );
+    const currentDateTime = taiwanTime.toLocaleString("zh-TW", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
     });
 
-    let systemPrompt = `你是 TzAI 智能客服助理。當前時間：${currentDateTime}，用戶ID：${userId || '未知'}
+    let systemPrompt = `你是 TzAI 智能客服助理。當前時間：${currentDateTime}，用戶ID：${
+      userId || "未知"
+    }
 
 ## 工具使用指南
 
@@ -373,6 +417,7 @@ ${JSON.stringify(dbSchema, null, 2)}
   - magazine-style: Elegant/sophisticated
   - social-feed-style: Casual/friendly
   - comic-pop-style: Fun/energetic
+  - love-letter-style: Romantic/sweet
 
   This is NOT optional - AI Pages provide visual engagement that increases customer purchases.
 `;
@@ -393,7 +438,7 @@ ${JSON.stringify(dbSchema, null, 2)}
    * 詳細記錄工具調用和結果（包含並行調用檢測）
    */
   private logToolCalls(messages: any[]): void {
-    console.log('[AgentService] 🔍 ===== Tool Calls Detail =====');
+    console.log("[AgentService] 🔍 ===== Tool Calls Detail =====");
 
     for (let i = 0; i < messages.length; i++) {
       const msg = messages[i];
@@ -402,22 +447,30 @@ ${JSON.stringify(dbSchema, null, 2)}
       if (msg.tool_calls && msg.tool_calls.length > 0) {
         // 檢測並行調用
         if (msg.tool_calls.length > 1) {
-          console.log(`[AgentService] ⚡ PARALLEL EXECUTION: ${msg.tool_calls.length} tools called simultaneously`);
+          console.log(
+            `[AgentService] ⚡ PARALLEL EXECUTION: ${msg.tool_calls.length} tools called simultaneously`
+          );
         }
 
         for (const toolCall of msg.tool_calls) {
           console.log(`[AgentService] 🔧 Tool Call: ${toolCall.name}`);
-          console.log(`[AgentService] 📥 Input:`, JSON.stringify(toolCall.args, null, 2));
+          console.log(
+            `[AgentService] 📥 Input:`,
+            JSON.stringify(toolCall.args, null, 2)
+          );
         }
       }
 
       // 記錄工具結果
-      if (msg.role === 'tool' && msg.content) {
-        console.log(`[AgentService] 📤 Tool Result (${msg.name || 'unknown'}):`, msg.content.substring(0, 500));
+      if (msg.role === "tool" && msg.content) {
+        console.log(
+          `[AgentService] 📤 Tool Result (${msg.name || "unknown"}):`,
+          msg.content.substring(0, 500)
+        );
       }
     }
 
-    console.log('[AgentService] 🔍 ===== End Tool Calls =====');
+    console.log("[AgentService] 🔍 ===== End Tool Calls =====");
   }
 
   /**
@@ -447,18 +500,20 @@ ${JSON.stringify(dbSchema, null, 2)}
       // Check if this is a generate_ai_page tool response
       // LangChain messages use 'type' not 'role', and ToolMessage has type='tool'
       const isGenerateAIPageResponse =
-        message.name === 'generate_ai_page' ||
-        (message.type === 'tool' && message.name === 'generate_ai_page');
+        message.name === "generate_ai_page" ||
+        (message.type === "tool" && message.name === "generate_ai_page");
 
       if (isGenerateAIPageResponse && message.content) {
         try {
           const result = JSON.parse(message.content);
           if (result.success && result.pageId) {
-            console.log('[AgentService] ✅ Extracted pageId:', result.pageId);
+            console.log("[AgentService] ✅ Extracted pageId:", result.pageId);
             return result.pageId;
           }
         } catch (e) {
-          console.log('[AgentService] ⚠️ Failed to parse generate_ai_page result');
+          console.log(
+            "[AgentService] ⚠️ Failed to parse generate_ai_page result"
+          );
         }
       }
     }
@@ -469,14 +524,18 @@ ${JSON.stringify(dbSchema, null, 2)}
   /**
    * 構建完整的執行日誌
    */
-  private buildExecutionLog(messages: any[], userQuery: string, systemPrompt: string) {
+  private buildExecutionLog(
+    messages: any[],
+    userQuery: string,
+    systemPrompt: string
+  ) {
     const steps: any[] = [];
     let stepNumber = 0;
 
     // Step 0: User Query
     steps.push({
       step: stepNumber++,
-      type: 'user_query',
+      type: "user_query",
       content: userQuery,
       timestamp: new Date().toISOString(),
     });
@@ -484,16 +543,20 @@ ${JSON.stringify(dbSchema, null, 2)}
     // Process all messages
     for (const msg of messages) {
       // Skip system messages
-      if (msg.role === 'system') {
+      if (msg.role === "system") {
         continue;
       }
 
       // AI Tool Calls
-      if (msg.tool_calls && Array.isArray(msg.tool_calls) && msg.tool_calls.length > 0) {
+      if (
+        msg.tool_calls &&
+        Array.isArray(msg.tool_calls) &&
+        msg.tool_calls.length > 0
+      ) {
         for (const toolCall of msg.tool_calls) {
           steps.push({
             step: stepNumber++,
-            type: 'tool_call',
+            type: "tool_call",
             toolName: toolCall.name,
             toolArgs: toolCall.args,
             toolCallId: toolCall.id,
@@ -503,21 +566,24 @@ ${JSON.stringify(dbSchema, null, 2)}
       }
 
       // Tool Results
-      if (msg.role === 'tool' && msg.content) {
+      if (msg.role === "tool" && msg.content) {
         steps.push({
           step: stepNumber++,
-          type: 'tool_result',
+          type: "tool_result",
           toolName: msg.name,
-          result: typeof msg.content === 'string' ? msg.content : JSON.stringify(msg.content),
+          result:
+            typeof msg.content === "string"
+              ? msg.content
+              : JSON.stringify(msg.content),
           timestamp: new Date().toISOString(),
         });
       }
 
       // AI Responses (thinking/final answer)
-      if ((msg.role === 'assistant' || msg.role === 'ai') && msg.content) {
+      if ((msg.role === "assistant" || msg.role === "ai") && msg.content) {
         steps.push({
           step: stepNumber++,
-          type: 'llm_response',
+          type: "llm_response",
           content: msg.content,
           timestamp: new Date().toISOString(),
         });
@@ -530,7 +596,7 @@ ${JSON.stringify(dbSchema, null, 2)}
       steps,
       summary: {
         toolsUsed: this.extractToolsUsed(messages),
-        finalAnswer: messages[messages.length - 1]?.content || '',
+        finalAnswer: messages[messages.length - 1]?.content || "",
       },
     };
   }
@@ -538,11 +604,13 @@ ${JSON.stringify(dbSchema, null, 2)}
   /**
    * 取得修剪過的對話歷史（只保留最後 2 次 QA，不含工具調用）
    */
-  private async getTrimmedConversationHistory(conversationId: string): Promise<any[]> {
+  private async getTrimmedConversationHistory(
+    conversationId: string
+  ): Promise<any[]> {
     try {
-      const state = await this.memory.get({
-        configurable: { thread_id: conversationId }
-      }) as any;
+      const state = (await this.memory.get({
+        configurable: { thread_id: conversationId },
+      })) as any;
 
       if (!state || !state.values || !state.values.messages) {
         return [];
@@ -556,12 +624,12 @@ ${JSON.stringify(dbSchema, null, 2)}
 
       for (const msg of allMessages) {
         // 跳過 system 和 tool 訊息
-        if (msg.role === 'system' || msg.role === 'tool') {
+        if (msg.role === "system" || msg.role === "tool") {
           continue;
         }
 
         // 用戶訊息開始新的 QA 對
-        if (msg.role === 'user') {
+        if (msg.role === "user") {
           if (currentQA.length > 0) {
             qaMessages.push(...currentQA);
             currentQA = [];
@@ -569,7 +637,10 @@ ${JSON.stringify(dbSchema, null, 2)}
           currentQA.push(msg);
         }
         // Assistant 的最終回答（沒有 tool_calls）
-        else if (msg.role === 'assistant' && (!msg.tool_calls || msg.tool_calls.length === 0)) {
+        else if (
+          msg.role === "assistant" &&
+          (!msg.tool_calls || msg.tool_calls.length === 0)
+        ) {
           currentQA.push(msg);
         }
         // 跳過有 tool_calls 的 assistant 訊息
@@ -583,11 +654,16 @@ ${JSON.stringify(dbSchema, null, 2)}
       // 只保留最後 2 組 QA（每組 QA 是 user + assistant 共 2 則訊息，所以取最後 4 則）
       const trimmed = qaMessages.slice(-4);
 
-      console.log(`[AgentService] 💬 Trimmed conversation history: ${qaMessages.length} total messages → ${trimmed.length} kept (last 2 Q&A pairs)`);
+      console.log(
+        `[AgentService] 💬 Trimmed conversation history: ${qaMessages.length} total messages → ${trimmed.length} kept (last 2 Q&A pairs)`
+      );
 
       return trimmed;
     } catch (error) {
-      console.error('[AgentService] Failed to get trimmed conversation history:', error);
+      console.error(
+        "[AgentService] Failed to get trimmed conversation history:",
+        error
+      );
       return [];
     }
   }
@@ -595,23 +671,25 @@ ${JSON.stringify(dbSchema, null, 2)}
   /**
    * 取得對話歷史
    */
-  async getConversationHistory(conversationId: string): Promise<AgentMessage[]> {
+  async getConversationHistory(
+    conversationId: string
+  ): Promise<AgentMessage[]> {
     try {
-      const state = await this.memory.get({
-        configurable: { thread_id: conversationId }
-      }) as any;
+      const state = (await this.memory.get({
+        configurable: { thread_id: conversationId },
+      })) as any;
 
       if (!state || !state.values || !state.values.messages) {
         return [];
       }
 
       return state.values.messages.map((msg: any) => ({
-        role: msg.role || 'assistant',
+        role: msg.role || "assistant",
         content: msg.content,
         timestamp: msg.timestamp || Date.now(),
       }));
     } catch (error) {
-      console.error('[AgentService] 取得對話歷史失敗:', error);
+      console.error("[AgentService] 取得對話歷史失敗:", error);
       return [];
     }
   }
@@ -629,16 +707,16 @@ ${JSON.stringify(dbSchema, null, 2)}
           id: `clear-${Date.now()}`,
           channel_values: { messages: [] },
           channel_versions: {},
-          versions_seen: {}
+          versions_seen: {},
         },
         {
           source: "update",
           step: -1,
-          parents: {}
+          parents: {},
         }
       );
     } catch (error) {
-      console.error('[AgentService] 清除對話歷史失敗:', error);
+      console.error("[AgentService] 清除對話歷史失敗:", error);
     }
   }
 
@@ -646,6 +724,6 @@ ${JSON.stringify(dbSchema, null, 2)}
    * 取得啟用的工具列表
    */
   getEnabledTools(): string[] {
-    return this.enabledTools.map(tool => tool.name);
+    return this.enabledTools.map((tool) => tool.name);
   }
 }

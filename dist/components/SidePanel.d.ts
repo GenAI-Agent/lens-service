@@ -1,4 +1,4 @@
-import { Message, Rule } from '../types';
+import { Message, Rule } from "../types";
 /**
  * 側邊欄面板組件
  * 從右側滑入，將原頁面推到左邊 2/3
@@ -14,7 +14,7 @@ export declare class SidePanel {
     private onSelectRule?;
     private onClose?;
     private onOpen?;
-    constructor(width?: string, position?: 'left' | 'right');
+    constructor(width?: string, position?: "left" | "right");
     /**
      * 注入 Markdown 樣式
      */

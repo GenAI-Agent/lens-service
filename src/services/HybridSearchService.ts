@@ -1,5 +1,5 @@
 // import { prisma } from '../lib/prisma'; // Removed: Using API mode
-import axios from 'axios';
+import axios from "axios";
 
 export interface SearchResult {
   id: string;
@@ -18,7 +18,7 @@ export interface SearchResult {
 export interface SearchOptions {
   query: string;
   limit?: number;
-  type?: 'manual' | 'url';
+  type?: "manual" | "url";
   minScore?: number;
 }
 
@@ -36,7 +36,7 @@ export class HybridSearchService {
     const deployment = process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT;
 
     if (!endpoint || !apiKey || !deployment) {
-      throw new Error('Azure OpenAI configuration missing');
+      throw new Error("Azure OpenAI configuration missing");
     }
 
     const url = `${endpoint}openai/deployments/${deployment}/embeddings?api-version=2023-05-15`;
@@ -46,8 +46,8 @@ export class HybridSearchService {
       { input: text.substring(0, 8000) },
       {
         headers: {
-          'Content-Type': 'application/json',
-          'api-key': apiKey,
+          "Content-Type": "application/json",
+          "api-key": apiKey,
         },
       }
     );
@@ -64,19 +64,24 @@ export class HybridSearchService {
     try {
       // Use API-based hybrid search
       // In browser environment, use relative URL; in Node.js, use full URL
-      const isBrowser = typeof window !== 'undefined';
-      const apiUrl = isBrowser ? '' : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000');
-      const response = await axios.post(`${apiUrl}/api/widget/manual-indexes/search`, {
-        query,
-        limit,
-        type,
-        minScore,
-      });
+      const isBrowser = typeof window !== "undefined";
+      const apiUrl = isBrowser
+        ? ""
+        : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const response = await axios.post(
+        `${apiUrl}/api/widget/manual-indexes/search`,
+        {
+          query,
+          limit,
+          type,
+          minScore,
+        }
+      );
 
       if (response.data.success) {
         return response.data.results;
       } else {
-        console.error('Hybrid search API error:', response.data.error);
+        console.error("Hybrid search API error:", response.data.error);
         return [];
       }
 
@@ -161,7 +166,7 @@ export class HybridSearchService {
       return results;
       */
     } catch (error) {
-      console.error('Error performing hybrid search:', error);
+      console.error("Error performing hybrid search:", error);
       throw error;
     }
   }
@@ -169,15 +174,20 @@ export class HybridSearchService {
   /**
    * Search only in manual indexes
    */
-  static async searchManual(query: string, limit: number = 5): Promise<SearchResult[]> {
-    return this.search({ query, limit, type: 'manual' });
+  static async searchManual(
+    query: string,
+    limit: number = 5
+  ): Promise<SearchResult[]> {
+    return this.search({ query, limit, type: "manual" });
   }
 
   /**
    * Search only in URL knowledge base
    */
-  static async searchURL(query: string, limit: number = 5): Promise<SearchResult[]> {
-    return this.search({ query, limit, type: 'url' });
+  static async searchURL(
+    query: string,
+    limit: number = 5
+  ): Promise<SearchResult[]> {
+    return this.search({ query, limit, type: "url" });
   }
 }
-

@@ -1,8 +1,14 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
-import type { ServiceModulerConfig } from '../../types';
-import * as fs from 'fs';
-import * as path from 'path';
+import type { ServiceModulerConfig } from "../../types";
+import * as fs from "fs";
+import * as path from "path";
+
+// API 配置
+const baseUrl =
+  typeof window !== "undefined"
+    ? window.location.origin
+    : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 
 // 搜尋索引相關
 let searchIndexService: any = null;
@@ -14,14 +20,17 @@ let embeddingService: any = null;
 let currentConfig: ServiceModulerConfig | null = null;
 
 // 儲存生成的 AI Page（內存儲存 + JSON 檔案持久化，永久保存）
-const aiPageStore = new Map<string, {
-  content: string;
-  createdAt: number;
-}>();
+const aiPageStore = new Map<
+  string,
+  {
+    content: string;
+    createdAt: number;
+  }
+>();
 
 // AI Page 儲存路徑
-const AI_PAGE_STORAGE_DIR = path.join(process.cwd(), '.ai-pages');
-const AI_PAGE_INDEX_FILE = path.join(AI_PAGE_STORAGE_DIR, 'index.json');
+const AI_PAGE_STORAGE_DIR = path.join(process.cwd(), ".ai-pages");
+const AI_PAGE_INDEX_FILE = path.join(AI_PAGE_STORAGE_DIR, "index.json");
 
 /**
  * 初始化 AI Page 儲存目錄
@@ -30,10 +39,10 @@ function initAIPageStorage() {
   try {
     if (!fs.existsSync(AI_PAGE_STORAGE_DIR)) {
       fs.mkdirSync(AI_PAGE_STORAGE_DIR, { recursive: true });
-      console.log('[AI Page] Created storage directory:', AI_PAGE_STORAGE_DIR);
+      console.log("[AI Page] Created storage directory:", AI_PAGE_STORAGE_DIR);
     }
   } catch (error) {
-    console.error('[AI Page] Failed to create storage directory:', error);
+    console.error("[AI Page] Failed to create storage directory:", error);
   }
 }
 
@@ -43,7 +52,7 @@ function initAIPageStorage() {
 function loadAIPagesFromDisk() {
   try {
     if (fs.existsSync(AI_PAGE_INDEX_FILE)) {
-      const indexData = fs.readFileSync(AI_PAGE_INDEX_FILE, 'utf-8');
+      const indexData = fs.readFileSync(AI_PAGE_INDEX_FILE, "utf-8");
       const pages = JSON.parse(indexData);
 
       // 載入到 Map 中（永久保存，不檢查過期）
@@ -52,22 +61,27 @@ function loadAIPagesFromDisk() {
         aiPageStore.set(pageId, pageData);
       }
 
-      console.log(`[AI Page] Loaded ${aiPageStore.size} pages from disk (permanent storage)`);
+      console.log(
+        `[AI Page] Loaded ${aiPageStore.size} pages from disk (permanent storage)`
+      );
     }
   } catch (error) {
-    console.error('[AI Page] Failed to load pages from disk:', error);
+    console.error("[AI Page] Failed to load pages from disk:", error);
   }
 }
 
 /**
  * 儲存 AI Page 到磁碟
  */
-function saveAIPageToDisk(pageId: string, pageData: { content: string; createdAt: number }) {
+function saveAIPageToDisk(
+  pageId: string,
+  pageData: { content: string; createdAt: number }
+) {
   try {
     // 讀取現有 index
     let pages: Record<string, any> = {};
     if (fs.existsSync(AI_PAGE_INDEX_FILE)) {
-      const indexData = fs.readFileSync(AI_PAGE_INDEX_FILE, 'utf-8');
+      const indexData = fs.readFileSync(AI_PAGE_INDEX_FILE, "utf-8");
       pages = JSON.parse(indexData);
     }
 
@@ -75,11 +89,15 @@ function saveAIPageToDisk(pageId: string, pageData: { content: string; createdAt
     pages[pageId] = pageData;
 
     // 寫回 index
-    fs.writeFileSync(AI_PAGE_INDEX_FILE, JSON.stringify(pages, null, 2), 'utf-8');
+    fs.writeFileSync(
+      AI_PAGE_INDEX_FILE,
+      JSON.stringify(pages, null, 2),
+      "utf-8"
+    );
 
     console.log(`[AI Page] Saved page ${pageId} to disk (permanent)`);
   } catch (error) {
-    console.error('[AI Page] Failed to save page to disk:', error);
+    console.error("[AI Page] Failed to save page to disk:", error);
   }
 }
 
@@ -89,17 +107,21 @@ function saveAIPageToDisk(pageId: string, pageData: { content: string; createdAt
 function deleteAIPageFromDisk(pageId: string) {
   try {
     if (fs.existsSync(AI_PAGE_INDEX_FILE)) {
-      const indexData = fs.readFileSync(AI_PAGE_INDEX_FILE, 'utf-8');
+      const indexData = fs.readFileSync(AI_PAGE_INDEX_FILE, "utf-8");
       const pages = JSON.parse(indexData);
 
       delete pages[pageId];
 
-      fs.writeFileSync(AI_PAGE_INDEX_FILE, JSON.stringify(pages, null, 2), 'utf-8');
+      fs.writeFileSync(
+        AI_PAGE_INDEX_FILE,
+        JSON.stringify(pages, null, 2),
+        "utf-8"
+      );
 
       console.log(`[AI Page] Deleted page ${pageId} from disk`);
     }
   } catch (error) {
-    console.error('[AI Page] Failed to delete page from disk:', error);
+    console.error("[AI Page] Failed to delete page from disk:", error);
   }
 }
 
@@ -109,14 +131,18 @@ function deleteAIPageFromDisk(pageId: string) {
 async function initSearchIndexing() {
   if (!searchIndexService && process.env.DATABASE_URL) {
     try {
-      const { SearchIndexService } = await import('../../services/SearchIndexService');
-      const { EmbeddingService } = await import('../../services/EmbeddingService');
+      const { SearchIndexService } = await import(
+        "../../services/SearchIndexService"
+      );
+      const { EmbeddingService } = await import(
+        "../../services/EmbeddingService"
+      );
 
       // 初始化 Embedding 服務
       embeddingService = new EmbeddingService({
-        endpoint: process.env.AZURE_OPENAI_ENDPOINT || '',
-        apiKey: process.env.AZURE_OPENAI_API_KEY || '',
-        deployment: 'text-embedding-3-small',
+        endpoint: process.env.AZURE_OPENAI_ENDPOINT || "",
+        apiKey: process.env.AZURE_OPENAI_API_KEY || "",
+        deployment: "text-embedding-3-small",
         dimensions: 1536,
       });
 
@@ -126,9 +152,12 @@ async function initSearchIndexing() {
         embeddingService
       );
 
-      console.log('[AI Page] ✅ Search indexing initialized');
+      console.log("[AI Page] ✅ Search indexing initialized");
     } catch (error) {
-      console.error('[AI Page] ⚠️  Failed to initialize search indexing:', error);
+      console.error(
+        "[AI Page] ⚠️  Failed to initialize search indexing:",
+        error
+      );
       // 不阻止 AI Page 功能，索引是可選的
     }
   }
@@ -137,33 +166,37 @@ async function initSearchIndexing() {
 /**
  * 索引 AI Page 到搜尋系統
  */
-async function indexAIPage(pageId: string, title: string, htmlContent: string): Promise<void> {
+async function indexAIPage(
+  pageId: string,
+  title: string,
+  htmlContent: string
+): Promise<void> {
   // 確保搜尋索引已初始化
   await initSearchIndexing();
 
   if (!searchIndexService) {
-    console.log('[AI Page] Search indexing not available, skipping');
+    console.log("[AI Page] Search indexing not available, skipping");
     return;
   }
 
   // 從 HTML 中提取純文本（簡單的 HTML 標籤移除）
   const textContent = htmlContent
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') // 移除 script
-    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')   // 移除 style
-    .replace(/<[^>]+>/g, ' ')                                          // 移除所有 HTML 標籤
-    .replace(/\s+/g, ' ')                                              // 合併多個空格
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "") // 移除 script
+    .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, "") // 移除 style
+    .replace(/<[^>]+>/g, " ") // 移除所有 HTML 標籤
+    .replace(/\s+/g, " ") // 合併多個空格
     .trim()
     .substring(0, 5000); // 限制長度
 
   await searchIndexService.indexDocument({
     contentId: pageId,
-    contentType: 'ai_page',
+    contentType: "ai_page",
     title,
     content: textContent,
     summary: textContent.substring(0, 200),
     url: `/api/ai-page/${pageId}`,
-    tags: ['ai-generated'],
-    category: 'dynamic-content',
+    tags: ["ai-generated"],
+    category: "dynamic-content",
     metadata: {
       generatedAt: new Date().toISOString(),
     },
@@ -180,8 +213,8 @@ export function initAIPageTools(config: ServiceModulerConfig) {
   loadAIPagesFromDisk();
 
   // 初始化搜尋索引（異步，不阻塞）
-  initSearchIndexing().catch(err => {
-    console.error('[AI Page] Failed to init search indexing:', err);
+  initSearchIndexing().catch((err) => {
+    console.error("[AI Page] Failed to init search indexing:", err);
   });
 }
 
@@ -191,7 +224,6 @@ export function initAIPageTools(config: ServiceModulerConfig) {
 function generatePageId(): string {
   return `ai-page-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
 }
-
 
 /**
  * 包裝 HTML 內容（添加基礎樣式和安全設定）
@@ -286,7 +318,9 @@ function wrapHTMLContent(content: string): string {
 <body>
   ${content}
   <footer style="margin-top: 3em; padding-top: 1em; border-top: 1px solid #ddd; color: #888; font-size: 0.9em;">
-    <p>此頁面由 AI Agent 自動生成 | 生成時間: ${new Date().toLocaleString('zh-TW')}</p>
+    <p>此頁面由 AI Agent 自動生成 | 生成時間: ${new Date().toLocaleString(
+      "zh-TW"
+    )}</p>
   </footer>
 </body>
 </html>`;
@@ -322,11 +356,14 @@ export const manageAIPageTool = new DynamicStructuredTool({
 
 **頁面會永久保存並自動索引到搜尋系統**`,
   schema: z.object({
-    action: z.enum(['create', 'update', 'delete']).describe("操作類型"),
+    action: z.enum(["create", "update", "delete"]).describe("操作類型"),
 
     // 創建/更新時需要
     title: z.string().optional().describe("頁面標題（創建時必填）"),
-    htmlContent: z.string().optional().describe("頁面 HTML 內容，只需要 body 部分（創建/更新時必填）"),
+    htmlContent: z
+      .string()
+      .optional()
+      .describe("頁面 HTML 內容，只需要 body 部分（創建/更新時必填）"),
 
     // 更新/刪除時需要
     pageId: z.string().optional().describe("頁面 ID（更新/刪除時必填）"),
@@ -340,7 +377,7 @@ export const manageAIPageTool = new DynamicStructuredTool({
     }
 
     // 創建新頁面
-    if (action === 'create') {
+    if (action === "create") {
       if (!title || !htmlContent) {
         return JSON.stringify({
           success: false,
@@ -366,22 +403,22 @@ export const manageAIPageTool = new DynamicStructuredTool({
       try {
         await indexAIPage(newPageId, title, wrappedContent);
       } catch (error) {
-        console.error('[AI Page] Failed to index page:', error);
+        console.error("[AI Page] Failed to index page:", error);
         // 不阻止 AI Page 生成，即使索引失敗
       }
 
       return JSON.stringify({
         success: true,
-        action: 'create',
+        action: "create",
         pageId: newPageId,
         url: `/api/ai-page/${newPageId}`,
         message: `AI Page 已生成並永久儲存`,
-        createdAt: new Date(pageData.createdAt).toLocaleString('zh-TW'),
+        createdAt: new Date(pageData.createdAt).toLocaleString("zh-TW"),
       });
     }
 
     // 更新頁面
-    if (action === 'update') {
+    if (action === "update") {
       if (!pageId || !htmlContent) {
         return JSON.stringify({
           success: false,
@@ -405,7 +442,7 @@ export const manageAIPageTool = new DynamicStructuredTool({
 
       return JSON.stringify({
         success: true,
-        action: 'update',
+        action: "update",
         pageId,
         url: `/api/ai-page/${pageId}`,
         message: "AI Page 已更新並儲存",
@@ -413,7 +450,7 @@ export const manageAIPageTool = new DynamicStructuredTool({
     }
 
     // 刪除頁面
-    if (action === 'delete') {
+    if (action === "delete") {
       if (!pageId) {
         return JSON.stringify({
           success: false,
@@ -430,8 +467,10 @@ export const manageAIPageTool = new DynamicStructuredTool({
 
       return JSON.stringify({
         success: deleted,
-        action: 'delete',
-        message: deleted ? "AI Page 已刪除（包含磁碟）" : "找不到指定的 AI Page",
+        action: "delete",
+        message: deleted
+          ? "AI Page 已刪除（包含磁碟）"
+          : "找不到指定的 AI Page",
       });
     }
 
@@ -442,39 +481,105 @@ export const manageAIPageTool = new DynamicStructuredTool({
   },
 });
 
-/**
- * 取得 AI Page 內容（供前端使用）
- */
-export function getAIPageContent(pageId: string): string | null {
-  // 從 public/aipages/ 目錄讀取 HTML 檔案
-  try {
-    const aipagesDir = path.join(process.cwd(), '../TzAI_web/public/aipages');
-    const filePath = path.join(aipagesDir, `${pageId}.html`);
+// ==================== 舊版本（已註解） ====================
+// /**
+//  * 取得 AI Page 內容（供前端使用）- 舊版從檔案系統讀取
+//  */
+// export function getAIPageContent(pageId: string): string | null {
+//   // 從 public/aipages/ 目錄讀取 HTML 檔案
+//   try {
+//     const aipagesDir = path.join(process.cwd(), '../TzAI_web/public/aipages');
+//     const filePath = path.join(aipagesDir, `${pageId}.html`);
+//
+//     if (fs.existsSync(filePath)) {
+//       const content = fs.readFileSync(filePath, 'utf-8');
+//       console.log(`[AI Page] Loaded page ${pageId} from ${filePath}`);
+//       return content;
+//     } else {
+//       console.error(`[AI Page] File not found: ${filePath}`);
+//       return null;
+//     }
+//   } catch (error) {
+//     console.error('[AI Page] Failed to load page from disk:', error);
+//     return null;
+//   }
+// }
 
-    if (fs.existsSync(filePath)) {
-      const content = fs.readFileSync(filePath, 'utf-8');
-      console.log(`[AI Page] Loaded page ${pageId} from ${filePath}`);
-      return content;
-    } else {
-      console.error(`[AI Page] File not found: ${filePath}`);
-      return null;
+// /**
+//  * 列出所有 AI Page（供前端使用）- 舊版從記憶體讀取
+//  */
+// export function listAIPages(): Array<{ pageId: string; createdAt: number }> {
+//   return Array.from(aiPageStore.entries()).map(([pageId, page]) => ({
+//     pageId,
+//     createdAt: page.createdAt,
+//   }));
+// }
+
+// ==================== 新版本（透過 API） ====================
+/**
+ * 取得 AI Page 內容（透過 API）
+ */
+export async function getAIPageContent(pageId: string): Promise<any | null> {
+  try {
+    const response = await fetch(
+      `${baseUrl}/api/widget/agenticPage/${pageId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        console.error(`[AI Page] Page ${pageId} not found`);
+        return null;
+      }
+      const errorText = await response.text();
+      throw new Error(`API error: ${response.status} - ${errorText}`);
     }
+
+    const page = await response.json();
+    console.log(`[AI Page] Retrieved page ${pageId} from API`);
+    return page;
   } catch (error) {
-    console.error('[AI Page] Failed to load page from disk:', error);
+    console.error("[AI Page] Failed to get page from API:", error);
     return null;
   }
 }
 
 /**
- * 列出所有 AI Page（供前端使用）
+ * 列出所有 AI Page（透過 API）
  */
-export function listAIPages(): Array<{ pageId: string; createdAt: number }> {
-  return Array.from(aiPageStore.entries()).map(([pageId, page]) => ({
-    pageId,
-    createdAt: page.createdAt,
-  }));
+export async function listAIPages(): Promise<
+  Array<{ pageId: string; createdAt: string }>
+> {
+  try {
+    const response = await fetch(`${baseUrl}/api/widget/agenticPage`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`API error: ${response.status} - ${errorText}`);
+    }
+
+    const pages = await response.json();
+    console.log(`[AI Page] Retrieved ${pages.length} pages from API`);
+
+    // 轉換格式以符合原本的介面
+    return pages.map((page: any) => ({
+      pageId: page.page_id,
+      createdAt: page.created_at,
+    }));
+  } catch (error) {
+    console.error("[AI Page] Failed to list pages from API:", error);
+    return [];
+  }
 }
 
-export const aipageTools = [
-  manageAIPageTool,
-];
+export const aipageTools = [manageAIPageTool];
