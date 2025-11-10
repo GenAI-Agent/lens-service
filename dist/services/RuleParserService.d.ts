@@ -5,7 +5,7 @@ import { ParsedQuery } from '../types';
  * 支持在任何位置出現 /rule_name
  */
 export declare class RuleParserService {
-    private ruleRegex;
+    private static ruleRegex;
     constructor();
     /**
      * 解析查詢，提取 rule 名稱並獲取對應的配置
@@ -13,7 +13,7 @@ export declare class RuleParserService {
      * @param query - 原始查詢字符串
      * @returns ParsedQuery 對象
      */
-    parseQuery(query: string): ParsedQuery;
+    static parseQuery(query: string): ParsedQuery;
     /**
      * 獲取所有可用的 rule 名稱（用於自動補全）
      * @returns Rule 名稱數組
@@ -40,4 +40,9 @@ export declare class RuleParserService {
      * @returns 最大 token 數
      */
     getMaxTokens(parsedQuery: ParsedQuery, defaultMaxTokens?: number): number;
+    /**
+     * 執行 rule 的 searchTools 爬取
+     * 自動爬取 rule 配置中的所有 URL
+     */
+    static executeRuleSearchTools(parsedQuery: ParsedQuery): Promise<string | null>;
 }

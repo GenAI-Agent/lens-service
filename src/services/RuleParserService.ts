@@ -8,7 +8,8 @@ import { RuleStorageService } from './RuleStorageService';
  */
 export class RuleParserService {
   // 匹配任何位置的 /rule_name（前後可以有其他內容）
-  private ruleRegex = /\/([a-zA-Z0-9_-]+)/g;
+  // 修正: 只匹配開頭或空白後的 /rule_name，避免匹配 URL 中的路徑
+  private static ruleRegex = /(?:^|\s)(\/[a-zA-Z0-9_-]+)/g;
 
   constructor() {
     // 不再需要 dbService，使用 localStorage
@@ -20,11 +21,11 @@ export class RuleParserService {
    * @param query - 原始查詢字符串
    * @returns ParsedQuery 對象
    */
-  parseQuery(query: string): ParsedQuery {
+  static parseQuery(query: string): ParsedQuery {
     // 重置 regex 的 lastIndex
-    this.ruleRegex.lastIndex = 0;
+    RuleParserService.ruleRegex.lastIndex = 0;
 
-    const matches = Array.from(query.matchAll(this.ruleRegex));
+    const matches = Array.from(query.matchAll(RuleParserService.ruleRegex));
 
     if (matches.length === 0) {
       // 沒有匹配到 rule，返回原始 query
@@ -36,10 +37,13 @@ export class RuleParserService {
 
     // 取第一個匹配的 rule name
     const firstMatch = matches[0];
-    const ruleName = firstMatch[1];
+    // Group 1 contains the /rule_name (e.g., "/book_recommend")
+    const ruleNameWithSlash = firstMatch[1];
+    // Remove the leading slash to get just the rule name
+    const ruleName = ruleNameWithSlash.substring(1);
 
-    // 移除所有 /rule_name，保留其他內容
-    const cleanQuery = query.replace(this.ruleRegex, '').trim();
+    // 移除所有 /rule_name，保留其他內容（保留空白）
+    const cleanQuery = query.replace(RuleParserService.ruleRegex, ' ').trim();
 
     // 從 localStorage 獲取 rule 配置
     const ruleConfig = RuleStorageService.getRuleByName(ruleName);
@@ -103,5 +107,69 @@ ${outputFormat}`;
    */
   getMaxTokens(parsedQuery: ParsedQuery, defaultMaxTokens: number = 2000): number {
     return parsedQuery.ruleConfig?.maxTokens ?? defaultMaxTokens;
+  }
+
+  /**
+   * 執行 rule 的 searchTools 爬取
+   * 自動爬取 rule 配置中的所有 URL
+   */
+  static async executeRuleSearchTools(parsedQuery: ParsedQuery): Promise<string | null> {
+    if (!parsedQuery.ruleConfig?.searchTools) {
+      return null;
+    }
+
+    try {
+      // 動態導入 web scraper
+      const { scrapeUrl } = await import('../agent/tools/web-scraper-helper');
+
+      // 收集所有 active searchTools 的 URLs
+      const activeSearchTools = parsedQuery.ruleConfig.searchTools.filter((tool: any) => tool.isActive);
+      const allUrls: string[] = [];
+
+      for (const tool of activeSearchTools) {
+        if (tool.urls && Array.isArray(tool.urls)) {
+          allUrls.push(...tool.urls);
+        }
+      }
+
+      if (allUrls.length === 0) {
+        console.log('[Rule Parser] No URLs to scrape in searchTools');
+        return null;
+      }
+
+      console.log(`[Rule Parser] Scraping ${allUrls.length} URLs from rule "${parsedQuery.ruleName}"`);
+
+      // 並行爬取所有 URLs
+      const results = await Promise.all(
+        allUrls.map((url: string) => scrapeUrl(url, 'article'))
+      );
+
+      // 合併所有成功的爬取結果
+      const successfulResults = results.filter((r: any) => r.success);
+
+      if (successfulResults.length === 0) {
+        console.log('[Rule Parser] No successful scrapes');
+        return null;
+      }
+
+      // 格式化為結構化資訊返回
+      let combinedContent = `\n\n## 自動爬取的網頁內容 (來自 Rule: ${parsedQuery.ruleName})\n\n`;
+
+      successfulResults.forEach((result: any, index: number) => {
+        combinedContent += `### 頁面 ${index + 1}: ${result.title}\n`;
+        combinedContent += `URL: ${result.url}\n`;
+        if (result.metadata?.description) {
+          combinedContent += `描述: ${result.metadata.description}\n`;
+        }
+        combinedContent += `\n${result.content}\n\n---\n\n`;
+      });
+
+      console.log(`[Rule Parser] Successfully scraped ${successfulResults.length}/${allUrls.length} URLs`);
+
+      return combinedContent;
+    } catch (error) {
+      console.error('[Rule Parser] Failed to execute searchTools:', error);
+      return null;
+    }
   }
 }

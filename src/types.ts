@@ -28,19 +28,25 @@ export interface ServiceModulerConfig {
     apiVersion?: string;
   };
 
-  // Telegram 通報配置
+  // Telegram 通報配置（擴展支援多個群組）
   telegram?: {
     botToken: string;
-    chatId: string;
+    chatId?: string; // 向後兼容
+    chatIds?: {
+      default?: string;
+      customerService?: string;
+      logistics?: string;
+    };
   };
 
-  // 資料庫配置
+  // 資料庫配置（擴展支援完整連線或 URL）
   database?: {
     host?: string;
     port?: number;
     database?: string;
     user?: string;
     password?: string;
+    url?: string; // PostgreSQL connection URL (優先於分離參數)
   };
 
   // 網站配置
@@ -83,6 +89,31 @@ export interface ServiceModulerConfig {
     enableScreenshot?: boolean;
     enableRules?: boolean;
     enableSearch?: boolean;
+  };
+
+  // Agent 功能配置
+  agent?: {
+    enableDatabaseTools?: boolean;      // 啟用資料庫工具
+    enableTelegramNotify?: boolean;     // 啟用 Telegram 通知
+    enableAIPageGeneration?: boolean;   // 啟用 AI Page 生成
+    enablePermissionCheck?: boolean;    // 啟用權限檢查（預設 true）
+    enableManualIndexSearch?: boolean;  // 啟用知識庫搜尋（預設 true）
+    enableInternalSearch?: boolean;     // 啟用內部搜尋工具（預設 true）
+    enableWebScraper?: boolean;         // 啟用網頁爬取工具（預設 true）
+
+    // 危險操作關鍵字（自定義）
+    dangerousActions?: string[];
+
+    // 敏感表格列表（自定義）
+    sensitiveTables?: string[];
+
+    // 訂單表格配置（如果有訂單功能）
+    orderConfig?: {
+      enabled?: boolean;
+      tableName?: string;
+      statusField?: string;
+      orderNumberField?: string;
+    };
   };
   
   // 規則配置

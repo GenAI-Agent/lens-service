@@ -1,5 +1,6 @@
 import { ServiceModulerConfig, ConversationState, Message, Rule } from './types';
 import { SidePanel } from './components/SidePanel';
+import { ResizablePanel } from './components/ResizablePanel';
 import { AdminPanel } from './admin/AdminPanel';
 import { ConversationService } from './services/ConversationService';
 import { ManualIndexService } from './services/ManualIndexService';
@@ -29,33 +30,20 @@ import { ConfigService } from './services/ConfigService';
  */
 class LensServiceWidget {
   private config?: ServiceModulerConfig;
-  private panel?: SidePanel;
+  private panel?: ResizablePanel;
   private conversationState?: ConversationState;
   private initialized: boolean = false;
   private adminPanel?: AdminPanel;
   private floatingIcon?: HTMLElement;
   
   /**
-   * 從SQL載入規則
+   * Load rules from SQL database
+   * Note: Rule loading is currently disabled. The system operates without predefined rules.
+   * If you need to enable rules, start the db-server on port 3002 and uncomment the implementation.
    */
   private async loadRulesFromSQL(): Promise<Rule[]> {
-    try {
-      // 暫時停用規則載入功能
-      // 如果需要使用規則，請啟動 db-server 在 port 3002
-      console.log('Rules loading disabled, using empty array');
-      return [];
-
-      // const response = await fetch('http://localhost:3002/rules');
-      // if (!response.ok) {
-      //   console.log('No rules found in database, using empty array');
-      //   return [];
-      // }
-      // const rules = await response.json();
-      // return Array.isArray(rules) ? rules : [];
-    } catch (error) {
-      console.error('Failed to load rules from SQL:', error);
-      return [];
-    }
+    console.log('Rules loading disabled, using empty array');
+    return [];
   }
 
   /**
@@ -80,15 +68,18 @@ class LensServiceWidget {
     // 將 Telegram 配置存儲到全局變量供 AdminPanel 使用
     (window as any).SM_TELEGRAM_CONFIG = telegramConfig;
 
-    // 從SQL讀取規則
+    // Load rules from SQL (currently disabled)
     const rules = await this.loadRulesFromSQL();
 
-    // Agent initialization disabled
-    // Capture service disabled
+    // 初始化 UI - 使用 ResizablePanel
+    const initialWidth = config.ui?.width
+      ? (typeof config.ui.width === 'string' && config.ui.width.includes('%'))
+        ? (parseFloat(config.ui.width) / 100) * window.innerWidth
+        : parseFloat(config.ui.width as string)
+      : 500; // 預設 500px
 
-    // 初始化 UI
-    this.panel = new SidePanel(
-      config.ui?.width || '33.33%',
+    this.panel = new ResizablePanel(
+      initialWidth,
       config.ui?.position || 'right'
     );
 
@@ -101,11 +92,8 @@ class LensServiceWidget {
       onOpen: () => this.handleOpen()
     });
 
-    // 載入對話狀態（舊版兼容）
+    // Load conversation state (legacy compatibility)
     await this.loadConversationState();
-    
-    // 設置規則列表
-    // Agent disabled
     
     // 初始化管理後台（確保只創建一次）
     if (!this.adminPanel) {
@@ -178,20 +166,38 @@ class LensServiceWidget {
       let response: string;
       let sources: any[] | undefined;
       let needsHumanReply = false;
+      let pageId: string | undefined;
 
-      // 獲取 session ID 和 user ID
+      // 獲取 session ID（user ID 由後端從 session 取得）
       const sessionId = this.conversationState?.sessionId || this.generateSessionId();
-      const userId = localStorage.getItem('lens_service_user_id') || 'default_user';
 
       if (imageBase64) {
         // 帶圖片的訊息 - 使用 vision 模型
         response = await this.processImageMessage(message, imageBase64);
       } else {
         // 純文字訊息 - 使用 agent 處理
-        const result = await this.processTextMessage(message, sessionId, userId);
+        const result = await this.processTextMessage(message, sessionId);
         response = result.response;
         sources = result.sources;
         needsHumanReply = result.needsHumanReply;
+        pageId = result.pageId;
+
+        // 如果有 AI Page 產生，顯示按鈕讓用戶開啟
+        if (result.aiPageHtml || pageId) {
+          console.log('📄 AI Page generated, showing button');
+          // 顯示 AI Page 按鈕
+          if (this.panel) {
+            this.panel.showAIPageButton();
+          }
+        }
+
+        if (pageId) {
+          // AI Page 已經生成，用戶可通過返回的 URL 直接訪問
+          console.log('📄 AI Page ID received:', pageId);
+          if (this.panel) {
+            this.panel.showAIPageButton();
+          }
+        }
 
         // 如果需要人工回覆，發送 Telegram 通知
         if (needsHumanReply) {
@@ -227,8 +233,8 @@ class LensServiceWidget {
       this.conversationState?.messages.push(assistantMessage);
       this.saveConversationState();
 
-      // 保存對話記錄到資料庫
-      await this.saveConversationToDatabase(sessionId, userId);
+      // 保存對話記錄到資料庫（userId 由後端處理）
+      await this.saveConversationToDatabase(sessionId);
     } catch (error) {
       console.error('Error processing message:', error);
 
@@ -247,232 +253,66 @@ class LensServiceWidget {
   }
 
   /**
-   * 處理文字訊息
+   * 處理文字訊息（新架構：統一透過後端 API）
    */
-  private async processTextMessage(message: string, sessionId: string, userId: string): Promise<{
+  private async processTextMessage(message: string, sessionId: string): Promise<{
     response: string;
     sources: any[];
     needsHumanReply: boolean;
+    pageId?: string;
+    aiPageHtml?: string;
   }> {
     try {
-      // 從資料庫獲取系統提示詞和預設回覆
-      const { DatabaseService } = await import('./services/DatabaseService');
-      await DatabaseService.initializePool();
+      // 調用統一的後端 API
+      const apiEndpoint = this.config?.apiEndpoint || '/api/widget/chat';
 
-      const systemPrompt = await DatabaseService.getSetting('system_prompt') ||
-        '你是一個專業的客服助手，請用繁體中文回答問題。';
-      const defaultReply = await DatabaseService.getSetting('default_reply') ||
-        '很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。';
+      console.log(`🤖 Calling backend API: ${apiEndpoint}`);
 
-      // 步驟 0: 判斷是否為簡單問候
-      const greetingKeywords = ['你好', '您好', '嗨', 'hi', 'hello', '早安', '午安', '晚安', '哈囉', '安安'];
-      const isSimpleGreeting = greetingKeywords.some(keyword =>
-        message.toLowerCase().trim() === keyword.toLowerCase() ||
-        message.toLowerCase().trim() === keyword.toLowerCase() + '!' ||
-        message.toLowerCase().trim() === keyword.toLowerCase() + '！'
-      );
-
-      if (isSimpleGreeting) {
-        console.log('👋 Simple greeting detected, responding directly');
-        const greetingResponse = '您好！我是客服助手，很高興為您服務。請問有什麼可以幫助您的嗎？';
-        return {
-          response: greetingResponse,
-          sources: [],
-          needsHumanReply: false
-        };
-      }
-
-      // 步驟 1: 搜索手動索引（Hybrid Search with improved settings）
-      const { ManualIndexService } = await import('./services/ManualIndexService');
-      // 限制最多 3 筆結果，設定最低分數 0.15
-      const manualIndexResults = await ManualIndexService.search(message, 3);
-
-      console.log('🔍 Manual index search results:', manualIndexResults.length);
-
-      // 步驟 1.5: 搜索訂單和訂閱資訊（從 JWT token 獲取當前用戶）
-      const orders = await DatabaseService.getUserOrders();
-      const subscriptions = await DatabaseService.getUserSubscriptions();
-
-      console.log('🔍 User orders:', orders.length);
-      console.log('🔍 User subscriptions:', subscriptions.length);
-
-      // 合併搜索結果（最多 3 筆知識庫內容）
-      const knowledgeBaseSources = manualIndexResults.slice(0, 3).map((r: any) => ({
-        type: 'manual_index',
-        title: r.title || r.name,
-        content: r.content,
-        description: r.description || '',
-        score: r.hybrid_score || 0
-      }));
-
-      const allSources = [...knowledgeBaseSources];
-
-      // 添加訂單資訊到 sources（如果有）
-      if (orders.length > 0) {
-        allSources.push({
-          type: 'orders',
-          title: '訂單資訊',
-          content: this.formatOrdersForContext(orders),
-          description: '用戶的訂單記錄',
-          score: 1.0  // 訂單資訊給予最高分數
-        } as any);
-      }
-
-      // 添加訂閱資訊到 sources（如果有）
-      if (subscriptions.length > 0) {
-        allSources.push({
-          type: 'subscriptions',
-          title: '訂閱資訊',
-          content: this.formatSubscriptionsForContext(subscriptions),
-          description: '用戶的訂閱記錄',
-          score: 1.0  // 訂閱資訊給予最高分數
-        } as any);
-      }
-
-      console.log(`📊 Total sources: ${allSources.length} (${knowledgeBaseSources.length} knowledge base + ${orders.length > 0 ? 1 : 0} orders + ${subscriptions.length > 0 ? 1 : 0} subscriptions)`);
-
-      // 步驟 2: 判斷能否回答
-      // 如果沒有搜索結果或相關度太低，直接返回預設回覆並通知 Telegram
-      if (allSources.length === 0) {
-        console.log('❌ No relevant content found, using default reply');
-        return {
-          response: defaultReply,
-          sources: [],
-          needsHumanReply: true
-        };
-      }
-
-      // 步驟 3: 調用後端 API 生成回覆（不再檢查前端配置）
-
-      // 步驟 4: 獲取對話歷史（最近 2 輪對話，僅限當前 session）
-      const currentSessionId = this.conversationState?.sessionId;
-      const conversationHistory = this.conversationState?.messages || [];
-
-      // 只使用當前 session 的對話記錄
-      const sessionMessages = conversationHistory.filter(msg => {
-        // 如果訊息沒有 sessionId，則認為是當前 session 的
-        return true; // conversationState 已經是當前 session 的訊息
+      const response = await fetch(apiEndpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // 包含 cookies (session)
+        body: JSON.stringify({
+          message,
+          sessionId,
+          // userId removed - will be extracted from session by backend
+          conversationHistory: this.conversationState?.messages || [],
+        }),
       });
 
-      const recentHistory = sessionMessages.slice(-4); // 最近 2 輪（每輪 2 條：user + assistant）
-
-      let historyContext = '';
-      if (recentHistory.length > 0) {
-        historyContext = '\n\n【對話歷史】\n' + recentHistory.map(msg => {
-          const role = msg.role === 'user' ? '用戶' : '助手';
-          return `${role}：${msg.content}`;
-        }).join('\n');
-      }
-
-      // 步驟 5: 使用搜索結果作為上下文，調用 LLM 生成回覆
-      const context = allSources.map((source: any) => {
-        if (source.type === 'manual_index') {
-          return `【手動索引】\n標題：${source.title}\n${source.description ? `描述：${source.description}\n` : ''}內容：${source.content.substring(0, 1000)}${source.content.length > 1000 ? '...' : ''}`;
-        } else if (source.type === 'llms_txt') {
-          return `【網站資訊】\n${source.content.substring(0, 1000)}${source.content.length > 1000 ? '...' : ''}`;
-        } else if (source.type === 'orders') {
-          return `【訂單資訊】\n${source.content}`;
-        } else if (source.type === 'subscriptions') {
-          return `【訂閱資訊】\n${source.content}`;
+      if (!response.ok) {
+        if (response.status === 401) {
+          return {
+            response: '抱歉，您需要先登入才能使用此功能。',
+            sources: [],
+            needsHumanReply: false,
+          };
         }
-        return '';
-      }).join('\n\n---\n\n');
-
-      const enhancedPrompt = `${systemPrompt}\n\n以下是相關的知識庫內容和用戶資料：\n\n${context}${historyContext}\n\n請根據以上內容和對話歷史回答用戶的問題。如果內容不足以回答問題，請誠實告知。`;
-
-      const response = await this.callAzureOpenAI(message, enhancedPrompt);
-
-      // 檢查回覆是否表示無法回答
-      const cannotAnswerKeywords = ['無法回答', '不清楚', '不確定', '沒有相關', '無法提供'];
-      const needsHuman = cannotAnswerKeywords.some(keyword => response.includes(keyword));
-
-      if (needsHuman) {
-        console.log('❌ LLM cannot answer, using default reply');
-        return {
-          response: defaultReply,
-          sources: allSources,
-          needsHumanReply: true
-        };
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
 
+      const data = await response.json();
+
+      // 標準化回應格式
       return {
-        response,
-        sources: allSources,
-        needsHumanReply: false
+        response: data.reply || data.message || '抱歉，我無法生成回應。',
+        sources: data.sources || [],
+        needsHumanReply: data.needsHumanReply || false,
+        pageId: data.pageId, // AI Page ID
+        aiPageHtml: data.aiPageHtml, // AI Page HTML 內容
       };
     } catch (error) {
-      console.error('Error processing text message:', error);
+      console.error('[LensService] API call failed:', error);
 
-      // 獲取預設回覆
-      try {
-        const { DatabaseService } = await import('./services/DatabaseService');
-        const defaultReply = await DatabaseService.getSetting('default_reply') ||
-          '很抱歉，我無法回答這個問題。請聯繫人工客服獲得更多幫助。';
-        return {
-          response: defaultReply,
-          sources: [],
-          needsHumanReply: true
-        };
-      } catch {
-        return {
-          response: '系統暫時無法回應，請稍後再試。',
-          sources: [],
-          needsHumanReply: true
-        };
-      }
+      // 降級處理：返回友善的錯誤訊息
+      return {
+        response: '抱歉，系統暫時無法回應。請稍後再試或聯繫客服。',
+        sources: [],
+        needsHumanReply: true,
+      };
     }
-  }
-
-  /**
-   * 格式化訂單資訊為上下文
-   */
-  private formatOrdersForContext(orders: any[]): string {
-    if (orders.length === 0) {
-      return '用戶目前沒有訂單記錄。';
-    }
-
-    const orderTexts = orders.slice(0, 10).map((order, index) => {
-      const orderDate = new Date(order.created_at).toLocaleDateString('zh-TW');
-      const completedDate = order.completed_at ? new Date(order.completed_at).toLocaleDateString('zh-TW') : '未完成';
-
-      return `訂單 ${index + 1}:
-- 訂單編號: ${order.id}
-- 訂單類型: ${order.order_type}
-- 金額: ${order.totalAmount} ${order.currency}
-- 狀態: ${order.status}
-- 付款方式: ${order.payment_method || '未指定'}
-- 建立時間: ${orderDate}
-- 完成時間: ${completedDate}`;
-    });
-
-    return `用戶共有 ${orders.length} 筆訂單記錄（顯示最近 ${Math.min(orders.length, 10)} 筆）：\n\n${orderTexts.join('\n\n')}`;
-  }
-
-  /**
-   * 格式化訂閱資訊為上下文
-   */
-  private formatSubscriptionsForContext(subscriptions: any[]): string {
-    if (subscriptions.length === 0) {
-      return '用戶目前沒有訂閱記錄。';
-    }
-
-    const subTexts = subscriptions.slice(0, 5).map((sub, index) => {
-      const startDate = sub.current_period_start ? new Date(sub.current_period_start).toLocaleDateString('zh-TW') : '未知';
-      const endDate = sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString('zh-TW') : '未知';
-      const planName = sub.plan?.name || '未知方案';
-      const planPrice = sub.plan?.price || '未知';
-
-      return `訂閱 ${index + 1}:
-- 訂閱編號: ${sub.id}
-- 方案名稱: ${planName}
-- 方案價格: ${planPrice}
-- 狀態: ${sub.status}
-- 每月額度: ${sub.monthly_credits || '無限制'}
-- 當前週期: ${startDate} ~ ${endDate}
-- Stripe 訂閱 ID: ${sub.stripe_subscription_id || '無'}`;
-    });
-
-    return `用戶共有 ${subscriptions.length} 筆訂閱記錄（顯示最近 ${Math.min(subscriptions.length, 5)} 筆）：\n\n${subTexts.join('\n\n')}`;
   }
 
   /**
@@ -494,43 +334,10 @@ class LensServiceWidget {
   }
 
   /**
-   * 調用後端 API 來生成回覆（不直接調用 Azure OpenAI）
-   */
-  private async callAzureOpenAI(message: string, systemPrompt: string): Promise<string> {
-    try {
-      // Get JWT token from localStorage
-      const token = localStorage.getItem('auth_token');
-
-      const response = await fetch('/api/widget/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          message,
-          systemPrompt,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Chat API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      return data.reply || '抱歉，我無法生成回應。';
-    } catch (error) {
-      console.error('Failed to call chat API:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 調用 Azure OpenAI Vision API（暫時保留直接調用，因為需要傳遞圖片）
-   * TODO: 未來可以改為後端 API
+   * Call Azure OpenAI Vision API
+   * Note: Vision API is currently not implemented. Future implementation should use backend API.
    */
   private async callAzureOpenAIVision(message: string, imageBase64: string): Promise<string> {
-    // Vision API 暫時不支持，返回預設訊息
     return '抱歉，圖片分析功能暫時不可用。請聯繫客服獲得幫助。';
   }
 
@@ -575,12 +382,13 @@ class LensServiceWidget {
   /**
    * 保存對話記錄到資料庫
    */
-  private async saveConversationToDatabase(sessionId: string, userId: string): Promise<void> {
+  private async saveConversationToDatabase(sessionId: string): Promise<void> {
     if (!this.conversationState) return;
 
     try {
       const { DatabaseService } = await import('./services/DatabaseService');
-      await DatabaseService.saveConversation(sessionId, userId, this.conversationState.messages);
+      // userId will be extracted from session by backend
+      await DatabaseService.saveConversation(sessionId, 'anonymous', this.conversationState.messages);
       console.log('✅ Conversation saved to database');
     } catch (error) {
       console.error('Failed to save conversation to database:', error);
@@ -588,10 +396,11 @@ class LensServiceWidget {
   }
   
   /**
-   * 設置規則
+   * Set rule (currently disabled)
+   * Note: Rule functionality is not implemented in this version
    */
   setRule(ruleId: string): void {
-    // Rule setting disabled
+    console.log('Rule setting is disabled');
   }
   
   /**
@@ -604,29 +413,28 @@ class LensServiceWidget {
   }
 
   /**
-   * 開始索引網站
-   * @param mode 'local' = 索引本地專案, 'domain' = 爬取域名（默認）
+   * Index site (not implemented)
+   * Note: Site indexing functionality has been removed. Use backend API for indexing.
    */
   async indexSite(
     startUrl?: string,
     mode: 'local' | 'domain' = 'domain',
     onProgress?: (current: number, total: number) => void
   ): Promise<void> {
-    console.log('Site indexing disabled');
+    console.warn('Site indexing is not implemented. Use backend API instead.');
   }
 
   /**
-   * 搜尋當前頁面內容
+   * Search current page content (not implemented)
+   * Note: This functionality has been removed.
    */
-  searchCurrentPage(query: string): Array<{
-    text: string;
-    context: string;
-  }> {
+  searchCurrentPage(query: string): Array<{ text: string; context: string }> {
     return [];
   }
 
   /**
-   * 獲取當前頁面內容
+   * Get current page content (not implemented)
+   * Note: This functionality has been removed.
    */
   getCurrentPageContent(): {
     title: string;
@@ -764,14 +572,45 @@ class LensServiceWidget {
   }
   
   /**
-   * 保存對話狀態
+   * 載入並顯示 AI Page
    */
-  private saveConversationState(): void {
-    if (this.conversationState) {
-      // Save conversation disabled
+  private async loadAndShowAIPage(pageId: string): Promise<void> {
+    try {
+      // 構建 AI Page URL
+      const apiEndpoint = this.config?.apiEndpoint || '/api/widget';
+      const baseUrl = apiEndpoint.replace('/chat', '');
+      const pageUrl = `${baseUrl}/api/ai-page/${pageId}`;
+
+      console.log('📄 Loading AI Page from:', pageUrl);
+
+      // 獲取 AI Page 內容
+      const response = await fetch(pageUrl, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch AI Page:', response.statusText);
+        return;
+      }
+
+      const htmlContent = await response.text();
+
+      // AI Page overlay 已移除，改為直接在新視窗開啟
+      window.open(pageUrl, '_blank');
+    } catch (error) {
+      console.error('Error loading AI Page:', error);
     }
   }
-  
+
+  /**
+   * Save conversation state
+   * Note: Local storage saving is disabled. Conversations are saved to database via saveConversationToDatabase()
+   */
+  private saveConversationState(): void {
+    // Conversation state is saved to database instead of localStorage
+  }
+
   /**
    * 檢查是否在管理後台頁面
    */

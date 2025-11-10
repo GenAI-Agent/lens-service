@@ -4,6 +4,7 @@
  */
 import { Conversation } from '../types';
 export declare class CustomerServiceManager {
+    private static baseUrl;
     /**
      * 獲取所有對話列表
      */

@@ -599,7 +599,7 @@ export class AdminPanel {
           return;
         }
 
-        // Password save disabled
+        // Note: Password saving is not implemented. This is a placeholder UI.
         alert('密碼已更新');
 
         // 重新渲染頁面
@@ -666,7 +666,7 @@ export class AdminPanel {
           }
         };
 
-        // Config save disabled
+        // Note: Config saving is not implemented. This is a placeholder UI.
         alert('API 設定已儲存');
       });
     }
@@ -681,7 +681,7 @@ export class AdminPanel {
         const manualIndexEnabled = (this.container!.querySelector('#manual-index-enabled') as HTMLInputElement)?.checked || false;
         const frontendPagesEnabled = (this.container!.querySelector('#frontend-pages-enabled') as HTMLInputElement)?.checked || false;
 
-        // Tool config disabled
+        // Note: Tool configuration saving is not implemented. This is a placeholder UI.
         alert('Agent 設定已儲存');
 
         // 重新渲染頁面
@@ -740,8 +740,7 @@ export class AdminPanel {
         }
 
         try {
-          // SQL connection creation disabled
-
+          // Note: SQL connection creation is not implemented. This is a placeholder UI.
           alert('SQL 連接已新增');
 
           // 重新渲染頁面

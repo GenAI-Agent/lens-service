@@ -46,7 +46,7 @@ export declare class SidePanel {
     /**
      * 添加訊息
      */
-    addMessage(message: Message): void;
+    addMessage(message: Message): Promise<void>;
     /**
      * 顯示搜尋動畫
      */

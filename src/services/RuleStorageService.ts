@@ -12,6 +12,10 @@ export class RuleStorageService {
    */
   static getRules(): RuleConfig[] {
     try {
+      // Check if localStorage is available (browser only)
+      if (typeof localStorage === 'undefined') {
+        return [];
+      }
       const data = localStorage.getItem(this.STORAGE_KEY);
       if (!data) return [];
       return JSON.parse(data) as RuleConfig[];
@@ -86,6 +90,9 @@ export class RuleStorageService {
    */
   private static saveRules(rules: RuleConfig[]): void {
     try {
+      if (typeof localStorage === 'undefined') {
+        return;
+      }
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(rules));
     } catch (error) {
       console.error('Failed to save rules to localStorage:', error);
@@ -160,6 +167,9 @@ export class RuleStorageService {
    * 清空所有 Rules（僅用於開發/測試）
    */
   static clearAll(): void {
+    if (typeof localStorage === 'undefined') {
+      return;
+    }
     localStorage.removeItem(this.STORAGE_KEY);
   }
 

@@ -92,6 +92,17 @@ export class SidePanel {
     // 面板內容 - 移除 header，改善設計
     panel.innerHTML = `
       <div id="sm-view-container" style="${styles.viewContainer}">
+        <!-- 左上角 Logo/Icon -->
+        <div style="position: absolute; top: 16px; left: 16px; z-index: 10;">
+          <div style="width: 36px; height: 36px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+              <path d="M2 17l10 5 10-5"></path>
+              <path d="M2 12l10 5 10-5"></path>
+            </svg>
+          </div>
+        </div>
+
         <!-- 右上角工具按鈕 -->
         <div style="position: absolute; top: 16px; right: 16px; display: flex; gap: 6px; z-index: 10;">
 
@@ -217,19 +228,34 @@ export class SidePanel {
       // 顯示規則下拉選單
       const showRuleDropdown = async (query: string) => {
         try {
-          const { RuleParserService } = await import('../services/RuleParserService');
-          const parser = new RuleParserService();
-          availableRules = parser.getAvailableRules();
+          // 從 API 動態獲取 rules
+          const apiUrl = typeof window !== 'undefined'
+            ? window.location.origin
+            : 'http://localhost:8080';
 
-          if (availableRules.length === 0) {
+          const response = await fetch(`${apiUrl}/api/widget/rules`);
+
+          if (!response.ok) {
+            console.error('Failed to fetch rules from API');
             dropdown.style.display = 'none';
             return;
           }
 
+          const data = await response.json();
+          const rules = data.rules || [];
+
+          if (rules.length === 0) {
+            dropdown.style.display = 'none';
+            return;
+          }
+
+          // 提取規則名稱
+          availableRules = rules.map((r: any) => r.name);
+
           // 過濾符合的規則
           const filteredRules = query
-            ? availableRules.filter(rule => rule.toLowerCase().includes(query.toLowerCase()))
-            : availableRules;
+            ? rules.filter((r: any) => r.name.toLowerCase().includes(query.toLowerCase()) || r.displayName.includes(query))
+            : rules;
 
           if (filteredRules.length === 0) {
             dropdown.style.display = 'none';
@@ -237,14 +263,15 @@ export class SidePanel {
           }
 
           // 渲染下拉選單
-          dropdown.innerHTML = filteredRules.map((rule, index) => `
-            <div class="rule-item" data-index="${index}" data-rule="${rule}" style="
+          dropdown.innerHTML = filteredRules.map((rule: any, index: number) => `
+            <div class="rule-item" data-index="${index}" data-rule="${rule.name}" style="
               padding: 10px 16px;
               cursor: pointer;
               border-bottom: 1px solid #f3f4f6;
               transition: background-color 0.15s;
             " onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='white'">
-              <div style="font-weight: 500; font-size: 14px; color: #1f2937;">/${rule}</div>
+              <div style="font-weight: 500; font-size: 14px; color: #1f2937;">/${rule.name}</div>
+              <div style="font-size: 12px; color: #6b7280; margin-top: 2px;">${rule.displayName}${rule.description ? ' - ' + rule.description : ''}</div>
             </div>
           `).join('');
 
@@ -441,7 +468,7 @@ export class SidePanel {
   /**
    * 添加訊息
    */
-  addMessage(message: Message): void {
+  async addMessage(message: Message): Promise<void> {
     const messagesContainer = this.panel.querySelector('#sm-messages');
     if (!messagesContainer) return;
 
@@ -452,7 +479,14 @@ export class SidePanel {
 
     // 對於助手消息使用 Markdown 渲染，用戶消息保持純文本
     if (message.role === 'assistant') {
-      messageEl.innerHTML = message.content;
+      // 渲染 Markdown
+      try {
+        const htmlContent = await marked.parse(message.content);
+        messageEl.innerHTML = htmlContent;
+      } catch (error) {
+        console.error('Failed to render markdown:', error);
+        messageEl.textContent = message.content;
+      }
     } else {
       messageEl.textContent = message.content;
     }

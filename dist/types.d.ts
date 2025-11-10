@@ -22,7 +22,12 @@ export interface ServiceModulerConfig {
     };
     telegram?: {
         botToken: string;
-        chatId: string;
+        chatId?: string;
+        chatIds?: {
+            default?: string;
+            customerService?: string;
+            logistics?: string;
+        };
     };
     database?: {
         host?: string;
@@ -30,6 +35,7 @@ export interface ServiceModulerConfig {
         database?: string;
         user?: string;
         password?: string;
+        url?: string;
     };
     siteConfig?: {
         localMode?: boolean;
@@ -58,6 +64,23 @@ export interface ServiceModulerConfig {
         enableScreenshot?: boolean;
         enableRules?: boolean;
         enableSearch?: boolean;
+    };
+    agent?: {
+        enableDatabaseTools?: boolean;
+        enableTelegramNotify?: boolean;
+        enableAIPageGeneration?: boolean;
+        enablePermissionCheck?: boolean;
+        enableManualIndexSearch?: boolean;
+        enableInternalSearch?: boolean;
+        enableWebScraper?: boolean;
+        dangerousActions?: string[];
+        sensitiveTables?: string[];
+        orderConfig?: {
+            enabled?: boolean;
+            tableName?: string;
+            statusField?: string;
+            orderNumberField?: string;
+        };
     };
     rules?: Rule[];
     debug?: boolean;

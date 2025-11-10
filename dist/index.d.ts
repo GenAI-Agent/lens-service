@@ -28,7 +28,9 @@ declare class LensServiceWidget {
     private adminPanel?;
     private floatingIcon?;
     /**
-     * 從SQL載入規則
+     * Load rules from SQL database
+     * Note: Rule loading is currently disabled. The system operates without predefined rules.
+     * If you need to enable rules, start the db-server on port 3002 and uncomment the implementation.
      */
     private loadRulesFromSQL;
     /**
@@ -48,28 +50,16 @@ declare class LensServiceWidget {
      */
     sendMessage(message: string, imageBase64?: string): Promise<void>;
     /**
-     * 處理文字訊息
+     * 處理文字訊息（新架構：統一透過後端 API）
      */
     private processTextMessage;
-    /**
-     * 格式化訂單資訊為上下文
-     */
-    private formatOrdersForContext;
-    /**
-     * 格式化訂閱資訊為上下文
-     */
-    private formatSubscriptionsForContext;
     /**
      * 處理圖片訊息
      */
     private processImageMessage;
     /**
-     * 調用後端 API 來生成回覆（不直接調用 Azure OpenAI）
-     */
-    private callAzureOpenAI;
-    /**
-     * 調用 Azure OpenAI Vision API（暫時保留直接調用，因為需要傳遞圖片）
-     * TODO: 未來可以改為後端 API
+     * Call Azure OpenAI Vision API
+     * Note: Vision API is currently not implemented. Future implementation should use backend API.
      */
     private callAzureOpenAIVision;
     /**
@@ -81,7 +71,8 @@ declare class LensServiceWidget {
      */
     private saveConversationToDatabase;
     /**
-     * 設置規則
+     * Set rule (currently disabled)
+     * Note: Rule functionality is not implemented in this version
      */
     setRule(ruleId: string): void;
     /**
@@ -89,19 +80,21 @@ declare class LensServiceWidget {
      */
     private openAdminPanel;
     /**
-     * 開始索引網站
-     * @param mode 'local' = 索引本地專案, 'domain' = 爬取域名（默認）
+     * Index site (not implemented)
+     * Note: Site indexing functionality has been removed. Use backend API for indexing.
      */
     indexSite(startUrl?: string, mode?: 'local' | 'domain', onProgress?: (current: number, total: number) => void): Promise<void>;
     /**
-     * 搜尋當前頁面內容
+     * Search current page content (not implemented)
+     * Note: This functionality has been removed.
      */
     searchCurrentPage(query: string): Array<{
         text: string;
         context: string;
     }>;
     /**
-     * 獲取當前頁面內容
+     * Get current page content (not implemented)
+     * Note: This functionality has been removed.
      */
     getCurrentPageContent(): {
         title: string;
@@ -149,7 +142,12 @@ declare class LensServiceWidget {
      */
     private loadConversationState;
     /**
-     * 保存對話狀態
+     * 載入並顯示 AI Page
+     */
+    private loadAndShowAIPage;
+    /**
+     * Save conversation state
+     * Note: Local storage saving is disabled. Conversations are saved to database via saveConversationToDatabase()
      */
     private saveConversationState;
     /**

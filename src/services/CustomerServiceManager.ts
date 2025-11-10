@@ -6,6 +6,9 @@
 import { Conversation, Message } from '../types';
 
 export class CustomerServiceManager {
+  private static baseUrl = typeof window !== 'undefined'
+    ? window.location.origin
+    : 'http://localhost:3000';
   /**
    * 獲取所有對話列表
    */
@@ -48,7 +51,7 @@ export class CustomerServiceManager {
       const adminId = localStorage.getItem('lens_admin_user_id') || 'admin';
 
       // 調用 API 添加回覆
-      const response = await fetch(`http://localhost:3000/api/widget/conversations/${conversationId}/reply`, {
+      const response = await fetch(`${this.baseUrl}/api/widget/conversations/${conversationId}/reply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -79,7 +82,7 @@ export class CustomerServiceManager {
    */
   static async deleteConversation(id: string): Promise<boolean> {
     try {
-      const response = await fetch(`http://localhost:3000/api/widget/conversations/${id}`, {
+      const response = await fetch(`${this.baseUrl}/api/widget/conversations/${id}`, {
         method: 'DELETE'
       });
 
@@ -101,7 +104,7 @@ export class CustomerServiceManager {
    */
   static async markConversationAsHandled(id: string): Promise<boolean> {
     try {
-      const response = await fetch(`http://localhost:3000/api/widget/conversations/${id}`, {
+      const response = await fetch(`${this.baseUrl}/api/widget/conversations/${id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'

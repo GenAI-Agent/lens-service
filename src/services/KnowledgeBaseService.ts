@@ -105,110 +105,55 @@ export class KnowledgeBaseService {
 
   private static async processURL(id: string, url: string, fileType: string): Promise<void> {
     try {
-      // TODO: Implement API-based URL processing
+      // API-based URL processing not implemented
+      // This service is designed to work with external API endpoints
       console.warn('processURL not yet implemented in API mode');
       return;
-
-      /* Commented out: Prisma-based implementation
-      await prisma.manualIndex.update({ where: { id }, data: { status: 'processing' } });
-
-      const content = await this.fetchURLContent(url, fileType);
-      const chunks = this.splitIntoChunks(content);
-
-      console.log('Processing URL: ' + url + ', chunks: ' + chunks.length);
-
-      for (const chunk of chunks) {
-        const chunkFingerprint = this.generateFingerprint(url + '_chunk_' + chunk.index);
-        const embedding = await this.generateEmbedding(chunk.content);
-        const embeddingStr = '[' + embedding.join(',') + ']';
-
-        // Check if exists
-        const existing = await prisma.manualIndex.findUnique({
-          where: { fingerprint: chunkFingerprint },
-        });
-
-        if (existing) {
-          // Update using raw SQL
-          await prisma.$executeRawUnsafe(
-            `UPDATE manual_indexes SET content = $1, embedding = $2::vector, status = $3, last_check = $4 WHERE fingerprint = $5`,
-            chunk.content,
-            embeddingStr,
-            'active',
-            new Date(),
-            chunkFingerprint
-          );
-        } else {
-          // Insert using raw SQL
-          await prisma.$executeRawUnsafe(
-            `INSERT INTO manual_indexes (name, description, content, url, type, file_type, status, fingerprint, embedding, metadata, created_at, updated_at)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::vector, $10, $11, $12)`,
-            url + ' (chunk ' + (chunk.index + 1) + ')',
-            'Chunk ' + (chunk.index + 1) + ' of ' + url,
-            chunk.content,
-            url,
-            'url',
-            fileType,
-            'active',
-            chunkFingerprint,
-            embeddingStr,
-            JSON.stringify({ originalUrl: url, chunkIndex: chunk.index, totalChunks: chunks.length }),
-            new Date(),
-            new Date()
-          );
-        }
-      }
-
-      await prisma.manualIndex.update({
-        where: { id },
-        data: {
-          status: 'active',
-          content: content.substring(0, 1000) + '...',
-          last_check: new Date()
-        },
-      });
-
-      console.log('✅ URL processed: ' + url);
-      */
     } catch (error) {
-      console.error('❌ Error processing URL: ' + url, error);
-      /* Commented out: Prisma-based implementation
-      await prisma.manualIndex.update({
-        where: { id },
-        data: {
-          status: 'error',
-          metadata: { error: error instanceof Error ? error.message : 'Unknown error' }
-        },
-      });
-      */
+      console.error('Error processing URL: ' + url, error);
     }
   }
 
+  /**
+   * Add a URL to the knowledge base
+   * Note: This method requires API backend implementation
+   */
   static async addUrl(url: string, fileType?: string, name?: string): Promise<KnowledgeFile> {
-    // TODO: Implement API-based URL addition
-    console.warn('addUrl not yet implemented in API mode');
-    throw new Error('Not implemented');
+    throw new Error('API-based URL addition not implemented. Please use backend API.');
   }
 
+  /**
+   * Get all files from the knowledge base
+   * Note: This method requires API backend implementation
+   */
   static async getFiles(): Promise<KnowledgeFile[]> {
-    // TODO: Implement API-based file retrieval
-    console.warn('getFiles not yet implemented in API mode');
+    console.warn('getFiles not implemented in API mode');
     return [];
   }
 
+  /**
+   * Delete a file from the knowledge base
+   * Note: This method requires API backend implementation
+   */
   static async deleteFile(id: string): Promise<void> {
-    // TODO: Implement API-based file deletion
-    console.warn('deleteFile not yet implemented in API mode');
+    console.warn('deleteFile not implemented in API mode');
   }
 
+  /**
+   * Remove invalid URLs from the knowledge base
+   * Note: This method requires API backend implementation
+   */
   static async removeInvalidUrls(): Promise<number> {
-    // TODO: Implement API-based invalid URL removal
-    console.warn('removeInvalidUrls not yet implemented in API mode');
+    console.warn('removeInvalidUrls not implemented in API mode');
     return 0;
   }
 
+  /**
+   * Refresh a file in the knowledge base
+   * Note: This method requires API backend implementation
+   */
   static async refreshFile(id: string): Promise<void> {
-    // TODO: Implement API-based file refresh
-    console.warn('refreshFile not yet implemented in API mode');
+    console.warn('refreshFile not implemented in API mode');
   }
 
   static async batchAddUrls(urls: string[]): Promise<KnowledgeFile[]> {

@@ -61,6 +61,9 @@
     "vite": "^5.0.11"
   },
   "dependencies": {
+    "@langchain/core": "^1.0.2",
+    "@langchain/langgraph": "^1.0.1",
+    "@langchain/openai": "^1.0.0",
     "@prisma/client": "^6.16.3",
     "@types/html2canvas": "^0.5.35",
     "@types/pg": "^8.15.5",
@@ -75,7 +78,9 @@
     "pg": "^8.7.3",
     "pg-connection-string": "^2.9.1",
     "postgres": "^3.4.7",
-    "prisma": "^6.16.3"
+    "prisma": "^6.16.3",
+    "uuid": "^13.0.0",
+    "zod": "^4.1.12"
   },
   "peerDependencies": {
     "openai": "^4.0.0"
