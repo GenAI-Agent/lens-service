@@ -8597,8 +8597,8 @@ function convertToChunk(message) {
 // node_modules/@langchain/core/dist/singletons/async_local_storage/globals.js
 var TRACING_ALS_KEY = Symbol.for("ls:tracing_async_local_storage");
 var _CONTEXT_VARIABLES_KEY = Symbol.for("lc:context_variables");
-var setGlobalAsyncLocalStorageInstance = (instance) => {
-  globalThis[TRACING_ALS_KEY] = instance;
+var setGlobalAsyncLocalStorageInstance = (instance2) => {
+  globalThis[TRACING_ALS_KEY] = instance2;
 };
 var getGlobalAsyncLocalStorageInstance = () => {
   return globalThis[TRACING_ALS_KEY];
@@ -15062,9 +15062,9 @@ var AsyncLocalStorageProvider = class {
   getInstance() {
     return globalThis[TRACING_ALS_KEY2] ?? mockAsyncLocalStorage;
   }
-  initializeGlobalInstance(instance) {
+  initializeGlobalInstance(instance2) {
     if (globalThis[TRACING_ALS_KEY2] === void 0) {
-      globalThis[TRACING_ALS_KEY2] = instance;
+      globalThis[TRACING_ALS_KEY2] = instance2;
     }
   }
 };
@@ -15746,8 +15746,8 @@ var AsyncLocalStorageProvider2 = class {
     }
     return storage.run(runTree, callback);
   }
-  initializeGlobalInstance(instance) {
-    if (getGlobalAsyncLocalStorageInstance() === void 0) setGlobalAsyncLocalStorageInstance(instance);
+  initializeGlobalInstance(instance2) {
+    if (getGlobalAsyncLocalStorageInstance() === void 0) setGlobalAsyncLocalStorageInstance(instance2);
   }
 };
 var AsyncLocalStorageProviderSingleton2 = new AsyncLocalStorageProvider2();
@@ -34281,7 +34281,7 @@ function ucs2length(s) {
 }
 
 // node_modules/@cfworker/json-schema/dist/esm/validate.js
-function validate4(instance, schema, draft = "2019-09", lookup2 = dereference(schema), shortCircuit = true, recursiveAnchor = null, instanceLocation = "#", schemaLocation = "#", evaluated = /* @__PURE__ */ Object.create(null)) {
+function validate4(instance2, schema, draft = "2019-09", lookup2 = dereference(schema), shortCircuit = true, recursiveAnchor = null, instanceLocation = "#", schemaLocation = "#", evaluated = /* @__PURE__ */ Object.create(null)) {
   if (schema === true) {
     return { valid: true, errors: [] };
   }
@@ -34298,7 +34298,7 @@ function validate4(instance, schema, draft = "2019-09", lookup2 = dereference(sc
       ]
     };
   }
-  const rawInstanceType = typeof instance;
+  const rawInstanceType = typeof instance2;
   let instanceType;
   switch (rawInstanceType) {
     case "boolean":
@@ -34307,9 +34307,9 @@ function validate4(instance, schema, draft = "2019-09", lookup2 = dereference(sc
       instanceType = rawInstanceType;
       break;
     case "object":
-      if (instance === null) {
+      if (instance2 === null) {
         instanceType = "null";
-      } else if (Array.isArray(instance)) {
+      } else if (Array.isArray(instance2)) {
         instanceType = "array";
       } else {
         instanceType = "object";
@@ -34326,7 +34326,7 @@ function validate4(instance, schema, draft = "2019-09", lookup2 = dereference(sc
   if ($recursiveRef === "#") {
     const refSchema = recursiveAnchor === null ? lookup2[__absolute_recursive_ref__] : recursiveAnchor;
     const keywordLocation = `${schemaLocation}/$recursiveRef`;
-    const result = validate4(instance, recursiveAnchor === null ? schema : recursiveAnchor, draft, lookup2, shortCircuit, refSchema, instanceLocation, keywordLocation, evaluated);
+    const result = validate4(instance2, recursiveAnchor === null ? schema : recursiveAnchor, draft, lookup2, shortCircuit, refSchema, instanceLocation, keywordLocation, evaluated);
     if (!result.valid) {
       errors.push({
         instanceLocation,
@@ -34350,7 +34350,7 @@ Known schemas:
       throw new Error(message);
     }
     const keywordLocation = `${schemaLocation}/$ref`;
-    const result = validate4(instance, refSchema, draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, keywordLocation, evaluated);
+    const result = validate4(instance2, refSchema, draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, keywordLocation, evaluated);
     if (!result.valid) {
       errors.push({
         instanceLocation,
@@ -34367,7 +34367,7 @@ Known schemas:
     let length = $type.length;
     let valid = false;
     for (let i = 0; i < length; i++) {
-      if (instanceType === $type[i] || $type[i] === "integer" && instanceType === "number" && instance % 1 === 0 && instance === instance) {
+      if (instanceType === $type[i] || $type[i] === "integer" && instanceType === "number" && instance2 % 1 === 0 && instance2 === instance2) {
         valid = true;
         break;
       }
@@ -34381,7 +34381,7 @@ Known schemas:
       });
     }
   } else if ($type === "integer") {
-    if (instanceType !== "number" || instance % 1 || instance !== instance) {
+    if (instanceType !== "number" || instance2 % 1 || instance2 !== instance2) {
       errors.push({
         instanceLocation,
         keyword: "type",
@@ -34399,7 +34399,7 @@ Known schemas:
   }
   if ($const !== void 0) {
     if (instanceType === "object" || instanceType === "array") {
-      if (!deepCompareStrict(instance, $const)) {
+      if (!deepCompareStrict(instance2, $const)) {
         errors.push({
           instanceLocation,
           keyword: "const",
@@ -34407,7 +34407,7 @@ Known schemas:
           error: `Instance does not match ${JSON.stringify($const)}.`
         });
       }
-    } else if (instance !== $const) {
+    } else if (instance2 !== $const) {
       errors.push({
         instanceLocation,
         keyword: "const",
@@ -34418,7 +34418,7 @@ Known schemas:
   }
   if ($enum !== void 0) {
     if (instanceType === "object" || instanceType === "array") {
-      if (!$enum.some((value) => deepCompareStrict(instance, value))) {
+      if (!$enum.some((value) => deepCompareStrict(instance2, value))) {
         errors.push({
           instanceLocation,
           keyword: "enum",
@@ -34426,7 +34426,7 @@ Known schemas:
           error: `Instance does not match any of ${JSON.stringify($enum)}.`
         });
       }
-    } else if (!$enum.some((value) => instance === value)) {
+    } else if (!$enum.some((value) => instance2 === value)) {
       errors.push({
         instanceLocation,
         keyword: "enum",
@@ -34437,7 +34437,7 @@ Known schemas:
   }
   if ($not !== void 0) {
     const keywordLocation = `${schemaLocation}/not`;
-    const result = validate4(instance, $not, draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, keywordLocation);
+    const result = validate4(instance2, $not, draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, keywordLocation);
     if (result.valid) {
       errors.push({
         instanceLocation,
@@ -34455,7 +34455,7 @@ Known schemas:
     for (let i = 0; i < $anyOf.length; i++) {
       const subSchema = $anyOf[i];
       const subEvaluated = Object.create(evaluated);
-      const result = validate4(instance, subSchema, draft, lookup2, shortCircuit, $recursiveAnchor === true ? recursiveAnchor : null, instanceLocation, `${keywordLocation}/${i}`, subEvaluated);
+      const result = validate4(instance2, subSchema, draft, lookup2, shortCircuit, $recursiveAnchor === true ? recursiveAnchor : null, instanceLocation, `${keywordLocation}/${i}`, subEvaluated);
       errors.push(...result.errors);
       anyValid = anyValid || result.valid;
       if (result.valid) {
@@ -34480,7 +34480,7 @@ Known schemas:
     for (let i = 0; i < $allOf.length; i++) {
       const subSchema = $allOf[i];
       const subEvaluated = Object.create(evaluated);
-      const result = validate4(instance, subSchema, draft, lookup2, shortCircuit, $recursiveAnchor === true ? recursiveAnchor : null, instanceLocation, `${keywordLocation}/${i}`, subEvaluated);
+      const result = validate4(instance2, subSchema, draft, lookup2, shortCircuit, $recursiveAnchor === true ? recursiveAnchor : null, instanceLocation, `${keywordLocation}/${i}`, subEvaluated);
       errors.push(...result.errors);
       allValid = allValid && result.valid;
       if (result.valid) {
@@ -34503,7 +34503,7 @@ Known schemas:
     const errorsLength = errors.length;
     const matches = $oneOf.filter((subSchema, i) => {
       const subEvaluated = Object.create(evaluated);
-      const result = validate4(instance, subSchema, draft, lookup2, shortCircuit, $recursiveAnchor === true ? recursiveAnchor : null, instanceLocation, `${keywordLocation}/${i}`, subEvaluated);
+      const result = validate4(instance2, subSchema, draft, lookup2, shortCircuit, $recursiveAnchor === true ? recursiveAnchor : null, instanceLocation, `${keywordLocation}/${i}`, subEvaluated);
       errors.push(...result.errors);
       if (result.valid) {
         subEvaluateds.push(subEvaluated);
@@ -34526,10 +34526,10 @@ Known schemas:
   }
   if ($if !== void 0) {
     const keywordLocation = `${schemaLocation}/if`;
-    const conditionResult = validate4(instance, $if, draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, keywordLocation, evaluated).valid;
+    const conditionResult = validate4(instance2, $if, draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, keywordLocation, evaluated).valid;
     if (conditionResult) {
       if ($then !== void 0) {
-        const thenResult = validate4(instance, $then, draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, `${schemaLocation}/then`, evaluated);
+        const thenResult = validate4(instance2, $then, draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, `${schemaLocation}/then`, evaluated);
         if (!thenResult.valid) {
           errors.push({
             instanceLocation,
@@ -34540,7 +34540,7 @@ Known schemas:
         }
       }
     } else if ($else !== void 0) {
-      const elseResult = validate4(instance, $else, draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, `${schemaLocation}/else`, evaluated);
+      const elseResult = validate4(instance2, $else, draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, `${schemaLocation}/else`, evaluated);
       if (!elseResult.valid) {
         errors.push({
           instanceLocation,
@@ -34554,7 +34554,7 @@ Known schemas:
   if (instanceType === "object") {
     if ($required !== void 0) {
       for (const key of $required) {
-        if (!(key in instance)) {
+        if (!(key in instance2)) {
           errors.push({
             instanceLocation,
             keyword: "required",
@@ -34564,7 +34564,7 @@ Known schemas:
         }
       }
     }
-    const keys = Object.keys(instance);
+    const keys = Object.keys(instance2);
     if ($minProperties !== void 0 && keys.length < $minProperties) {
       errors.push({
         instanceLocation,
@@ -34583,7 +34583,7 @@ Known schemas:
     }
     if ($propertyNames !== void 0) {
       const keywordLocation = `${schemaLocation}/propertyNames`;
-      for (const key in instance) {
+      for (const key in instance2) {
         const subInstancePointer = `${instanceLocation}/${encodePointer(key)}`;
         const result = validate4(key, $propertyNames, draft, lookup2, shortCircuit, recursiveAnchor, subInstancePointer, keywordLocation);
         if (!result.valid) {
@@ -34599,10 +34599,10 @@ Known schemas:
     if ($dependentRequired !== void 0) {
       const keywordLocation = `${schemaLocation}/dependantRequired`;
       for (const key in $dependentRequired) {
-        if (key in instance) {
+        if (key in instance2) {
           const required2 = $dependentRequired[key];
           for (const dependantKey of required2) {
-            if (!(dependantKey in instance)) {
+            if (!(dependantKey in instance2)) {
               errors.push({
                 instanceLocation,
                 keyword: "dependentRequired",
@@ -34617,8 +34617,8 @@ Known schemas:
     if ($dependentSchemas !== void 0) {
       for (const key in $dependentSchemas) {
         const keywordLocation = `${schemaLocation}/dependentSchemas`;
-        if (key in instance) {
-          const result = validate4(instance, $dependentSchemas[key], draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, `${keywordLocation}/${encodePointer(key)}`, evaluated);
+        if (key in instance2) {
+          const result = validate4(instance2, $dependentSchemas[key], draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, `${keywordLocation}/${encodePointer(key)}`, evaluated);
           if (!result.valid) {
             errors.push({
               instanceLocation,
@@ -34633,11 +34633,11 @@ Known schemas:
     if ($dependencies !== void 0) {
       const keywordLocation = `${schemaLocation}/dependencies`;
       for (const key in $dependencies) {
-        if (key in instance) {
+        if (key in instance2) {
           const propsOrSchema = $dependencies[key];
           if (Array.isArray(propsOrSchema)) {
             for (const dependantKey of propsOrSchema) {
-              if (!(dependantKey in instance)) {
+              if (!(dependantKey in instance2)) {
                 errors.push({
                   instanceLocation,
                   keyword: "dependencies",
@@ -34647,7 +34647,7 @@ Known schemas:
               }
             }
           } else {
-            const result = validate4(instance, propsOrSchema, draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, `${keywordLocation}/${encodePointer(key)}`);
+            const result = validate4(instance2, propsOrSchema, draft, lookup2, shortCircuit, recursiveAnchor, instanceLocation, `${keywordLocation}/${encodePointer(key)}`);
             if (!result.valid) {
               errors.push({
                 instanceLocation,
@@ -34665,11 +34665,11 @@ Known schemas:
     if ($properties !== void 0) {
       const keywordLocation = `${schemaLocation}/properties`;
       for (const key in $properties) {
-        if (!(key in instance)) {
+        if (!(key in instance2)) {
           continue;
         }
         const subInstancePointer = `${instanceLocation}/${encodePointer(key)}`;
-        const result = validate4(instance[key], $properties[key], draft, lookup2, shortCircuit, recursiveAnchor, subInstancePointer, `${keywordLocation}/${encodePointer(key)}`);
+        const result = validate4(instance2[key], $properties[key], draft, lookup2, shortCircuit, recursiveAnchor, subInstancePointer, `${keywordLocation}/${encodePointer(key)}`);
         if (result.valid) {
           evaluated[key] = thisEvaluated[key] = true;
         } else {
@@ -34690,12 +34690,12 @@ Known schemas:
       for (const pattern in $patternProperties) {
         const regex2 = new RegExp(pattern, "u");
         const subSchema = $patternProperties[pattern];
-        for (const key in instance) {
+        for (const key in instance2) {
           if (!regex2.test(key)) {
             continue;
           }
           const subInstancePointer = `${instanceLocation}/${encodePointer(key)}`;
-          const result = validate4(instance[key], subSchema, draft, lookup2, shortCircuit, recursiveAnchor, subInstancePointer, `${keywordLocation}/${encodePointer(pattern)}`);
+          const result = validate4(instance2[key], subSchema, draft, lookup2, shortCircuit, recursiveAnchor, subInstancePointer, `${keywordLocation}/${encodePointer(pattern)}`);
           if (result.valid) {
             evaluated[key] = thisEvaluated[key] = true;
           } else {
@@ -34712,12 +34712,12 @@ Known schemas:
     }
     if (!stop && $additionalProperties !== void 0) {
       const keywordLocation = `${schemaLocation}/additionalProperties`;
-      for (const key in instance) {
+      for (const key in instance2) {
         if (thisEvaluated[key]) {
           continue;
         }
         const subInstancePointer = `${instanceLocation}/${encodePointer(key)}`;
-        const result = validate4(instance[key], $additionalProperties, draft, lookup2, shortCircuit, recursiveAnchor, subInstancePointer, keywordLocation);
+        const result = validate4(instance2[key], $additionalProperties, draft, lookup2, shortCircuit, recursiveAnchor, subInstancePointer, keywordLocation);
         if (result.valid) {
           evaluated[key] = true;
         } else {
@@ -34732,10 +34732,10 @@ Known schemas:
       }
     } else if (!stop && $unevaluatedProperties !== void 0) {
       const keywordLocation = `${schemaLocation}/unevaluatedProperties`;
-      for (const key in instance) {
+      for (const key in instance2) {
         if (!evaluated[key]) {
           const subInstancePointer = `${instanceLocation}/${encodePointer(key)}`;
-          const result = validate4(instance[key], $unevaluatedProperties, draft, lookup2, shortCircuit, recursiveAnchor, subInstancePointer, keywordLocation);
+          const result = validate4(instance2[key], $unevaluatedProperties, draft, lookup2, shortCircuit, recursiveAnchor, subInstancePointer, keywordLocation);
           if (result.valid) {
             evaluated[key] = true;
           } else {
@@ -34750,30 +34750,30 @@ Known schemas:
       }
     }
   } else if (instanceType === "array") {
-    if ($maxItems !== void 0 && instance.length > $maxItems) {
+    if ($maxItems !== void 0 && instance2.length > $maxItems) {
       errors.push({
         instanceLocation,
         keyword: "maxItems",
         keywordLocation: `${schemaLocation}/maxItems`,
-        error: `Array has too many items (${instance.length} > ${$maxItems}).`
+        error: `Array has too many items (${instance2.length} > ${$maxItems}).`
       });
     }
-    if ($minItems !== void 0 && instance.length < $minItems) {
+    if ($minItems !== void 0 && instance2.length < $minItems) {
       errors.push({
         instanceLocation,
         keyword: "minItems",
         keywordLocation: `${schemaLocation}/minItems`,
-        error: `Array has too few items (${instance.length} < ${$minItems}).`
+        error: `Array has too few items (${instance2.length} < ${$minItems}).`
       });
     }
-    const length = instance.length;
+    const length = instance2.length;
     let i = 0;
     let stop = false;
     if ($prefixItems !== void 0) {
       const keywordLocation = `${schemaLocation}/prefixItems`;
       const length2 = Math.min($prefixItems.length, length);
       for (; i < length2; i++) {
-        const result = validate4(instance[i], $prefixItems[i], draft, lookup2, shortCircuit, recursiveAnchor, `${instanceLocation}/${i}`, `${keywordLocation}/${i}`);
+        const result = validate4(instance2[i], $prefixItems[i], draft, lookup2, shortCircuit, recursiveAnchor, `${instanceLocation}/${i}`, `${keywordLocation}/${i}`);
         evaluated[i] = true;
         if (!result.valid) {
           stop = shortCircuit;
@@ -34793,7 +34793,7 @@ Known schemas:
       if (Array.isArray($items)) {
         const length2 = Math.min($items.length, length);
         for (; i < length2; i++) {
-          const result = validate4(instance[i], $items[i], draft, lookup2, shortCircuit, recursiveAnchor, `${instanceLocation}/${i}`, `${keywordLocation}/${i}`);
+          const result = validate4(instance2[i], $items[i], draft, lookup2, shortCircuit, recursiveAnchor, `${instanceLocation}/${i}`, `${keywordLocation}/${i}`);
           evaluated[i] = true;
           if (!result.valid) {
             stop = shortCircuit;
@@ -34809,7 +34809,7 @@ Known schemas:
         }
       } else {
         for (; i < length; i++) {
-          const result = validate4(instance[i], $items, draft, lookup2, shortCircuit, recursiveAnchor, `${instanceLocation}/${i}`, keywordLocation);
+          const result = validate4(instance2[i], $items, draft, lookup2, shortCircuit, recursiveAnchor, `${instanceLocation}/${i}`, keywordLocation);
           evaluated[i] = true;
           if (!result.valid) {
             stop = shortCircuit;
@@ -34827,7 +34827,7 @@ Known schemas:
       if (!stop && $additionalItems !== void 0) {
         const keywordLocation2 = `${schemaLocation}/additionalItems`;
         for (; i < length; i++) {
-          const result = validate4(instance[i], $additionalItems, draft, lookup2, shortCircuit, recursiveAnchor, `${instanceLocation}/${i}`, keywordLocation2);
+          const result = validate4(instance2[i], $additionalItems, draft, lookup2, shortCircuit, recursiveAnchor, `${instanceLocation}/${i}`, keywordLocation2);
           evaluated[i] = true;
           if (!result.valid) {
             stop = shortCircuit;
@@ -34861,7 +34861,7 @@ Known schemas:
         const errorsLength = errors.length;
         let contained = 0;
         for (let j = 0; j < length; j++) {
-          const result = validate4(instance[j], $contains, draft, lookup2, shortCircuit, recursiveAnchor, `${instanceLocation}/${j}`, keywordLocation);
+          const result = validate4(instance2[j], $contains, draft, lookup2, shortCircuit, recursiveAnchor, `${instanceLocation}/${j}`, keywordLocation);
           if (result.valid) {
             evaluated[j] = true;
             contained++;
@@ -34902,7 +34902,7 @@ Known schemas:
         if (evaluated[i]) {
           continue;
         }
-        const result = validate4(instance[i], $unevaluatedItems, draft, lookup2, shortCircuit, recursiveAnchor, `${instanceLocation}/${i}`, keywordLocation);
+        const result = validate4(instance2[i], $unevaluatedItems, draft, lookup2, shortCircuit, recursiveAnchor, `${instanceLocation}/${i}`, keywordLocation);
         evaluated[i] = true;
         if (!result.valid) {
           errors.push({
@@ -34916,13 +34916,13 @@ Known schemas:
     }
     if ($uniqueItems) {
       for (let j = 0; j < length; j++) {
-        const a = instance[j];
+        const a = instance2[j];
         const ao = typeof a === "object" && a !== null;
         for (let k = 0; k < length; k++) {
           if (j === k) {
             continue;
           }
-          const b = instance[k];
+          const b = instance2[k];
           const bo = typeof b === "object" && b !== null;
           if (a === b || ao && bo && deepCompareStrict(a, b)) {
             errors.push({
@@ -34939,69 +34939,69 @@ Known schemas:
     }
   } else if (instanceType === "number") {
     if (draft === "4") {
-      if ($minimum !== void 0 && ($exclusiveMinimum === true && instance <= $minimum || instance < $minimum)) {
+      if ($minimum !== void 0 && ($exclusiveMinimum === true && instance2 <= $minimum || instance2 < $minimum)) {
         errors.push({
           instanceLocation,
           keyword: "minimum",
           keywordLocation: `${schemaLocation}/minimum`,
-          error: `${instance} is less than ${$exclusiveMinimum ? "or equal to " : ""} ${$minimum}.`
+          error: `${instance2} is less than ${$exclusiveMinimum ? "or equal to " : ""} ${$minimum}.`
         });
       }
-      if ($maximum !== void 0 && ($exclusiveMaximum === true && instance >= $maximum || instance > $maximum)) {
+      if ($maximum !== void 0 && ($exclusiveMaximum === true && instance2 >= $maximum || instance2 > $maximum)) {
         errors.push({
           instanceLocation,
           keyword: "maximum",
           keywordLocation: `${schemaLocation}/maximum`,
-          error: `${instance} is greater than ${$exclusiveMaximum ? "or equal to " : ""} ${$maximum}.`
+          error: `${instance2} is greater than ${$exclusiveMaximum ? "or equal to " : ""} ${$maximum}.`
         });
       }
     } else {
-      if ($minimum !== void 0 && instance < $minimum) {
+      if ($minimum !== void 0 && instance2 < $minimum) {
         errors.push({
           instanceLocation,
           keyword: "minimum",
           keywordLocation: `${schemaLocation}/minimum`,
-          error: `${instance} is less than ${$minimum}.`
+          error: `${instance2} is less than ${$minimum}.`
         });
       }
-      if ($maximum !== void 0 && instance > $maximum) {
+      if ($maximum !== void 0 && instance2 > $maximum) {
         errors.push({
           instanceLocation,
           keyword: "maximum",
           keywordLocation: `${schemaLocation}/maximum`,
-          error: `${instance} is greater than ${$maximum}.`
+          error: `${instance2} is greater than ${$maximum}.`
         });
       }
-      if ($exclusiveMinimum !== void 0 && instance <= $exclusiveMinimum) {
+      if ($exclusiveMinimum !== void 0 && instance2 <= $exclusiveMinimum) {
         errors.push({
           instanceLocation,
           keyword: "exclusiveMinimum",
           keywordLocation: `${schemaLocation}/exclusiveMinimum`,
-          error: `${instance} is less than ${$exclusiveMinimum}.`
+          error: `${instance2} is less than ${$exclusiveMinimum}.`
         });
       }
-      if ($exclusiveMaximum !== void 0 && instance >= $exclusiveMaximum) {
+      if ($exclusiveMaximum !== void 0 && instance2 >= $exclusiveMaximum) {
         errors.push({
           instanceLocation,
           keyword: "exclusiveMaximum",
           keywordLocation: `${schemaLocation}/exclusiveMaximum`,
-          error: `${instance} is greater than or equal to ${$exclusiveMaximum}.`
+          error: `${instance2} is greater than or equal to ${$exclusiveMaximum}.`
         });
       }
     }
     if ($multipleOf !== void 0) {
-      const remainder = instance % $multipleOf;
+      const remainder = instance2 % $multipleOf;
       if (Math.abs(0 - remainder) >= 11920929e-14 && Math.abs($multipleOf - remainder) >= 11920929e-14) {
         errors.push({
           instanceLocation,
           keyword: "multipleOf",
           keywordLocation: `${schemaLocation}/multipleOf`,
-          error: `${instance} is not a multiple of ${$multipleOf}.`
+          error: `${instance2} is not a multiple of ${$multipleOf}.`
         });
       }
     }
   } else if (instanceType === "string") {
-    const length = $minLength === void 0 && $maxLength === void 0 ? 0 : ucs2length(instance);
+    const length = $minLength === void 0 && $maxLength === void 0 ? 0 : ucs2length(instance2);
     if ($minLength !== void 0 && length < $minLength) {
       errors.push({
         instanceLocation,
@@ -35018,7 +35018,7 @@ Known schemas:
         error: `String is too long (${length} > ${$maxLength}).`
       });
     }
-    if ($pattern !== void 0 && !new RegExp($pattern, "u").test(instance)) {
+    if ($pattern !== void 0 && !new RegExp($pattern, "u").test(instance2)) {
       errors.push({
         instanceLocation,
         keyword: "pattern",
@@ -35026,7 +35026,7 @@ Known schemas:
         error: `String does not match pattern.`
       });
     }
-    if ($format !== void 0 && format[$format] && !format[$format](instance)) {
+    if ($format !== void 0 && format[$format] && !format[$format](instance2)) {
       errors.push({
         instanceLocation,
         keyword: "format",
@@ -35050,8 +35050,8 @@ var Validator = class {
     this.shortCircuit = shortCircuit;
     this.lookup = dereference(schema);
   }
-  validate(instance) {
-    return validate4(instance, this.schema, this.draft, this.lookup, this.shortCircuit);
+  validate(instance2) {
+    return validate4(instance2, this.schema, this.draft, this.lookup, this.shortCircuit);
   }
   addSchema(schema, id) {
     if (id) {
@@ -45093,6 +45093,274 @@ function _stringify(content) {
 // node_modules/@langchain/openai/dist/index.js
 import { OpenAI as OpenAIClient, toFile } from "openai";
 
+// src/services/ApiKeyRotationService.ts
+var ApiKeyRotationService = class {
+  configs = [];
+  currentIndex = 0;
+  failureCounts = /* @__PURE__ */ new Map();
+  lastUsedTime = /* @__PURE__ */ new Map();
+  MAX_FAILURES = 3;
+  COOLDOWN_MS = 6e4;
+  // 1 minute cooldown after failures
+  constructor() {
+    this.loadConfigs();
+  }
+  /**
+   * 從環境變數載入所有可用的 API configurations
+   */
+  loadConfigs() {
+    const configs = [];
+    for (let i = 1; i <= 10; i++) {
+      const endpoint = process.env[`AZURE_OPENAI_ENDPOINT_${i}`];
+      const apiKey = process.env[`AZURE_OPENAI_API_KEY_${i}`];
+      if (endpoint && apiKey) {
+        configs.push({
+          endpoint,
+          apiKey,
+          deployment: process.env[`AZURE_OPENAI_DEPLOYMENT_${i}`] || process.env.AZURE_OPENAI_DEPLOYMENT,
+          apiVersion: process.env[`AZURE_OPENAI_API_VERSION_${i}`] || process.env.AZURE_OPENAI_API_VERSION || "2025-01-01-preview"
+        });
+        this.failureCounts.set(i - 1, 0);
+        this.lastUsedTime.set(i - 1, 0);
+      }
+    }
+    if (configs.length === 0) {
+      const legacyEndpoint = process.env.AZURE_OPENAI_ENDPOINT;
+      const legacyApiKey = process.env.AZURE_OPENAI_API_KEY;
+      if (legacyEndpoint && legacyApiKey) {
+        configs.push({
+          endpoint: legacyEndpoint,
+          apiKey: legacyApiKey,
+          deployment: process.env.AZURE_OPENAI_DEPLOYMENT,
+          apiVersion: process.env.AZURE_OPENAI_API_VERSION || "2024-02-15-preview"
+        });
+        this.failureCounts.set(0, 0);
+        this.lastUsedTime.set(0, 0);
+      }
+    }
+    this.configs = configs;
+    console.log(`[API Key Rotation] Loaded ${configs.length} API key configuration(s)`);
+  }
+  /**
+   * 檢查指定的 config index 是否可用
+   */
+  isConfigAvailable(index2) {
+    const failures = this.failureCounts.get(index2) || 0;
+    const lastUsed = this.lastUsedTime.get(index2) || 0;
+    const now = Date.now();
+    if (failures >= this.MAX_FAILURES) {
+      if (now - lastUsed < this.COOLDOWN_MS) {
+        return false;
+      }
+      this.failureCounts.set(index2, 0);
+    }
+    return true;
+  }
+  /**
+   * 獲取下一個可用的 API configuration
+   * 使用 round-robin 策略輪詢
+   */
+  getNextConfig() {
+    if (this.configs.length === 0) {
+      console.error("[API Key Rotation] No API configurations available");
+      return null;
+    }
+    if (this.configs.length === 1) {
+      return this.configs[0];
+    }
+    const startIndex = this.currentIndex;
+    let attempts = 0;
+    while (attempts < this.configs.length) {
+      if (this.isConfigAvailable(this.currentIndex)) {
+        const config2 = this.configs[this.currentIndex];
+        const selectedIndex = this.currentIndex;
+        this.lastUsedTime.set(selectedIndex, Date.now());
+        this.currentIndex = (this.currentIndex + 1) % this.configs.length;
+        console.log(`[API Key Rotation] Using API config #${selectedIndex + 1}/${this.configs.length}`);
+        return config2;
+      }
+      this.currentIndex = (this.currentIndex + 1) % this.configs.length;
+      attempts++;
+    }
+    console.warn("[API Key Rotation] All configs in cooldown, using first config as fallback");
+    return this.configs[0];
+  }
+  /**
+   * 報告某個 config 的請求失敗（通常是 rate limit 或其他錯誤）
+   */
+  reportFailure(config2) {
+    const index2 = this.configs.findIndex((c) => c.apiKey === config2.apiKey);
+    if (index2 !== -1) {
+      const currentFailures = this.failureCounts.get(index2) || 0;
+      this.failureCounts.set(index2, currentFailures + 1);
+      console.warn(`[API Key Rotation] Config #${index2 + 1} failure count: ${currentFailures + 1}`);
+    }
+  }
+  /**
+   * 報告某個 config 的請求成功
+   */
+  reportSuccess(config2) {
+    const index2 = this.configs.findIndex((c) => c.apiKey === config2.apiKey);
+    if (index2 !== -1) {
+      this.failureCounts.set(index2, 0);
+    }
+  }
+  /**
+   * 獲取所有 configs 的狀態
+   */
+  getStatus() {
+    return this.configs.map((_, index2) => ({
+      index: index2 + 1,
+      failures: this.failureCounts.get(index2) || 0,
+      available: this.isConfigAvailable(index2),
+      lastUsed: this.lastUsedTime.get(index2) || 0
+    }));
+  }
+  /**
+   * 重置所有失敗計數
+   */
+  reset() {
+    this.failureCounts.clear();
+    this.lastUsedTime.clear();
+    this.configs.forEach((_, index2) => {
+      this.failureCounts.set(index2, 0);
+      this.lastUsedTime.set(index2, 0);
+    });
+    console.log("[API Key Rotation] Reset all failure counts");
+  }
+  /**
+   * 獲取可用的 config 數量
+   */
+  getAvailableCount() {
+    return this.configs.filter((_, index2) => this.isConfigAvailable(index2)).length;
+  }
+  /**
+   * 獲取總 config 數量
+   */
+  getTotalCount() {
+    return this.configs.length;
+  }
+};
+var instance = null;
+function getApiKeyRotationService() {
+  if (!instance) {
+    instance = new ApiKeyRotationService();
+  }
+  return instance;
+}
+
+// src/services/RotatingChatOpenAI.ts
+var RotatingChatOpenAI = class extends ChatOpenAI {
+  rotationService = getApiKeyRotationService();
+  currentConfig = null;
+  constructor(options) {
+    const rotationService = getApiKeyRotationService();
+    const initialConfig = rotationService.getNextConfig();
+    if (!initialConfig) {
+      throw new Error("No API configuration available for RotatingChatOpenAI");
+    }
+    const { baseURL, deployment, apiVersion } = parseEndpointURL(initialConfig.endpoint);
+    super({
+      temperature: options?.temperature ?? 0.3,
+      maxTokens: options?.maxTokens ?? 1500,
+      configuration: {
+        apiKey: initialConfig.apiKey,
+        baseURL: baseURL || `${initialConfig.endpoint}/openai/deployments/${deployment || initialConfig.deployment}`,
+        defaultQuery: { "api-version": apiVersion || initialConfig.apiVersion || "2025-01-01-preview" },
+        defaultHeaders: { "api-key": initialConfig.apiKey }
+      },
+      ...options
+    });
+    this.currentConfig = initialConfig;
+  }
+  /**
+   * 重寫 invoke 方法來實現 API key 輪詢
+   */
+  async invoke(input, options) {
+    let lastError = null;
+    const maxRetries = this.rotationService.getTotalCount();
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const result = await super.invoke(input, options);
+        if (this.currentConfig) {
+          this.rotationService.reportSuccess(this.currentConfig);
+        }
+        return result;
+      } catch (error46) {
+        lastError = error46;
+        const isRateLimitError = error46?.message?.includes("rate limit") || error46?.message?.includes("429") || error46?.status === 429 || error46?.code === "rate_limit_exceeded";
+        if (isRateLimitError && this.currentConfig) {
+          console.warn(`[Rotating ChatOpenAI] Rate limit hit, rotating to next API key (attempt ${attempt + 1}/${maxRetries})`);
+          this.rotationService.reportFailure(this.currentConfig);
+          const nextConfig = this.rotationService.getNextConfig();
+          if (nextConfig && nextConfig.apiKey !== this.currentConfig.apiKey) {
+            await this.updateConfiguration(nextConfig);
+            this.currentConfig = nextConfig;
+            continue;
+          }
+        }
+        throw error46;
+      }
+    }
+    throw lastError || new Error("All API keys exhausted");
+  }
+  /**
+   * 更新 ChatOpenAI 的配置
+   */
+  async updateConfiguration(config2) {
+    const { baseURL, deployment, apiVersion } = parseEndpointURL(config2.endpoint);
+    this.azureOpenAIApiKey = config2.apiKey;
+    this.azureOpenAIApiVersion = apiVersion || config2.apiVersion || "2025-01-01-preview";
+    if (this.client) {
+      this.client.apiKey = config2.apiKey;
+      this.client.baseURL = baseURL || `${config2.endpoint}/openai/deployments/${deployment || config2.deployment}`;
+      this.client.defaultQuery = { "api-version": apiVersion || config2.apiVersion || "2025-01-01-preview" };
+      this.client.defaultHeaders = { "api-key": config2.apiKey };
+    }
+    console.log(`[Rotating ChatOpenAI] Switched to new API configuration`);
+  }
+  /**
+   * 獲取當前的輪詢狀態
+   */
+  getRotationStatus() {
+    return this.rotationService.getStatus();
+  }
+  /**
+   * 重置輪詢服務的失敗計數
+   */
+  resetRotation() {
+    this.rotationService.reset();
+  }
+};
+function parseEndpointURL(endpoint) {
+  try {
+    const url2 = new URL(endpoint);
+    const pathMatch = url2.pathname.match(/\/openai\/deployments\/([^\/]+)/);
+    if (pathMatch) {
+      const deployment = pathMatch[1].replace("/chat/completions", "");
+      const apiVersion = url2.searchParams.get("api-version");
+      const baseURL = `${url2.protocol}//${url2.host}${url2.pathname}`;
+      return {
+        baseURL,
+        deployment,
+        apiVersion
+      };
+    }
+    return {
+      baseURL: endpoint,
+      deployment: null,
+      apiVersion: null
+    };
+  } catch (error46) {
+    console.error("[Rotating ChatOpenAI] Failed to parse endpoint URL:", error46);
+    return {
+      baseURL: endpoint,
+      deployment: null,
+      apiVersion: null
+    };
+  }
+}
+
 // node_modules/@langchain/langgraph/dist/setup/async_local_storage.js
 import { AsyncLocalStorage } from "node:async_hooks";
 function initializeAsyncLocalStorageSingleton() {
@@ -49784,9 +50052,9 @@ var FakeVectorStore = class FakeVectorStore2 extends VectorStore {
   * @returns Promise that resolves with a new `FakeVectorStore` instance.
   */
   static async fromDocuments(docs, embeddings, dbConfig) {
-    const instance = new this(embeddings, dbConfig);
-    await instance.addDocuments(docs);
-    return instance;
+    const instance2 = new this(embeddings, dbConfig);
+    await instance2.addDocuments(docs);
+    return instance2;
   }
   /**
   * Static method to create a `FakeVectorStore` instance from an existing
@@ -49797,8 +50065,8 @@ var FakeVectorStore = class FakeVectorStore2 extends VectorStore {
   * @returns Promise that resolves with a new `FakeVectorStore` instance.
   */
   static async fromExistingIndex(embeddings, dbConfig) {
-    const instance = new this(embeddings, dbConfig);
-    return instance;
+    const instance2 = new this(embeddings, dbConfig);
+    return instance2;
   }
 };
 
@@ -49945,9 +50213,9 @@ async function reviver(value) {
       path: [...path5, "kwargs"]
     }, serialized.kwargs);
     if (serialized.type === "constructor") {
-      const instance = new builder(mapKeys(kwargs, keyFromJson, combineAliasesAndInvert(builder)));
-      Object.defineProperty(instance.constructor, "name", { value: name });
-      return instance;
+      const instance2 = new builder(mapKeys(kwargs, keyFromJson, combineAliasesAndInvert(builder)));
+      Object.defineProperty(instance2.constructor, "name", { value: name });
+      return instance2;
     } else throw new Error(`Invalid type: ${pathStr} -> ${str}`);
   } else if (typeof value === "object" && value !== null) if (Array.isArray(value)) return Promise.all(value.map((v, i) => reviver.call({
     ...this,
@@ -57844,21 +58112,14 @@ var AgentService = class {
   constructor(config2) {
     this.config = config2;
     this.memory = new MemorySaver();
-    const llmConfig = config2.llmAPI || config2.azureOpenAI;
-    if (!llmConfig) {
-      throw new Error("LLM API \u914D\u7F6E\u7F3A\u5931");
-    }
-    this.model = new ChatOpenAI({
+    const rotationService = getApiKeyRotationService();
+    const availableKeys = rotationService.getTotalCount();
+    console.log(`[AgentService] Initializing with ${availableKeys} API key(s) for rotation`);
+    this.model = new RotatingChatOpenAI({
       temperature: 0.3,
       // 降低溫度以減少token使用
-      maxTokens: 1500,
+      maxTokens: 1500
       // 限制最大輸出token
-      configuration: {
-        apiKey: llmConfig.apiKey,
-        baseURL: `${llmConfig.endpoint}/openai/deployments/${llmConfig.deployment}`,
-        defaultQuery: { "api-version": llmConfig.apiVersion || "2024-02-15-preview" },
-        defaultHeaders: { "api-key": llmConfig.apiKey }
-      }
     });
     this.initializeTools();
     this.agent = createReactAgent({
@@ -60008,6 +60269,7 @@ var searchPopularBooksTool2 = new DynamicStructuredTool({
 });
 export {
   AgentService,
+  ApiKeyRotationService,
   ConfigManager,
   ConfigService,
   ContentExtractorService,
@@ -60020,6 +60282,7 @@ export {
   KnowledgeBaseService,
   ManualIndexService,
   ProductIndexService,
+  RotatingChatOpenAI,
   RuleParserService,
   RuleStorageService,
   SearchIndexService,
@@ -60028,6 +60291,7 @@ export {
   aipageTools2 as aipageTools,
   databaseTools2 as databaseTools,
   getAIPageContent,
+  getApiKeyRotationService,
   initAIPageTools2 as initAIPageTools,
   initDatabaseTools2 as initDatabaseTools,
   initSearchTools2 as initSearchTools,

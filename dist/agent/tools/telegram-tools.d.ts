@@ -21,8 +21,8 @@ export declare const sendNotificationTool: DynamicStructuredTool<z.ZodObject<{
     userId: z.ZodOptional<z.ZodString>;
     priority: z.ZodOptional<z.ZodEnum<{
         low: "low";
-        normal: "normal";
         high: "high";
+        normal: "normal";
         critical: "critical";
     }>>;
     subject: z.ZodOptional<z.ZodString>;
@@ -41,7 +41,7 @@ export declare const sendNotificationTool: DynamicStructuredTool<z.ZodObject<{
     userQuery?: string | undefined;
     questionType?: "knowledge_gap" | "sensitive_request" | "technical_error" | "other" | undefined;
     userId?: string | undefined;
-    priority?: "low" | "normal" | "high" | "critical" | undefined;
+    priority?: "low" | "high" | "normal" | "critical" | undefined;
     subject?: string | undefined;
     orderNumber?: string | undefined;
     requestType?: "delete" | "other" | "address_change" | "shipping_method_change" | "delivery_date_change" | "item_change" | undefined;
@@ -51,7 +51,7 @@ export declare const sendNotificationTool: DynamicStructuredTool<z.ZodObject<{
     userQuery?: string | undefined;
     questionType?: "knowledge_gap" | "sensitive_request" | "technical_error" | "other" | undefined;
     userId?: string | undefined;
-    priority?: "low" | "normal" | "high" | "critical" | undefined;
+    priority?: "low" | "high" | "normal" | "critical" | undefined;
     subject?: string | undefined;
     orderNumber?: string | undefined;
     requestType?: "delete" | "other" | "address_change" | "shipping_method_change" | "delivery_date_change" | "item_change" | undefined;
@@ -72,8 +72,8 @@ export declare const telegramTools: DynamicStructuredTool<z.ZodObject<{
     userId: z.ZodOptional<z.ZodString>;
     priority: z.ZodOptional<z.ZodEnum<{
         low: "low";
-        normal: "normal";
         high: "high";
+        normal: "normal";
         critical: "critical";
     }>>;
     subject: z.ZodOptional<z.ZodString>;
@@ -92,7 +92,7 @@ export declare const telegramTools: DynamicStructuredTool<z.ZodObject<{
     userQuery?: string | undefined;
     questionType?: "knowledge_gap" | "sensitive_request" | "technical_error" | "other" | undefined;
     userId?: string | undefined;
-    priority?: "low" | "normal" | "high" | "critical" | undefined;
+    priority?: "low" | "high" | "normal" | "critical" | undefined;
     subject?: string | undefined;
     orderNumber?: string | undefined;
     requestType?: "delete" | "other" | "address_change" | "shipping_method_change" | "delivery_date_change" | "item_change" | undefined;
@@ -102,7 +102,7 @@ export declare const telegramTools: DynamicStructuredTool<z.ZodObject<{
     userQuery?: string | undefined;
     questionType?: "knowledge_gap" | "sensitive_request" | "technical_error" | "other" | undefined;
     userId?: string | undefined;
-    priority?: "low" | "normal" | "high" | "critical" | undefined;
+    priority?: "low" | "high" | "normal" | "critical" | undefined;
     subject?: string | undefined;
     orderNumber?: string | undefined;
     requestType?: "delete" | "other" | "address_change" | "shipping_method_change" | "delivery_date_change" | "item_change" | undefined;

@@ -12,6 +12,8 @@ import { aipageTools, initAIPageTools } from './tools/aipage';
 import { webScraperTools } from './tools/web-scraper';
 import { searchTools, initSearchTools } from './tools/search';
 import { EmbeddingService } from '../services/EmbeddingService';
+import { RotatingChatOpenAI } from '../services/RotatingChatOpenAI';
+import { getApiKeyRotationService } from '../services/ApiKeyRotationService';
 
 export interface AgentMessage {
   role: 'user' | 'assistant' | 'system';
@@ -48,21 +50,16 @@ export class AgentService {
     this.config = config;
     this.memory = new MemorySaver();
 
-    // 初始化 LLM
-    const llmConfig = config.llmAPI || config.azureOpenAI;
-    if (!llmConfig) {
-      throw new Error("LLM API 配置缺失");
-    }
+    // 初始化 LLM - 使用 API key 輪詢機制
+    const rotationService = getApiKeyRotationService();
+    const availableKeys = rotationService.getTotalCount();
 
-    this.model = new ChatOpenAI({
+    console.log(`[AgentService] Initializing with ${availableKeys} API key(s) for rotation`);
+
+    // 使用 RotatingChatOpenAI 來自動處理 API key 輪詢
+    this.model = new RotatingChatOpenAI({
       temperature: 0.3, // 降低溫度以減少token使用
       maxTokens: 1500, // 限制最大輸出token
-      configuration: {
-        apiKey: llmConfig.apiKey,
-        baseURL: `${llmConfig.endpoint}/openai/deployments/${llmConfig.deployment}`,
-        defaultQuery: { 'api-version': llmConfig.apiVersion || "2024-02-15-preview" },
-        defaultHeaders: { 'api-key': llmConfig.apiKey },
-      },
     });
 
     // 初始化並收集啟用的 tools
