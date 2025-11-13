@@ -599,12 +599,10 @@ export class SearchIndexService {
         OFFSET $${params.length + queries.length * 2 + 2}
       `;
 
-      // 6. 準備參數
-      queries.forEach((query) => {
+      // 6. 準備參數 (交錯：tsquery, vector, tsquery, vector, ...)
+      queries.forEach((query, idx) => {
         params.push(this.prepareQuery(query)); // tsquery
-      });
-      queryEmbeddings.forEach((embedding) => {
-        params.push(JSON.stringify(embedding)); // vector
+        params.push(JSON.stringify(queryEmbeddings[idx])); // vector
       });
       params.push(limit, offset);
 

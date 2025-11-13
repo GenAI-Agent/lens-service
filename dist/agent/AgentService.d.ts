@@ -1,6 +1,6 @@
-import type { ServiceModulerConfig } from '../types';
+import type { ServiceModulerConfig } from "../types";
 export interface AgentMessage {
-    role: 'user' | 'assistant' | 'system';
+    role: "user" | "assistant" | "system";
     content: string;
     timestamp?: number;
     metadata?: {

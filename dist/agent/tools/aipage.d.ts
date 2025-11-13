@@ -33,6 +33,7 @@ export declare const generateAIPageTool: DynamicStructuredTool<z.ZodObject<{
         "magazine-style": "magazine-style";
         "social-feed-style": "social-feed-style";
         "comic-pop-style": "comic-pop-style";
+        "love-letter-style": "love-letter-style";
     }>;
     books: z.ZodArray<z.ZodObject<{
         book_id: z.ZodString;
@@ -45,7 +46,7 @@ export declare const generateAIPageTool: DynamicStructuredTool<z.ZodObject<{
     }, z.core.$strip>>;
 }, z.core.$strip>, {
     title: string;
-    template: "neon-gradient-style" | "magazine-style" | "social-feed-style" | "comic-pop-style";
+    template: "neon-gradient-style" | "magazine-style" | "social-feed-style" | "comic-pop-style" | "love-letter-style";
     books: {
         book_id: string;
         title: string;
@@ -57,7 +58,7 @@ export declare const generateAIPageTool: DynamicStructuredTool<z.ZodObject<{
     }[];
 }, {
     title: string;
-    template: "neon-gradient-style" | "magazine-style" | "social-feed-style" | "comic-pop-style";
+    template: "neon-gradient-style" | "magazine-style" | "social-feed-style" | "comic-pop-style" | "love-letter-style";
     books: {
         book_id: string;
         title: string;
@@ -75,6 +76,7 @@ export declare const aipageTools: DynamicStructuredTool<z.ZodObject<{
         "magazine-style": "magazine-style";
         "social-feed-style": "social-feed-style";
         "comic-pop-style": "comic-pop-style";
+        "love-letter-style": "love-letter-style";
     }>;
     books: z.ZodArray<z.ZodObject<{
         book_id: z.ZodString;
@@ -87,7 +89,7 @@ export declare const aipageTools: DynamicStructuredTool<z.ZodObject<{
     }, z.core.$strip>>;
 }, z.core.$strip>, {
     title: string;
-    template: "neon-gradient-style" | "magazine-style" | "social-feed-style" | "comic-pop-style";
+    template: "neon-gradient-style" | "magazine-style" | "social-feed-style" | "comic-pop-style" | "love-letter-style";
     books: {
         book_id: string;
         title: string;
@@ -99,7 +101,7 @@ export declare const aipageTools: DynamicStructuredTool<z.ZodObject<{
     }[];
 }, {
     title: string;
-    template: "neon-gradient-style" | "magazine-style" | "social-feed-style" | "comic-pop-style";
+    template: "neon-gradient-style" | "magazine-style" | "social-feed-style" | "comic-pop-style" | "love-letter-style";
     books: {
         book_id: string;
         title: string;

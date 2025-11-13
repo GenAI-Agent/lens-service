@@ -1021,22 +1021,22 @@ function getCurrentTransform(ctx) {
     a,
     b: b2,
     c,
-    d: d2,
+    d,
     e,
     f
   } = ctx.getTransform();
-  return [a, b2, c, d2, e, f];
+  return [a, b2, c, d, e, f];
 }
 function getCurrentTransformInverse(ctx) {
   const {
     a,
     b: b2,
     c,
-    d: d2,
+    d,
     e,
     f
   } = ctx.getTransform().invertSelf();
-  return [a, b2, c, d2, e, f];
+  return [a, b2, c, d, e, f];
 }
 function setLayerDimensions(div, viewport, mustFlip = false, mustRotate = true) {
   if (viewport instanceof PageViewport) {
@@ -1048,8 +1048,8 @@ function setLayerDimensions(div, viewport, mustFlip = false, mustRotate = true) 
       style
     } = div;
     const useRound = util_FeatureTest.isCSSRoundSupported;
-    const w2 = `var(--total-scale-factor) * ${pageWidth}px`, h = `var(--total-scale-factor) * ${pageHeight}px`;
-    const widthStr = useRound ? `round(down, ${w2}, var(--scale-round-x))` : `calc(${w2})`, heightStr = useRound ? `round(down, ${h}, var(--scale-round-y))` : `calc(${h})`;
+    const w2 = `var(--total-scale-factor) * ${pageWidth}px`, h2 = `var(--total-scale-factor) * ${pageHeight}px`;
+    const widthStr = useRound ? `round(down, ${w2}, var(--scale-round-x))` : `calc(${w2})`, heightStr = useRound ? `round(down, ${h2}, var(--scale-round-y))` : `calc(${h2})`;
     if (!mustFlip || viewport.rotation % 180 === 0) {
       style.width = widthStr;
       style.height = heightStr;
@@ -1076,34 +1076,34 @@ function RGBToHSL(rgb, output) {
   const b2 = rgb[2] / 255;
   const max = Math.max(r, g, b2);
   const min = Math.min(r, g, b2);
-  const l3 = (max + min) / 2;
+  const l = (max + min) / 2;
   if (max === min) {
     output[0] = output[1] = 0;
   } else {
-    const d2 = max - min;
-    output[1] = l3 < 0.5 ? d2 / (max + min) : d2 / (2 - max - min);
+    const d = max - min;
+    output[1] = l < 0.5 ? d / (max + min) : d / (2 - max - min);
     switch (max) {
       case r:
-        output[0] = ((g - b2) / d2 + (g < b2 ? 6 : 0)) * 60;
+        output[0] = ((g - b2) / d + (g < b2 ? 6 : 0)) * 60;
         break;
       case g:
-        output[0] = ((b2 - r) / d2 + 2) * 60;
+        output[0] = ((b2 - r) / d + 2) * 60;
         break;
       case b2:
-        output[0] = ((r - g) / d2 + 4) * 60;
+        output[0] = ((r - g) / d + 4) * 60;
         break;
     }
   }
-  output[2] = l3;
+  output[2] = l;
 }
 function HSLToRGB(hsl, output) {
-  const h = hsl[0];
+  const h2 = hsl[0];
   const s = hsl[1];
-  const l3 = hsl[2];
-  const c = (1 - Math.abs(2 * l3 - 1)) * s;
-  const x2 = c * (1 - Math.abs(h / 60 % 2 - 1));
-  const m2 = l3 - c / 2;
-  switch (Math.floor(h / 60)) {
+  const l = hsl[2];
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x2 = c * (1 - Math.abs(h2 / 60 % 2 - 1));
+  const m2 = l - c / 2;
+  switch (Math.floor(h2 / 60)) {
     case 0:
       output[0] = c + m2;
       output[1] = x2 + m2;
@@ -1529,13 +1529,13 @@ function mirrorContextOperations(ctx, destCtx) {
     destCtx.scale(x2, y2);
     this.__originalScale(x2, y2);
   };
-  ctx.transform = function(a, b2, c, d2, e, f) {
-    destCtx.transform(a, b2, c, d2, e, f);
-    this.__originalTransform(a, b2, c, d2, e, f);
+  ctx.transform = function(a, b2, c, d, e, f) {
+    destCtx.transform(a, b2, c, d, e, f);
+    this.__originalTransform(a, b2, c, d, e, f);
   };
-  ctx.setTransform = function(a, b2, c, d2, e, f) {
-    destCtx.setTransform(a, b2, c, d2, e, f);
-    this.__originalSetTransform(a, b2, c, d2, e, f);
+  ctx.setTransform = function(a, b2, c, d, e, f) {
+    destCtx.setTransform(a, b2, c, d, e, f);
+    this.__originalSetTransform(a, b2, c, d, e, f);
   };
   ctx.resetTransform = function() {
     destCtx.resetTransform();
@@ -1575,22 +1575,22 @@ function mirrorContextOperations(ctx, destCtx) {
   };
 }
 function drawImageAtIntegerCoords(ctx, srcImg, srcX, srcY, srcW, srcH, destX, destY, destW, destH) {
-  const [a, b2, c, d2, tx, ty] = getCurrentTransform(ctx);
+  const [a, b2, c, d, tx, ty] = getCurrentTransform(ctx);
   if (b2 === 0 && c === 0) {
     const tlX = destX * a + tx;
     const rTlX = Math.round(tlX);
-    const tlY = destY * d2 + ty;
+    const tlY = destY * d + ty;
     const rTlY = Math.round(tlY);
     const brX = (destX + destW) * a + tx;
     const rWidth = Math.abs(Math.round(brX) - rTlX) || 1;
-    const brY = (destY + destH) * d2 + ty;
+    const brY = (destY + destH) * d + ty;
     const rHeight = Math.abs(Math.round(brY) - rTlY) || 1;
-    ctx.setTransform(Math.sign(a), 0, 0, Math.sign(d2), rTlX, rTlY);
+    ctx.setTransform(Math.sign(a), 0, 0, Math.sign(d), rTlX, rTlY);
     ctx.drawImage(srcImg, srcX, srcY, srcW, srcH, 0, 0, rWidth, rHeight);
-    ctx.setTransform(a, b2, c, d2, tx, ty);
+    ctx.setTransform(a, b2, c, d, tx, ty);
     return [rWidth, rHeight];
   }
-  if (a === 0 && d2 === 0) {
+  if (a === 0 && d === 0) {
     const tlX = destY * c + tx;
     const rTlX = Math.round(tlX);
     const tlY = destX * b2 + ty;
@@ -1601,12 +1601,12 @@ function drawImageAtIntegerCoords(ctx, srcImg, srcX, srcY, srcW, srcH, destX, de
     const rHeight = Math.abs(Math.round(brY) - rTlY) || 1;
     ctx.setTransform(0, Math.sign(b2), Math.sign(c), 0, rTlX, rTlY);
     ctx.drawImage(srcImg, srcX, srcY, srcW, srcH, 0, 0, rHeight, rWidth);
-    ctx.setTransform(a, b2, c, d2, tx, ty);
+    ctx.setTransform(a, b2, c, d, tx, ty);
     return [rHeight, rWidth];
   }
   ctx.drawImage(srcImg, srcX, srcY, srcW, srcH, destX, destY, destW, destH);
   const scaleX = Math.hypot(a, b2);
-  const scaleY = Math.hypot(c, d2);
+  const scaleY = Math.hypot(c, d);
   return [scaleX * destW, scaleY * destH];
 }
 function putBinaryImageData(ctx, imgData) {
@@ -7329,9 +7329,9 @@ var init_pdf_parse_es = __esm({
       static applyInverseTransform(p, m2) {
         const p0 = p[0];
         const p1 = p[1];
-        const d2 = m2[0] * m2[3] - m2[1] * m2[2];
-        p[0] = (p0 * m2[3] - p1 * m2[2] + m2[2] * m2[5] - m2[4] * m2[3]) / d2;
-        p[1] = (-p0 * m2[1] + p1 * m2[0] + m2[4] * m2[1] - m2[5] * m2[0]) / d2;
+        const d = m2[0] * m2[3] - m2[1] * m2[2];
+        p[0] = (p0 * m2[3] - p1 * m2[2] + m2[2] * m2[5] - m2[4] * m2[3]) / d;
+        p[1] = (-p0 * m2[1] + p1 * m2[0] + m2[4] * m2[1] - m2[5] * m2[0]) / d;
       }
       static axialAlignedBoundingBox(rect, transform, output) {
         const m0 = transform[0];
@@ -7372,8 +7372,8 @@ var init_pdf_parse_es = __esm({
         output[3] = Math.max(output[3], b0, b1, b2, b3);
       }
       static inverseTransform(m2) {
-        const d2 = m2[0] * m2[3] - m2[1] * m2[2];
-        return [m2[3] / d2, -m2[1] / d2, -m2[2] / d2, m2[0] / d2, (m2[2] * m2[5] - m2[4] * m2[3]) / d2, (m2[4] * m2[1] - m2[5] * m2[0]) / d2];
+        const d = m2[0] * m2[3] - m2[1] * m2[2];
+        return [m2[3] / d, -m2[1] / d, -m2[2] / d, m2[0] / d, (m2[2] * m2[5] - m2[4] * m2[3]) / d, (m2[4] * m2[1] - m2[5] * m2[0]) / d];
       }
       static singularValueDecompose2dScale(matrix, output) {
         const m0 = matrix[0];
@@ -10228,35 +10228,35 @@ var init_pdf_parse_es = __esm({
         let rotator;
         switch (textLayer.getAttribute("data-main-rotation")) {
           case "90":
-            rotator = (x2, y2, w2, h) => ({
+            rotator = (x2, y2, w2, h2) => ({
               x: (y2 - layerY) / parentHeight,
               y: 1 - (x2 + w2 - layerX) / parentWidth,
-              width: h / parentHeight,
+              width: h2 / parentHeight,
               height: w2 / parentWidth
             });
             break;
           case "180":
-            rotator = (x2, y2, w2, h) => ({
+            rotator = (x2, y2, w2, h2) => ({
               x: 1 - (x2 + w2 - layerX) / parentWidth,
-              y: 1 - (y2 + h - layerY) / parentHeight,
+              y: 1 - (y2 + h2 - layerY) / parentHeight,
               width: w2 / parentWidth,
-              height: h / parentHeight
+              height: h2 / parentHeight
             });
             break;
           case "270":
-            rotator = (x2, y2, w2, h) => ({
-              x: 1 - (y2 + h - layerY) / parentHeight,
+            rotator = (x2, y2, w2, h2) => ({
+              x: 1 - (y2 + h2 - layerY) / parentHeight,
               y: (x2 - layerX) / parentWidth,
-              width: h / parentHeight,
+              width: h2 / parentHeight,
               height: w2 / parentWidth
             });
             break;
           default:
-            rotator = (x2, y2, w2, h) => ({
+            rotator = (x2, y2, w2, h2) => ({
               x: (x2 - layerX) / parentWidth,
               y: (y2 - layerY) / parentHeight,
               width: w2 / parentWidth,
-              height: h / parentHeight
+              height: h2 / parentHeight
             });
             break;
         }
@@ -11600,41 +11600,41 @@ var init_pdf_parse_es = __esm({
         switch (name) {
           case "topLeft":
             isDiagonal = true;
-            getPoint = (w2, h) => [0, 0];
-            getOpposite = (w2, h) => [w2, h];
+            getPoint = (w2, h2) => [0, 0];
+            getOpposite = (w2, h2) => [w2, h2];
             break;
           case "topMiddle":
-            getPoint = (w2, h) => [w2 / 2, 0];
-            getOpposite = (w2, h) => [w2 / 2, h];
+            getPoint = (w2, h2) => [w2 / 2, 0];
+            getOpposite = (w2, h2) => [w2 / 2, h2];
             break;
           case "topRight":
             isDiagonal = true;
-            getPoint = (w2, h) => [w2, 0];
-            getOpposite = (w2, h) => [0, h];
+            getPoint = (w2, h2) => [w2, 0];
+            getOpposite = (w2, h2) => [0, h2];
             break;
           case "middleRight":
             isHorizontal = true;
-            getPoint = (w2, h) => [w2, h / 2];
-            getOpposite = (w2, h) => [0, h / 2];
+            getPoint = (w2, h2) => [w2, h2 / 2];
+            getOpposite = (w2, h2) => [0, h2 / 2];
             break;
           case "bottomRight":
             isDiagonal = true;
-            getPoint = (w2, h) => [w2, h];
-            getOpposite = (w2, h) => [0, 0];
+            getPoint = (w2, h2) => [w2, h2];
+            getOpposite = (w2, h2) => [0, 0];
             break;
           case "bottomMiddle":
-            getPoint = (w2, h) => [w2 / 2, h];
-            getOpposite = (w2, h) => [w2 / 2, 0];
+            getPoint = (w2, h2) => [w2 / 2, h2];
+            getOpposite = (w2, h2) => [w2 / 2, 0];
             break;
           case "bottomLeft":
             isDiagonal = true;
-            getPoint = (w2, h) => [0, h];
-            getOpposite = (w2, h) => [w2, 0];
+            getPoint = (w2, h2) => [0, h2];
+            getOpposite = (w2, h2) => [w2, 0];
             break;
           case "middleLeft":
             isHorizontal = true;
-            getPoint = (w2, h) => [0, h / 2];
-            getOpposite = (w2, h) => [w2, h / 2];
+            getPoint = (w2, h2) => [0, h2 / 2];
+            getOpposite = (w2, h2) => [w2, h2 / 2];
             break;
         }
         const point = getPoint(savedWidth, savedHeight);
@@ -15796,9 +15796,9 @@ var init_pdf_parse_es = __esm({
         this._cachedScaleForStroking[0] = -1;
         this._cachedGetSinglePixelWidth = null;
       }
-      transform(opIdx, a, b2, c, d2, e, f) {
+      transform(opIdx, a, b2, c, d, e, f) {
         this.dependencyTracker?.recordIncrementalData("transform", opIdx);
-        this.ctx.transform(a, b2, c, d2, e, f);
+        this.ctx.transform(a, b2, c, d, e, f);
         this._cachedScaleForStroking[0] = -1;
         this._cachedGetSinglePixelWidth = null;
       }
@@ -16110,10 +16110,10 @@ var init_pdf_parse_es = __esm({
                 a,
                 b: b2,
                 c,
-                d: d2
+                d
               } = currentTransform;
               const invPatternTransform = Util.inverseTransform(patternStrokeTransform);
-              const transf = Util.transform([a, b2, c, d2, 0, 0], invPatternTransform);
+              const transf = Util.transform([a, b2, c, d, 0, 0], invPatternTransform);
               Util.singularValueDecompose2dScale(transf, XY);
               ctx.lineWidth *= Math.max(XY[0], XY[1]) / fontSize;
               ctx.stroke(this.#getScaledPath(path, currentTransform, patternStrokeTransform));
@@ -16836,8 +16836,8 @@ var init_pdf_parse_es = __esm({
           imgToPaint = imgData.bitmap;
         } else {
           const w2 = imgData.width;
-          const h = imgData.height;
-          const tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", w2, h);
+          const h2 = imgData.height;
+          const tmpCanvas = this.cachedCanvases.getCanvas("inlineImage", w2, h2);
           const tmpCtx = tmpCanvas.context;
           putBinaryImageData(tmpCtx, imgData);
           imgToPaint = this.applyTransferMapsToCanvas(tmpCtx);
@@ -16941,12 +16941,12 @@ var init_pdf_parse_es = __esm({
             a,
             b: b2,
             c,
-            d: d2
+            d
           } = this.ctx.getTransform();
           let scaleX, scaleY;
           if (b2 === 0 && c === 0) {
             const normX = Math.abs(a);
-            const normY = Math.abs(d2);
+            const normY = Math.abs(d);
             if (normX === normY) {
               if (lineWidth === 0) {
                 scaleX = scaleY = 1 / normX;
@@ -16964,9 +16964,9 @@ var init_pdf_parse_es = __esm({
               scaleY = scaledYLineWidth < 1 ? 1 / scaledYLineWidth : 1;
             }
           } else {
-            const absDet = Math.abs(a * d2 - b2 * c);
+            const absDet = Math.abs(a * d - b2 * c);
             const normX = Math.hypot(a, b2);
-            const normY = Math.hypot(c, d2);
+            const normY = Math.hypot(c, d);
             if (lineWidth === 0) {
               scaleX = normY / absDet;
               scaleY = normX / absDet;
@@ -25204,12 +25204,12 @@ var init_pdf_parse_es = __esm({
         let [x1, y1, x22, y22] = this.#last.subarray(8, 12);
         const diffX = x2 - x22;
         const diffY = y2 - y22;
-        const d2 = Math.hypot(diffX, diffY);
-        if (d2 < this.#min) {
+        const d = Math.hypot(diffX, diffY);
+        if (d < this.#min) {
           return false;
         }
-        const diffD = d2 - this.#min_dist;
-        const K2 = diffD / d2;
+        const diffD = d - this.#min_dist;
+        const K2 = diffD / d;
         const shiftX = K2 * diffX;
         const shiftY = K2 * diffY;
         let x0 = x1;
@@ -27317,8 +27317,8 @@ var init_pdf_parse_es = __esm({
         const [x1, y1, x22, y22] = this.#last.subarray(2, 6);
         const diffX = x2 - x22;
         const diffY = y2 - y22;
-        const d2 = Math.hypot(this.#parentWidth * diffX, this.#parentHeight * diffY);
-        if (d2 <= 2) {
+        const d = Math.hypot(this.#parentWidth * diffX, this.#parentHeight * diffY);
+        if (d <= 2) {
           return null;
         }
         this.#points.push(x2, y2);
@@ -27765,7 +27765,7 @@ var init_pdf_parse_es = __esm({
       }
       get rotationTransform() {
         const [, , width, height] = this.#bbox;
-        let a = 0, b2 = 0, c = 0, d2 = 0, e = 0, f = 0;
+        let a = 0, b2 = 0, c = 0, d = 0, e = 0, f = 0;
         switch (this.#currentRotation) {
           case 90:
             b2 = height / width;
@@ -27774,7 +27774,7 @@ var init_pdf_parse_es = __esm({
             break;
           case 180:
             a = -1;
-            d2 = -1;
+            d = -1;
             e = width;
             f = height;
             break;
@@ -27786,7 +27786,7 @@ var init_pdf_parse_es = __esm({
           default:
             return "";
         }
-        return `matrix(${a} ${b2} ${c} ${d2} ${Outline.svgRound(e)} ${Outline.svgRound(f)})`;
+        return `matrix(${a} ${b2} ${c} ${d} ${Outline.svgRound(e)} ${Outline.svgRound(f)})`;
       }
       getPathResizingSVGProperties([newX, newY, newWidth, newHeight]) {
         const [marginX, marginY] = this.#getMarginComponents();
@@ -28337,10 +28337,10 @@ var init_pdf_parse_es = __esm({
         let dmax = 0;
         let index2 = start;
         for (let i = start + 2; i < end2 - 2; i += 2) {
-          const d2 = Math.abs(aa - nabx * points[i + 1] + naby * points[i]);
-          if (d2 > dmax) {
+          const d = Math.abs(aa - nabx * points[i + 1] + naby * points[i]);
+          if (d > dmax) {
             index2 = i;
-            dmax = d2;
+            dmax = d;
           }
         }
         if (dmax > (dist * partialPhi) ** 2) {
@@ -28386,13 +28386,13 @@ var init_pdf_parse_es = __esm({
               if (y2 < 0 || y2 >= height) {
                 continue;
               }
-              for (let l3 = 0; l3 < kernelSize; l3++) {
-                const x2 = j2 + l3 - halfSize;
+              for (let l = 0; l < kernelSize; l++) {
+                const x2 = j2 + l - halfSize;
                 if (x2 < 0 || x2 >= width) {
                   continue;
                 }
                 const neighbour = buf[y2 * width + x2];
-                const w2 = kernel[k2 * kernelSize + l3] * rangeValues[Math.abs(neighbour - center)];
+                const w2 = kernel[k2 * kernelSize + l] * rangeValues[Math.abs(neighbour - center)];
                 sum += neighbour * w2;
                 norm += w2;
               }
@@ -31315,7 +31315,7 @@ var init_pdf_parse_es = __esm({
         return same;
       }
       mergeHorizontalLines(lines) {
-        lines.sort((l1, l22) => l1.from.x - l22.from.x);
+        lines.sort((l1, l2) => l1.from.x - l2.from.x);
         const minX = lines[0].from.x;
         const maxX = lines[lines.length - 1].to.x;
         const resultLine = new Line(new Point(minX, lines[0].from.y), new Point(maxX, lines[0].from.y));
@@ -31333,7 +31333,7 @@ var init_pdf_parse_es = __esm({
         return resultLine;
       }
       mergeVerticalLines(lines) {
-        lines.sort((l1, l22) => l1.from.y - l22.from.y);
+        lines.sort((l1, l2) => l1.from.y - l2.from.y);
         const minY = lines[0].from.y;
         const maxY = lines[lines.length - 1].to.y;
         const resultLine = new Line(new Point(lines[0].from.x, minY), new Point(lines[0].from.x, maxY));
@@ -31348,10 +31348,10 @@ var init_pdf_parse_es = __esm({
         return resultLine;
       }
       normalize() {
-        this.hLines = this.hLines.filter((l3) => l3.intersections.length > 1);
-        this.vLines = this.vLines.filter((l3) => l3.intersections.length > 1);
-        this.hLines.sort((l1, l22) => l1.from.y - l22.from.y);
-        this.vLines.sort((l1, l22) => l1.from.x - l22.from.x);
+        this.hLines = this.hLines.filter((l) => l.intersections.length > 1);
+        this.vLines = this.vLines.filter((l) => l.intersections.length > 1);
+        this.hLines.sort((l1, l2) => l1.from.y - l2.from.y);
+        this.vLines.sort((l1, l2) => l1.from.x - l2.from.x);
         const newHLines = [];
         while (this.hLines.length > 0) {
           const line = this.hLines.shift();
@@ -31528,7 +31528,7 @@ var init_pdf_parse_es = __esm({
         this.normalizeVertical();
       }
       normalizeHorizontal() {
-        this.hLines.sort((l1, l22) => l1.from.y - l22.from.y);
+        this.hLines.sort((l1, l2) => l1.from.y - l2.from.y);
         const newLines = [];
         let sameY = [];
         for (const line of this.hLines) {
@@ -31549,7 +31549,7 @@ var init_pdf_parse_es = __esm({
         this.hLines = newLines;
       }
       normalizeVertical() {
-        this.vLines.sort((l1, l22) => l1.from.x - l22.from.x);
+        this.vLines.sort((l1, l2) => l1.from.x - l2.from.x);
         const newLines = [];
         let sameX = [];
         for (const line of this.vLines) {
@@ -31596,7 +31596,7 @@ var init_pdf_parse_es = __esm({
       }
       margeHorizontalLines(sameYLines) {
         const result = [];
-        sameYLines.sort((l1, l22) => l1.from.x - l22.from.x);
+        sameYLines.sort((l1, l2) => l1.from.x - l2.from.x);
         const sameY = sameYLines[0]?.from.y;
         if (sameY === void 0) return result;
         let minX = Number.MAX_SAFE_INTEGER;
@@ -31629,7 +31629,7 @@ var init_pdf_parse_es = __esm({
       }
       margeVerticalLines(sameXLines) {
         const result = [];
-        sameXLines.sort((l1, l22) => l1.from.y - l22.from.y);
+        sameXLines.sort((l1, l2) => l1.from.y - l2.from.y);
         const sameX = sameXLines[0]?.from.x;
         if (sameX === void 0) return result;
         let minY = Number.MAX_SAFE_INTEGER;
@@ -31682,7 +31682,7 @@ var init_pdf_parse_es = __esm({
           new Line(new Point(to.x, this.from.y), to),
           new Line(new Point(this.from.x, to.y), to)
         ];
-        return lines.filter((l3) => l3.valid);
+        return lines.filter((l) => l.valid);
       }
       transform(matrix) {
         const p1 = Shape.applyTransform([this.from.x, this.from.y], matrix);
@@ -32039,7 +32039,7 @@ ${pageNumber}
           const [x2, y2] = viewport.convertToViewportPoint(tm[4], tm[5]);
           if (params.parseHyperlinks) {
             const posArr = links.get(item.str) || [];
-            const hit = posArr.find((l3) => x2 >= l3.rect.left && x2 <= l3.rect.right && y2 >= l3.rect.top && y2 <= l3.rect.bottom);
+            const hit = posArr.find((l) => x2 >= l.rect.left && x2 <= l.rect.right && y2 >= l.rect.top && y2 <= l.rect.bottom);
             if (hit) {
               item.str = `[${item.str}](${hit.url})`;
             }
@@ -32955,147 +32955,140 @@ function L() {
   return { async: false, breaks: false, extensions: null, gfm: true, hooks: null, pedantic: false, renderer: null, silent: false, tokenizer: null, walkTokens: null };
 }
 var T = L();
-function G(l3) {
-  T = l3;
+function G(u3) {
+  T = u3;
 }
-var E = { exec: () => null };
-function d(l3, e = "") {
-  let t = typeof l3 == "string" ? l3 : l3.source, n = { replace: (r, i) => {
+var I = { exec: () => null };
+function h(u3, e = "") {
+  let t = typeof u3 == "string" ? u3 : u3.source, n = { replace: (r, i) => {
     let s = typeof i == "string" ? i : i.source;
     return s = s.replace(m.caret, "$1"), t = t.replace(r, s), n;
   }, getRegex: () => new RegExp(t, e) };
   return n;
 }
-var be = (() => {
-  try {
-    return !!new RegExp("(?<=1)(?<!1)");
-  } catch {
-    return false;
-  }
-})();
-var m = { codeRemoveIndent: /^(?: {1,4}| {0,3}\t)/gm, outputLinkReplace: /\\([\[\]])/g, indentCodeCompensation: /^(\s+)(?:```)/, beginningSpace: /^\s+/, endingHash: /#$/, startingSpaceChar: /^ /, endingSpaceChar: / $/, nonSpaceChar: /[^ ]/, newLineCharGlobal: /\n/g, tabCharGlobal: /\t/g, multipleSpaceGlobal: /\s+/g, blankLine: /^[ \t]*$/, doubleBlankLine: /\n[ \t]*\n[ \t]*$/, blockquoteStart: /^ {0,3}>/, blockquoteSetextReplace: /\n {0,3}((?:=+|-+) *)(?=\n|$)/g, blockquoteSetextReplace2: /^ {0,3}>[ \t]?/gm, listReplaceTabs: /^\t+/, listReplaceNesting: /^ {1,4}(?=( {4})*[^ ])/g, listIsTask: /^\[[ xX]\] /, listReplaceTask: /^\[[ xX]\] +/, anyLine: /\n.*\n/, hrefBrackets: /^<(.*)>$/, tableDelimiter: /[:|]/, tableAlignChars: /^\||\| *$/g, tableRowBlankLine: /\n[ \t]*$/, tableAlignRight: /^ *-+: *$/, tableAlignCenter: /^ *:-+: *$/, tableAlignLeft: /^ *:-+ *$/, startATag: /^<a /i, endATag: /^<\/a>/i, startPreScriptTag: /^<(pre|code|kbd|script)(\s|>)/i, endPreScriptTag: /^<\/(pre|code|kbd|script)(\s|>)/i, startAngleBracket: /^</, endAngleBracket: />$/, pedanticHrefTitle: /^([^'"]*[^\s])\s+(['"])(.*)\2/, unicodeAlphaNumeric: /[\p{L}\p{N}]/u, escapeTest: /[&<>"']/, escapeReplace: /[&<>"']/g, escapeTestNoEncode: /[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/, escapeReplaceNoEncode: /[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/g, unescapeTest: /&(#(?:\d+)|(?:#x[0-9A-Fa-f]+)|(?:\w+));?/ig, caret: /(^|[^\[])\^/g, percentDecode: /%25/g, findPipe: /\|/g, splitPipe: / \|/, slashPipe: /\\\|/g, carriageReturn: /\r\n|\r/g, spaceLine: /^ +$/gm, notSpaceStart: /^\S*/, endingNewline: /\n$/, listItemRegex: (l3) => new RegExp(`^( {0,3}${l3})((?:[	 ][^\\n]*)?(?:\\n|$))`), nextBulletRegex: (l3) => new RegExp(`^ {0,${Math.min(3, l3 - 1)}}(?:[*+-]|\\d{1,9}[.)])((?:[ 	][^\\n]*)?(?:\\n|$))`), hrRegex: (l3) => new RegExp(`^ {0,${Math.min(3, l3 - 1)}}((?:- *){3,}|(?:_ *){3,}|(?:\\* *){3,})(?:\\n+|$)`), fencesBeginRegex: (l3) => new RegExp(`^ {0,${Math.min(3, l3 - 1)}}(?:\`\`\`|~~~)`), headingBeginRegex: (l3) => new RegExp(`^ {0,${Math.min(3, l3 - 1)}}#`), htmlBeginRegex: (l3) => new RegExp(`^ {0,${Math.min(3, l3 - 1)}}<(?:[a-z].*>|!--)`, "i") };
-var Re = /^(?:[ \t]*(?:\n|$))+/;
-var Te = /^((?: {4}| {0,3}\t)[^\n]+(?:\n(?:[ \t]*(?:\n|$))*)?)+/;
-var Oe = /^ {0,3}(`{3,}(?=[^`\n]*(?:\n|$))|~{3,})([^\n]*)(?:\n|$)(?:|([\s\S]*?)(?:\n|$))(?: {0,3}\1[~`]* *(?=\n|$)|$)/;
-var I = /^ {0,3}((?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/;
-var we = /^ {0,3}(#{1,6})(?=\s|$)(.*)(?:\n+|$)/;
+var m = { codeRemoveIndent: /^(?: {1,4}| {0,3}\t)/gm, outputLinkReplace: /\\([\[\]])/g, indentCodeCompensation: /^(\s+)(?:```)/, beginningSpace: /^\s+/, endingHash: /#$/, startingSpaceChar: /^ /, endingSpaceChar: / $/, nonSpaceChar: /[^ ]/, newLineCharGlobal: /\n/g, tabCharGlobal: /\t/g, multipleSpaceGlobal: /\s+/g, blankLine: /^[ \t]*$/, doubleBlankLine: /\n[ \t]*\n[ \t]*$/, blockquoteStart: /^ {0,3}>/, blockquoteSetextReplace: /\n {0,3}((?:=+|-+) *)(?=\n|$)/g, blockquoteSetextReplace2: /^ {0,3}>[ \t]?/gm, listReplaceTabs: /^\t+/, listReplaceNesting: /^ {1,4}(?=( {4})*[^ ])/g, listIsTask: /^\[[ xX]\] /, listReplaceTask: /^\[[ xX]\] +/, anyLine: /\n.*\n/, hrefBrackets: /^<(.*)>$/, tableDelimiter: /[:|]/, tableAlignChars: /^\||\| *$/g, tableRowBlankLine: /\n[ \t]*$/, tableAlignRight: /^ *-+: *$/, tableAlignCenter: /^ *:-+: *$/, tableAlignLeft: /^ *:-+ *$/, startATag: /^<a /i, endATag: /^<\/a>/i, startPreScriptTag: /^<(pre|code|kbd|script)(\s|>)/i, endPreScriptTag: /^<\/(pre|code|kbd|script)(\s|>)/i, startAngleBracket: /^</, endAngleBracket: />$/, pedanticHrefTitle: /^([^'"]*[^\s])\s+(['"])(.*)\2/, unicodeAlphaNumeric: /[\p{L}\p{N}]/u, escapeTest: /[&<>"']/, escapeReplace: /[&<>"']/g, escapeTestNoEncode: /[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/, escapeReplaceNoEncode: /[<>"']|&(?!(#\d{1,7}|#[Xx][a-fA-F0-9]{1,6}|\w+);)/g, unescapeTest: /&(#(?:\d+)|(?:#x[0-9A-Fa-f]+)|(?:\w+));?/ig, caret: /(^|[^\[])\^/g, percentDecode: /%25/g, findPipe: /\|/g, splitPipe: / \|/, slashPipe: /\\\|/g, carriageReturn: /\r\n|\r/g, spaceLine: /^ +$/gm, notSpaceStart: /^\S*/, endingNewline: /\n$/, listItemRegex: (u3) => new RegExp(`^( {0,3}${u3})((?:[	 ][^\\n]*)?(?:\\n|$))`), nextBulletRegex: (u3) => new RegExp(`^ {0,${Math.min(3, u3 - 1)}}(?:[*+-]|\\d{1,9}[.)])((?:[ 	][^\\n]*)?(?:\\n|$))`), hrRegex: (u3) => new RegExp(`^ {0,${Math.min(3, u3 - 1)}}((?:- *){3,}|(?:_ *){3,}|(?:\\* *){3,})(?:\\n+|$)`), fencesBeginRegex: (u3) => new RegExp(`^ {0,${Math.min(3, u3 - 1)}}(?:\`\`\`|~~~)`), headingBeginRegex: (u3) => new RegExp(`^ {0,${Math.min(3, u3 - 1)}}#`), htmlBeginRegex: (u3) => new RegExp(`^ {0,${Math.min(3, u3 - 1)}}<(?:[a-z].*>|!--)`, "i") };
+var be = /^(?:[ \t]*(?:\n|$))+/;
+var Re = /^((?: {4}| {0,3}\t)[^\n]+(?:\n(?:[ \t]*(?:\n|$))*)?)+/;
+var Te = /^ {0,3}(`{3,}(?=[^`\n]*(?:\n|$))|~{3,})([^\n]*)(?:\n|$)(?:|([\s\S]*?)(?:\n|$))(?: {0,3}\1[~`]* *(?=\n|$)|$)/;
+var E = /^ {0,3}((?:-[\t ]*){3,}|(?:_[ \t]*){3,}|(?:\*[ \t]*){3,})(?:\n+|$)/;
+var Oe = /^ {0,3}(#{1,6})(?=\s|$)(.*)(?:\n+|$)/;
 var F = /(?:[*+-]|\d{1,9}[.)])/;
 var ie = /^(?!bull |blockCode|fences|blockquote|heading|html|table)((?:.|\n(?!\s*?\n|bull |blockCode|fences|blockquote|heading|html|table))+?)\n {0,3}(=+|-+) *(?:\n+|$)/;
-var oe = d(ie).replace(/bull/g, F).replace(/blockCode/g, /(?: {4}| {0,3}\t)/).replace(/fences/g, / {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g, / {0,3}>/).replace(/heading/g, / {0,3}#{1,6}/).replace(/html/g, / {0,3}<[^\n>]+>\n/).replace(/\|table/g, "").getRegex();
-var ye = d(ie).replace(/bull/g, F).replace(/blockCode/g, /(?: {4}| {0,3}\t)/).replace(/fences/g, / {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g, / {0,3}>/).replace(/heading/g, / {0,3}#{1,6}/).replace(/html/g, / {0,3}<[^\n>]+>\n/).replace(/table/g, / {0,3}\|?(?:[:\- ]*\|)+[\:\- ]*\n/).getRegex();
+var oe = h(ie).replace(/bull/g, F).replace(/blockCode/g, /(?: {4}| {0,3}\t)/).replace(/fences/g, / {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g, / {0,3}>/).replace(/heading/g, / {0,3}#{1,6}/).replace(/html/g, / {0,3}<[^\n>]+>\n/).replace(/\|table/g, "").getRegex();
+var we = h(ie).replace(/bull/g, F).replace(/blockCode/g, /(?: {4}| {0,3}\t)/).replace(/fences/g, / {0,3}(?:`{3,}|~{3,})/).replace(/blockquote/g, / {0,3}>/).replace(/heading/g, / {0,3}#{1,6}/).replace(/html/g, / {0,3}<[^\n>]+>\n/).replace(/table/g, / {0,3}\|?(?:[:\- ]*\|)+[\:\- ]*\n/).getRegex();
 var j = /^([^\n]+(?:\n(?!hr|heading|lheading|blockquote|fences|list|html|table| +\n)[^\n]+)*)/;
-var Pe = /^[^\n]+/;
+var ye = /^[^\n]+/;
 var Q = /(?!\s*\])(?:\\[\s\S]|[^\[\]\\])+/;
-var Se = d(/^ {0,3}\[(label)\]: *(?:\n[ \t]*)?([^<\s][^\s]*|<.*?>)(?:(?: +(?:\n[ \t]*)?| *\n[ \t]*)(title))? *(?:\n+|$)/).replace("label", Q).replace("title", /(?:"(?:\\"?|[^"\\])*"|'[^'\n]*(?:\n[^'\n]+)*\n?'|\([^()]*\))/).getRegex();
-var $e = d(/^( {0,3}bull)([ \t][^\n]+?)?(?:\n|$)/).replace(/bull/g, F).getRegex();
+var Pe = h(/^ {0,3}\[(label)\]: *(?:\n[ \t]*)?([^<\s][^\s]*|<.*?>)(?:(?: +(?:\n[ \t]*)?| *\n[ \t]*)(title))? *(?:\n+|$)/).replace("label", Q).replace("title", /(?:"(?:\\"?|[^"\\])*"|'[^'\n]*(?:\n[^'\n]+)*\n?'|\([^()]*\))/).getRegex();
+var Se = h(/^( {0,3}bull)([ \t][^\n]+?)?(?:\n|$)/).replace(/bull/g, F).getRegex();
 var v = "address|article|aside|base|basefont|blockquote|body|caption|center|col|colgroup|dd|details|dialog|dir|div|dl|dt|fieldset|figcaption|figure|footer|form|frame|frameset|h[1-6]|head|header|hr|html|iframe|legend|li|link|main|menu|menuitem|meta|nav|noframes|ol|optgroup|option|p|param|search|section|summary|table|tbody|td|tfoot|th|thead|title|tr|track|ul";
 var U = /<!--(?:-?>|[\s\S]*?(?:-->|$))/;
-var _e = d("^ {0,3}(?:<(script|pre|style|textarea)[\\s>][\\s\\S]*?(?:</\\1>[^\\n]*\\n+|$)|comment[^\\n]*(\\n+|$)|<\\?[\\s\\S]*?(?:\\?>\\n*|$)|<![A-Z][\\s\\S]*?(?:>\\n*|$)|<!\\[CDATA\\[[\\s\\S]*?(?:\\]\\]>\\n*|$)|</?(tag)(?: +|\\n|/?>)[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$)|<(?!script|pre|style|textarea)([a-z][\\w-]*)(?:attribute)*? */?>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$)|</(?!script|pre|style|textarea)[a-z][\\w-]*\\s*>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$))", "i").replace("comment", U).replace("tag", v).replace("attribute", / +[a-zA-Z:_][\w.:-]*(?: *= *"[^"\n]*"| *= *'[^'\n]*'| *= *[^\s"'=<>`]+)?/).getRegex();
-var ae = d(j).replace("hr", I).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("|lheading", "").replace("|table", "").replace("blockquote", " {0,3}>").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list", " {0,3}(?:[*+-]|1[.)]) ").replace("html", "</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag", v).getRegex();
-var Le = d(/^( {0,3}> ?(paragraph|[^\n]*)(?:\n|$))+/).replace("paragraph", ae).getRegex();
-var K = { blockquote: Le, code: Te, def: Se, fences: Oe, heading: we, hr: I, html: _e, lheading: oe, list: $e, newline: Re, paragraph: ae, table: E, text: Pe };
-var re = d("^ *([^\\n ].*)\\n {0,3}((?:\\| *)?:?-+:? *(?:\\| *:?-+:? *)*(?:\\| *)?)(?:\\n((?:(?! *\\n|hr|heading|blockquote|code|fences|list|html).*(?:\\n|$))*)\\n*|$)").replace("hr", I).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("blockquote", " {0,3}>").replace("code", "(?: {4}| {0,3}	)[^\\n]").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list", " {0,3}(?:[*+-]|1[.)]) ").replace("html", "</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag", v).getRegex();
-var Me = { ...K, lheading: ye, table: re, paragraph: d(j).replace("hr", I).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("|lheading", "").replace("table", re).replace("blockquote", " {0,3}>").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list", " {0,3}(?:[*+-]|1[.)]) ").replace("html", "</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag", v).getRegex() };
-var ze = { ...K, html: d(`^ *(?:comment *(?:\\n|\\s*$)|<(tag)[\\s\\S]+?</\\1> *(?:\\n{2,}|\\s*$)|<tag(?:"[^"]*"|'[^']*'|\\s[^'"/>\\s]*)*?/?> *(?:\\n{2,}|\\s*$))`).replace("comment", U).replace(/tag/g, "(?!(?:a|em|strong|small|s|cite|q|dfn|abbr|data|time|code|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo|span|br|wbr|ins|del|img)\\b)\\w+(?!:|[^\\w\\s@]*@)\\b").getRegex(), def: /^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +(["(][^\n]+[")]))? *(?:\n+|$)/, heading: /^(#{1,6})(.*)(?:\n+|$)/, fences: E, lheading: /^(.+?)\n {0,3}(=+|-+) *(?:\n+|$)/, paragraph: d(j).replace("hr", I).replace("heading", ` *#{1,6} *[^
+var $e = h("^ {0,3}(?:<(script|pre|style|textarea)[\\s>][\\s\\S]*?(?:</\\1>[^\\n]*\\n+|$)|comment[^\\n]*(\\n+|$)|<\\?[\\s\\S]*?(?:\\?>\\n*|$)|<![A-Z][\\s\\S]*?(?:>\\n*|$)|<!\\[CDATA\\[[\\s\\S]*?(?:\\]\\]>\\n*|$)|</?(tag)(?: +|\\n|/?>)[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$)|<(?!script|pre|style|textarea)([a-z][\\w-]*)(?:attribute)*? */?>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$)|</(?!script|pre|style|textarea)[a-z][\\w-]*\\s*>(?=[ \\t]*(?:\\n|$))[\\s\\S]*?(?:(?:\\n[ 	]*)+\\n|$))", "i").replace("comment", U).replace("tag", v).replace("attribute", / +[a-zA-Z:_][\w.:-]*(?: *= *"[^"\n]*"| *= *'[^'\n]*'| *= *[^\s"'=<>`]+)?/).getRegex();
+var ae = h(j).replace("hr", E).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("|lheading", "").replace("|table", "").replace("blockquote", " {0,3}>").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list", " {0,3}(?:[*+-]|1[.)]) ").replace("html", "</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag", v).getRegex();
+var _e = h(/^( {0,3}> ?(paragraph|[^\n]*)(?:\n|$))+/).replace("paragraph", ae).getRegex();
+var K = { blockquote: _e, code: Re, def: Pe, fences: Te, heading: Oe, hr: E, html: $e, lheading: oe, list: Se, newline: be, paragraph: ae, table: I, text: ye };
+var re = h("^ *([^\\n ].*)\\n {0,3}((?:\\| *)?:?-+:? *(?:\\| *:?-+:? *)*(?:\\| *)?)(?:\\n((?:(?! *\\n|hr|heading|blockquote|code|fences|list|html).*(?:\\n|$))*)\\n*|$)").replace("hr", E).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("blockquote", " {0,3}>").replace("code", "(?: {4}| {0,3}	)[^\\n]").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list", " {0,3}(?:[*+-]|1[.)]) ").replace("html", "</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag", v).getRegex();
+var Le = { ...K, lheading: we, table: re, paragraph: h(j).replace("hr", E).replace("heading", " {0,3}#{1,6}(?:\\s|$)").replace("|lheading", "").replace("table", re).replace("blockquote", " {0,3}>").replace("fences", " {0,3}(?:`{3,}(?=[^`\\n]*\\n)|~{3,})[^\\n]*\\n").replace("list", " {0,3}(?:[*+-]|1[.)]) ").replace("html", "</?(?:tag)(?: +|\\n|/?>)|<(?:script|pre|style|textarea|!--)").replace("tag", v).getRegex() };
+var Me = { ...K, html: h(`^ *(?:comment *(?:\\n|\\s*$)|<(tag)[\\s\\S]+?</\\1> *(?:\\n{2,}|\\s*$)|<tag(?:"[^"]*"|'[^']*'|\\s[^'"/>\\s]*)*?/?> *(?:\\n{2,}|\\s*$))`).replace("comment", U).replace(/tag/g, "(?!(?:a|em|strong|small|s|cite|q|dfn|abbr|data|time|code|var|samp|kbd|sub|sup|i|b|u|mark|ruby|rt|rp|bdi|bdo|span|br|wbr|ins|del|img)\\b)\\w+(?!:|[^\\w\\s@]*@)\\b").getRegex(), def: /^ *\[([^\]]+)\]: *<?([^\s>]+)>?(?: +(["(][^\n]+[")]))? *(?:\n+|$)/, heading: /^(#{1,6})(.*)(?:\n+|$)/, fences: I, lheading: /^(.+?)\n {0,3}(=+|-+) *(?:\n+|$)/, paragraph: h(j).replace("hr", E).replace("heading", ` *#{1,6} *[^
 ]`).replace("lheading", oe).replace("|table", "").replace("blockquote", " {0,3}>").replace("|fences", "").replace("|list", "").replace("|html", "").replace("|tag", "").getRegex() };
-var Ae = /^\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/;
-var Ee = /^(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/;
+var ze = /^\\([!"#$%&'()*+,\-./:;<=>?@\[\]\\^_`{|}~])/;
+var Ae = /^(`+)([^`]|[^`][\s\S]*?[^`])\1(?!`)/;
 var le = /^( {2,}|\\)\n(?!\s*$)/;
 var Ie = /^(`+|[^`])(?:(?= {2,}\n)|[\s\S]*?(?:(?=[\\<!\[`*_]|\b_|$)|[^ ](?= {2,}\n)))/;
 var D = /[\p{P}\p{S}]/u;
 var W = /[\s\p{P}\p{S}]/u;
 var ue = /[^\s\p{P}\p{S}]/u;
-var Ce = d(/^((?![*_])punctSpace)/, "u").replace(/punctSpace/g, W).getRegex();
+var Ee = h(/^((?![*_])punctSpace)/, "u").replace(/punctSpace/g, W).getRegex();
 var pe = /(?!~)[\p{P}\p{S}]/u;
-var Be = /(?!~)[\s\p{P}\p{S}]/u;
-var qe = /(?:[^\s\p{P}\p{S}]|~)/u;
-var ve = d(/link|precode-code|html/, "g").replace("link", /\[(?:[^\[\]`]|(?<a>`+)[^`]+\k<a>(?!`))*?\]\((?:\\[\s\S]|[^\\\(\)]|\((?:\\[\s\S]|[^\\\(\)])*\))*\)/).replace("precode-", be ? "(?<!`)()" : "(^^|[^`])").replace("code", /(?<b>`+)[^`]+\k<b>(?!`)/).replace("html", /<(?! )[^<>]*?>/).getRegex();
+var Ce = /(?!~)[\s\p{P}\p{S}]/u;
+var Be = /(?:[^\s\p{P}\p{S}]|~)/u;
+var qe = h(/link|code|html/, "g").replace("link", /\[(?:[^\[\]`]|(?<!`)(?<a>`+)[^`]+\k<a>(?!`))*?\]\((?:\\[\s\S]|[^\\\(\)]|\((?:\\[\s\S]|[^\\\(\)])*\))*\)/).replace("code", /(?<!`)(?<b>`+)[^`]+\k<b>(?!`)/).replace("html", /<(?! )[^<>]*?>/).getRegex();
 var ce = /^(?:\*+(?:((?!\*)punct)|[^\s*]))|^_+(?:((?!_)punct)|([^\s_]))/;
-var De = d(ce, "u").replace(/punct/g, D).getRegex();
-var He = d(ce, "u").replace(/punct/g, pe).getRegex();
+var ve = h(ce, "u").replace(/punct/g, D).getRegex();
+var De = h(ce, "u").replace(/punct/g, pe).getRegex();
 var he = "^[^_*]*?__[^_*]*?\\*[^_*]*?(?=__)|[^*]+(?=[^*])|(?!\\*)punct(\\*+)(?=[\\s]|$)|notPunctSpace(\\*+)(?!\\*)(?=punctSpace|$)|(?!\\*)punctSpace(\\*+)(?=notPunctSpace)|[\\s](\\*+)(?!\\*)(?=punct)|(?!\\*)punct(\\*+)(?!\\*)(?=punct)|notPunctSpace(\\*+)(?=notPunctSpace)";
-var Ze = d(he, "gu").replace(/notPunctSpace/g, ue).replace(/punctSpace/g, W).replace(/punct/g, D).getRegex();
-var Ge = d(he, "gu").replace(/notPunctSpace/g, qe).replace(/punctSpace/g, Be).replace(/punct/g, pe).getRegex();
-var Ne = d("^[^_*]*?\\*\\*[^_*]*?_[^_*]*?(?=\\*\\*)|[^_]+(?=[^_])|(?!_)punct(_+)(?=[\\s]|$)|notPunctSpace(_+)(?!_)(?=punctSpace|$)|(?!_)punctSpace(_+)(?=notPunctSpace)|[\\s](_+)(?!_)(?=punct)|(?!_)punct(_+)(?!_)(?=punct)", "gu").replace(/notPunctSpace/g, ue).replace(/punctSpace/g, W).replace(/punct/g, D).getRegex();
-var Fe = d(/\\(punct)/, "gu").replace(/punct/g, D).getRegex();
-var je = d(/^<(scheme:[^\s\x00-\x1f<>]*|email)>/).replace("scheme", /[a-zA-Z][a-zA-Z0-9+.-]{1,31}/).replace("email", /[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+(@)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+(?![-_])/).getRegex();
-var Qe = d(U).replace("(?:-->|$)", "-->").getRegex();
-var Ue = d("^comment|^</[a-zA-Z][\\w:-]*\\s*>|^<[a-zA-Z][\\w-]*(?:attribute)*?\\s*/?>|^<\\?[\\s\\S]*?\\?>|^<![a-zA-Z]+\\s[\\s\\S]*?>|^<!\\[CDATA\\[[\\s\\S]*?\\]\\]>").replace("comment", Qe).replace("attribute", /\s+[a-zA-Z:_][\w.:-]*(?:\s*=\s*"[^"]*"|\s*=\s*'[^']*'|\s*=\s*[^\s"'=<>`]+)?/).getRegex();
+var He = h(he, "gu").replace(/notPunctSpace/g, ue).replace(/punctSpace/g, W).replace(/punct/g, D).getRegex();
+var Ze = h(he, "gu").replace(/notPunctSpace/g, Be).replace(/punctSpace/g, Ce).replace(/punct/g, pe).getRegex();
+var Ge = h("^[^_*]*?\\*\\*[^_*]*?_[^_*]*?(?=\\*\\*)|[^_]+(?=[^_])|(?!_)punct(_+)(?=[\\s]|$)|notPunctSpace(_+)(?!_)(?=punctSpace|$)|(?!_)punctSpace(_+)(?=notPunctSpace)|[\\s](_+)(?!_)(?=punct)|(?!_)punct(_+)(?!_)(?=punct)", "gu").replace(/notPunctSpace/g, ue).replace(/punctSpace/g, W).replace(/punct/g, D).getRegex();
+var Ne = h(/\\(punct)/, "gu").replace(/punct/g, D).getRegex();
+var Fe = h(/^<(scheme:[^\s\x00-\x1f<>]*|email)>/).replace("scheme", /[a-zA-Z][a-zA-Z0-9+.-]{1,31}/).replace("email", /[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+(@)[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)+(?![-_])/).getRegex();
+var je = h(U).replace("(?:-->|$)", "-->").getRegex();
+var Qe = h("^comment|^</[a-zA-Z][\\w:-]*\\s*>|^<[a-zA-Z][\\w-]*(?:attribute)*?\\s*/?>|^<\\?[\\s\\S]*?\\?>|^<![a-zA-Z]+\\s[\\s\\S]*?>|^<!\\[CDATA\\[[\\s\\S]*?\\]\\]>").replace("comment", je).replace("attribute", /\s+[a-zA-Z:_][\w.:-]*(?:\s*=\s*"[^"]*"|\s*=\s*'[^']*'|\s*=\s*[^\s"'=<>`]+)?/).getRegex();
 var q = /(?:\[(?:\\[\s\S]|[^\[\]\\])*\]|\\[\s\S]|`+[^`]*?`+(?!`)|[^\[\]\\`])*?/;
-var Ke = d(/^!?\[(label)\]\(\s*(href)(?:(?:[ \t]*(?:\n[ \t]*)?)(title))?\s*\)/).replace("label", q).replace("href", /<(?:\\.|[^\n<>\\])+>|[^ \t\n\x00-\x1f]*/).replace("title", /"(?:\\"?|[^"\\])*"|'(?:\\'?|[^'\\])*'|\((?:\\\)?|[^)\\])*\)/).getRegex();
-var de = d(/^!?\[(label)\]\[(ref)\]/).replace("label", q).replace("ref", Q).getRegex();
-var ke = d(/^!?\[(ref)\](?:\[\])?/).replace("ref", Q).getRegex();
-var We = d("reflink|nolink(?!\\()", "g").replace("reflink", de).replace("nolink", ke).getRegex();
+var Ue = h(/^!?\[(label)\]\(\s*(href)(?:(?:[ \t]*(?:\n[ \t]*)?)(title))?\s*\)/).replace("label", q).replace("href", /<(?:\\.|[^\n<>\\])+>|[^ \t\n\x00-\x1f]*/).replace("title", /"(?:\\"?|[^"\\])*"|'(?:\\'?|[^'\\])*'|\((?:\\\)?|[^)\\])*\)/).getRegex();
+var de = h(/^!?\[(label)\]\[(ref)\]/).replace("label", q).replace("ref", Q).getRegex();
+var ke = h(/^!?\[(ref)\](?:\[\])?/).replace("ref", Q).getRegex();
+var Ke = h("reflink|nolink(?!\\()", "g").replace("reflink", de).replace("nolink", ke).getRegex();
 var se = /[hH][tT][tT][pP][sS]?|[fF][tT][pP]/;
-var X = { _backpedal: E, anyPunctuation: Fe, autolink: je, blockSkip: ve, br: le, code: Ee, del: E, emStrongLDelim: De, emStrongRDelimAst: Ze, emStrongRDelimUnd: Ne, escape: Ae, link: Ke, nolink: ke, punctuation: Ce, reflink: de, reflinkSearch: We, tag: Ue, text: Ie, url: E };
-var Xe = { ...X, link: d(/^!?\[(label)\]\((.*?)\)/).replace("label", q).getRegex(), reflink: d(/^!?\[(label)\]\s*\[([^\]]*)\]/).replace("label", q).getRegex() };
-var N = { ...X, emStrongRDelimAst: Ge, emStrongLDelim: He, url: d(/^((?:protocol):\/\/|www\.)(?:[a-zA-Z0-9\-]+\.?)+[^\s<]*|^email/).replace("protocol", se).replace("email", /[A-Za-z0-9._+-]+(@)[a-zA-Z0-9-_]+(?:\.[a-zA-Z0-9-_]*[a-zA-Z0-9])+(?![-_])/).getRegex(), _backpedal: /(?:[^?!.,:;*_'"~()&]+|\([^)]*\)|&(?![a-zA-Z0-9]+;$)|[?!.,:;*_'"~)]+(?!$))+/, del: /^(~~?)(?=[^\s~])((?:\\[\s\S]|[^\\])*?(?:\\[\s\S]|[^\s~\\]))\1(?=[^~]|$)/, text: d(/^([`~]+|[^`~])(?:(?= {2,}\n)|(?=[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@)|[\s\S]*?(?:(?=[\\<!\[`*~_]|\b_|protocol:\/\/|www\.|$)|[^ ](?= {2,}\n)|[^a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-](?=[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@)))/).replace("protocol", se).getRegex() };
-var Je = { ...N, br: d(le).replace("{2,}", "*").getRegex(), text: d(N.text).replace("\\b_", "\\b_| {2,}\\n").replace(/\{2,\}/g, "*").getRegex() };
-var C = { normal: K, gfm: Me, pedantic: ze };
-var M = { normal: X, gfm: N, breaks: Je, pedantic: Xe };
-var Ve = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-var ge = (l3) => Ve[l3];
-function w(l3, e) {
+var X = { _backpedal: I, anyPunctuation: Ne, autolink: Fe, blockSkip: qe, br: le, code: Ae, del: I, emStrongLDelim: ve, emStrongRDelimAst: He, emStrongRDelimUnd: Ge, escape: ze, link: Ue, nolink: ke, punctuation: Ee, reflink: de, reflinkSearch: Ke, tag: Qe, text: Ie, url: I };
+var We = { ...X, link: h(/^!?\[(label)\]\((.*?)\)/).replace("label", q).getRegex(), reflink: h(/^!?\[(label)\]\s*\[([^\]]*)\]/).replace("label", q).getRegex() };
+var N = { ...X, emStrongRDelimAst: Ze, emStrongLDelim: De, url: h(/^((?:protocol):\/\/|www\.)(?:[a-zA-Z0-9\-]+\.?)+[^\s<]*|^email/).replace("protocol", se).replace("email", /[A-Za-z0-9._+-]+(@)[a-zA-Z0-9-_]+(?:\.[a-zA-Z0-9-_]*[a-zA-Z0-9])+(?![-_])/).getRegex(), _backpedal: /(?:[^?!.,:;*_'"~()&]+|\([^)]*\)|&(?![a-zA-Z0-9]+;$)|[?!.,:;*_'"~)]+(?!$))+/, del: /^(~~?)(?=[^\s~])((?:\\[\s\S]|[^\\])*?(?:\\[\s\S]|[^\s~\\]))\1(?=[^~]|$)/, text: h(/^([`~]+|[^`~])(?:(?= {2,}\n)|(?=[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@)|[\s\S]*?(?:(?=[\\<!\[`*~_]|\b_|protocol:\/\/|www\.|$)|[^ ](?= {2,}\n)|[^a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-](?=[a-zA-Z0-9.!#$%&'*+\/=?_`{\|}~-]+@)))/).replace("protocol", se).getRegex() };
+var Xe = { ...N, br: h(le).replace("{2,}", "*").getRegex(), text: h(N.text).replace("\\b_", "\\b_| {2,}\\n").replace(/\{2,\}/g, "*").getRegex() };
+var C = { normal: K, gfm: Le, pedantic: Me };
+var M = { normal: X, gfm: N, breaks: Xe, pedantic: We };
+var Je = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+var ge = (u3) => Je[u3];
+function w(u3, e) {
   if (e) {
-    if (m.escapeTest.test(l3)) return l3.replace(m.escapeReplace, ge);
-  } else if (m.escapeTestNoEncode.test(l3)) return l3.replace(m.escapeReplaceNoEncode, ge);
-  return l3;
+    if (m.escapeTest.test(u3)) return u3.replace(m.escapeReplace, ge);
+  } else if (m.escapeTestNoEncode.test(u3)) return u3.replace(m.escapeReplaceNoEncode, ge);
+  return u3;
 }
-function J(l3) {
+function J(u3) {
   try {
-    l3 = encodeURI(l3).replace(m.percentDecode, "%");
+    u3 = encodeURI(u3).replace(m.percentDecode, "%");
   } catch {
     return null;
   }
-  return l3;
+  return u3;
 }
-function V(l3, e) {
-  let t = l3.replace(m.findPipe, (i, s, a) => {
-    let o = false, p = s;
-    for (; --p >= 0 && a[p] === "\\"; ) o = !o;
-    return o ? "|" : " |";
+function V(u3, e) {
+  let t = u3.replace(m.findPipe, (i, s, o) => {
+    let a = false, l = s;
+    for (; --l >= 0 && o[l] === "\\"; ) a = !a;
+    return a ? "|" : " |";
   }), n = t.split(m.splitPipe), r = 0;
   if (n[0].trim() || n.shift(), n.length > 0 && !n.at(-1)?.trim() && n.pop(), e) if (n.length > e) n.splice(e);
   else for (; n.length < e; ) n.push("");
   for (; r < n.length; r++) n[r] = n[r].trim().replace(m.slashPipe, "|");
   return n;
 }
-function z(l3, e, t) {
-  let n = l3.length;
+function z(u3, e, t) {
+  let n = u3.length;
   if (n === 0) return "";
   let r = 0;
   for (; r < n; ) {
-    let i = l3.charAt(n - r - 1);
+    let i = u3.charAt(n - r - 1);
     if (i === e && !t) r++;
     else if (i !== e && t) r++;
     else break;
   }
-  return l3.slice(0, n - r);
+  return u3.slice(0, n - r);
 }
-function fe(l3, e) {
-  if (l3.indexOf(e[1]) === -1) return -1;
+function fe(u3, e) {
+  if (u3.indexOf(e[1]) === -1) return -1;
   let t = 0;
-  for (let n = 0; n < l3.length; n++) if (l3[n] === "\\") n++;
-  else if (l3[n] === e[0]) t++;
-  else if (l3[n] === e[1] && (t--, t < 0)) return n;
+  for (let n = 0; n < u3.length; n++) if (u3[n] === "\\") n++;
+  else if (u3[n] === e[0]) t++;
+  else if (u3[n] === e[1] && (t--, t < 0)) return n;
   return t > 0 ? -2 : -1;
 }
-function me(l3, e, t, n, r) {
-  let i = e.href, s = e.title || null, a = l3[1].replace(r.other.outputLinkReplace, "$1");
+function me(u3, e, t, n, r) {
+  let i = e.href, s = e.title || null, o = u3[1].replace(r.other.outputLinkReplace, "$1");
   n.state.inLink = true;
-  let o = { type: l3[0].charAt(0) === "!" ? "image" : "link", raw: t, href: i, title: s, text: a, tokens: n.inlineTokens(a) };
-  return n.state.inLink = false, o;
+  let a = { type: u3[0].charAt(0) === "!" ? "image" : "link", raw: t, href: i, title: s, text: o, tokens: n.inlineTokens(o) };
+  return n.state.inLink = false, a;
 }
-function Ye(l3, e, t) {
-  let n = l3.match(t.other.indentCodeCompensation);
+function Ve(u3, e, t) {
+  let n = u3.match(t.other.indentCodeCompensation);
   if (n === null) return e;
   let r = n[1];
   return e.split(`
 `).map((i) => {
     let s = i.match(t.other.beginningSpace);
     if (s === null) return i;
-    let [a] = s;
-    return a.length >= r.length ? i.slice(r.length) : i;
+    let [o] = s;
+    return o.length >= r.length ? i.slice(r.length) : i;
   }).join(`
 `);
 }
@@ -33121,7 +33114,7 @@ var y = class {
   fences(e) {
     let t = this.rules.block.fences.exec(e);
     if (t) {
-      let n = t[0], r = Ye(n, t[3] || "", this.rules);
+      let n = t[0], r = Ve(n, t[3] || "", this.rules);
       return { type: "code", raw: n, lang: t[2] ? t[2].trim().replace(this.rules.inline.anyPunctuation, "$1") : t[2], text: r };
     }
   }
@@ -33148,32 +33141,32 @@ var y = class {
 `).split(`
 `), r = "", i = "", s = [];
       for (; n.length > 0; ) {
-        let a = false, o = [], p;
-        for (p = 0; p < n.length; p++) if (this.rules.other.blockquoteStart.test(n[p])) o.push(n[p]), a = true;
-        else if (!a) o.push(n[p]);
+        let o = false, a = [], l;
+        for (l = 0; l < n.length; l++) if (this.rules.other.blockquoteStart.test(n[l])) a.push(n[l]), o = true;
+        else if (!o) a.push(n[l]);
         else break;
-        n = n.slice(p);
-        let u = o.join(`
-`), c = u.replace(this.rules.other.blockquoteSetextReplace, `
+        n = n.slice(l);
+        let c = a.join(`
+`), p = c.replace(this.rules.other.blockquoteSetextReplace, `
     $1`).replace(this.rules.other.blockquoteSetextReplace2, "");
         r = r ? `${r}
-${u}` : u, i = i ? `${i}
-${c}` : c;
+${c}` : c, i = i ? `${i}
+${p}` : p;
         let g = this.lexer.state.top;
-        if (this.lexer.state.top = true, this.lexer.blockTokens(c, s, true), this.lexer.state.top = g, n.length === 0) break;
-        let h = s.at(-1);
-        if (h?.type === "code") break;
-        if (h?.type === "blockquote") {
-          let R = h, f = R.raw + `
+        if (this.lexer.state.top = true, this.lexer.blockTokens(p, s, true), this.lexer.state.top = g, n.length === 0) break;
+        let d = s.at(-1);
+        if (d?.type === "code") break;
+        if (d?.type === "blockquote") {
+          let R = d, f = R.raw + `
 ` + n.join(`
 `), O = this.blockquote(f);
           s[s.length - 1] = O, r = r.substring(0, r.length - R.raw.length) + O.raw, i = i.substring(0, i.length - R.text.length) + O.text;
           break;
-        } else if (h?.type === "list") {
-          let R = h, f = R.raw + `
+        } else if (d?.type === "list") {
+          let R = d, f = R.raw + `
 ` + n.join(`
 `), O = this.list(f);
-          s[s.length - 1] = O, r = r.substring(0, r.length - h.raw.length) + O.raw, i = i.substring(0, i.length - R.raw.length) + O.raw, n = f.substring(s.at(-1).raw.length).split(`
+          s[s.length - 1] = O, r = r.substring(0, r.length - d.raw.length) + O.raw, i = i.substring(0, i.length - R.raw.length) + O.raw, n = f.substring(s.at(-1).raw.length).split(`
 `);
           continue;
         }
@@ -33186,45 +33179,45 @@ ${c}` : c;
     if (t) {
       let n = t[1].trim(), r = n.length > 1, i = { type: "list", raw: "", ordered: r, start: r ? +n.slice(0, -1) : "", loose: false, items: [] };
       n = r ? `\\d{1,9}\\${n.slice(-1)}` : `\\${n}`, this.options.pedantic && (n = r ? n : "[*+-]");
-      let s = this.rules.other.listItemRegex(n), a = false;
+      let s = this.rules.other.listItemRegex(n), o = false;
       for (; e; ) {
-        let p = false, u = "", c = "";
+        let l = false, c = "", p = "";
         if (!(t = s.exec(e)) || this.rules.block.hr.test(e)) break;
-        u = t[0], e = e.substring(u.length);
+        c = t[0], e = e.substring(c.length);
         let g = t[2].split(`
-`, 1)[0].replace(this.rules.other.listReplaceTabs, (H) => " ".repeat(3 * H.length)), h = e.split(`
+`, 1)[0].replace(this.rules.other.listReplaceTabs, (H) => " ".repeat(3 * H.length)), d = e.split(`
 `, 1)[0], R = !g.trim(), f = 0;
-        if (this.options.pedantic ? (f = 2, c = g.trimStart()) : R ? f = t[1].length + 1 : (f = t[2].search(this.rules.other.nonSpaceChar), f = f > 4 ? 1 : f, c = g.slice(f), f += t[1].length), R && this.rules.other.blankLine.test(h) && (u += h + `
-`, e = e.substring(h.length + 1), p = true), !p) {
+        if (this.options.pedantic ? (f = 2, p = g.trimStart()) : R ? f = t[1].length + 1 : (f = t[2].search(this.rules.other.nonSpaceChar), f = f > 4 ? 1 : f, p = g.slice(f), f += t[1].length), R && this.rules.other.blankLine.test(d) && (c += d + `
+`, e = e.substring(d.length + 1), l = true), !l) {
           let H = this.rules.other.nextBulletRegex(f), ee = this.rules.other.hrRegex(f), te = this.rules.other.fencesBeginRegex(f), ne = this.rules.other.headingBeginRegex(f), xe = this.rules.other.htmlBeginRegex(f);
           for (; e; ) {
             let Z = e.split(`
 `, 1)[0], A;
-            if (h = Z, this.options.pedantic ? (h = h.replace(this.rules.other.listReplaceNesting, "  "), A = h) : A = h.replace(this.rules.other.tabCharGlobal, "    "), te.test(h) || ne.test(h) || xe.test(h) || H.test(h) || ee.test(h)) break;
-            if (A.search(this.rules.other.nonSpaceChar) >= f || !h.trim()) c += `
+            if (d = Z, this.options.pedantic ? (d = d.replace(this.rules.other.listReplaceNesting, "  "), A = d) : A = d.replace(this.rules.other.tabCharGlobal, "    "), te.test(d) || ne.test(d) || xe.test(d) || H.test(d) || ee.test(d)) break;
+            if (A.search(this.rules.other.nonSpaceChar) >= f || !d.trim()) p += `
 ` + A.slice(f);
             else {
               if (R || g.replace(this.rules.other.tabCharGlobal, "    ").search(this.rules.other.nonSpaceChar) >= 4 || te.test(g) || ne.test(g) || ee.test(g)) break;
-              c += `
-` + h;
+              p += `
+` + d;
             }
-            !R && !h.trim() && (R = true), u += Z + `
+            !R && !d.trim() && (R = true), c += Z + `
 `, e = e.substring(Z.length + 1), g = A.slice(f);
           }
         }
-        i.loose || (a ? i.loose = true : this.rules.other.doubleBlankLine.test(u) && (a = true));
+        i.loose || (o ? i.loose = true : this.rules.other.doubleBlankLine.test(c) && (o = true));
         let O = null, Y;
-        this.options.gfm && (O = this.rules.other.listIsTask.exec(c), O && (Y = O[0] !== "[ ] ", c = c.replace(this.rules.other.listReplaceTask, ""))), i.items.push({ type: "list_item", raw: u, task: !!O, checked: Y, loose: false, text: c, tokens: [] }), i.raw += u;
+        this.options.gfm && (O = this.rules.other.listIsTask.exec(p), O && (Y = O[0] !== "[ ] ", p = p.replace(this.rules.other.listReplaceTask, ""))), i.items.push({ type: "list_item", raw: c, task: !!O, checked: Y, loose: false, text: p, tokens: [] }), i.raw += c;
       }
-      let o = i.items.at(-1);
-      if (o) o.raw = o.raw.trimEnd(), o.text = o.text.trimEnd();
+      let a = i.items.at(-1);
+      if (a) a.raw = a.raw.trimEnd(), a.text = a.text.trimEnd();
       else return;
       i.raw = i.raw.trimEnd();
-      for (let p = 0; p < i.items.length; p++) if (this.lexer.state.top = false, i.items[p].tokens = this.lexer.blockTokens(i.items[p].text, []), !i.loose) {
-        let u = i.items[p].tokens.filter((g) => g.type === "space"), c = u.length > 0 && u.some((g) => this.rules.other.anyLine.test(g.raw));
-        i.loose = c;
+      for (let l = 0; l < i.items.length; l++) if (this.lexer.state.top = false, i.items[l].tokens = this.lexer.blockTokens(i.items[l].text, []), !i.loose) {
+        let c = i.items[l].tokens.filter((g) => g.type === "space"), p = c.length > 0 && c.some((g) => this.rules.other.anyLine.test(g.raw));
+        i.loose = p;
       }
-      if (i.loose) for (let p = 0; p < i.items.length; p++) i.items[p].loose = true;
+      if (i.loose) for (let l = 0; l < i.items.length; l++) i.items[l].loose = true;
       return i;
     }
   }
@@ -33245,9 +33238,9 @@ ${c}` : c;
     let n = V(t[1]), r = t[2].replace(this.rules.other.tableAlignChars, "").split("|"), i = t[3]?.trim() ? t[3].replace(this.rules.other.tableRowBlankLine, "").split(`
 `) : [], s = { type: "table", raw: t[0], header: [], align: [], rows: [] };
     if (n.length === r.length) {
-      for (let a of r) this.rules.other.tableAlignRight.test(a) ? s.align.push("right") : this.rules.other.tableAlignCenter.test(a) ? s.align.push("center") : this.rules.other.tableAlignLeft.test(a) ? s.align.push("left") : s.align.push(null);
-      for (let a = 0; a < n.length; a++) s.header.push({ text: n[a], tokens: this.lexer.inline(n[a]), header: true, align: s.align[a] });
-      for (let a of i) s.rows.push(V(a, s.header.length).map((o, p) => ({ text: o, tokens: this.lexer.inline(o), header: false, align: s.align[p] })));
+      for (let o of r) this.rules.other.tableAlignRight.test(o) ? s.align.push("right") : this.rules.other.tableAlignCenter.test(o) ? s.align.push("center") : this.rules.other.tableAlignLeft.test(o) ? s.align.push("left") : s.align.push(null);
+      for (let o = 0; o < n.length; o++) s.header.push({ text: n[o], tokens: this.lexer.inline(n[o]), header: true, align: s.align[o] });
+      for (let o of i) s.rows.push(V(o, s.header.length).map((a, l) => ({ text: a, tokens: this.lexer.inline(a), header: false, align: s.align[l] })));
       return s;
     }
   }
@@ -33287,8 +33280,8 @@ ${c}` : c;
         let s = fe(t[2], "()");
         if (s === -2) return;
         if (s > -1) {
-          let o = (t[0].indexOf("!") === 0 ? 5 : 4) + t[1].length + s;
-          t[2] = t[2].substring(0, s), t[0] = t[0].substring(0, o).trim(), t[3] = "";
+          let a = (t[0].indexOf("!") === 0 ? 5 : 4) + t[1].length + s;
+          t[2] = t[2].substring(0, s), t[0] = t[0].substring(0, a).trim(), t[3] = "";
         }
       }
       let r = t[2], i = "";
@@ -33314,25 +33307,25 @@ ${c}` : c;
     let r = this.rules.inline.emStrongLDelim.exec(e);
     if (!r || r[3] && n.match(this.rules.other.unicodeAlphaNumeric)) return;
     if (!(r[1] || r[2] || "") || !n || this.rules.inline.punctuation.exec(n)) {
-      let s = [...r[0]].length - 1, a, o, p = s, u = 0, c = r[0][0] === "*" ? this.rules.inline.emStrongRDelimAst : this.rules.inline.emStrongRDelimUnd;
-      for (c.lastIndex = 0, t = t.slice(-1 * e.length + s); (r = c.exec(t)) != null; ) {
-        if (a = r[1] || r[2] || r[3] || r[4] || r[5] || r[6], !a) continue;
-        if (o = [...a].length, r[3] || r[4]) {
-          p += o;
+      let s = [...r[0]].length - 1, o, a, l = s, c = 0, p = r[0][0] === "*" ? this.rules.inline.emStrongRDelimAst : this.rules.inline.emStrongRDelimUnd;
+      for (p.lastIndex = 0, t = t.slice(-1 * e.length + s); (r = p.exec(t)) != null; ) {
+        if (o = r[1] || r[2] || r[3] || r[4] || r[5] || r[6], !o) continue;
+        if (a = [...o].length, r[3] || r[4]) {
+          l += a;
           continue;
-        } else if ((r[5] || r[6]) && s % 3 && !((s + o) % 3)) {
-          u += o;
+        } else if ((r[5] || r[6]) && s % 3 && !((s + a) % 3)) {
+          c += a;
           continue;
         }
-        if (p -= o, p > 0) continue;
-        o = Math.min(o, o + p + u);
-        let g = [...r[0]][0].length, h = e.slice(0, s + r.index + g + o);
-        if (Math.min(s, o) % 2) {
-          let f = h.slice(1, -1);
-          return { type: "em", raw: h, text: f, tokens: this.lexer.inlineTokens(f) };
+        if (l -= a, l > 0) continue;
+        a = Math.min(a, a + l + c);
+        let g = [...r[0]][0].length, d = e.slice(0, s + r.index + g + a);
+        if (Math.min(s, a) % 2) {
+          let f = d.slice(1, -1);
+          return { type: "em", raw: d, text: f, tokens: this.lexer.inlineTokens(f) };
         }
-        let R = h.slice(2, -2);
-        return { type: "strong", raw: h, text: R, tokens: this.lexer.inlineTokens(R) };
+        let R = d.slice(2, -2);
+        return { type: "strong", raw: d, text: R, tokens: this.lexer.inlineTokens(R) };
       }
     }
   }
@@ -33381,7 +33374,7 @@ ${c}` : c;
     }
   }
 };
-var x = class l {
+var x = class u {
   tokens;
   options;
   state;
@@ -33396,10 +33389,10 @@ var x = class l {
     return { block: C, inline: M };
   }
   static lex(e, t) {
-    return new l(t).lex(e);
+    return new u(t).lex(e);
   }
   static lexInline(e, t) {
-    return new l(t).inlineTokens(e);
+    return new u(t).inlineTokens(e);
   }
   lex(e) {
     e = e.replace(m.carriageReturn, `
@@ -33473,9 +33466,9 @@ var x = class l {
       }
       let i = e;
       if (this.options.extensions?.startBlock) {
-        let s = 1 / 0, a = e.slice(1), o;
-        this.options.extensions.startBlock.forEach((p) => {
-          o = p.call({ lexer: this }, a), typeof o == "number" && o >= 0 && (s = Math.min(s, o));
+        let s = 1 / 0, o = e.slice(1), a;
+        this.options.extensions.startBlock.forEach((l) => {
+          a = l.call({ lexer: this }, o), typeof a == "number" && a >= 0 && (s = Math.min(s, a));
         }), s < 1 / 0 && s >= 0 && (i = e.substring(0, s + 1));
       }
       if (this.state.top && (r = this.tokenizer.paragraph(i))) {
@@ -33515,14 +33508,13 @@ var x = class l {
       if (o.length > 0) for (; (r = this.tokenizer.rules.inline.reflinkSearch.exec(n)) != null; ) o.includes(r[0].slice(r[0].lastIndexOf("[") + 1, -1)) && (n = n.slice(0, r.index) + "[" + "a".repeat(r[0].length - 2) + "]" + n.slice(this.tokenizer.rules.inline.reflinkSearch.lastIndex));
     }
     for (; (r = this.tokenizer.rules.inline.anyPunctuation.exec(n)) != null; ) n = n.slice(0, r.index) + "++" + n.slice(this.tokenizer.rules.inline.anyPunctuation.lastIndex);
-    let i;
-    for (; (r = this.tokenizer.rules.inline.blockSkip.exec(n)) != null; ) i = r[2] ? r[2].length : 0, n = n.slice(0, r.index + i) + "[" + "a".repeat(r[0].length - i - 2) + "]" + n.slice(this.tokenizer.rules.inline.blockSkip.lastIndex);
+    for (; (r = this.tokenizer.rules.inline.blockSkip.exec(n)) != null; ) n = n.slice(0, r.index) + "[" + "a".repeat(r[0].length - 2) + "]" + n.slice(this.tokenizer.rules.inline.blockSkip.lastIndex);
     n = this.options.hooks?.emStrongMask?.call({ lexer: this }, n) ?? n;
-    let s = false, a = "";
+    let i = false, s = "";
     for (; e; ) {
-      s || (a = ""), s = false;
+      i || (s = ""), i = false;
       let o;
-      if (this.options.extensions?.inline?.some((u) => (o = u.call({ lexer: this }, e, t)) ? (e = e.substring(o.raw.length), t.push(o), true) : false)) continue;
+      if (this.options.extensions?.inline?.some((l) => (o = l.call({ lexer: this }, e, t)) ? (e = e.substring(o.raw.length), t.push(o), true) : false)) continue;
       if (o = this.tokenizer.escape(e)) {
         e = e.substring(o.raw.length), t.push(o);
         continue;
@@ -33537,11 +33529,11 @@ var x = class l {
       }
       if (o = this.tokenizer.reflink(e, this.tokens.links)) {
         e = e.substring(o.raw.length);
-        let u = t.at(-1);
-        o.type === "text" && u?.type === "text" ? (u.raw += o.raw, u.text += o.text) : t.push(o);
+        let l = t.at(-1);
+        o.type === "text" && l?.type === "text" ? (l.raw += o.raw, l.text += o.text) : t.push(o);
         continue;
       }
-      if (o = this.tokenizer.emStrong(e, n, a)) {
+      if (o = this.tokenizer.emStrong(e, n, s)) {
         e = e.substring(o.raw.length), t.push(o);
         continue;
       }
@@ -33565,25 +33557,25 @@ var x = class l {
         e = e.substring(o.raw.length), t.push(o);
         continue;
       }
-      let p = e;
+      let a = e;
       if (this.options.extensions?.startInline) {
-        let u = 1 / 0, c = e.slice(1), g;
-        this.options.extensions.startInline.forEach((h) => {
-          g = h.call({ lexer: this }, c), typeof g == "number" && g >= 0 && (u = Math.min(u, g));
-        }), u < 1 / 0 && u >= 0 && (p = e.substring(0, u + 1));
+        let l = 1 / 0, c = e.slice(1), p;
+        this.options.extensions.startInline.forEach((g) => {
+          p = g.call({ lexer: this }, c), typeof p == "number" && p >= 0 && (l = Math.min(l, p));
+        }), l < 1 / 0 && l >= 0 && (a = e.substring(0, l + 1));
       }
-      if (o = this.tokenizer.inlineText(p)) {
-        e = e.substring(o.raw.length), o.raw.slice(-1) !== "_" && (a = o.raw.slice(-1)), s = true;
-        let u = t.at(-1);
-        u?.type === "text" ? (u.raw += o.raw, u.text += o.text) : t.push(o);
+      if (o = this.tokenizer.inlineText(a)) {
+        e = e.substring(o.raw.length), o.raw.slice(-1) !== "_" && (s = o.raw.slice(-1)), i = true;
+        let l = t.at(-1);
+        l?.type === "text" ? (l.raw += o.raw, l.text += o.text) : t.push(o);
         continue;
       }
       if (e) {
-        let u = "Infinite loop on byte: " + e.charCodeAt(0);
+        let l = "Infinite loop on byte: " + e.charCodeAt(0);
         if (this.options.silent) {
-          console.error(u);
+          console.error(l);
           break;
-        } else throw new Error(u);
+        } else throw new Error(l);
       }
     }
     return t;
@@ -33626,9 +33618,9 @@ ${this.parser.parse(e)}</blockquote>
   }
   list(e) {
     let t = e.ordered, n = e.start, r = "";
-    for (let a = 0; a < e.items.length; a++) {
-      let o = e.items[a];
-      r += this.listitem(o);
+    for (let o = 0; o < e.items.length; o++) {
+      let a = e.items[o];
+      r += this.listitem(a);
     }
     let i = t ? "ol" : "ul", s = t && n !== 1 ? ' start="' + n + '"' : "";
     return "<" + i + s + `>
@@ -33659,7 +33651,7 @@ ${this.parser.parse(e)}</blockquote>
     for (let i = 0; i < e.rows.length; i++) {
       let s = e.rows[i];
       n = "";
-      for (let a = 0; a < s.length; a++) n += this.tablecell(s[a]);
+      for (let o = 0; o < s.length; o++) n += this.tablecell(s[o]);
       r += this.tablerow({ text: n });
     }
     return r && (r = `<tbody>${r}</tbody>`), `<table>
@@ -33741,7 +33733,7 @@ var $ = class {
     return "";
   }
 };
-var b = class l2 {
+var b = class u2 {
   options;
   renderer;
   textRenderer;
@@ -33749,19 +33741,19 @@ var b = class l2 {
     this.options = e || T, this.options.renderer = this.options.renderer || new P(), this.renderer = this.options.renderer, this.renderer.options = this.options, this.renderer.parser = this, this.textRenderer = new $();
   }
   static parse(e, t) {
-    return new l2(t).parse(e);
+    return new u2(t).parse(e);
   }
   static parseInline(e, t) {
-    return new l2(t).parseInline(e);
+    return new u2(t).parseInline(e);
   }
   parse(e, t = true) {
     let n = "";
     for (let r = 0; r < e.length; r++) {
       let i = e[r];
       if (this.options.extensions?.renderers?.[i.type]) {
-        let a = i, o = this.options.extensions.renderers[a.type].call({ parser: this }, a);
-        if (o !== false || !["space", "hr", "heading", "code", "table", "blockquote", "list", "html", "def", "paragraph", "text"].includes(a.type)) {
-          n += o || "";
+        let o = i, a = this.options.extensions.renderers[o.type].call({ parser: this }, o);
+        if (a !== false || !["space", "hr", "heading", "code", "table", "blockquote", "list", "html", "def", "paragraph", "text"].includes(o.type)) {
+          n += a || "";
           continue;
         }
       }
@@ -33808,16 +33800,16 @@ var b = class l2 {
           continue;
         }
         case "text": {
-          let a = s, o = this.renderer.text(a);
-          for (; r + 1 < e.length && e[r + 1].type === "text"; ) a = e[++r], o += `
-` + this.renderer.text(a);
-          t ? n += this.renderer.paragraph({ type: "paragraph", raw: o, text: o, tokens: [{ type: "text", raw: o, text: o, escaped: true }] }) : n += o;
+          let o = s, a = this.renderer.text(o);
+          for (; r + 1 < e.length && e[r + 1].type === "text"; ) o = e[++r], a += `
+` + this.renderer.text(o);
+          t ? n += this.renderer.paragraph({ type: "paragraph", raw: a, text: a, tokens: [{ type: "text", raw: a, text: a, escaped: true }] }) : n += a;
           continue;
         }
         default: {
-          let a = 'Token with "' + s.type + '" type was not found.';
-          if (this.options.silent) return console.error(a), "";
-          throw new Error(a);
+          let o = 'Token with "' + s.type + '" type was not found.';
+          if (this.options.silent) return console.error(o), "";
+          throw new Error(o);
         }
       }
     }
@@ -33828,9 +33820,9 @@ var b = class l2 {
     for (let r = 0; r < e.length; r++) {
       let i = e[r];
       if (this.options.extensions?.renderers?.[i.type]) {
-        let a = this.options.extensions.renderers[i.type].call({ parser: this }, i);
-        if (a !== false || !["escape", "html", "link", "image", "strong", "em", "codespan", "br", "del", "text"].includes(i.type)) {
-          n += a || "";
+        let o = this.options.extensions.renderers[i.type].call({ parser: this }, i);
+        if (o !== false || !["escape", "html", "link", "image", "strong", "em", "codespan", "br", "del", "text"].includes(i.type)) {
+          n += o || "";
           continue;
         }
       }
@@ -33877,9 +33869,9 @@ var b = class l2 {
           break;
         }
         default: {
-          let a = 'Token with "' + s.type + '" type was not found.';
-          if (this.options.silent) return console.error(a), "";
-          throw new Error(a);
+          let o = 'Token with "' + s.type + '" type was not found.';
+          if (this.options.silent) return console.error(o), "";
+          throw new Error(o);
         }
       }
     }
@@ -33933,7 +33925,7 @@ var B = class {
       case "table": {
         let i = r;
         for (let s of i.header) n = n.concat(this.walkTokens(s.tokens, t));
-        for (let s of i.rows) for (let a of s) n = n.concat(this.walkTokens(a.tokens, t));
+        for (let s of i.rows) for (let o of s) n = n.concat(this.walkTokens(o.tokens, t));
         break;
       }
       case "list": {
@@ -33944,8 +33936,8 @@ var B = class {
       default: {
         let i = r;
         this.defaults.extensions?.childTokens?.[i.type] ? this.defaults.extensions.childTokens[i.type].forEach((s) => {
-          let a = i[s].flat(1 / 0);
-          n = n.concat(this.walkTokens(a, t));
+          let o = i[s].flat(1 / 0);
+          n = n.concat(this.walkTokens(o, t));
         }) : i.tokens && (n = n.concat(this.walkTokens(i.tokens, t)));
       }
     }
@@ -33959,9 +33951,9 @@ var B = class {
         if (!i.name) throw new Error("extension name required");
         if ("renderer" in i) {
           let s = t.renderers[i.name];
-          s ? t.renderers[i.name] = function(...a) {
-            let o = i.renderer.apply(this, a);
-            return o === false && (o = s.apply(this, a)), o;
+          s ? t.renderers[i.name] = function(...o) {
+            let a = i.renderer.apply(this, o);
+            return a === false && (a = s.apply(this, o)), a;
           } : t.renderers[i.name] = i.renderer;
         }
         if ("tokenizer" in i) {
@@ -33975,10 +33967,10 @@ var B = class {
         for (let s in n.renderer) {
           if (!(s in i)) throw new Error(`renderer '${s}' does not exist`);
           if (["options", "parser"].includes(s)) continue;
-          let a = s, o = n.renderer[a], p = i[a];
-          i[a] = (...u) => {
-            let c = o.apply(i, u);
-            return c === false && (c = p.apply(i, u)), c || "";
+          let o = s, a = n.renderer[o], l = i[o];
+          i[o] = (...c) => {
+            let p = a.apply(i, c);
+            return p === false && (p = l.apply(i, c)), p || "";
           };
         }
         r.renderer = i;
@@ -33988,10 +33980,10 @@ var B = class {
         for (let s in n.tokenizer) {
           if (!(s in i)) throw new Error(`tokenizer '${s}' does not exist`);
           if (["options", "rules", "lexer"].includes(s)) continue;
-          let a = s, o = n.tokenizer[a], p = i[a];
-          i[a] = (...u) => {
-            let c = o.apply(i, u);
-            return c === false && (c = p.apply(i, u)), c;
+          let o = s, a = n.tokenizer[o], l = i[o];
+          i[o] = (...c) => {
+            let p = a.apply(i, c);
+            return p === false && (p = l.apply(i, c)), p;
           };
         }
         r.tokenizer = i;
@@ -34001,30 +33993,30 @@ var B = class {
         for (let s in n.hooks) {
           if (!(s in i)) throw new Error(`hook '${s}' does not exist`);
           if (["options", "block"].includes(s)) continue;
-          let a = s, o = n.hooks[a], p = i[a];
-          S.passThroughHooks.has(s) ? i[a] = (u) => {
+          let o = s, a = n.hooks[o], l = i[o];
+          S.passThroughHooks.has(s) ? i[o] = (c) => {
             if (this.defaults.async && S.passThroughHooksRespectAsync.has(s)) return (async () => {
-              let g = await o.call(i, u);
-              return p.call(i, g);
+              let g = await a.call(i, c);
+              return l.call(i, g);
             })();
-            let c = o.call(i, u);
-            return p.call(i, c);
-          } : i[a] = (...u) => {
+            let p = a.call(i, c);
+            return l.call(i, p);
+          } : i[o] = (...c) => {
             if (this.defaults.async) return (async () => {
-              let g = await o.apply(i, u);
-              return g === false && (g = await p.apply(i, u)), g;
+              let g = await a.apply(i, c);
+              return g === false && (g = await l.apply(i, c)), g;
             })();
-            let c = o.apply(i, u);
-            return c === false && (c = p.apply(i, u)), c;
+            let p = a.apply(i, c);
+            return p === false && (p = l.apply(i, c)), p;
           };
         }
         r.hooks = i;
       }
       if (n.walkTokens) {
         let i = this.defaults.walkTokens, s = n.walkTokens;
-        r.walkTokens = function(a) {
-          let o = [];
-          return o.push(s.call(this, a)), i && (o = o.concat(i.call(this, a))), o;
+        r.walkTokens = function(o) {
+          let a = [];
+          return a.push(s.call(this, o)), i && (a = a.concat(i.call(this, o))), a;
         };
       }
       this.defaults = { ...this.defaults, ...r };
@@ -34041,24 +34033,24 @@ var B = class {
   }
   parseMarkdown(e) {
     return (n, r) => {
-      let i = { ...r }, s = { ...this.defaults, ...i }, a = this.onError(!!s.silent, !!s.async);
-      if (this.defaults.async === true && i.async === false) return a(new Error("marked(): The async option was set to true by an extension. Remove async: false from the parse options object to return a Promise."));
-      if (typeof n > "u" || n === null) return a(new Error("marked(): input parameter is undefined or null"));
-      if (typeof n != "string") return a(new Error("marked(): input parameter is of type " + Object.prototype.toString.call(n) + ", string expected"));
+      let i = { ...r }, s = { ...this.defaults, ...i }, o = this.onError(!!s.silent, !!s.async);
+      if (this.defaults.async === true && i.async === false) return o(new Error("marked(): The async option was set to true by an extension. Remove async: false from the parse options object to return a Promise."));
+      if (typeof n > "u" || n === null) return o(new Error("marked(): input parameter is undefined or null"));
+      if (typeof n != "string") return o(new Error("marked(): input parameter is of type " + Object.prototype.toString.call(n) + ", string expected"));
       if (s.hooks && (s.hooks.options = s, s.hooks.block = e), s.async) return (async () => {
-        let o = s.hooks ? await s.hooks.preprocess(n) : n, u = await (s.hooks ? await s.hooks.provideLexer() : e ? x.lex : x.lexInline)(o, s), c = s.hooks ? await s.hooks.processAllTokens(u) : u;
-        s.walkTokens && await Promise.all(this.walkTokens(c, s.walkTokens));
-        let h = await (s.hooks ? await s.hooks.provideParser() : e ? b.parse : b.parseInline)(c, s);
-        return s.hooks ? await s.hooks.postprocess(h) : h;
-      })().catch(a);
+        let a = s.hooks ? await s.hooks.preprocess(n) : n, c = await (s.hooks ? await s.hooks.provideLexer() : e ? x.lex : x.lexInline)(a, s), p = s.hooks ? await s.hooks.processAllTokens(c) : c;
+        s.walkTokens && await Promise.all(this.walkTokens(p, s.walkTokens));
+        let d = await (s.hooks ? await s.hooks.provideParser() : e ? b.parse : b.parseInline)(p, s);
+        return s.hooks ? await s.hooks.postprocess(d) : d;
+      })().catch(o);
       try {
         s.hooks && (n = s.hooks.preprocess(n));
-        let p = (s.hooks ? s.hooks.provideLexer() : e ? x.lex : x.lexInline)(n, s);
-        s.hooks && (p = s.hooks.processAllTokens(p)), s.walkTokens && this.walkTokens(p, s.walkTokens);
-        let c = (s.hooks ? s.hooks.provideParser() : e ? b.parse : b.parseInline)(p, s);
-        return s.hooks && (c = s.hooks.postprocess(c)), c;
-      } catch (o) {
-        return a(o);
+        let l = (s.hooks ? s.hooks.provideLexer() : e ? x.lex : x.lexInline)(n, s);
+        s.hooks && (l = s.hooks.processAllTokens(l)), s.walkTokens && this.walkTokens(l, s.walkTokens);
+        let p = (s.hooks ? s.hooks.provideParser() : e ? b.parse : b.parseInline)(l, s);
+        return s.hooks && (p = s.hooks.postprocess(p)), p;
+      } catch (a) {
+        return o(a);
       }
     };
   }
@@ -34075,19 +34067,19 @@ Please report this to https://github.com/markedjs/marked.`, e) {
   }
 };
 var _ = new B();
-function k(l3, e) {
-  return _.parse(l3, e);
+function k(u3, e) {
+  return _.parse(u3, e);
 }
-k.options = k.setOptions = function(l3) {
-  return _.setOptions(l3), k.defaults = _.defaults, G(k.defaults), k;
+k.options = k.setOptions = function(u3) {
+  return _.setOptions(u3), k.defaults = _.defaults, G(k.defaults), k;
 };
 k.getDefaults = L;
 k.defaults = T;
-k.use = function(...l3) {
-  return _.use(...l3), k.defaults = _.defaults, G(k.defaults), k;
+k.use = function(...u3) {
+  return _.use(...u3), k.defaults = _.defaults, G(k.defaults), k;
 };
-k.walkTokens = function(l3, e) {
-  return _.walkTokens(l3, e);
+k.walkTokens = function(u3, e) {
+  return _.walkTokens(u3, e);
 };
 k.parseInline = _.parseInline;
 k.Parser = b;
@@ -34099,13 +34091,13 @@ k.lexer = x.lex;
 k.Tokenizer = y;
 k.Hooks = S;
 k.parse = k;
-var Zt = k.options;
-var Gt = k.setOptions;
-var Nt = k.use;
-var Ft = k.walkTokens;
-var jt = k.parseInline;
-var Ut = b.parse;
-var Kt = x.lex;
+var Ht = k.options;
+var Zt = k.setOptions;
+var Gt = k.use;
+var Nt = k.walkTokens;
+var Ft = k.parseInline;
+var Qt = b.parse;
+var Ut = x.lex;
 
 // src/components/SidePanel.ts
 k.setOptions({
@@ -35290,12 +35282,12 @@ function forEach(obj, fn, { allOwnKeys = false } = {}) {
     return;
   }
   let i;
-  let l3;
+  let l;
   if (typeof obj !== "object") {
     obj = [obj];
   }
   if (isArray(obj)) {
-    for (i = 0, l3 = obj.length; i < l3; i++) {
+    for (i = 0, l = obj.length; i < l; i++) {
       fn.call(null, obj[i], i, obj);
     }
   } else {
@@ -35347,7 +35339,7 @@ function merge() {
       result[targetKey] = val2;
     }
   };
-  for (let i = 0, l3 = arguments.length; i < l3; i++) {
+  for (let i = 0, l = arguments.length; i < l; i++) {
     arguments[i] && forEach(arguments[i], assignValue);
   }
   return result;
@@ -35923,9 +35915,9 @@ var InterceptorManager = class {
    * @returns {void}
    */
   forEach(fn) {
-    utils_default.forEach(this.handlers, function forEachHandler(h) {
-      if (h !== null) {
-        fn(h);
+    utils_default.forEach(this.handlers, function forEachHandler(h2) {
+      if (h2 !== null) {
+        fn(h2);
       }
     });
   }
@@ -42308,7 +42300,7 @@ function getProcedure(token) {
     } else if (token.name === "has" || token.name === "contains") {
       proc = 0;
     } else if (Array.isArray(token.data)) {
-      proc = Math.min(...token.data.map((d2) => Math.min(...d2.map(getProcedure))));
+      proc = Math.min(...token.data.map((d) => Math.min(...d.map(getProcedure))));
       if (proc < 0) {
         proc = 0;
       }
@@ -56148,7 +56140,7 @@ var ContentExtractorService = class {
       const title = data2.info?.Title || "PDF Document";
       const author = data2.info?.Author;
       const content = this.cleanText(data2.text);
-      const lines = content.split("\n").filter((l3) => l3.trim());
+      const lines = content.split("\n").filter((l) => l.trim());
       const description = lines.slice(0, 3).join(" ").substring(0, 200);
       return {
         title,
@@ -56171,7 +56163,7 @@ var ContentExtractorService = class {
    */
   extractFromText(text3, url) {
     const content = this.cleanText(text3);
-    const lines = content.split("\n").filter((l3) => l3.trim());
+    const lines = content.split("\n").filter((l) => l.trim());
     const title = lines[0]?.substring(0, 100) || "Text Document";
     const description = lines.slice(0, 3).join(" ").substring(0, 200);
     return {
@@ -56291,7 +56283,7 @@ var ContentExtractorService = class {
     let currentHeadings = [rootTitle];
     let headingStack = [];
     const rebuildHeadingContext = () => {
-      return headingStack.map((h) => h.text).join("\n\n") + "\n\n";
+      return headingStack.map((h2) => h2.text).join("\n\n") + "\n\n";
     };
     for (const node of nodes) {
       if (node.type === "heading") {
@@ -56300,7 +56292,7 @@ var ContentExtractorService = class {
           headingStack.pop();
         }
         headingStack.push({ level, text: node.text });
-        currentHeadings = [rootTitle, ...headingStack.map((h) => h.text)];
+        currentHeadings = [rootTitle, ...headingStack.map((h2) => h2.text)];
         if (currentChunk.length > this.MAX_CHUNK_SIZE) {
           chunks.push({
             content: currentChunk.trim(),

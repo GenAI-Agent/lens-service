@@ -919,11 +919,9 @@ var init_SearchIndexService = __esm({
         LIMIT $${params.length + queries.length * 2 + 1}
         OFFSET $${params.length + queries.length * 2 + 2}
       `;
-          queries.forEach((query) => {
+          queries.forEach((query, idx) => {
             params.push(this.prepareQuery(query));
-          });
-          queryEmbeddings.forEach((embedding) => {
-            params.push(JSON.stringify(embedding));
+            params.push(JSON.stringify(queryEmbeddings[idx]));
           });
           params.push(limit, offset);
           console.log("[SearchIndex] Executing multi-query product search:", {
@@ -9145,7 +9143,7 @@ var getDefaultProjectName = () => {
 };
 
 // node_modules/langsmith/dist/index.js
-var __version__ = "0.3.79";
+var __version__ = "0.3.78";
 
 // node_modules/langsmith/dist/utils/env.js
 var globalEnv;
@@ -57010,10 +57008,10 @@ Examples:
       let paramIndex = 1;
       for (const [key, value] of Object.entries(safeConditions)) {
         if (typeof value === "string" && value.includes("%")) {
-          whereClauses.push(`${key} LIKE $${paramIndex}`);
+          whereClauses.push(`"${key}" LIKE $${paramIndex}`);
           values.push(value);
         } else {
-          whereClauses.push(`${key} = $${paramIndex}`);
+          whereClauses.push(`"${key}" = $${paramIndex}`);
           values.push(value);
         }
         paramIndex++;
@@ -57021,7 +57019,7 @@ Examples:
       const whereClause = whereClauses.length > 0 ? "WHERE " + whereClauses.join(" AND ") : "";
       const orderClause = orderBy ? `ORDER BY ${orderBy}` : "";
       const query = `
-        SELECT * FROM ${tableName}
+        SELECT * FROM "${tableName}"
         ${whereClause}
         ${orderClause}
         LIMIT $${paramIndex}
@@ -57064,8 +57062,9 @@ Example: Insert a new product record with title, price, and category fields.`,
       const columns = Object.keys(data);
       const values = Object.values(data);
       const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
+      const quotedColumns = columns.map((col) => `"${col}"`).join(", ");
       const query = `
-        INSERT INTO ${tableName} (${columns.join(", ")})
+        INSERT INTO "${tableName}" (${quotedColumns})
         VALUES (${placeholders})
         RETURNING *
       `;
@@ -57110,18 +57109,18 @@ Example: Update the status of all pending orders to confirmed.`,
       const values = [];
       let paramIndex = 1;
       for (const [key, value] of Object.entries(data)) {
-        setClauses.push(`${key} = $${paramIndex}`);
+        setClauses.push(`"${key}" = $${paramIndex}`);
         values.push(value);
         paramIndex++;
       }
       const whereClauses = [];
       for (const [key, value] of Object.entries(safeConditions)) {
-        whereClauses.push(`${key} = $${paramIndex}`);
+        whereClauses.push(`"${key}" = $${paramIndex}`);
         values.push(value);
         paramIndex++;
       }
       const query = `
-        UPDATE ${tableName}
+        UPDATE "${tableName}"
         SET ${setClauses.join(", ")}
         WHERE ${whereClauses.join(" AND ")}
         RETURNING *
@@ -57173,12 +57172,12 @@ Example: Delete a cancelled order by its ID.`,
       const values = [];
       let paramIndex = 1;
       for (const [key, value] of Object.entries(conditions)) {
-        whereClauses.push(`${key} = $${paramIndex}`);
+        whereClauses.push(`"${key}" = $${paramIndex}`);
         values.push(value);
         paramIndex++;
       }
       const query = `
-        DELETE FROM ${tableName}
+        DELETE FROM "${tableName}"
         WHERE ${whereClauses.join(" AND ")}
         RETURNING *
       `;
@@ -57437,6 +57436,7 @@ This is NOT optional for book recommendations - always generate an AI page along
 - magazine-style: Magazine layout with large featured images
 - social-feed-style: Social media feed style
 - comic-pop-style: Vibrant comic book style
+- love-letter-style: Romantic/sweet
 
 Workflow: Fetch book data (search_popular_books or scrape_web) \u2192 Generate AI page \u2192 Include page URL in response.`,
   schema: external_exports2.object({
@@ -57447,9 +57447,10 @@ Workflow: Fetch book data (search_popular_books or scrape_web) \u2192 Generate A
       "neon-gradient-style",
       "magazine-style",
       "social-feed-style",
-      "comic-pop-style"
+      "comic-pop-style",
+      "love-letter-style"
     ]).describe(
-      "Template to use. Choose based on mood: neon-gradient-style for modern/tech, magazine-style for elegant, social-feed-style for casual, comic-pop-style for fun/energetic"
+      "Template to use. Choose based on mood: neon-gradient-style for modern/tech, magazine-style for elegant, social-feed-style for casual, comic-pop-style for fun/energetic, love-letter-style for romantic/sweet"
     ),
     books: external_exports2.array(
       external_exports2.object({
@@ -57970,7 +57971,9 @@ var AgentService = class {
     this.memory = new MemorySaver();
     const rotationService = getApiKeyRotationService();
     const availableKeys = rotationService.getTotalCount();
-    console.log(`[AgentService] Initializing with ${availableKeys} API key(s) for rotation`);
+    console.log(
+      `[AgentService] Initializing with ${availableKeys} API key(s) for rotation`
+    );
     this.model = new RotatingChatOpenAI({
       temperature: 0.3,
       // 降低溫度以減少token使用
@@ -57992,7 +57995,11 @@ var AgentService = class {
     if (agentConfig.enableDatabaseTools && this.config.database) {
       initDatabaseTools(this.config);
       this.enabledTools.push(...databaseTools);
-      console.log("[AgentService] \u5DF2\u555F\u7528\u8CC7\u6599\u5EAB\u5DE5\u5177\uFF0C\u5DF2\u6DFB\u52A0", databaseTools.length, "\u500B\u5DE5\u5177");
+      console.log(
+        "[AgentService] \u5DF2\u555F\u7528\u8CC7\u6599\u5EAB\u5DE5\u5177\uFF0C\u5DF2\u6DFB\u52A0",
+        databaseTools.length,
+        "\u500B\u5DE5\u5177"
+      );
     } else {
       console.log("[AgentService] \u26A0\uFE0F Database tools NOT enabled:", {
         enableDatabaseTools: agentConfig.enableDatabaseTools,
@@ -58010,11 +58017,19 @@ var AgentService = class {
     if (agentConfig.enableManualIndexSearch !== false) {
       initSearchTools(this.config);
       this.enabledTools.push(...searchTools);
-      console.log("[AgentService] \u5DF2\u555F\u7528\u5167\u90E8\u641C\u5C0B\u5DE5\u5177\uFF0C\u5DF2\u6DFB\u52A0", searchTools.length, "\u500B\u5DE5\u5177");
+      console.log(
+        "[AgentService] \u5DF2\u555F\u7528\u5167\u90E8\u641C\u5C0B\u5DE5\u5177\uFF0C\u5DF2\u6DFB\u52A0",
+        searchTools.length,
+        "\u500B\u5DE5\u5177"
+      );
     }
     if (agentConfig.enableWebScraper === true) {
       this.enabledTools.push(...webScraperTools);
-      console.log("[AgentService] \u5DF2\u555F\u7528\u7DB2\u9801\u722C\u53D6\u5DE5\u5177\uFF08\u5305\u542B\u901A\u7528\u722C\u53D6 + \u71B1\u9580\u66F8\u7C4D\uFF09\uFF0C\u5DF2\u6DFB\u52A0", webScraperTools.length, "\u500B\u5DE5\u5177");
+      console.log(
+        "[AgentService] \u5DF2\u555F\u7528\u7DB2\u9801\u722C\u53D6\u5DE5\u5177\uFF08\u5305\u542B\u901A\u7528\u722C\u53D6 + \u71B1\u9580\u66F8\u7C4D\uFF09\uFF0C\u5DF2\u6DFB\u52A0",
+        webScraperTools.length,
+        "\u500B\u5DE5\u5177"
+      );
     }
     if (this.enabledTools.length === 0) {
       console.warn("[AgentService] \u6C92\u6709\u555F\u7528\u4EFB\u4F55\u5DE5\u5177\uFF0CAgent \u5C07\u50C5\u80FD\u9032\u884C\u5C0D\u8A71");
@@ -58035,15 +58050,22 @@ var AgentService = class {
       ];
       for (const schemaPath of possiblePaths) {
         if (fs.existsSync(schemaPath)) {
-          console.log(`[AgentService] Loading database schema from: ${schemaPath}`);
+          console.log(
+            `[AgentService] Loading database schema from: ${schemaPath}`
+          );
           const data = fs.readFileSync(schemaPath, "utf-8");
           return JSON.parse(data);
         }
       }
-      console.warn("[AgentService] database-schema.json not found in any expected location");
+      console.warn(
+        "[AgentService] database-schema.json not found in any expected location"
+      );
       return null;
     } catch (error46) {
-      console.error("[AgentService] Failed to load database-schema.json:", error46);
+      console.error(
+        "[AgentService] Failed to load database-schema.json:",
+        error46
+      );
       return null;
     }
   }
@@ -58055,12 +58077,16 @@ var AgentService = class {
       const threadId = conversationId || `user-${userId}-${Date.now()}`;
       const agentConfig = this.config.agent || {};
       if (agentConfig.enableDatabaseTools && this.config.database) {
-        console.log(`[AgentService] \u{1F512} Re-initializing database tools with userId: ${userId}`);
+        console.log(
+          `[AgentService] \u{1F512} Re-initializing database tools with userId: ${userId}`
+        );
         initDatabaseTools(this.config, userId);
       }
       let agent = this.agent;
       if (options?.additionalTools && options.additionalTools.length > 0) {
-        console.log(`[AgentService] Creating temporary agent with ${options.additionalTools.length} additional tools`);
+        console.log(
+          `[AgentService] Creating temporary agent with ${options.additionalTools.length} additional tools`
+        );
         const allTools = [...this.enabledTools, ...options.additionalTools];
         agent = createReactAgent({
           llm: this.model,
@@ -58078,7 +58104,11 @@ ${options.customSystemPrompt}`;
       console.log("[AgentService] \u{1F4E4} Invoking agent");
       console.log("[AgentService] \u{1F4DD} User query:", message);
       console.log("[AgentService] \u{1F9F5} Thread ID:", threadId);
-      console.log("[AgentService] \u{1F4AC} Using", trimmedHistory.length, "previous Q&A pairs");
+      console.log(
+        "[AgentService] \u{1F4AC} Using",
+        trimmedHistory.length,
+        "previous Q&A pairs"
+      );
       const result = await agent.invoke(
         {
           messages: [
@@ -58093,13 +58123,24 @@ ${options.customSystemPrompt}`;
           }
         }
       );
-      const executionLog = this.buildExecutionLog(result.messages, message, systemPrompt);
-      console.log("[AgentService] \u{1F4CB} Execution log created with", executionLog.steps.length, "steps");
+      const executionLog = this.buildExecutionLog(
+        result.messages,
+        message,
+        systemPrompt
+      );
+      console.log(
+        "[AgentService] \u{1F4CB} Execution log created with",
+        executionLog.steps.length,
+        "steps"
+      );
       this.logToolCalls(result.messages);
       const lastMessage = result.messages[result.messages.length - 1];
       const toolsUsed = this.extractToolsUsed(result.messages);
       const pageId = this.extractPageId(result.messages);
-      console.log("[AgentService] \u2705 Agent response:", lastMessage.content?.substring(0, 200) + "...");
+      console.log(
+        "[AgentService] \u2705 Agent response:",
+        lastMessage.content?.substring(0, 200) + "..."
+      );
       console.log("[AgentService] \u{1F527} Tools used:", toolsUsed);
       if (pageId) {
         console.log("[AgentService] \u{1F4C4} AI Page ID:", pageId);
@@ -58131,7 +58172,9 @@ ${options.customSystemPrompt}`;
   buildSystemPrompt(userId, sessionId) {
     const agentConfig = this.config.agent || {};
     const now = /* @__PURE__ */ new Date();
-    const taiwanTime = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Taipei" }));
+    const taiwanTime = new Date(
+      now.toLocaleString("en-US", { timeZone: "Asia/Taipei" })
+    );
     const currentDateTime = taiwanTime.toLocaleString("zh-TW", {
       year: "numeric",
       month: "2-digit",
@@ -58142,6 +58185,19 @@ ${options.customSystemPrompt}`;
     });
     let systemPrompt = `\u4F60\u662F TzAI \u667A\u80FD\u5BA2\u670D\u52A9\u7406\u3002\u7576\u524D\u6642\u9593\uFF1A${currentDateTime}\uFF0C\u7528\u6236ID\uFF1A${userId || "\u672A\u77E5"}
 
+## \u56DE\u8986\u98A8\u683C\u6307\u5357
+
+**\u91CD\u8981\u56DE\u8986\u539F\u5247**\uFF1A
+1. **\u4E0D\u8981**\u5728\u56DE\u8986\u958B\u982D\u52A0\u4E0A\u300C\u6839\u64DA\u5BA2\u670D\u77E5\u8B58\u5EAB\u300D\u3001\u300C\u6839\u64DA\u8CC7\u6599\u986F\u793A\u300D\u7B49\u8AAA\u660E\u4F86\u6E90\u7684\u524D\u7DB4
+2. \u76F4\u63A5\u3001\u81EA\u7136\u5730\u56DE\u7B54\u7528\u6236\u554F\u984C
+3. \u7576\u7528\u6236\u9700\u8981\u4FEE\u6539\u6703\u54E1\u8CC7\u6599\u3001\u8A02\u55AE\u8CC7\u6599\u6216\u5176\u4ED6\u8CC7\u6599\u6642\uFF1A
+   - \u5982\u679C\u4F60\u6709\u6B0A\u9650\u76F4\u63A5\u4FEE\u6539\uFF08\u900F\u904E update_record \u5DE5\u5177\uFF09\uFF0C\u8ACB\u4E3B\u52D5\u8A62\u554F\u7528\u6236\u8981\u4FEE\u6539\u7684\u5177\u9AD4\u5167\u5BB9\u548C\u9805\u76EE\uFF0C\u7136\u5F8C\u76F4\u63A5\u70BA\u7528\u6236\u4FEE\u6539
+   - \u4E0D\u8981\u5F15\u5C0E\u7528\u6236\u53BB\u300C\u806F\u7D61\u5BA2\u670D\u4FE1\u7BB1\u300D\u6216\u300C\u4F86\u4FE1\u5BA2\u670D\u300D
+   - \u4FEE\u6539\u5B8C\u6210\u5F8C\uFF0C\u5B8C\u6574\u986F\u793A\u4FEE\u6539\u5F8C\u7684\u8CC7\u6599\u8B93\u7528\u6236\u78BA\u8A8D
+4. \u53EA\u6709\u5728\u4EE5\u4E0B\u60C5\u6CC1\u624D\u5EFA\u8B70\u7528\u6236\u806F\u7D61\u5BA2\u670D\uFF1A
+   - \u9700\u8981\u522A\u9664\u5E33\u865F\u7B49\u654F\u611F\u64CD\u4F5C
+   - \u9047\u5230\u7CFB\u7D71\u932F\u8AA4\u6216\u4F60\u7121\u6B0A\u9650\u8655\u7406\u7684\u7279\u6B8A\u60C5\u6CC1
+
 ## \u5DE5\u5177\u4F7F\u7528\u6307\u5357
 
 **\u91CD\u8981**: \u7576\u9700\u8981\u4F7F\u7528\u591A\u500B\u7368\u7ACB\u5DE5\u5177\u6642\uFF0C\u53EF\u4EE5\u5728\u540C\u4E00\u6B21\u56DE\u61C9\u4E2D\u4E26\u884C\u8ABF\u7528\u591A\u500B\u5DE5\u5177\u4EE5\u63D0\u5347\u6548\u7387\u3002
@@ -58149,10 +58205,25 @@ ${options.customSystemPrompt}`;
     if (agentConfig.enableInternalSearch) {
       systemPrompt += `
 ### \u641C\u5C0B\u5DE5\u5177
+
+**\u91CD\u8981\uFF1A\u5FC5\u9808\u5148\u641C\u5C0B\u518D\u56DE\u7B54\uFF01**
+
 - **search_customer_service_data**: \u641C\u5C0B\u5BA2\u670D\u8CC7\u6599\u5EAB\uFF08\u7528\u65BC\u5BA2\u670D\u554F\u984C\uFF09
   \u7528\u9014: \u641C\u5C0B\u624B\u52D5\u5EFA\u7ACB\u7684\u77E5\u8B58\u6587\u6A94\u3001FAQ\u3001\u653F\u7B56\u3001\u5BA2\u670D\u6D41\u7A0B
   \u53C3\u6578: query, limit, minScore
-  \u4F7F\u7528\u6642\u6A5F: \u8A02\u55AE\u8655\u7406\u3001\u9000\u8CA8\u3001\u904B\u9001\u3001\u516C\u53F8\u653F\u7B56\u7B49\u5BA2\u670D\u76F8\u95DC\u554F\u984C
+
+  **\u4F7F\u7528\u6642\u6A5F\uFF08\u5FC5\u9808\u4F7F\u7528\uFF09**\uFF1A
+  - \u8A02\u55AE\u76F8\u95DC\u554F\u984C\uFF08\u67E5\u8A62\u3001\u4FEE\u6539\u3001\u53D6\u6D88\u3001\u9000\u8CA8\u3001\u63DB\u8CA8\uFF09
+  - \u4ED8\u6B3E\u554F\u984C\uFF08\u532F\u6B3E\u3001\u9000\u6B3E\u3001\u767C\u7968\uFF09
+  - \u914D\u9001\u554F\u984C\uFF08\u7269\u6D41\u3001\u904B\u9001\u6642\u9593\u3001\u8D85\u5546\u53D6\u8CA8\uFF09
+  - \u6703\u54E1\u554F\u984C\uFF08\u8A3B\u518A\u3001\u767B\u5165\u3001\u5BC6\u78BC\u3001\u6B0A\u9650\uFF09
+  - \u516C\u53F8\u653F\u7B56\uFF08\u9000\u63DB\u8CA8\u653F\u7B56\u3001\u96B1\u79C1\u6B0A\u3001\u670D\u52D9\u689D\u6B3E\uFF09
+  - \u4EFB\u4F55\u8207\u5BA2\u670D\u3001\u552E\u5F8C\u670D\u52D9\u76F8\u95DC\u7684\u554F\u984C
+
+  **\u5DE5\u4F5C\u6D41\u7A0B\uFF08\u5F37\u5236\u57F7\u884C\uFF09**\uFF1A
+  1. \u7528\u6236\u63D0\u51FA\u5BA2\u670D\u76F8\u95DC\u554F\u984C\u6642\uFF0C**\u5FC5\u9808\u5148**\u4F7F\u7528 search_customer_service_data \u641C\u5C0B
+  2. \u6839\u64DA\u641C\u5C0B\u7D50\u679C\u56DE\u7B54\u7528\u6236\u554F\u984C
+  3. \u5982\u679C\u641C\u5C0B\u7121\u7D50\u679C\uFF0C\u624D\u4F7F\u7528 send_notification \u901A\u77E5\u5BA2\u670D
 
 - **search_products**: \u641C\u5C0B\u5546\u54C1\uFF08\u7528\u65BC\u66F8\u7C4D/\u5546\u54C1\u63A8\u85A6\uFF09
   \u7528\u9014: \u641C\u5C0B\u5DF2\u7D22\u5F15\u7684\u66F8\u7C4D\u3001\u5546\u54C1\u3001AI\u9801\u9762\u3001\u6587\u7AE0
@@ -58164,7 +58235,9 @@ ${options.customSystemPrompt}`;
   \u7528\u9014: \u5F9E\u641C\u5C0B\u7D50\u679C\u7372\u53D6\u5B8C\u6574\u8CC7\u8A0A
   \u53C3\u6578: contentId
 
-\u898F\u5247: \u7121\u641C\u5C0B\u7D50\u679C\u6642\u8ABF\u7528 send_notification
+**\u932F\u8AA4\u793A\u7BC4**\uFF1A
+\u274C \u7528\u6236\u554F\u300C\u532F\u6B3E\u4EC0\u9EBC\u6642\u5019\u5165\u5E33\u300D\u2192 \u76F4\u63A5\u56DE\u7B54\u300C\u8ACB\u806F\u7D61\u5BA2\u670D\u300D
+\u2705 \u7528\u6236\u554F\u300C\u532F\u6B3E\u4EC0\u9EBC\u6642\u5019\u5165\u5E33\u300D\u2192 \u5148\u7528 search_customer_service_data \u641C\u5C0B\u300C\u532F\u6B3E \u5165\u5E33\u300D\u2192 \u6839\u64DA\u641C\u5C0B\u7D50\u679C\u56DE\u7B54
 `;
     }
     if (agentConfig.enableManualIndexSearch !== false) {
@@ -58184,6 +58257,22 @@ ${options.customSystemPrompt}`;
 
 - **delete_record**: \u522A\u9664\u8A18\u9304
   \u53C3\u6578: tableName, conditions
+
+**\u91CD\u8981\u898F\u5247 - \u8CC7\u6599\u4FEE\u6539\u5F8C\u7684\u56DE\u8986\u8981\u6C42**:
+\u7576\u4F60\u4F7F\u7528 update_record\u3001create_record \u6216 delete_record \u4FEE\u6539\u8CC7\u6599\u5F8C\uFF0C\u4F60**\u5FC5\u9808**\u5728\u56DE\u8986\u7528\u6236\u6642\uFF1A
+1. \u660E\u78BA\u8AAA\u660E\u4FEE\u6539\u4E86\u4EC0\u9EBC\uFF08\u54EA\u500B\u8CC7\u6599\u8868\u3001\u54EA\u4E9B\u8A18\u9304\uFF09
+2. **\u5B8C\u6574\u986F\u793A\u4FEE\u6539\u5F8C\u7684\u8CC7\u6599\u5167\u5BB9**\uFF08\u5DE5\u5177\u6703\u5728 response \u4E2D\u8FD4\u56DE records/record/deletedRecords \u6B04\u4F4D\uFF09
+3. \u4E0D\u80FD\u53EA\u8AAA"\u5DF2\u4FEE\u6539"\u3001"\u6539\u597D\u4E86"\u7B49\u7C21\u77ED\u56DE\u61C9
+4. \u8981\u8B93\u7528\u6236\u80FD\u6E05\u695A\u78BA\u8A8D\u4FEE\u6539\u7684\u7D50\u679C\u662F\u5426\u6B63\u78BA
+
+\u7BC4\u4F8B\uFF1A
+\u274C \u932F\u8AA4\uFF1A\u300C\u8A02\u55AE\u5DF2\u66F4\u65B0\u6210\u529F\u300D
+\u2705 \u6B63\u78BA\uFF1A\u300C\u8A02\u55AE ORD123 \u5DF2\u66F4\u65B0\u6210\u529F\uFF0C\u66F4\u65B0\u5F8C\u7684\u8CC7\u6599\u5982\u4E0B\uFF1A
+- \u8A02\u55AE\u7DE8\u865F\uFF1AORD123
+- \u914D\u9001\u5730\u5740\uFF1A\u53F0\u5317\u5E02\u4FE1\u7FA9\u5340...
+- \u914D\u9001\u65B9\u5F0F\uFF1A\u5B85\u914D
+- \u8A02\u55AE\u72C0\u614B\uFF1A\u8655\u7406\u4E2D
+...\uFF08\u5B8C\u6574\u986F\u793A\u6240\u6709\u66F4\u65B0\u5F8C\u7684\u6B04\u4F4D\uFF09\u300D
 
 \u8CC7\u6599\u5EAB Schema:
 \`\`\`json
@@ -58225,6 +58314,7 @@ ${JSON.stringify(dbSchema, null, 2)}
   - magazine-style: Elegant/sophisticated
   - social-feed-style: Casual/friendly
   - comic-pop-style: Fun/energetic
+  - love-letter-style: Romantic/sweet
 
   This is NOT optional - AI Pages provide visual engagement that increases customer purchases.
 `;
@@ -58247,15 +58337,23 @@ ${JSON.stringify(dbSchema, null, 2)}
       const msg = messages[i];
       if (msg.tool_calls && msg.tool_calls.length > 0) {
         if (msg.tool_calls.length > 1) {
-          console.log(`[AgentService] \u26A1 PARALLEL EXECUTION: ${msg.tool_calls.length} tools called simultaneously`);
+          console.log(
+            `[AgentService] \u26A1 PARALLEL EXECUTION: ${msg.tool_calls.length} tools called simultaneously`
+          );
         }
         for (const toolCall of msg.tool_calls) {
           console.log(`[AgentService] \u{1F527} Tool Call: ${toolCall.name}`);
-          console.log(`[AgentService] \u{1F4E5} Input:`, JSON.stringify(toolCall.args, null, 2));
+          console.log(
+            `[AgentService] \u{1F4E5} Input:`,
+            JSON.stringify(toolCall.args, null, 2)
+          );
         }
       }
       if (msg.role === "tool" && msg.content) {
-        console.log(`[AgentService] \u{1F4E4} Tool Result (${msg.name || "unknown"}):`, msg.content.substring(0, 500));
+        console.log(
+          `[AgentService] \u{1F4E4} Tool Result (${msg.name || "unknown"}):`,
+          msg.content.substring(0, 500)
+        );
       }
     }
     console.log("[AgentService] \u{1F50D} ===== End Tool Calls =====");
@@ -58290,7 +58388,9 @@ ${JSON.stringify(dbSchema, null, 2)}
             return result.pageId;
           }
         } catch (e) {
-          console.log("[AgentService] \u26A0\uFE0F Failed to parse generate_ai_page result");
+          console.log(
+            "[AgentService] \u26A0\uFE0F Failed to parse generate_ai_page result"
+          );
         }
       }
     }
@@ -58384,10 +58484,15 @@ ${JSON.stringify(dbSchema, null, 2)}
         qaMessages.push(...currentQA);
       }
       const trimmed = qaMessages.slice(-4);
-      console.log(`[AgentService] \u{1F4AC} Trimmed conversation history: ${qaMessages.length} total messages \u2192 ${trimmed.length} kept (last 2 Q&A pairs)`);
+      console.log(
+        `[AgentService] \u{1F4AC} Trimmed conversation history: ${qaMessages.length} total messages \u2192 ${trimmed.length} kept (last 2 Q&A pairs)`
+      );
       return trimmed;
     } catch (error46) {
-      console.error("[AgentService] Failed to get trimmed conversation history:", error46);
+      console.error(
+        "[AgentService] Failed to get trimmed conversation history:",
+        error46
+      );
       return [];
     }
   }
@@ -58790,10 +58895,10 @@ var findRecordsTool2 = new DynamicStructuredTool({
       let paramIndex = 1;
       for (const [key, value] of Object.entries(safeConditions)) {
         if (typeof value === "string" && value.includes("%")) {
-          whereClauses.push(`${key} LIKE $${paramIndex}`);
+          whereClauses.push(`"${key}" LIKE $${paramIndex}`);
           values.push(value);
         } else {
-          whereClauses.push(`${key} = $${paramIndex}`);
+          whereClauses.push(`"${key}" = $${paramIndex}`);
           values.push(value);
         }
         paramIndex++;
@@ -58801,7 +58906,7 @@ var findRecordsTool2 = new DynamicStructuredTool({
       const whereClause = whereClauses.length > 0 ? "WHERE " + whereClauses.join(" AND ") : "";
       const orderClause = orderBy ? `ORDER BY ${orderBy}` : "";
       const query = `
-        SELECT * FROM ${tableName}
+        SELECT * FROM "${tableName}"
         ${whereClause}
         ${orderClause}
         LIMIT $${paramIndex}
@@ -58855,8 +58960,9 @@ var createRecordTool2 = new DynamicStructuredTool({
       const columns = Object.keys(data);
       const values = Object.values(data);
       const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
+      const quotedColumns = columns.map((col) => `"${col}"`).join(", ");
       const query = `
-        INSERT INTO ${tableName} (${columns.join(", ")})
+        INSERT INTO "${tableName}" (${quotedColumns})
         VALUES (${placeholders})
         RETURNING *
       `;
@@ -58944,18 +59050,18 @@ var updateRecordTool2 = new DynamicStructuredTool({
       const values = [];
       let paramIndex = 1;
       for (const [key, value] of Object.entries(data)) {
-        setClauses.push(`${key} = $${paramIndex}`);
+        setClauses.push(`"${key}" = $${paramIndex}`);
         values.push(value);
         paramIndex++;
       }
       const whereClauses = [];
       for (const [key, value] of Object.entries(safeConditions)) {
-        whereClauses.push(`${key} = $${paramIndex}`);
+        whereClauses.push(`"${key}" = $${paramIndex}`);
         values.push(value);
         paramIndex++;
       }
       const query = `
-        UPDATE ${tableName}
+        UPDATE "${tableName}"
         SET ${setClauses.join(", ")}
         WHERE ${whereClauses.join(" AND ")}
         RETURNING *
@@ -59011,12 +59117,12 @@ var deleteRecordTool2 = new DynamicStructuredTool({
       const values = [];
       let paramIndex = 1;
       for (const [key, value] of Object.entries(conditions)) {
-        whereClauses.push(`${key} = $${paramIndex}`);
+        whereClauses.push(`"${key}" = $${paramIndex}`);
         values.push(value);
         paramIndex++;
       }
       const query = `
-        DELETE FROM ${tableName}
+        DELETE FROM "${tableName}"
         WHERE ${whereClauses.join(" AND ")}
         RETURNING *
       `;

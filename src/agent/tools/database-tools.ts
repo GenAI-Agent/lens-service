@@ -124,11 +124,11 @@ export const findRecordsTool = new DynamicStructuredTool({
       for (const [key, value] of Object.entries(safeConditions)) {
         if (typeof value === 'string' && value.includes('%')) {
           // LIKE 查詢
-          whereClauses.push(`${key} LIKE $${paramIndex}`);
+          whereClauses.push(`"${key}" LIKE $${paramIndex}`);
           values.push(value);
         } else {
           // 等於查詢
-          whereClauses.push(`${key} = $${paramIndex}`);
+          whereClauses.push(`"${key}" = $${paramIndex}`);
           values.push(value);
         }
         paramIndex++;
@@ -141,7 +141,7 @@ export const findRecordsTool = new DynamicStructuredTool({
       const orderClause = orderBy ? `ORDER BY ${orderBy}` : '';
 
       const query = `
-        SELECT * FROM ${tableName}
+        SELECT * FROM "${tableName}"
         ${whereClause}
         ${orderClause}
         LIMIT $${paramIndex}
@@ -209,9 +209,10 @@ export const createRecordTool = new DynamicStructuredTool({
       const columns = Object.keys(data);
       const values = Object.values(data);
       const placeholders = columns.map((_, i) => `$${i + 1}`).join(', ');
+      const quotedColumns = columns.map(col => `"${col}"`).join(', ');
 
       const query = `
-        INSERT INTO ${tableName} (${columns.join(', ')})
+        INSERT INTO "${tableName}" (${quotedColumns})
         VALUES (${placeholders})
         RETURNING *
       `;
@@ -328,7 +329,7 @@ export const updateRecordTool = new DynamicStructuredTool({
       let paramIndex = 1;
 
       for (const [key, value] of Object.entries(data)) {
-        setClauses.push(`${key} = $${paramIndex}`);
+        setClauses.push(`"${key}" = $${paramIndex}`);
         values.push(value);
         paramIndex++;
       }
@@ -336,13 +337,13 @@ export const updateRecordTool = new DynamicStructuredTool({
       // 構建 WHERE 子句
       const whereClauses: string[] = [];
       for (const [key, value] of Object.entries(safeConditions)) {
-        whereClauses.push(`${key} = $${paramIndex}`);
+        whereClauses.push(`"${key}" = $${paramIndex}`);
         values.push(value);
         paramIndex++;
       }
 
       const query = `
-        UPDATE ${tableName}
+        UPDATE "${tableName}"
         SET ${setClauses.join(', ')}
         WHERE ${whereClauses.join(' AND ')}
         RETURNING *
@@ -414,13 +415,13 @@ export const deleteRecordTool = new DynamicStructuredTool({
       let paramIndex = 1;
 
       for (const [key, value] of Object.entries(conditions)) {
-        whereClauses.push(`${key} = $${paramIndex}`);
+        whereClauses.push(`"${key}" = $${paramIndex}`);
         values.push(value);
         paramIndex++;
       }
 
       const query = `
-        DELETE FROM ${tableName}
+        DELETE FROM "${tableName}"
         WHERE ${whereClauses.join(' AND ')}
         RETURNING *
       `;
