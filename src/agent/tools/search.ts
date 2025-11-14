@@ -186,16 +186,16 @@ export const searchProductsTool = new DynamicStructuredTool({
   description: `Searches for products, books, and catalog items in the indexed product database.
 
 Use this tool when users search for or ask about:
-- Books by topic, category, or keywords (e.g., "psychology books", "business books")
+- Books by topic or keywords (e.g., "psychology books", "business books", "悲傷的書")
 - Product recommendations and suggestions
 - Specific product features or availability
 - Book authors, titles, or subjects
 - Previously generated AI pages showcasing products
 
-**NEW Multi-Query Support**: You can now pass multiple search keywords to improve search accuracy.
+**Multi-Query Support**: You can pass multiple search keywords to improve search accuracy.
 For example, if user asks "推薦心理學和商業相關的暢銷書", pass keywords: ["心理學", "商業", "暢銷書"]
 
-**Category Filtering**: Filter by specific categories (e.g., ["心理勵志", "商業理財"]) or pass null for all categories.
+**Category Filtering is DISABLED**: Searches across all categories without filtering.
 
 Results are ranked using hybrid search (BM25 + Vector) with RRF fusion, plus:
 - Recency boost: Newer books get up to 10% score boost
@@ -205,13 +205,11 @@ Example: User asks "心理學書籍" → Use this tool with keywords: ["心理�
 
   schema: z.object({
     keywords: z.array(z.string()).describe("Array of search keywords. Multiple keywords will be combined using RRF. Example: ['心理學', '商業'] or ['暢銷書']"),
-    categories: z.array(z.string()).optional().nullable()
-      .describe("Filter by categories (e.g., ['心理勵志', '商業理財']). Pass null or omit for all categories."),
     limit: z.number().optional().default(20)
       .describe("Maximum results to return (default: 20)"),
   }),
 
-  func: async ({ keywords, categories = null, limit = 20 }) => {
+  func: async ({ keywords, limit = 20 }) => {
     try {
       // 初始化搜尋服務
       const service = await initSearchService();
@@ -224,9 +222,9 @@ Example: User asks "心理學書籍" → Use this tool with keywords: ["心理�
         });
       }
 
-      // 使用新的 searchProducts 方法
+      // 使用新的 searchProducts 方法 (不使用分類過濾)
       const results = await service.searchProducts(keywords, {
-        categories,
+        categories: null,
         limit,
       });
 
@@ -249,7 +247,6 @@ Example: User asks "心理學書籍" → Use this tool with keywords: ["心理�
       return JSON.stringify({
         success: true,
         keywords,
-        categories,
         totalResults: results.length,
         results: formattedResults,
         message: `找到 ${results.length} 個相關商品`,

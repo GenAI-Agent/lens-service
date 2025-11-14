@@ -58537,16 +58537,16 @@ var searchProductsTool = new DynamicStructuredTool({
   description: `Searches for products, books, and catalog items in the indexed product database.
 
 Use this tool when users search for or ask about:
-- Books by topic, category, or keywords (e.g., "psychology books", "business books")
+- Books by topic or keywords (e.g., "psychology books", "business books", "\u60B2\u50B7\u7684\u66F8")
 - Product recommendations and suggestions
 - Specific product features or availability
 - Book authors, titles, or subjects
 - Previously generated AI pages showcasing products
 
-**NEW Multi-Query Support**: You can now pass multiple search keywords to improve search accuracy.
+**Multi-Query Support**: You can pass multiple search keywords to improve search accuracy.
 For example, if user asks "\u63A8\u85A6\u5FC3\u7406\u5B78\u548C\u5546\u696D\u76F8\u95DC\u7684\u66A2\u92B7\u66F8", pass keywords: ["\u5FC3\u7406\u5B78", "\u5546\u696D", "\u66A2\u92B7\u66F8"]
 
-**Category Filtering**: Filter by specific categories (e.g., ["\u5FC3\u7406\u52F5\u5FD7", "\u5546\u696D\u7406\u8CA1"]) or pass null for all categories.
+**Category Filtering is DISABLED**: Searches across all categories without filtering.
 
 Results are ranked using hybrid search (BM25 + Vector) with RRF fusion, plus:
 - Recency boost: Newer books get up to 10% score boost
@@ -58555,10 +58555,9 @@ Results are ranked using hybrid search (BM25 + Vector) with RRF fusion, plus:
 Example: User asks "\u5FC3\u7406\u5B78\u66F8\u7C4D" \u2192 Use this tool with keywords: ["\u5FC3\u7406\u5B78"]`,
   schema: external_exports2.object({
     keywords: external_exports2.array(external_exports2.string()).describe("Array of search keywords. Multiple keywords will be combined using RRF. Example: ['\u5FC3\u7406\u5B78', '\u5546\u696D'] or ['\u66A2\u92B7\u66F8']"),
-    categories: external_exports2.array(external_exports2.string()).optional().nullable().describe("Filter by categories (e.g., ['\u5FC3\u7406\u52F5\u5FD7', '\u5546\u696D\u7406\u8CA1']). Pass null or omit for all categories."),
     limit: external_exports2.number().optional().default(20).describe("Maximum results to return (default: 20)")
   }),
-  func: async ({ keywords, categories = null, limit = 20 }) => {
+  func: async ({ keywords, limit = 20 }) => {
     try {
       const service = await initSearchService();
       if (!service) {
@@ -58569,7 +58568,7 @@ Example: User asks "\u5FC3\u7406\u5B78\u66F8\u7C4D" \u2192 Use this tool with ke
         });
       }
       const results = await service.searchProducts(keywords, {
-        categories,
+        categories: null,
         limit
       });
       const formattedResults = results.map((result) => ({
@@ -58588,7 +58587,6 @@ Example: User asks "\u5FC3\u7406\u5B78\u66F8\u7C4D" \u2192 Use this tool with ke
       return JSON.stringify({
         success: true,
         keywords,
-        categories,
         totalResults: results.length,
         results: formattedResults,
         message: `\u627E\u5230 ${results.length} \u500B\u76F8\u95DC\u5546\u54C1`

@@ -26,15 +26,12 @@ export declare const searchCustomerServiceDataTool: DynamicStructuredTool<z.ZodO
  */
 export declare const searchProductsTool: DynamicStructuredTool<z.ZodObject<{
     keywords: z.ZodArray<z.ZodString>;
-    categories: z.ZodNullable<z.ZodOptional<z.ZodArray<z.ZodString>>>;
     limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
 }, z.core.$strip>, {
     keywords: string[];
     limit: number;
-    categories?: string[] | null | undefined;
 }, {
     keywords: string[];
-    categories?: string[] | null | undefined;
     limit?: number | undefined;
 }, string>;
 /**
@@ -61,15 +58,12 @@ export declare const searchTools: (DynamicStructuredTool<z.ZodObject<{
     minScore?: number | undefined;
 }, string> | DynamicStructuredTool<z.ZodObject<{
     keywords: z.ZodArray<z.ZodString>;
-    categories: z.ZodNullable<z.ZodOptional<z.ZodArray<z.ZodString>>>;
     limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
 }, z.core.$strip>, {
     keywords: string[];
     limit: number;
-    categories?: string[] | null | undefined;
 }, {
     keywords: string[];
-    categories?: string[] | null | undefined;
     limit?: number | undefined;
 }, string> | DynamicStructuredTool<z.ZodObject<{
     contentId: z.ZodString;
