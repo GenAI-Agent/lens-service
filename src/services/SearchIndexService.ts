@@ -619,11 +619,11 @@ export class SearchIndexService {
         ...row,
         tags: row.tags || [],
         metadata: row.metadata || {},
-        score: row.final_score,
-        bm25Score: row.base_score,
+        score: parseFloat(row.final_score),
+        bm25Score: parseFloat(row.base_score),
         vectorScore: 0,
         rank: offset + index + 1,
-        relevanceExplanation: `RRF=${row.base_score.toFixed(3)}`,
+        relevanceExplanation: `RRF=${parseFloat(row.base_score).toFixed(3)}`,
       }));
     } catch (error) {
       console.error('[SearchIndex] searchProducts failed:', error);
