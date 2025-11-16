@@ -58655,13 +58655,348 @@ Example workflow: search_products finds relevant items \u2192 use their contentI
     }
   }
 });
+var searchBestsellersTool = new DynamicStructuredTool({
+  name: "search_bestsellers",
+  description: `Searches for bestselling books in the catalog.
+
+Use this tool when users ask about:
+- Bestselling books or popular books (\u66A2\u92B7\u66F8\u3001\u71B1\u9580\u66F8\u7C4D)
+- Top-selling or best-performing books
+- Popular book recommendations
+
+This tool searches books that have been marked as bestsellers in our database.
+Results are ranked by semantic relevance and include only bestselling titles.
+
+Example: User asks "\u6709\u54EA\u4E9B\u66A2\u92B7\u66F8?" \u2192 Use this tool with query: "\u66A2\u92B7\u66F8"`,
+  schema: external_exports2.object({
+    query: external_exports2.string().describe("Search query to find relevant bestselling books"),
+    limit: external_exports2.number().optional().default(20).describe("Maximum results to return (default: 20)")
+  }),
+  func: async ({ query, limit = 20 }) => {
+    try {
+      const service = await initSearchService();
+      if (!service) {
+        return JSON.stringify({
+          success: false,
+          message: "\u641C\u5C0B\u670D\u52D9\u672A\u555F\u7528",
+          results: []
+        });
+      }
+      const results = await service.pool.query(`
+        WITH bm25_results AS (
+          SELECT
+            content_id,
+            title,
+            content,
+            summary,
+            url,
+            tags,
+            category,
+            metadata,
+            ts_rank(title_tsv, plainto_tsquery('simple', $1)) as bm25_score
+          FROM search_index
+          WHERE
+            content_type = 'static_page'
+            AND metadata->'book_types' ? 'bestseller'
+            AND (
+              title_tsv @@ plainto_tsquery('simple', $1)
+              OR content_tsv @@ plainto_tsquery('simple', $1)
+            )
+        ),
+        vector_results AS (
+          SELECT
+            content_id,
+            title,
+            content,
+            summary,
+            url,
+            tags,
+            category,
+            metadata,
+            1 - (title_vector <=> $2::vector) as vector_score
+          FROM search_index
+          WHERE
+            content_type = 'static_page'
+            AND metadata->'book_types' ? 'bestseller'
+            AND title_vector IS NOT NULL
+          ORDER BY title_vector <=> $2::vector
+          LIMIT 100
+        ),
+        combined AS (
+          SELECT
+            COALESCE(b.content_id, v.content_id) as content_id,
+            COALESCE(b.title, v.title) as title,
+            COALESCE(b.content, v.content) as content,
+            COALESCE(b.summary, v.summary) as summary,
+            COALESCE(b.url, v.url) as url,
+            COALESCE(b.tags, v.tags) as tags,
+            COALESCE(b.category, v.category) as category,
+            COALESCE(b.metadata, v.metadata) as metadata,
+            COALESCE(b.bm25_score, 0) as bm25_score,
+            COALESCE(v.vector_score, 0) as vector_score
+          FROM bm25_results b
+          FULL OUTER JOIN vector_results v ON b.content_id = v.content_id
+        )
+        SELECT
+          *,
+          (bm25_score * 0.4 + vector_score * 0.6) as final_score
+        FROM combined
+        ORDER BY final_score DESC
+        LIMIT $3
+      `, [query, JSON.stringify(await embeddingService.generateEmbedding(query)), limit]);
+      const formattedResults = results.rows.map((row) => ({
+        contentId: row.content_id,
+        title: row.title,
+        summary: row.summary || (row.content ? row.content.substring(0, 200) : ""),
+        url: row.url,
+        tags: row.tags,
+        category: row.category,
+        metadata: row.metadata,
+        score: parseFloat(row.final_score).toFixed(3)
+      }));
+      console.log(`[Bestsellers Search Tool] Found ${formattedResults.length} bestselling books for query: ${query}`);
+      return JSON.stringify({
+        success: true,
+        query,
+        totalResults: formattedResults.length,
+        results: formattedResults,
+        message: `\u627E\u5230 ${formattedResults.length} \u672C\u66A2\u92B7\u66F8`
+      });
+    } catch (error46) {
+      console.error("[Bestsellers Search Tool] Search failed:", error46);
+      return JSON.stringify({
+        success: false,
+        message: `\u66A2\u92B7\u66F8\u641C\u5C0B\u5931\u6557\uFF1A${error46 instanceof Error ? error46.message : "\u672A\u77E5\u932F\u8AA4"}`,
+        results: []
+      });
+    }
+  }
+});
+var search79DiscountBooksTool = new DynamicStructuredTool({
+  name: "search_79_discount_books",
+  description: `Searches for books with 79% discount (21% off) in the catalog.
+
+Use this tool when users ask about:
+- 79\u6298\u66F8\u7C4D or discounted books
+- Special offers or promotional books
+- Books on sale at 79\u6298
+
+This tool searches books that are currently offered at 79% of the original price.
+Results are ranked by semantic relevance and include only discounted titles.
+
+Example: User asks "\u6709\u54EA\u4E9B79\u6298\u7684\u66F8?" \u2192 Use this tool with query: "79\u6298\u512A\u60E0"`,
+  schema: external_exports2.object({
+    query: external_exports2.string().describe("Search query to find relevant 79% discount books"),
+    limit: external_exports2.number().optional().default(20).describe("Maximum results to return (default: 20)")
+  }),
+  func: async ({ query, limit = 20 }) => {
+    try {
+      const service = await initSearchService();
+      if (!service) {
+        return JSON.stringify({
+          success: false,
+          message: "\u641C\u5C0B\u670D\u52D9\u672A\u555F\u7528",
+          results: []
+        });
+      }
+      const results = await service.pool.query(`
+        WITH bm25_results AS (
+          SELECT
+            content_id,
+            title,
+            content,
+            summary,
+            url,
+            tags,
+            category,
+            metadata,
+            ts_rank(title_tsv, plainto_tsquery('simple', $1)) as bm25_score
+          FROM search_index
+          WHERE
+            content_type = 'static_page'
+            AND metadata->'book_types' ? 'discount'
+            AND (
+              title_tsv @@ plainto_tsquery('simple', $1)
+              OR content_tsv @@ plainto_tsquery('simple', $1)
+            )
+        ),
+        vector_results AS (
+          SELECT
+            content_id,
+            title,
+            content,
+            summary,
+            url,
+            tags,
+            category,
+            metadata,
+            1 - (title_vector <=> $2::vector) as vector_score
+          FROM search_index
+          WHERE
+            content_type = 'static_page'
+            AND metadata->'book_types' ? 'discount'
+            AND title_vector IS NOT NULL
+          ORDER BY title_vector <=> $2::vector
+          LIMIT 100
+        ),
+        combined AS (
+          SELECT
+            COALESCE(b.content_id, v.content_id) as content_id,
+            COALESCE(b.title, v.title) as title,
+            COALESCE(b.content, v.content) as content,
+            COALESCE(b.summary, v.summary) as summary,
+            COALESCE(b.url, v.url) as url,
+            COALESCE(b.tags, v.tags) as tags,
+            COALESCE(b.category, v.category) as category,
+            COALESCE(b.metadata, v.metadata) as metadata,
+            COALESCE(b.bm25_score, 0) as bm25_score,
+            COALESCE(v.vector_score, 0) as vector_score
+          FROM bm25_results b
+          FULL OUTER JOIN vector_results v ON b.content_id = v.content_id
+        )
+        SELECT
+          *,
+          (bm25_score * 0.4 + vector_score * 0.6) as final_score
+        FROM combined
+        ORDER BY final_score DESC
+        LIMIT $3
+      `, [query, JSON.stringify(await embeddingService.generateEmbedding(query)), limit]);
+      const formattedResults = results.rows.map((row) => ({
+        contentId: row.content_id,
+        title: row.title,
+        summary: row.summary || (row.content ? row.content.substring(0, 200) : ""),
+        url: row.url,
+        tags: row.tags,
+        category: row.category,
+        metadata: row.metadata,
+        score: parseFloat(row.final_score).toFixed(3)
+      }));
+      console.log(`[79 Discount Search Tool] Found ${formattedResults.length} discounted books for query: ${query}`);
+      return JSON.stringify({
+        success: true,
+        query,
+        totalResults: formattedResults.length,
+        results: formattedResults,
+        message: `\u627E\u5230 ${formattedResults.length} \u672C79\u6298\u512A\u60E0\u66F8\u7C4D`
+      });
+    } catch (error46) {
+      console.error("[79 Discount Search Tool] Search failed:", error46);
+      return JSON.stringify({
+        success: false,
+        message: `79\u6298\u66F8\u7C4D\u641C\u5C0B\u5931\u6557\uFF1A${error46 instanceof Error ? error46.message : "\u672A\u77E5\u932F\u8AA4"}`,
+        results: []
+      });
+    }
+  }
+});
+var keywordSearchBooksTool = new DynamicStructuredTool({
+  name: "keyword_search_books",
+  description: `Performs keyword-based search (BM25) for books by title, author, or publisher.
+
+Use this tool when users search for:
+- Specific book titles, authors, or publishers by exact keywords
+- Books when user wants exact keyword matching (not semantic search)
+- "\u641C\u5C0BXXX\u4F5C\u8005\u7684\u66F8" or "XXX\u51FA\u7248\u793E\u7684\u66F8"
+
+This tool uses BM25 full-text search on:
+1. Book title (\u66F8\u540D)
+2. Author name (\u4F5C\u8005)
+3. Publisher name (\u51FA\u7248\u793E)
+
+Example: User asks "\u6751\u4E0A\u6625\u6A39\u7684\u66F8" \u2192 Use this tool with keyword: "\u6751\u4E0A\u6625\u6A39"`,
+  schema: external_exports2.object({
+    keyword: external_exports2.string().describe("Keyword to search in book titles, authors, and publishers"),
+    limit: external_exports2.number().optional().default(20).describe("Maximum results to return (default: 20)")
+  }),
+  func: async ({ keyword, limit = 20 }) => {
+    try {
+      const service = await initSearchService();
+      if (!service) {
+        return JSON.stringify({
+          success: false,
+          message: "\u641C\u5C0B\u670D\u52D9\u672A\u555F\u7528",
+          results: []
+        });
+      }
+      const results = await service.pool.query(`
+        SELECT
+          content_id,
+          title,
+          content,
+          summary,
+          url,
+          tags,
+          category,
+          metadata,
+          (
+            ts_rank(title_tsv, plainto_tsquery('simple', $1)) * 3.0 +
+            ts_rank(to_tsvector('simple', COALESCE(metadata->>'author', '')), plainto_tsquery('simple', $1)) * 2.0 +
+            ts_rank(to_tsvector('simple', COALESCE(metadata->>'publisher', '')), plainto_tsquery('simple', $1)) * 1.0
+          ) as bm25_score
+        FROM search_index
+        WHERE
+          content_type = 'static_page'
+          AND (
+            title_tsv @@ plainto_tsquery('simple', $1)
+            OR to_tsvector('simple', COALESCE(metadata->>'author', '')) @@ plainto_tsquery('simple', $1)
+            OR to_tsvector('simple', COALESCE(metadata->>'publisher', '')) @@ plainto_tsquery('simple', $1)
+          )
+        ORDER BY bm25_score DESC
+        LIMIT $2
+      `, [keyword, limit]);
+      const formattedResults = results.rows.map((row) => ({
+        contentId: row.content_id,
+        title: row.title,
+        summary: row.summary || (row.content ? row.content.substring(0, 200) : ""),
+        url: row.url,
+        tags: row.tags,
+        category: row.category,
+        metadata: row.metadata,
+        score: parseFloat(row.bm25_score).toFixed(3),
+        matchType: determineMatchType(row, keyword)
+      }));
+      console.log(`[Keyword Search Tool] Found ${formattedResults.length} books for keyword: ${keyword}`);
+      return JSON.stringify({
+        success: true,
+        keyword,
+        totalResults: formattedResults.length,
+        results: formattedResults,
+        message: `\u627E\u5230 ${formattedResults.length} \u672C\u66F8\u7C4D`
+      });
+    } catch (error46) {
+      console.error("[Keyword Search Tool] Search failed:", error46);
+      return JSON.stringify({
+        success: false,
+        message: `\u95DC\u9375\u5B57\u641C\u5C0B\u5931\u6557\uFF1A${error46 instanceof Error ? error46.message : "\u672A\u77E5\u932F\u8AA4"}`,
+        results: []
+      });
+    }
+  }
+});
+function determineMatchType(row, keyword) {
+  const title = row.title?.toLowerCase() || "";
+  const author = row.metadata?.author?.toLowerCase() || "";
+  const publisher = row.metadata?.publisher?.toLowerCase() || "";
+  const kw = keyword.toLowerCase();
+  const matches = [];
+  if (title.includes(kw)) matches.push("\u66F8\u540D");
+  if (author.includes(kw)) matches.push("\u4F5C\u8005");
+  if (publisher.includes(kw)) matches.push("\u51FA\u7248\u793E");
+  return matches.length > 0 ? `\u5339\u914D: ${matches.join(", ")}` : "\u76F8\u95DC\u5339\u914D";
+}
 var searchTools = [
   searchCustomerServiceDataTool,
   // 客服資料庫搜尋 (manual_indexes)
   searchProductsTool,
   // 商品搜尋 (search_index)
-  getContentDetailTool
+  getContentDetailTool,
   // 取得完整內容
+  searchBestsellersTool,
+  // 暢銷書搜尋
+  search79DiscountBooksTool,
+  // 79折書籍搜尋
+  keywordSearchBooksTool
+  // 關鍵字搜尋 (BM25)
 ];
 
 // src/agent/AgentService.ts

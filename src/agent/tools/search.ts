@@ -333,6 +333,399 @@ Example workflow: search_products finds relevant items → use their contentId w
 });
 
 // ========================================
+// 4. 暢銷書搜尋工具
+// ========================================
+
+/**
+ * Tool: 搜尋暢銷書
+ *
+ * 專門搜尋已索引的暢銷書籍（來自 books_bestsellers.jsonl）
+ */
+export const searchBestsellersTool = new DynamicStructuredTool({
+  name: "search_bestsellers",
+  description: `Searches for bestselling books in the catalog.
+
+Use this tool when users ask about:
+- Bestselling books or popular books (暢銷書、熱門書籍)
+- Top-selling or best-performing books
+- Popular book recommendations
+
+This tool searches books that have been marked as bestsellers in our database.
+Results are ranked by semantic relevance and include only bestselling titles.
+
+Example: User asks "有哪些暢銷書?" → Use this tool with query: "暢銷書"`,
+
+  schema: z.object({
+    query: z.string().describe("Search query to find relevant bestselling books"),
+    limit: z.number().optional().default(20).describe("Maximum results to return (default: 20)"),
+  }),
+
+  func: async ({ query, limit = 20 }) => {
+    try {
+      const service = await initSearchService();
+
+      if (!service) {
+        return JSON.stringify({
+          success: false,
+          message: "搜尋服務未啟用",
+          results: [],
+        });
+      }
+
+      // 使用 hybrid search，但過濾 book_types 陣列包含 'bestseller'
+      const results = await service.pool.query(`
+        WITH bm25_results AS (
+          SELECT
+            content_id,
+            title,
+            content,
+            summary,
+            url,
+            tags,
+            category,
+            metadata,
+            ts_rank(title_tsv, plainto_tsquery('simple', $1)) as bm25_score
+          FROM search_index
+          WHERE
+            content_type = 'static_page'
+            AND metadata->'book_types' ? 'bestseller'
+            AND (
+              title_tsv @@ plainto_tsquery('simple', $1)
+              OR content_tsv @@ plainto_tsquery('simple', $1)
+            )
+        ),
+        vector_results AS (
+          SELECT
+            content_id,
+            title,
+            content,
+            summary,
+            url,
+            tags,
+            category,
+            metadata,
+            1 - (title_vector <=> $2::vector) as vector_score
+          FROM search_index
+          WHERE
+            content_type = 'static_page'
+            AND metadata->'book_types' ? 'bestseller'
+            AND title_vector IS NOT NULL
+          ORDER BY title_vector <=> $2::vector
+          LIMIT 100
+        ),
+        combined AS (
+          SELECT
+            COALESCE(b.content_id, v.content_id) as content_id,
+            COALESCE(b.title, v.title) as title,
+            COALESCE(b.content, v.content) as content,
+            COALESCE(b.summary, v.summary) as summary,
+            COALESCE(b.url, v.url) as url,
+            COALESCE(b.tags, v.tags) as tags,
+            COALESCE(b.category, v.category) as category,
+            COALESCE(b.metadata, v.metadata) as metadata,
+            COALESCE(b.bm25_score, 0) as bm25_score,
+            COALESCE(v.vector_score, 0) as vector_score
+          FROM bm25_results b
+          FULL OUTER JOIN vector_results v ON b.content_id = v.content_id
+        )
+        SELECT
+          *,
+          (bm25_score * 0.4 + vector_score * 0.6) as final_score
+        FROM combined
+        ORDER BY final_score DESC
+        LIMIT $3
+      `, [query, JSON.stringify(await embeddingService.generateEmbedding(query)), limit]);
+
+      const formattedResults = results.rows.map((row: any) => ({
+        contentId: row.content_id,
+        title: row.title,
+        summary: row.summary || (row.content ? row.content.substring(0, 200) : ''),
+        url: row.url,
+        tags: row.tags,
+        category: row.category,
+        metadata: row.metadata,
+        score: parseFloat(row.final_score).toFixed(3),
+      }));
+
+      console.log(`[Bestsellers Search Tool] Found ${formattedResults.length} bestselling books for query: ${query}`);
+
+      return JSON.stringify({
+        success: true,
+        query,
+        totalResults: formattedResults.length,
+        results: formattedResults,
+        message: `找到 ${formattedResults.length} 本暢銷書`,
+      });
+
+    } catch (error) {
+      console.error('[Bestsellers Search Tool] Search failed:', error);
+      return JSON.stringify({
+        success: false,
+        message: `暢銷書搜尋失敗：${error instanceof Error ? error.message : '未知錯誤'}`,
+        results: [],
+      });
+    }
+  },
+});
+
+// ========================================
+// 5. 79折書籍搜尋工具
+// ========================================
+
+/**
+ * Tool: 搜尋79折優惠書籍
+ *
+ * 專門搜尋已索引的79折優惠書籍（來自 books_79_discount.jsonl）
+ */
+export const search79DiscountBooksTool = new DynamicStructuredTool({
+  name: "search_79_discount_books",
+  description: `Searches for books with 79% discount (21% off) in the catalog.
+
+Use this tool when users ask about:
+- 79折書籍 or discounted books
+- Special offers or promotional books
+- Books on sale at 79折
+
+This tool searches books that are currently offered at 79% of the original price.
+Results are ranked by semantic relevance and include only discounted titles.
+
+Example: User asks "有哪些79折的書?" → Use this tool with query: "79折優惠"`,
+
+  schema: z.object({
+    query: z.string().describe("Search query to find relevant 79% discount books"),
+    limit: z.number().optional().default(20).describe("Maximum results to return (default: 20)"),
+  }),
+
+  func: async ({ query, limit = 20 }) => {
+    try {
+      const service = await initSearchService();
+
+      if (!service) {
+        return JSON.stringify({
+          success: false,
+          message: "搜尋服務未啟用",
+          results: [],
+        });
+      }
+
+      // 使用 hybrid search，但過濾 book_types 陣列包含 'discount'
+      const results = await service.pool.query(`
+        WITH bm25_results AS (
+          SELECT
+            content_id,
+            title,
+            content,
+            summary,
+            url,
+            tags,
+            category,
+            metadata,
+            ts_rank(title_tsv, plainto_tsquery('simple', $1)) as bm25_score
+          FROM search_index
+          WHERE
+            content_type = 'static_page'
+            AND metadata->'book_types' ? 'discount'
+            AND (
+              title_tsv @@ plainto_tsquery('simple', $1)
+              OR content_tsv @@ plainto_tsquery('simple', $1)
+            )
+        ),
+        vector_results AS (
+          SELECT
+            content_id,
+            title,
+            content,
+            summary,
+            url,
+            tags,
+            category,
+            metadata,
+            1 - (title_vector <=> $2::vector) as vector_score
+          FROM search_index
+          WHERE
+            content_type = 'static_page'
+            AND metadata->'book_types' ? 'discount'
+            AND title_vector IS NOT NULL
+          ORDER BY title_vector <=> $2::vector
+          LIMIT 100
+        ),
+        combined AS (
+          SELECT
+            COALESCE(b.content_id, v.content_id) as content_id,
+            COALESCE(b.title, v.title) as title,
+            COALESCE(b.content, v.content) as content,
+            COALESCE(b.summary, v.summary) as summary,
+            COALESCE(b.url, v.url) as url,
+            COALESCE(b.tags, v.tags) as tags,
+            COALESCE(b.category, v.category) as category,
+            COALESCE(b.metadata, v.metadata) as metadata,
+            COALESCE(b.bm25_score, 0) as bm25_score,
+            COALESCE(v.vector_score, 0) as vector_score
+          FROM bm25_results b
+          FULL OUTER JOIN vector_results v ON b.content_id = v.content_id
+        )
+        SELECT
+          *,
+          (bm25_score * 0.4 + vector_score * 0.6) as final_score
+        FROM combined
+        ORDER BY final_score DESC
+        LIMIT $3
+      `, [query, JSON.stringify(await embeddingService.generateEmbedding(query)), limit]);
+
+      const formattedResults = results.rows.map((row: any) => ({
+        contentId: row.content_id,
+        title: row.title,
+        summary: row.summary || (row.content ? row.content.substring(0, 200) : ''),
+        url: row.url,
+        tags: row.tags,
+        category: row.category,
+        metadata: row.metadata,
+        score: parseFloat(row.final_score).toFixed(3),
+      }));
+
+      console.log(`[79 Discount Search Tool] Found ${formattedResults.length} discounted books for query: ${query}`);
+
+      return JSON.stringify({
+        success: true,
+        query,
+        totalResults: formattedResults.length,
+        results: formattedResults,
+        message: `找到 ${formattedResults.length} 本79折優惠書籍`,
+      });
+
+    } catch (error) {
+      console.error('[79 Discount Search Tool] Search failed:', error);
+      return JSON.stringify({
+        success: false,
+        message: `79折書籍搜尋失敗：${error instanceof Error ? error.message : '未知錯誤'}`,
+        results: [],
+      });
+    }
+  },
+});
+
+// ========================================
+// 6. 關鍵字搜尋工具 (純BM25，搜尋書名、作者、出版社)
+// ========================================
+
+/**
+ * Tool: 關鍵字搜尋書籍
+ *
+ * 使用 BM25 純關鍵字搜尋（不使用語意向量）
+ * 搜尋範圍：書名、作者、出版社
+ */
+export const keywordSearchBooksTool = new DynamicStructuredTool({
+  name: "keyword_search_books",
+  description: `Performs keyword-based search (BM25) for books by title, author, or publisher.
+
+Use this tool when users search for:
+- Specific book titles, authors, or publishers by exact keywords
+- Books when user wants exact keyword matching (not semantic search)
+- "搜尋XXX作者的書" or "XXX出版社的書"
+
+This tool uses BM25 full-text search on:
+1. Book title (書名)
+2. Author name (作者)
+3. Publisher name (出版社)
+
+Example: User asks "村上春樹的書" → Use this tool with keyword: "村上春樹"`,
+
+  schema: z.object({
+    keyword: z.string().describe("Keyword to search in book titles, authors, and publishers"),
+    limit: z.number().optional().default(20).describe("Maximum results to return (default: 20)"),
+  }),
+
+  func: async ({ keyword, limit = 20 }) => {
+    try {
+      const service = await initSearchService();
+
+      if (!service) {
+        return JSON.stringify({
+          success: false,
+          message: "搜尋服務未啟用",
+          results: [],
+        });
+      }
+
+      // 純 BM25 搜尋，組合 title、author、publisher
+      const results = await service.pool.query(`
+        SELECT
+          content_id,
+          title,
+          content,
+          summary,
+          url,
+          tags,
+          category,
+          metadata,
+          (
+            ts_rank(title_tsv, plainto_tsquery('simple', $1)) * 3.0 +
+            ts_rank(to_tsvector('simple', COALESCE(metadata->>'author', '')), plainto_tsquery('simple', $1)) * 2.0 +
+            ts_rank(to_tsvector('simple', COALESCE(metadata->>'publisher', '')), plainto_tsquery('simple', $1)) * 1.0
+          ) as bm25_score
+        FROM search_index
+        WHERE
+          content_type = 'static_page'
+          AND (
+            title_tsv @@ plainto_tsquery('simple', $1)
+            OR to_tsvector('simple', COALESCE(metadata->>'author', '')) @@ plainto_tsquery('simple', $1)
+            OR to_tsvector('simple', COALESCE(metadata->>'publisher', '')) @@ plainto_tsquery('simple', $1)
+          )
+        ORDER BY bm25_score DESC
+        LIMIT $2
+      `, [keyword, limit]);
+
+      const formattedResults = results.rows.map((row: any) => ({
+        contentId: row.content_id,
+        title: row.title,
+        summary: row.summary || (row.content ? row.content.substring(0, 200) : ''),
+        url: row.url,
+        tags: row.tags,
+        category: row.category,
+        metadata: row.metadata,
+        score: parseFloat(row.bm25_score).toFixed(3),
+        matchType: determineMatchType(row, keyword),
+      }));
+
+      console.log(`[Keyword Search Tool] Found ${formattedResults.length} books for keyword: ${keyword}`);
+
+      return JSON.stringify({
+        success: true,
+        keyword,
+        totalResults: formattedResults.length,
+        results: formattedResults,
+        message: `找到 ${formattedResults.length} 本書籍`,
+      });
+
+    } catch (error) {
+      console.error('[Keyword Search Tool] Search failed:', error);
+      return JSON.stringify({
+        success: false,
+        message: `關鍵字搜尋失敗：${error instanceof Error ? error.message : '未知錯誤'}`,
+        results: [],
+      });
+    }
+  },
+});
+
+/**
+ * 判斷關鍵字匹配類型
+ */
+function determineMatchType(row: any, keyword: string): string {
+  const title = row.title?.toLowerCase() || '';
+  const author = row.metadata?.author?.toLowerCase() || '';
+  const publisher = row.metadata?.publisher?.toLowerCase() || '';
+  const kw = keyword.toLowerCase();
+
+  const matches: string[] = [];
+  if (title.includes(kw)) matches.push('書名');
+  if (author.includes(kw)) matches.push('作者');
+  if (publisher.includes(kw)) matches.push('出版社');
+
+  return matches.length > 0 ? `匹配: ${matches.join(', ')}` : '相關匹配';
+}
+
+// ========================================
 // Export all tools
 // ========================================
 
@@ -340,4 +733,7 @@ export const searchTools = [
   searchCustomerServiceDataTool,  // 客服資料庫搜尋 (manual_indexes)
   searchProductsTool,             // 商品搜尋 (search_index)
   getContentDetailTool,           // 取得完整內容
+  searchBestsellersTool,          // 暢銷書搜尋
+  search79DiscountBooksTool,      // 79折書籍搜尋
+  keywordSearchBooksTool,         // 關鍵字搜尋 (BM25)
 ];
