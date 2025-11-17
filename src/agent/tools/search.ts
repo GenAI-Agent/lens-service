@@ -1,6 +1,6 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
-import type { ServiceModulerConfig } from '../../types';
+import type { ServiceModulerConfig } from "../../types";
 
 /**
  * ========================================
@@ -29,14 +29,18 @@ let embeddingService: any = null;
 async function initSearchService() {
   if (!searchIndexService && process.env.DATABASE_URL) {
     try {
-      const { SearchIndexService } = await import('../../services/SearchIndexService');
-      const { EmbeddingService } = await import('../../services/EmbeddingService');
+      const { SearchIndexService } = await import(
+        "../../services/SearchIndexService"
+      );
+      const { EmbeddingService } = await import(
+        "../../services/EmbeddingService"
+      );
 
       // 初始化 Embedding 服務
       embeddingService = new EmbeddingService({
-        endpoint: process.env.AZURE_OPENAI_ENDPOINT || '',
-        apiKey: process.env.AZURE_OPENAI_API_KEY || '',
-        deployment: 'text-embedding-3-small',
+        endpoint: process.env.AZURE_OPENAI_ENDPOINT || "",
+        apiKey: process.env.AZURE_OPENAI_API_KEY || "",
+        deployment: "text-embedding-3-small",
         dimensions: 1536,
       });
 
@@ -46,9 +50,12 @@ async function initSearchService() {
         embeddingService
       );
 
-      console.log('[Search Tools] ✅ Search service initialized');
+      console.log("[Search Tools] ✅ Search service initialized");
     } catch (error) {
-      console.error('[Search Tools] ⚠️  Failed to initialize search service:', error);
+      console.error(
+        "[Search Tools] ⚠️  Failed to initialize search service:",
+        error
+      );
       throw error;
     }
   }
@@ -61,8 +68,8 @@ export function initSearchTools(config: ServiceModulerConfig) {
 
   // 預先初始化搜尋服務（異步，不阻塞）
   if (config.agent?.enableManualIndexSearch) {
-    initSearchService().catch(err => {
-      console.error('[Search Tools] Failed to init search service:', err);
+    initSearchService().catch((err) => {
+      console.error("[Search Tools] Failed to init search service:", err);
     });
   }
 }
@@ -101,33 +108,50 @@ This is your primary source for customer service information. Do NOT use this fo
 
   schema: z.object({
     query: z.string().describe("The search query in natural language"),
-    limit: z.number().optional().default(3).describe("Maximum number of results to return (default: 3)"),
-    minScore: z.number().optional().default(0.15).describe("Minimum relevance score threshold (default: 0.15, range 0-1)"),
+    limit: z
+      .number()
+      .optional()
+      .default(3)
+      .describe("Maximum number of results to return (default: 3)"),
+    minScore: z
+      .number()
+      .optional()
+      .default(0.15)
+      .describe("Minimum relevance score threshold (default: 0.15, range 0-1)"),
   }),
 
   func: async ({ query, limit = 3, minScore = 0.15 }) => {
     try {
-      console.log(`[Customer Service Data Tool] 搜尋客服資料庫: query="${query}", limit=${limit}`);
+      console.log(
+        `[Customer Service Data Tool] 搜尋客服資料庫: query="${query}", limit=${limit}`
+      );
 
       // 調用 TzAI_web 的搜尋 API
-      const apiUrl = typeof window !== 'undefined'
+      const apiUrl = process.env.NEXT_PUBLIC_BASE_URL
+        ? process.env.NEXT_PUBLIC_BASE_URL
+        : typeof window !== "undefined"
         ? window.location.origin
-        : 'http://localhost:8080';
+        : "http://localhost:8080";
 
-      const response = await fetch(`${apiUrl}/api/widget/manual-indexes/search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query,
-          limit,
-          minScore,
-        }),
-      });
+      const response = await fetch(
+        `${apiUrl}/api/widget/manual-indexes/search`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query,
+            limit,
+            minScore,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(`API 返回錯誤: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `API 返回錯誤: ${response.status} ${response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -151,7 +175,9 @@ This is your primary source for customer service information. Do NOT use this fo
         relevanceScore: r.hybrid_score,
       }));
 
-      console.log(`✅ [Customer Service Data Tool] 找到 ${formattedResults.length} 筆結果`);
+      console.log(
+        `✅ [Customer Service Data Tool] 找到 ${formattedResults.length} 筆結果`
+      );
 
       return JSON.stringify({
         success: true,
@@ -160,9 +186,8 @@ This is your primary source for customer service information. Do NOT use this fo
         results: formattedResults,
         message: `在客服資料庫中找到 ${formattedResults.length} 筆與「${query}」相關的內容`,
       });
-
     } catch (error: any) {
-      console.error('[Customer Service Data Tool] 搜尋失敗:', error);
+      console.error("[Customer Service Data Tool] 搜尋失敗:", error);
 
       return JSON.stringify({
         success: false,
@@ -204,8 +229,15 @@ Results are ranked using hybrid search (BM25 + Vector) with RRF fusion, plus:
 Example: User asks "心理學書籍" → Use this tool with keywords: ["心理學"]`,
 
   schema: z.object({
-    keywords: z.array(z.string()).describe("Array of search keywords. Multiple keywords will be combined using RRF. Example: ['心理學', '商業'] or ['暢銷書']"),
-    limit: z.number().optional().default(20)
+    keywords: z
+      .array(z.string())
+      .describe(
+        "Array of search keywords. Multiple keywords will be combined using RRF. Example: ['心理學', '商業'] or ['暢銷書']"
+      ),
+    limit: z
+      .number()
+      .optional()
+      .default(20)
       .describe("Maximum results to return (default: 20)"),
   }),
 
@@ -233,16 +265,22 @@ Example: User asks "心理學書籍" → Use this tool with keywords: ["心理�
         contentId: result.content_id,
         title: result.title,
         contentType: result.content_type,
-        summary: result.summary || (result.content ? result.content.substring(0, 200) : ''),
+        summary:
+          result.summary ||
+          (result.content ? result.content.substring(0, 200) : ""),
         url: result.url,
         tags: result.tags,
         category: result.category,
         metadata: result.metadata,
-        score: result.score ? result.score.toFixed(3) : '0',
+        score: result.score ? result.score.toFixed(3) : "0",
         relevanceExplanation: result.relevanceExplanation,
       }));
 
-      console.log(`[Product Search Tool] Found ${results.length} results for keywords: ${keywords.join(', ')}`);
+      console.log(
+        `[Product Search Tool] Found ${
+          results.length
+        } results for keywords: ${keywords.join(", ")}`
+      );
 
       return JSON.stringify({
         success: true,
@@ -252,10 +290,12 @@ Example: User asks "心理學書籍" → Use this tool with keywords: ["心理�
         message: `找到 ${results.length} 個相關商品`,
       });
     } catch (error) {
-      console.error('[Product Search Tool] Search failed:', error);
+      console.error("[Product Search Tool] Search failed:", error);
       return JSON.stringify({
         success: false,
-        message: `商品搜尋失敗：${error instanceof Error ? error.message : '未知錯誤'}`,
+        message: `商品搜尋失敗：${
+          error instanceof Error ? error.message : "未知錯誤"
+        }`,
         results: [],
       });
     }
@@ -278,7 +318,9 @@ Use this tool after search_products returns results and you need the complete co
 Example workflow: search_products finds relevant items → use their contentId with this tool to get full details.`,
 
   schema: z.object({
-    contentId: z.string().describe("The unique content ID obtained from search results"),
+    contentId: z
+      .string()
+      .describe("The unique content ID obtained from search results"),
   }),
 
   func: async ({ contentId }) => {
@@ -295,7 +337,7 @@ Example workflow: search_products finds relevant items → use their contentId w
 
       // 使用 content_id 作為查詢，exact match
       const result = await service.pool.query(
-        'SELECT * FROM search_index WHERE content_id = $1',
+        "SELECT * FROM search_index WHERE content_id = $1",
         [contentId]
       );
 
@@ -323,10 +365,15 @@ Example workflow: search_products finds relevant items → use their contentId w
         },
       });
     } catch (error) {
-      console.error('[Content Detail Tool] Failed to get content detail:', error);
+      console.error(
+        "[Content Detail Tool] Failed to get content detail:",
+        error
+      );
       return JSON.stringify({
         success: false,
-        message: `取得內容失敗：${error instanceof Error ? error.message : '未知錯誤'}`,
+        message: `取得內容失敗：${
+          error instanceof Error ? error.message : "未知錯誤"
+        }`,
       });
     }
   },
@@ -356,8 +403,14 @@ Results are ranked by semantic relevance and include only bestselling titles.
 Example: User asks "有哪些暢銷書?" → Use this tool with query: "暢銷書"`,
 
   schema: z.object({
-    query: z.string().describe("Search query to find relevant bestselling books"),
-    limit: z.number().optional().default(20).describe("Maximum results to return (default: 20)"),
+    query: z
+      .string()
+      .describe("Search query to find relevant bestselling books"),
+    limit: z
+      .number()
+      .optional()
+      .default(20)
+      .describe("Maximum results to return (default: 20)"),
   }),
 
   func: async ({ query, limit = 20 }) => {
@@ -373,7 +426,8 @@ Example: User asks "有哪些暢銷書?" → Use this tool with query: "暢銷�
       }
 
       // 使用 hybrid search，但過濾 book_types 陣列包含 'bestseller'
-      const results = await service.pool.query(`
+      const results = await service.pool.query(
+        `
         WITH bm25_results AS (
           SELECT
             content_id,
@@ -434,12 +488,19 @@ Example: User asks "有哪些暢銷書?" → Use this tool with query: "暢銷�
         FROM combined
         ORDER BY final_score DESC
         LIMIT $3
-      `, [query, JSON.stringify(await embeddingService.generateEmbedding(query)), limit]);
+      `,
+        [
+          query,
+          JSON.stringify(await embeddingService.generateEmbedding(query)),
+          limit,
+        ]
+      );
 
       const formattedResults = results.rows.map((row: any) => ({
         contentId: row.content_id,
         title: row.title,
-        summary: row.summary || (row.content ? row.content.substring(0, 200) : ''),
+        summary:
+          row.summary || (row.content ? row.content.substring(0, 200) : ""),
         url: row.url,
         tags: row.tags,
         category: row.category,
@@ -447,7 +508,9 @@ Example: User asks "有哪些暢銷書?" → Use this tool with query: "暢銷�
         score: parseFloat(row.final_score).toFixed(3),
       }));
 
-      console.log(`[Bestsellers Search Tool] Found ${formattedResults.length} bestselling books for query: ${query}`);
+      console.log(
+        `[Bestsellers Search Tool] Found ${formattedResults.length} bestselling books for query: ${query}`
+      );
 
       return JSON.stringify({
         success: true,
@@ -456,12 +519,13 @@ Example: User asks "有哪些暢銷書?" → Use this tool with query: "暢銷�
         results: formattedResults,
         message: `找到 ${formattedResults.length} 本暢銷書`,
       });
-
     } catch (error) {
-      console.error('[Bestsellers Search Tool] Search failed:', error);
+      console.error("[Bestsellers Search Tool] Search failed:", error);
       return JSON.stringify({
         success: false,
-        message: `暢銷書搜尋失敗：${error instanceof Error ? error.message : '未知錯誤'}`,
+        message: `暢銷書搜尋失敗：${
+          error instanceof Error ? error.message : "未知錯誤"
+        }`,
         results: [],
       });
     }
@@ -492,8 +556,14 @@ Results are ranked by semantic relevance and include only discounted titles.
 Example: User asks "有哪些79折的書?" → Use this tool with query: "79折優惠"`,
 
   schema: z.object({
-    query: z.string().describe("Search query to find relevant 79% discount books"),
-    limit: z.number().optional().default(20).describe("Maximum results to return (default: 20)"),
+    query: z
+      .string()
+      .describe("Search query to find relevant 79% discount books"),
+    limit: z
+      .number()
+      .optional()
+      .default(20)
+      .describe("Maximum results to return (default: 20)"),
   }),
 
   func: async ({ query, limit = 20 }) => {
@@ -509,7 +579,8 @@ Example: User asks "有哪些79折的書?" → Use this tool with query: "79折�
       }
 
       // 使用 hybrid search，但過濾 book_types 陣列包含 'discount'
-      const results = await service.pool.query(`
+      const results = await service.pool.query(
+        `
         WITH bm25_results AS (
           SELECT
             content_id,
@@ -570,12 +641,19 @@ Example: User asks "有哪些79折的書?" → Use this tool with query: "79折�
         FROM combined
         ORDER BY final_score DESC
         LIMIT $3
-      `, [query, JSON.stringify(await embeddingService.generateEmbedding(query)), limit]);
+      `,
+        [
+          query,
+          JSON.stringify(await embeddingService.generateEmbedding(query)),
+          limit,
+        ]
+      );
 
       const formattedResults = results.rows.map((row: any) => ({
         contentId: row.content_id,
         title: row.title,
-        summary: row.summary || (row.content ? row.content.substring(0, 200) : ''),
+        summary:
+          row.summary || (row.content ? row.content.substring(0, 200) : ""),
         url: row.url,
         tags: row.tags,
         category: row.category,
@@ -583,7 +661,9 @@ Example: User asks "有哪些79折的書?" → Use this tool with query: "79折�
         score: parseFloat(row.final_score).toFixed(3),
       }));
 
-      console.log(`[79 Discount Search Tool] Found ${formattedResults.length} discounted books for query: ${query}`);
+      console.log(
+        `[79 Discount Search Tool] Found ${formattedResults.length} discounted books for query: ${query}`
+      );
 
       return JSON.stringify({
         success: true,
@@ -592,12 +672,13 @@ Example: User asks "有哪些79折的書?" → Use this tool with query: "79折�
         results: formattedResults,
         message: `找到 ${formattedResults.length} 本79折優惠書籍`,
       });
-
     } catch (error) {
-      console.error('[79 Discount Search Tool] Search failed:', error);
+      console.error("[79 Discount Search Tool] Search failed:", error);
       return JSON.stringify({
         success: false,
-        message: `79折書籍搜尋失敗：${error instanceof Error ? error.message : '未知錯誤'}`,
+        message: `79折書籍搜尋失敗：${
+          error instanceof Error ? error.message : "未知錯誤"
+        }`,
         results: [],
       });
     }
@@ -631,8 +712,14 @@ This tool uses BM25 full-text search on:
 Example: User asks "村上春樹的書" → Use this tool with keyword: "村上春樹"`,
 
   schema: z.object({
-    keyword: z.string().describe("Keyword to search in book titles, authors, and publishers"),
-    limit: z.number().optional().default(20).describe("Maximum results to return (default: 20)"),
+    keyword: z
+      .string()
+      .describe("Keyword to search in book titles, authors, and publishers"),
+    limit: z
+      .number()
+      .optional()
+      .default(20)
+      .describe("Maximum results to return (default: 20)"),
   }),
 
   func: async ({ keyword, limit = 20 }) => {
@@ -648,7 +735,8 @@ Example: User asks "村上春樹的書" → Use this tool with keyword: "村上�
       }
 
       // 純 BM25 搜尋，組合 title、author、publisher
-      const results = await service.pool.query(`
+      const results = await service.pool.query(
+        `
         SELECT
           content_id,
           title,
@@ -673,12 +761,15 @@ Example: User asks "村上春樹的書" → Use this tool with keyword: "村上�
           )
         ORDER BY bm25_score DESC
         LIMIT $2
-      `, [keyword, limit]);
+      `,
+        [keyword, limit]
+      );
 
       const formattedResults = results.rows.map((row: any) => ({
         contentId: row.content_id,
         title: row.title,
-        summary: row.summary || (row.content ? row.content.substring(0, 200) : ''),
+        summary:
+          row.summary || (row.content ? row.content.substring(0, 200) : ""),
         url: row.url,
         tags: row.tags,
         category: row.category,
@@ -687,7 +778,9 @@ Example: User asks "村上春樹的書" → Use this tool with keyword: "村上�
         matchType: determineMatchType(row, keyword),
       }));
 
-      console.log(`[Keyword Search Tool] Found ${formattedResults.length} books for keyword: ${keyword}`);
+      console.log(
+        `[Keyword Search Tool] Found ${formattedResults.length} books for keyword: ${keyword}`
+      );
 
       return JSON.stringify({
         success: true,
@@ -696,12 +789,13 @@ Example: User asks "村上春樹的書" → Use this tool with keyword: "村上�
         results: formattedResults,
         message: `找到 ${formattedResults.length} 本書籍`,
       });
-
     } catch (error) {
-      console.error('[Keyword Search Tool] Search failed:', error);
+      console.error("[Keyword Search Tool] Search failed:", error);
       return JSON.stringify({
         success: false,
-        message: `關鍵字搜尋失敗：${error instanceof Error ? error.message : '未知錯誤'}`,
+        message: `關鍵字搜尋失敗：${
+          error instanceof Error ? error.message : "未知錯誤"
+        }`,
         results: [],
       });
     }
@@ -712,17 +806,17 @@ Example: User asks "村上春樹的書" → Use this tool with keyword: "村上�
  * 判斷關鍵字匹配類型
  */
 function determineMatchType(row: any, keyword: string): string {
-  const title = row.title?.toLowerCase() || '';
-  const author = row.metadata?.author?.toLowerCase() || '';
-  const publisher = row.metadata?.publisher?.toLowerCase() || '';
+  const title = row.title?.toLowerCase() || "";
+  const author = row.metadata?.author?.toLowerCase() || "";
+  const publisher = row.metadata?.publisher?.toLowerCase() || "";
   const kw = keyword.toLowerCase();
 
   const matches: string[] = [];
-  if (title.includes(kw)) matches.push('書名');
-  if (author.includes(kw)) matches.push('作者');
-  if (publisher.includes(kw)) matches.push('出版社');
+  if (title.includes(kw)) matches.push("書名");
+  if (author.includes(kw)) matches.push("作者");
+  if (publisher.includes(kw)) matches.push("出版社");
 
-  return matches.length > 0 ? `匹配: ${matches.join(', ')}` : '相關匹配';
+  return matches.length > 0 ? `匹配: ${matches.join(", ")}` : "相關匹配";
 }
 
 // ========================================
@@ -730,10 +824,10 @@ function determineMatchType(row: any, keyword: string): string {
 // ========================================
 
 export const searchTools = [
-  searchCustomerServiceDataTool,  // 客服資料庫搜尋 (manual_indexes)
-  searchProductsTool,             // 商品搜尋 (search_index)
-  getContentDetailTool,           // 取得完整內容
-  searchBestsellersTool,          // 暢銷書搜尋
-  search79DiscountBooksTool,      // 79折書籍搜尋
-  keywordSearchBooksTool,         // 關鍵字搜尋 (BM25)
+  searchCustomerServiceDataTool, // 客服資料庫搜尋 (manual_indexes)
+  searchProductsTool, // 商品搜尋 (search_index)
+  getContentDetailTool, // 取得完整內容
+  searchBestsellersTool, // 暢銷書搜尋
+  search79DiscountBooksTool, // 79折書籍搜尋
+  keywordSearchBooksTool, // 關鍵字搜尋 (BM25)
 ];

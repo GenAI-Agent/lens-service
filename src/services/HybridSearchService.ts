@@ -65,9 +65,11 @@ export class HybridSearchService {
       // Use API-based hybrid search
       // In browser environment, use relative URL; in Node.js, use full URL
       const isBrowser = typeof window !== "undefined";
-      const apiUrl = isBrowser
+      const apiUrl = process.env.NEXT_PUBLIC_BASE_URL
+        ? process.env.NEXT_PUBLIC_BASE_URL
+        : isBrowser
         ? ""
-        : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+        : "http://localhost:8080";
       const response = await axios.post(
         `${apiUrl}/api/widget/manual-indexes/search`,
         {

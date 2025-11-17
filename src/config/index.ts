@@ -28,7 +28,7 @@ function getOptionalEnv(key: string, defaultValue: string): string {
  * Check if running in browser environment
  */
 function isBrowser(): boolean {
-  return typeof window !== 'undefined';
+  return typeof window !== "undefined";
 }
 
 /**
@@ -51,19 +51,7 @@ export const config = {
     if (isBrowser()) {
       return window.location.origin;
     }
-    return getRequiredEnv('NEXT_PUBLIC_BASE_URL');
-  },
-
-  /**
-   * API URL for backend services
-   * Browser: Uses current origin
-   * Server: Requires NEXT_PUBLIC_API_URL environment variable
-   */
-  get apiUrl(): string {
-    if (isBrowser()) {
-      return window.location.origin;
-    }
-    return getRequiredEnv('NEXT_PUBLIC_API_URL');
+    return getRequiredEnv("NEXT_PUBLIC_BASE_URL");
   },
 
   /**
@@ -71,22 +59,22 @@ export const config = {
    */
   database: {
     get url(): string {
-      return getRequiredEnv('DATABASE_URL');
+      return getRequiredEnv("DATABASE_URL");
     },
     get host(): string {
-      return getRequiredEnv('DB_HOST');
+      return getRequiredEnv("DB_HOST");
     },
     get port(): number {
-      return parseInt(getOptionalEnv('DB_PORT', '5432'), 10);
+      return parseInt(getOptionalEnv("DB_PORT", "5432"), 10);
     },
     get name(): string {
-      return getRequiredEnv('DB_NAME');
+      return getRequiredEnv("DB_NAME");
     },
     get user(): string {
-      return getRequiredEnv('DB_USER');
+      return getRequiredEnv("DB_USER");
     },
     get password(): string {
-      return getRequiredEnv('DB_PASSWORD');
+      return getRequiredEnv("DB_PASSWORD");
     },
   },
 
@@ -124,15 +112,15 @@ export const config = {
    * Environment
    */
   get environment(): string {
-    return getOptionalEnv('NODE_ENV', 'development');
+    return getOptionalEnv("NODE_ENV", "development");
   },
 
   get isDevelopment(): boolean {
-    return this.environment === 'development';
+    return this.environment === "development";
   },
 
   get isProduction(): boolean {
-    return this.environment === 'production';
+    return this.environment === "production";
   },
 };
 
@@ -148,42 +136,43 @@ export function validateConfig(): void {
     if (!isBrowser()) {
       // Required for server-side operations
       if (!process.env.NEXT_PUBLIC_BASE_URL) {
-        errors.push('NEXT_PUBLIC_BASE_URL is required for server-side operations');
-      }
-      if (!process.env.NEXT_PUBLIC_API_URL) {
-        errors.push('NEXT_PUBLIC_API_URL is required for server-side operations');
+        errors.push(
+          "NEXT_PUBLIC_BASE_URL is required for server-side operations"
+        );
       }
     }
 
     // Database is always required (server-side only)
     if (!isBrowser()) {
       if (!process.env.DATABASE_URL) {
-        errors.push('DATABASE_URL is required');
+        errors.push("DATABASE_URL is required");
       }
       if (!process.env.DB_HOST) {
-        errors.push('DB_HOST is required');
+        errors.push("DB_HOST is required");
       }
       if (!process.env.DB_NAME) {
-        errors.push('DB_NAME is required');
+        errors.push("DB_NAME is required");
       }
       if (!process.env.DB_USER) {
-        errors.push('DB_USER is required');
+        errors.push("DB_USER is required");
       }
       if (!process.env.DB_PASSWORD) {
-        errors.push('DB_PASSWORD is required');
+        errors.push("DB_PASSWORD is required");
       }
     }
 
     if (errors.length > 0) {
       throw new Error(
-        `Configuration validation failed:\n${errors.map(e => `  - ${e}`).join('\n')}`
+        `Configuration validation failed:\n${errors
+          .map((e) => `  - ${e}`)
+          .join("\n")}`
       );
     }
 
-    console.log('✅ Configuration validated successfully');
+    console.log("✅ Configuration validated successfully");
   } catch (error) {
     if (error instanceof Error) {
-      console.error('❌ Configuration validation failed:', error.message);
+      console.error("❌ Configuration validation failed:", error.message);
       throw error;
     }
     throw error;

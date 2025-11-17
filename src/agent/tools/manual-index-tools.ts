@@ -32,31 +32,44 @@ export const searchManualIndexTool = new DynamicStructuredTool({
   schema: z.object({
     query: z.string().describe("搜尋查詢詞"),
     limit: z.number().optional().default(3).describe("返回結果數量（預設3）"),
-    minScore: z.number().optional().default(0.15).describe("最低相關度分數（預設0.15）"),
+    minScore: z
+      .number()
+      .optional()
+      .default(0.15)
+      .describe("最低相關度分數（預設0.15）"),
   }),
   func: async ({ query, limit = 3, minScore = 0.15 }) => {
     try {
-      console.log(`[Manual Index Tool] 搜尋知識庫: query="${query}", limit=${limit}`);
+      console.log(
+        `[Manual Index Tool] 搜尋知識庫: query="${query}", limit=${limit}`
+      );
 
       // 調用 TzAI_web 的搜尋 API
-      const apiUrl = typeof window !== 'undefined'
+      const apiUrl = process.env.NEXT_PUBLIC_BASE_URL
+        ? process.env.NEXT_PUBLIC_BASE_URL
+        : typeof window !== "undefined"
         ? window.location.origin
-        : 'http://localhost:8080';
+        : "http://localhost:8080";
 
-      const response = await fetch(`${apiUrl}/api/widget/manual-indexes/search`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          query,
-          limit,
-          minScore,
-        }),
-      });
+      const response = await fetch(
+        `${apiUrl}/api/widget/manual-indexes/search`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            query,
+            limit,
+            minScore,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(`API 返回錯誤: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `API 返回錯誤: ${response.status} ${response.statusText}`
+        );
       }
 
       const data = await response.json();
@@ -80,7 +93,9 @@ export const searchManualIndexTool = new DynamicStructuredTool({
         relevanceScore: r.hybrid_score,
       }));
 
-      console.log(`✅ [Manual Index Tool] 找到 ${formattedResults.length} 筆結果`);
+      console.log(
+        `✅ [Manual Index Tool] 找到 ${formattedResults.length} 筆結果`
+      );
 
       return JSON.stringify({
         success: true,
@@ -89,9 +104,8 @@ export const searchManualIndexTool = new DynamicStructuredTool({
         results: formattedResults,
         message: `在知識庫中找到 ${formattedResults.length} 筆與「${query}」相關的內容`,
       });
-
     } catch (error: any) {
-      console.error('[Manual Index Tool] 搜尋失敗:', error);
+      console.error("[Manual Index Tool] 搜尋失敗:", error);
 
       return JSON.stringify({
         success: false,
@@ -103,6 +117,4 @@ export const searchManualIndexTool = new DynamicStructuredTool({
   },
 });
 
-export const manualIndexTools = [
-  searchManualIndexTool,
-];
+export const manualIndexTools = [searchManualIndexTool];

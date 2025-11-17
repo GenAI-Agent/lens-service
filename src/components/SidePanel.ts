@@ -217,10 +217,11 @@ export class SidePanel {
       const showRuleDropdown = async (query: string) => {
         try {
           // 從 API 動態獲取 rules
-          const apiUrl =
-            typeof window !== "undefined"
-              ? window.location.origin
-              : "http://localhost:8080";
+          const apiUrl = process.env.NEXT_PUBLIC_BASE_URL
+            ? process.env.NEXT_PUBLIC_BASE_URL
+            : typeof window !== "undefined"
+            ? window.location.origin
+            : "http://localhost:8080";
 
           const response = await fetch(`${apiUrl}/api/widget/rules`);
 

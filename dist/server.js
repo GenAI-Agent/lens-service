@@ -57248,6 +57248,15 @@ var telegramTools = [
 var baseUrl = typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8080";
 async function saveAIPageToDB(pageId, title, template, books, bannerImageUrl) {
   try {
+    console.log("baseUrl", baseUrl);
+    console.log(
+      "saveAIPageToDB",
+      pageId,
+      title,
+      template,
+      books,
+      bannerImageUrl
+    );
     const response = await fetch(`${baseUrl}/api/widget/agenticPage`, {
       method: "POST",
       headers: {
