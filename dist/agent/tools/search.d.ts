@@ -1,6 +1,6 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
-import type { ServiceModulerConfig } from '../../types';
+import type { ServiceModulerConfig } from "../../types";
 export declare function initSearchTools(config: ServiceModulerConfig): void;
 /**
  * Tool: 搜尋客服資料庫 (Manual Index)

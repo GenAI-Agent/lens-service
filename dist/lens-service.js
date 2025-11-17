@@ -34282,7 +34282,7 @@ var SidePanel = class {
       };
       const showRuleDropdown = async (query) => {
         try {
-          const apiUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:8080";
+          const apiUrl = process.env.NEXT_PUBLIC_BASE_URL ? process.env.NEXT_PUBLIC_BASE_URL : typeof window !== "undefined" ? window.location.origin : "http://localhost:8080";
           const response = await fetch(`${apiUrl}/api/widget/rules`);
           if (!response.ok) {
             console.error("Failed to fetch rules from API");
@@ -37853,7 +37853,7 @@ var HybridSearchService = class {
     const { query, limit = 3, type, minScore = 0.15 } = options;
     try {
       const isBrowser = typeof window !== "undefined";
-      const apiUrl = isBrowser ? "" : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const apiUrl = process.env.NEXT_PUBLIC_BASE_URL ? process.env.NEXT_PUBLIC_BASE_URL : isBrowser ? "" : "http://localhost:8080";
       const response = await axios_default.post(
         `${apiUrl}/api/widget/manual-indexes/search`,
         {
@@ -56833,7 +56833,11 @@ var LensServiceWidget = class {
     if (!this.conversationState) return;
     try {
       const { DatabaseService: DatabaseService2 } = await Promise.resolve().then(() => (init_DatabaseService(), DatabaseService_exports));
-      await DatabaseService2.saveConversation(sessionId, "anonymous", this.conversationState.messages);
+      await DatabaseService2.saveConversation(
+        sessionId,
+        "anonymous",
+        this.conversationState.messages
+      );
       console.log("\u2705 Conversation saved to database");
     } catch (error) {
       console.error("Failed to save conversation to database:", error);
@@ -56954,7 +56958,9 @@ var LensServiceWidget = class {
           sessionId: latestConversation.session_id,
           messages: latestConversation.messages || []
         };
-        console.log(`\u2705 Loaded conversation with ${state.messages.length} messages`);
+        console.log(
+          `\u2705 Loaded conversation with ${state.messages.length} messages`
+        );
       } else {
         state = {
           sessionId: this.generateSessionId(),
@@ -56975,29 +56981,6 @@ var LensServiceWidget = class {
         sessionId: this.generateSessionId(),
         messages: []
       };
-    }
-  }
-  /**
-   * 載入並顯示 AI Page
-   */
-  async loadAndShowAIPage(pageId) {
-    try {
-      const apiEndpoint = this.config?.apiEndpoint || "/api/widget";
-      const baseUrl = apiEndpoint.replace("/chat", "");
-      const pageUrl = `${baseUrl}/api/ai-page/${pageId}`;
-      console.log("\u{1F4C4} Loading AI Page from:", pageUrl);
-      const response = await fetch(pageUrl, {
-        method: "GET",
-        credentials: "include"
-      });
-      if (!response.ok) {
-        console.error("Failed to fetch AI Page:", response.statusText);
-        return;
-      }
-      const htmlContent = await response.text();
-      window.open(pageUrl, "_blank");
-    } catch (error) {
-      console.error("Error loading AI Page:", error);
     }
   }
   /**

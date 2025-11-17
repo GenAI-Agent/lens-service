@@ -4533,7 +4533,7 @@ var HybridSearchService = class {
     const { query, limit = 3, type, minScore = 0.15 } = options;
     try {
       const isBrowser3 = typeof window !== "undefined";
-      const apiUrl = isBrowser3 ? "" : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      const apiUrl = process.env.NEXT_PUBLIC_BASE_URL ? process.env.NEXT_PUBLIC_BASE_URL : isBrowser3 ? "" : "http://localhost:8080";
       const response = await axios2.post(
         `${apiUrl}/api/widget/manual-indexes/search`,
         {
@@ -57245,18 +57245,9 @@ var telegramTools = [
 ];
 
 // src/agent/tools/aipage.ts
-var baseUrl = typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8080";
+var baseUrl = process.env.NEXT_PUBLIC_BASE_URL ? process.env.NEXT_PUBLIC_BASE_URL : typeof window !== "undefined" ? window.location.origin : "http://localhost:8080";
 async function saveAIPageToDB(pageId, title, template, books, bannerImageUrl) {
   try {
-    console.log("baseUrl", baseUrl);
-    console.log(
-      "saveAIPageToDB",
-      pageId,
-      title,
-      template,
-      books,
-      bannerImageUrl
-    );
     const response = await fetch(`${baseUrl}/api/widget/agenticPage`, {
       method: "POST",
       headers: {
@@ -57366,7 +57357,7 @@ Workflow: Fetch book data (search_popular_books or scrape_web) \u2192 Generate A
       }
       const pageId = `aipage-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       await saveAIPageToDB(pageId, title, template, books, bannerImageUrl);
-      const baseUrl3 = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8080";
+      const baseUrl3 = process.env.NEXT_PUBLIC_BASE_URL ? process.env.NEXT_PUBLIC_BASE_URL : "http://localhost:8080";
       const pageUrl = `${baseUrl3}/agenticPages/${pageId}`;
       return JSON.stringify({
         success: true,
@@ -57598,7 +57589,10 @@ async function initSearchService() {
       );
       console.log("[Search Tools] \u2705 Search service initialized");
     } catch (error46) {
-      console.error("[Search Tools] \u26A0\uFE0F  Failed to initialize search service:", error46);
+      console.error(
+        "[Search Tools] \u26A0\uFE0F  Failed to initialize search service:",
+        error46
+      );
       throw error46;
     }
   }
@@ -57640,21 +57634,28 @@ This is your primary source for customer service information. Do NOT use this fo
   }),
   func: async ({ query, limit = 3, minScore = 0.15 }) => {
     try {
-      console.log(`[Customer Service Data Tool] \u641C\u5C0B\u5BA2\u670D\u8CC7\u6599\u5EAB: query="${query}", limit=${limit}`);
-      const apiUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:8080";
-      const response = await fetch(`${apiUrl}/api/widget/manual-indexes/search`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          query,
-          limit,
-          minScore
-        })
-      });
+      console.log(
+        `[Customer Service Data Tool] \u641C\u5C0B\u5BA2\u670D\u8CC7\u6599\u5EAB: query="${query}", limit=${limit}`
+      );
+      const apiUrl = process.env.NEXT_PUBLIC_BASE_URL ? process.env.NEXT_PUBLIC_BASE_URL : typeof window !== "undefined" ? window.location.origin : "http://localhost:8080";
+      const response = await fetch(
+        `${apiUrl}/api/widget/manual-indexes/search`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            query,
+            limit,
+            minScore
+          })
+        }
+      );
       if (!response.ok) {
-        throw new Error(`API \u8FD4\u56DE\u932F\u8AA4: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `API \u8FD4\u56DE\u932F\u8AA4: ${response.status} ${response.statusText}`
+        );
       }
       const data = await response.json();
       if (!data.success || !data.results || data.results.length === 0) {
@@ -57674,7 +57675,9 @@ This is your primary source for customer service information. Do NOT use this fo
         type: r.type,
         relevanceScore: r.hybrid_score
       }));
-      console.log(`\u2705 [Customer Service Data Tool] \u627E\u5230 ${formattedResults.length} \u7B46\u7D50\u679C`);
+      console.log(
+        `\u2705 [Customer Service Data Tool] \u627E\u5230 ${formattedResults.length} \u7B46\u7D50\u679C`
+      );
       return JSON.stringify({
         success: true,
         query,
@@ -57715,7 +57718,9 @@ Results are ranked using hybrid search (BM25 + Vector) with RRF fusion, plus:
 
 Example: User asks "\u5FC3\u7406\u5B78\u66F8\u7C4D" \u2192 Use this tool with keywords: ["\u5FC3\u7406\u5B78"]`,
   schema: external_exports2.object({
-    keywords: external_exports2.array(external_exports2.string()).describe("Array of search keywords. Multiple keywords will be combined using RRF. Example: ['\u5FC3\u7406\u5B78', '\u5546\u696D'] or ['\u66A2\u92B7\u66F8']"),
+    keywords: external_exports2.array(external_exports2.string()).describe(
+      "Array of search keywords. Multiple keywords will be combined using RRF. Example: ['\u5FC3\u7406\u5B78', '\u5546\u696D'] or ['\u66A2\u92B7\u66F8']"
+    ),
     limit: external_exports2.number().optional().default(20).describe("Maximum results to return (default: 20)")
   }),
   func: async ({ keywords, limit = 20 }) => {
@@ -57744,7 +57749,9 @@ Example: User asks "\u5FC3\u7406\u5B78\u66F8\u7C4D" \u2192 Use this tool with ke
         score: result.score ? result.score.toFixed(3) : "0",
         relevanceExplanation: result.relevanceExplanation
       }));
-      console.log(`[Product Search Tool] Found ${results.length} results for keywords: ${keywords.join(", ")}`);
+      console.log(
+        `[Product Search Tool] Found ${results.length} results for keywords: ${keywords.join(", ")}`
+      );
       return JSON.stringify({
         success: true,
         keywords,
@@ -57808,7 +57815,10 @@ Example workflow: search_products finds relevant items \u2192 use their contentI
         }
       });
     } catch (error46) {
-      console.error("[Content Detail Tool] Failed to get content detail:", error46);
+      console.error(
+        "[Content Detail Tool] Failed to get content detail:",
+        error46
+      );
       return JSON.stringify({
         success: false,
         message: `\u53D6\u5F97\u5167\u5BB9\u5931\u6557\uFF1A${error46 instanceof Error ? error46.message : "\u672A\u77E5\u932F\u8AA4"}`
@@ -57843,7 +57853,8 @@ Example: User asks "\u6709\u54EA\u4E9B\u66A2\u92B7\u66F8?" \u2192 Use this tool 
           results: []
         });
       }
-      const results = await service.pool.query(`
+      const results = await service.pool.query(
+        `
         WITH bm25_results AS (
           SELECT
             content_id,
@@ -57904,7 +57915,13 @@ Example: User asks "\u6709\u54EA\u4E9B\u66A2\u92B7\u66F8?" \u2192 Use this tool 
         FROM combined
         ORDER BY final_score DESC
         LIMIT $3
-      `, [query, JSON.stringify(await embeddingService.generateEmbedding(query)), limit]);
+      `,
+        [
+          query,
+          JSON.stringify(await embeddingService.generateEmbedding(query)),
+          limit
+        ]
+      );
       const formattedResults = results.rows.map((row) => ({
         contentId: row.content_id,
         title: row.title,
@@ -57915,7 +57932,9 @@ Example: User asks "\u6709\u54EA\u4E9B\u66A2\u92B7\u66F8?" \u2192 Use this tool 
         metadata: row.metadata,
         score: parseFloat(row.final_score).toFixed(3)
       }));
-      console.log(`[Bestsellers Search Tool] Found ${formattedResults.length} bestselling books for query: ${query}`);
+      console.log(
+        `[Bestsellers Search Tool] Found ${formattedResults.length} bestselling books for query: ${query}`
+      );
       return JSON.stringify({
         success: true,
         query,
@@ -57960,7 +57979,8 @@ Example: User asks "\u6709\u54EA\u4E9B79\u6298\u7684\u66F8?" \u2192 Use this too
           results: []
         });
       }
-      const results = await service.pool.query(`
+      const results = await service.pool.query(
+        `
         WITH bm25_results AS (
           SELECT
             content_id,
@@ -58021,7 +58041,13 @@ Example: User asks "\u6709\u54EA\u4E9B79\u6298\u7684\u66F8?" \u2192 Use this too
         FROM combined
         ORDER BY final_score DESC
         LIMIT $3
-      `, [query, JSON.stringify(await embeddingService.generateEmbedding(query)), limit]);
+      `,
+        [
+          query,
+          JSON.stringify(await embeddingService.generateEmbedding(query)),
+          limit
+        ]
+      );
       const formattedResults = results.rows.map((row) => ({
         contentId: row.content_id,
         title: row.title,
@@ -58032,7 +58058,9 @@ Example: User asks "\u6709\u54EA\u4E9B79\u6298\u7684\u66F8?" \u2192 Use this too
         metadata: row.metadata,
         score: parseFloat(row.final_score).toFixed(3)
       }));
-      console.log(`[79 Discount Search Tool] Found ${formattedResults.length} discounted books for query: ${query}`);
+      console.log(
+        `[79 Discount Search Tool] Found ${formattedResults.length} discounted books for query: ${query}`
+      );
       return JSON.stringify({
         success: true,
         query,
@@ -58079,7 +58107,8 @@ Example: User asks "\u6751\u4E0A\u6625\u6A39\u7684\u66F8" \u2192 Use this tool w
           results: []
         });
       }
-      const results = await service.pool.query(`
+      const results = await service.pool.query(
+        `
         SELECT
           content_id,
           title,
@@ -58104,7 +58133,9 @@ Example: User asks "\u6751\u4E0A\u6625\u6A39\u7684\u66F8" \u2192 Use this tool w
           )
         ORDER BY bm25_score DESC
         LIMIT $2
-      `, [keyword, limit]);
+      `,
+        [keyword, limit]
+      );
       const formattedResults = results.rows.map((row) => ({
         contentId: row.content_id,
         title: row.title,
@@ -58116,7 +58147,9 @@ Example: User asks "\u6751\u4E0A\u6625\u6A39\u7684\u66F8" \u2192 Use this tool w
         score: parseFloat(row.bm25_score).toFixed(3),
         matchType: determineMatchType(row, keyword)
       }));
-      console.log(`[Keyword Search Tool] Found ${formattedResults.length} books for keyword: ${keyword}`);
+      console.log(
+        `[Keyword Search Tool] Found ${formattedResults.length} books for keyword: ${keyword}`
+      );
       return JSON.stringify({
         success: true,
         keyword,
@@ -59515,7 +59548,7 @@ var telegramTools2 = [
 ];
 
 // src/agent/tools/aipage-tools.ts
-var baseUrl2 = typeof window !== "undefined" ? window.location.origin : process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+var baseUrl2 = process.env.NEXT_PUBLIC_BASE_URL ? process.env.NEXT_PUBLIC_BASE_URL : typeof window !== "undefined" ? window.location.origin : "http://localhost:8080";
 var searchIndexService2 = null;
 var embeddingService2 = null;
 var currentConfig6 = null;
@@ -60033,21 +60066,28 @@ var searchManualIndexTool = new DynamicStructuredTool({
   }),
   func: async ({ query, limit = 3, minScore = 0.15 }) => {
     try {
-      console.log(`[Manual Index Tool] \u641C\u5C0B\u77E5\u8B58\u5EAB: query="${query}", limit=${limit}`);
-      const apiUrl = typeof window !== "undefined" ? window.location.origin : "http://localhost:8080";
-      const response = await fetch(`${apiUrl}/api/widget/manual-indexes/search`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          query,
-          limit,
-          minScore
-        })
-      });
+      console.log(
+        `[Manual Index Tool] \u641C\u5C0B\u77E5\u8B58\u5EAB: query="${query}", limit=${limit}`
+      );
+      const apiUrl = process.env.NEXT_PUBLIC_BASE_URL ? process.env.NEXT_PUBLIC_BASE_URL : typeof window !== "undefined" ? window.location.origin : "http://localhost:8080";
+      const response = await fetch(
+        `${apiUrl}/api/widget/manual-indexes/search`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            query,
+            limit,
+            minScore
+          })
+        }
+      );
       if (!response.ok) {
-        throw new Error(`API \u8FD4\u56DE\u932F\u8AA4: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `API \u8FD4\u56DE\u932F\u8AA4: ${response.status} ${response.statusText}`
+        );
       }
       const data = await response.json();
       if (!data.success || !data.results || data.results.length === 0) {
@@ -60067,7 +60107,9 @@ var searchManualIndexTool = new DynamicStructuredTool({
         type: r.type,
         relevanceScore: r.hybrid_score
       }));
-      console.log(`\u2705 [Manual Index Tool] \u627E\u5230 ${formattedResults.length} \u7B46\u7D50\u679C`);
+      console.log(
+        `\u2705 [Manual Index Tool] \u627E\u5230 ${formattedResults.length} \u7B46\u7D50\u679C`
+      );
       return JSON.stringify({
         success: true,
         query,
@@ -60086,9 +60128,7 @@ var searchManualIndexTool = new DynamicStructuredTool({
     }
   }
 });
-var manualIndexTools = [
-  searchManualIndexTool
-];
+var manualIndexTools = [searchManualIndexTool];
 
 // src/agent/tools/popular-books-tool.ts
 import axios9 from "axios";

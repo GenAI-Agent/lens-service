@@ -22,12 +22,6 @@ export declare const config: {
      */
     readonly baseUrl: string;
     /**
-     * API URL for backend services
-     * Browser: Uses current origin
-     * Server: Requires NEXT_PUBLIC_API_URL environment variable
-     */
-    readonly apiUrl: string;
-    /**
      * Database configuration
      */
     database: {

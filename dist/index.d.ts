@@ -1,4 +1,4 @@
-import { ServiceModulerConfig } from './types';
+import { ServiceModulerConfig } from "./types";
 /**
  * Lens Service - 可嵌入的 AI 客服 Widget
  *
@@ -83,7 +83,7 @@ declare class LensServiceWidget {
      * Index site (not implemented)
      * Note: Site indexing functionality has been removed. Use backend API for indexing.
      */
-    indexSite(startUrl?: string, mode?: 'local' | 'domain', onProgress?: (current: number, total: number) => void): Promise<void>;
+    indexSite(startUrl?: string, mode?: "local" | "domain", onProgress?: (current: number, total: number) => void): Promise<void>;
     /**
      * Search current page content (not implemented)
      * Note: This functionality has been removed.
@@ -142,10 +142,6 @@ declare class LensServiceWidget {
      */
     private loadConversationState;
     /**
-     * 載入並顯示 AI Page
-     */
-    private loadAndShowAIPage;
-    /**
      * Save conversation state
      * Note: Local storage saving is disabled. Conversations are saved to database via saveConversationToDatabase()
      */
@@ -172,9 +168,9 @@ declare class LensServiceWidget {
     setConversationId(conversationId: string): void;
 }
 declare const LensService: LensServiceWidget;
-export { ContentExtractorService } from './services/ContentExtractorService';
-export { DatabaseService } from './services/DatabaseService';
-export { ManualIndexService } from './services/ManualIndexService';
-export { ConversationService } from './services/ConversationService';
-export { UserService } from './services/UserService';
+export { ContentExtractorService } from "./services/ContentExtractorService";
+export { DatabaseService } from "./services/DatabaseService";
+export { ManualIndexService } from "./services/ManualIndexService";
+export { ConversationService } from "./services/ConversationService";
+export { UserService } from "./services/UserService";
 export default LensService;
