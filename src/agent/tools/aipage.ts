@@ -8,10 +8,11 @@ import { z } from "zod";
 import { ImageGenerationService } from "../../services/ImageGenerationService";
 
 // ==================== Configuration ====================
-const baseUrl =
-  typeof window !== "undefined"
-    ? window.location.origin
-    : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8080";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+  ? process.env.NEXT_PUBLIC_BASE_URL
+  : typeof window !== "undefined"
+  ? window.location.origin
+  : "http://localhost:8080";
 
 // ==================== Database Storage Service (via API) ====================
 /**
@@ -216,8 +217,9 @@ Workflow: Fetch book data (search_popular_books or scrape_web) → Generate AI p
       await saveAIPageToDB(pageId, title, template, books, bannerImageUrl);
 
       // 從環境變數獲取 BASE_URL，如果沒有則使用預設值
-      const baseUrl =
-        process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8080";
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+        ? process.env.NEXT_PUBLIC_BASE_URL
+        : "http://localhost:8080";
       const pageUrl = `${baseUrl}/agenticPages/${pageId}`;
 
       return JSON.stringify({

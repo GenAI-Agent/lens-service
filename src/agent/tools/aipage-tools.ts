@@ -3,10 +3,11 @@ import { z } from "zod";
 import type { ServiceModulerConfig } from "../../types";
 
 // API 配置
-const baseUrl =
-  typeof window !== "undefined"
-    ? window.location.origin
-    : process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:8080";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+  ? process.env.NEXT_PUBLIC_BASE_URL
+  : typeof window !== "undefined"
+  ? window.location.origin
+  : "http://localhost:8080";
 
 // 搜尋索引相關
 let searchIndexService: any = null;
