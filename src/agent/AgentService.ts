@@ -11,7 +11,6 @@ import { telegramTools, initTelegramTools } from "./tools/telegram";
 import { aipageTools, initAIPageTools } from "./tools/aipage";
 import { webScraperTools } from "./tools/web-scraper";
 import { searchTools, initSearchTools } from "./tools/search";
-import { EmbeddingService } from "../services/EmbeddingService";
 import { RotatingChatOpenAI } from "../services/RotatingChatOpenAI";
 import { getApiKeyRotationService } from "../services/ApiKeyRotationService";
 
@@ -223,23 +222,24 @@ export class AgentService {
       }
 
       // 取得並修剪對話歷史（只保留最後 2 次 QA）
-      const trimmedHistory = await this.getTrimmedConversationHistory(threadId);
+      // TODO: 使用自己的 History，不要使用 MemorySaver 的 History
+      // const trimmedHistory = await this.getTrimmedConversationHistory(threadId);
 
       // 調用 Agent
       console.log("[AgentService] 📤 Invoking agent");
       console.log("[AgentService] 📝 User query:", message);
       console.log("[AgentService] 🧵 Thread ID:", threadId);
-      console.log(
-        "[AgentService] 💬 Using",
-        trimmedHistory.length,
-        "previous Q&A pairs"
-      );
+      // console.log(
+      //   "[AgentService] 💬 Using",
+      //   trimmedHistory.length,
+      //   "previous Q&A pairs"
+      // );
 
       const result = await agent.invoke(
         {
           messages: [
             { role: "system", content: systemPrompt },
-            ...trimmedHistory,
+            // ...trimmedHistory,
             { role: "user", content: message },
           ],
         },
@@ -448,6 +448,7 @@ ${JSON.stringify(dbSchema, null, 2)}
   - User searches for products/books
   - Complex information that benefits from visual presentation
   - Multi-item displays (3+ items)
+  - Keyword search
 
   **Workflow:**
   1. Use search_products to get book data from indexed products
@@ -456,7 +457,8 @@ ${JSON.stringify(dbSchema, null, 2)}
      - List book titles, authors, and brief descriptions
      - Explain why these books are recommended
      - Provide engaging summary of the collection
-     - Frontend will automatically add a clickable link to view the AI Page
+  4. Please include a link in your reply. Use Markdown link format.
+     - The link will be: http://localhost:8080/agenticPages/{pageId}
 
   **Templates:**
   - neon-gradient-style: Modern/tech feel

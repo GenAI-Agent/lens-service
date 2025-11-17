@@ -4,13 +4,6 @@
  */
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
-interface AIPageData {
-    id: string;
-    title: string;
-    content: string;
-    createdAt: Date;
-}
-export declare function saveAIPage(pageId: string, title: string, content: string): Promise<void>;
 /**
  * 將 AI 頁面資料儲存到資料庫 (透過 API)
  */
@@ -19,8 +12,6 @@ export declare function saveAIPageToDB(pageId: string, title: string, template: 
  * 從資料庫讀取 AI 頁面資料 (透過 API)
  */
 export declare function getAIPageFromDB(pageId: string): Promise<any>;
-export declare function getAIPage(pageId: string): Promise<AIPageData | null>;
-export declare function listAIPages(): Promise<AIPageData[]>;
 export declare function initAIPageTools(config?: {
     templatesDir?: string;
     fluxApiUrl?: string;
@@ -112,4 +103,4 @@ export declare const aipageTools: DynamicStructuredTool<z.ZodObject<{
         rating?: string | undefined;
     }[];
 }, string>[];
-export { getAIPage as getAIPageContent };
+export { getAIPageFromDB as getAIPageContent };
