@@ -26,7 +26,8 @@ export interface ImageGenerationResult {
 export declare class ImageGenerationService {
     private baseUrl;
     private timeout;
-    constructor(baseUrl?: string, timeout?: number);
+    private httpsAgent;
+    constructor(baseUrl?: string, timeout?: number, rejectUnauthorized?: boolean);
     /**
      * 生成書籍封面圖片的優化提示詞
      */

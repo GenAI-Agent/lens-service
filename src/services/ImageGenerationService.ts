@@ -1,4 +1,5 @@
 import axios from "axios";
+import https from "https";
 
 /**
  * ImageGenerationService
@@ -31,13 +32,20 @@ export interface ImageGenerationResult {
 export class ImageGenerationService {
   private baseUrl: string;
   private timeout: number;
+  private httpsAgent: https.Agent;
 
   constructor(
     baseUrl: string = "https://flux.ask-lens.ai/api/v1",
-    timeout: number = 300000
+    timeout: number = 300000,
+    rejectUnauthorized: boolean = process.env.NODE_ENV === "production"
   ) {
     this.baseUrl = baseUrl;
     this.timeout = timeout;
+
+    // 在開發環境中允許跳過 SSL 驗證
+    this.httpsAgent = new https.Agent({
+      rejectUnauthorized: rejectUnauthorized,
+    });
   }
 
   /**
@@ -99,6 +107,7 @@ export class ImageGenerationService {
           headers: {
             "Content-Type": "application/json",
           },
+          httpsAgent: this.httpsAgent,
         }
       );
 
@@ -162,6 +171,7 @@ export class ImageGenerationService {
     try {
       const response = await axios.get(`${this.baseUrl}/system-stats`, {
         timeout: 5000,
+        httpsAgent: this.httpsAgent,
       });
 
       return response.status === 200;

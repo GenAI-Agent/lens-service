@@ -6023,12 +6023,17 @@ var StaticPageIndexService = class {
 
 // src/services/ImageGenerationService.ts
 import axios6 from "axios";
+import https from "https";
 var ImageGenerationService = class {
   baseUrl;
   timeout;
-  constructor(baseUrl3 = "https://flux.ask-lens.ai/api/v1", timeout = 3e5) {
+  httpsAgent;
+  constructor(baseUrl3 = "https://flux.ask-lens.ai/api/v1", timeout = 3e5, rejectUnauthorized = process.env.NODE_ENV === "production") {
     this.baseUrl = baseUrl3;
     this.timeout = timeout;
+    this.httpsAgent = new https.Agent({
+      rejectUnauthorized
+    });
   }
   /**
    * 生成書籍封面圖片的優化提示詞
@@ -6074,7 +6079,8 @@ var ImageGenerationService = class {
           timeout: this.timeout,
           headers: {
             "Content-Type": "application/json"
-          }
+          },
+          httpsAgent: this.httpsAgent
         }
       );
       if (response.status === 200 && response.data) {
@@ -6132,7 +6138,8 @@ var ImageGenerationService = class {
   async checkSystemStatus() {
     try {
       const response = await axios6.get(`${this.baseUrl}/system-stats`, {
-        timeout: 5e3
+        timeout: 5e3,
+        httpsAgent: this.httpsAgent
       });
       return response.status === 200;
     } catch (error46) {
