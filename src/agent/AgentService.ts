@@ -111,7 +111,7 @@ export class AgentService {
     }
 
     // 初始化內部搜尋工具（新整合的搜尋工具，預設啟用）
-    if (agentConfig.enableManualIndexSearch !== false) {
+    if (agentConfig.enableInternalSearch !== false) {
       initSearchTools(this.config);
       this.enabledTools.push(...searchTools);
       console.log(
@@ -321,7 +321,7 @@ export class AgentService {
       hour12: false,
     });
 
-    let systemPrompt = `你是 TzAI 智能客服助理。當前時間：${currentDateTime}，用戶ID：${
+    let systemPrompt = `你是 Lens 智能客服助理。當前時間：${currentDateTime}，用戶ID：${
       userId || "未知"
     }
 
@@ -357,21 +357,19 @@ export class AgentService {
   **使用時機（必須使用）**：
   - 訂單相關問題（查詢、修改、取消、退貨、換貨）
   - 付款問題（匯款、退款、發票）
-  - 配送問題（物流、運送時間、超商取貨）
+  - Lens 相關問題（使用、功能、問題）
   - 會員問題（註冊、登入、密碼、權限）
-  - 公司政策（退換貨政策、隱私權、服務條款）
-  - 任何與客服、售後服務相關的問題
 
   **工作流程（強制執行）**：
-  1. 用戶提出客服相關問題時，**必須先**使用 search_customer_service_data 搜尋
+  1. 用戶提出 Lens 相關問題時，**必須先**使用 search_customer_service_data 搜尋
   2. 根據搜尋結果回答用戶問題
   3. 如果搜尋無結果，才使用 send_notification 通知客服
 
 - **search_products**: 搜尋商品（用於書籍/商品推薦）
-  用途: 搜尋已索引的書籍、商品、AI頁面、文章
+  用途: 搜尋已索引的產品、AI頁面、文章
   參數: query, contentTypes, limit, mode
-  使用時機: 用戶搜尋特定書籍、商品推薦、產品資訊查詢
-  重要: 書籍推薦應使用此工具，搜尋 search_index 中已索引的商品資料
+  使用時機: 用戶搜尋特定產品、產品推薦、產品資訊查詢
+  重要: 產品推薦應使用此工具，搜尋 search_index 中已索引的產品資料
 
 - **get_content_detail**: 取得完整內容
   用途: 從搜尋結果獲取完整資訊
@@ -382,12 +380,6 @@ export class AgentService {
 ✅ 用戶問「匯款什麼時候入帳」→ 先用 search_customer_service_data 搜尋「匯款 入帳」→ 根據搜尋結果回答
 `;
     }
-
-    // Manual Index - 已整合到上面
-    if (agentConfig.enableManualIndexSearch !== false) {
-      // 不需要額外說明，已在 search_customer_service_data 中涵蓋
-    }
-
     // 資料庫工具
     const dbSchema = this.loadDatabaseSchema();
     if (agentConfig.enableDatabaseTools && dbSchema) {
@@ -476,6 +468,14 @@ ${JSON.stringify(dbSchema, null, 2)}
 ### 網頁爬取
 - **scrape_web**: 爬取網頁內容
   參數: url
+  問 Lens Eureka 網站：https://eureka.ask-lens.ai
+  問 Lens Astro 網站：https://astro.ask-lens.ai
+  問 Lens 乾坤網站：https://qiankun.ask-lens.ai
+  問 Lens 1999Lens網站：https://1999lens.ask-lens.ai
+  問 Lens Image Lens網站：https://image-lens.ask-lens.ai
+  問 Lens 主站，包含所有Lens介紹：https://www.ask-lens.ai
+  問 Lens Quant：https://quant.ask-lens.ai
+  問 Lens Audio：https://audio.ask-lens.ai
 `;
     }
 

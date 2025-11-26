@@ -52,38 +52,44 @@ export interface ServiceModulerConfig {
   // 網站配置
   siteConfig?: {
     // 本地專案模式（默認啟用）
-    localMode?: boolean;         // 默認 true，索引當前專案所有頁面
+    localMode?: boolean; // 默認 true，索引當前專案所有頁面
 
     // 遠程域名配置（附加功能，需要在後台配置）
     remoteDomains?: Array<{
-      domain: string;            // 主域名，如 'ask-lens.ai'
-      subdomains?: string[];     // 包含的子域名，如 ['quant', 'audio']
-      excludeSubdomains?: string[];  // 排除的子域名
-      enabled?: boolean;         // 是否啟用
+      domain: string; // 主域名，如 'ask-lens.ai'
+      subdomains?: string[]; // 包含的子域名，如 ['quant', 'audio']
+      excludeSubdomains?: string[]; // 排除的子域名
+      enabled?: boolean; // 是否啟用
     }>;
 
     // 路徑過濾
-    includePaths?: string[];     // 包含的路徑
-    excludePaths?: string[];     // 排除的路徑
+    includePaths?: string[]; // 包含的路徑
+    excludePaths?: string[]; // 排除的路徑
   };
 
   // UI 配置
   ui?: {
     // 側邊欄配置
-    position?: 'left' | 'right'; // 側邊欄位置
-    width?: string;              // 側邊欄寬度，默認 '33.33%'
+    position?: "left" | "right"; // 側邊欄位置
+    width?: string; // 側邊欄寬度，默認 '33.33%'
     primaryColor?: string;
-    language?: 'zh-TW' | 'en';
+    language?: "zh-TW" | "en";
 
     // 客服圖標位置配置
-    iconPosition?: {
-      bottom?: string;    // 距離底部的距離，如 '20px'
-      right?: string;     // 距離右邊的距離，如 '20px'
-      top?: string;       // 距離頂部的距離，如 '20px'
-      left?: string;      // 距離左邊的距離，如 '20px'
-    } | 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | false; // false 表示不顯示浮動圖標
+    iconPosition?:
+      | {
+          bottom?: string; // 距離底部的距離，如 '20px'
+          right?: string; // 距離右邊的距離，如 '20px'
+          top?: string; // 距離頂部的距離，如 '20px'
+          left?: string; // 距離左邊的距離，如 '20px'
+        }
+      | "bottom-right"
+      | "bottom-left"
+      | "top-right"
+      | "top-left"
+      | false; // false 表示不顯示浮動圖標
   };
-  
+
   // 功能配置
   features?: {
     enableScreenshot?: boolean;
@@ -93,13 +99,12 @@ export interface ServiceModulerConfig {
 
   // Agent 功能配置
   agent?: {
-    enableDatabaseTools?: boolean;      // 啟用資料庫工具
-    enableTelegramNotify?: boolean;     // 啟用 Telegram 通知
-    enableAIPageGeneration?: boolean;   // 啟用 AI Page 生成
-    enablePermissionCheck?: boolean;    // 啟用權限檢查（預設 true）
-    enableManualIndexSearch?: boolean;  // 啟用知識庫搜尋（預設 true）
-    enableInternalSearch?: boolean;     // 啟用內部搜尋工具（預設 true）
-    enableWebScraper?: boolean;         // 啟用網頁爬取工具（預設 true）
+    enableDatabaseTools?: boolean; // 啟用資料庫工具
+    enableTelegramNotify?: boolean; // 啟用 Telegram 通知
+    enableAIPageGeneration?: boolean; // 啟用 AI Page 生成
+    enablePermissionCheck?: boolean; // 啟用權限檢查（預設 true）
+    enableInternalSearch?: boolean; // 啟用內部搜尋工具（預設 true）
+    enableWebScraper?: boolean; // 啟用網頁爬取工具（預設 true）
 
     // 危險操作關鍵字（自定義）
     dangerousActions?: string[];
@@ -115,10 +120,10 @@ export interface ServiceModulerConfig {
       orderNumberField?: string;
     };
   };
-  
+
   // 規則配置
   rules?: Rule[];
-  
+
   // 調試模式
   debug?: boolean;
 
@@ -139,7 +144,7 @@ export interface Rule {
 export interface Message {
   id?: string; // 可選，向後兼容
   conversationId?: string; // 可選，向後兼容
-  role: 'user' | 'assistant' | 'system' | 'human-agent';
+  role: "user" | "assistant" | "system" | "human-agent";
   content: string;
   imageBase64?: string;
   timestamp: number;
@@ -153,11 +158,11 @@ export interface Message {
 }
 
 export interface Source {
-  type?: 'manual-index' | 'frontend-page' | 'sitemap' | 'sql' | 'agent-content';
+  type?: "manual-index" | "frontend-page" | "sitemap" | "sql" | "agent-content";
   url: string;
   title: string;
-  snippet?: string;  // 可選，向後兼容
-  content?: string;  // 新增，用於完整內容
+  snippet?: string; // 可選，向後兼容
+  content?: string; // 新增，用於完整內容
   score?: number;
   metadata?: {
     [key: string]: any;
@@ -193,7 +198,7 @@ export interface Conversation {
   lastMessageAt: number; // timestamp
   createdAt?: number; // 向後兼容
   updatedAt?: number; // 向後兼容
-  status: 'active' | 'closed' | 'human-takeover';
+  status: "active" | "closed" | "human-takeover";
   humanAgentId?: string; // 如果有人工接管
   metadata?: {
     userAgent?: string;
@@ -240,7 +245,7 @@ export interface SitemapPage {
 export interface SQLConnection {
   id: string;
   name: string;
-  type: 'mysql' | 'postgresql' | 'mssql' | 'sqlite';
+  type: "mysql" | "postgresql" | "mssql" | "sqlite";
   enabled: boolean;
   createdAt: string;
   config: {
@@ -297,7 +302,7 @@ export interface IndexedPage {
 export interface SearchIndex {
   version: string;
   lastUpdated: number;
-  type: 'site' | 'project';
+  type: "site" | "project";
   config: {
     totalPages: number;
     totalKeywords: number;
@@ -322,7 +327,7 @@ export interface SearchSettings {
   projectSearchDescription: string;
   siteSearchDescription: string;
   autoRefresh: boolean;
-  refreshInterval: number;  // milliseconds
+  refreshInterval: number; // milliseconds
   sitemapUrl?: string;
 }
 
@@ -372,4 +377,3 @@ export interface ScrapedContent {
   };
   scrapedAt: Date;
 }
-

@@ -1,7 +1,7 @@
 import { DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import axios from "axios";
-import type { ServiceModulerConfig } from '../../types';
+import type { ServiceModulerConfig } from "../../types";
 
 let currentConfig: ServiceModulerConfig | null = null;
 let searchIndexService: any = null;
@@ -13,14 +13,18 @@ let embeddingService: any = null;
 async function initSearchService() {
   if (!searchIndexService && process.env.DATABASE_URL) {
     try {
-      const { SearchIndexService } = await import('../../services/SearchIndexService');
-      const { EmbeddingService } = await import('../../services/EmbeddingService');
+      const { SearchIndexService } = await import(
+        "../../services/SearchIndexService"
+      );
+      const { EmbeddingService } = await import(
+        "../../services/EmbeddingService"
+      );
 
       // 初始化 Embedding 服務
       embeddingService = new EmbeddingService({
-        endpoint: process.env.AZURE_OPENAI_ENDPOINT || '',
-        apiKey: process.env.AZURE_OPENAI_API_KEY || '',
-        deployment: 'text-embedding-3-small',
+        endpoint: process.env.AZURE_OPENAI_ENDPOINT || "",
+        apiKey: process.env.AZURE_OPENAI_API_KEY || "",
+        deployment: "text-embedding-3-small",
         dimensions: 1536,
       });
 
@@ -30,9 +34,12 @@ async function initSearchService() {
         embeddingService
       );
 
-      console.log('[Search Tools] ✅ Search service initialized');
+      console.log("[Search Tools] ✅ Search service initialized");
     } catch (error) {
-      console.error('[Search Tools] ⚠️  Failed to initialize search service:', error);
+      console.error(
+        "[Search Tools] ⚠️  Failed to initialize search service:",
+        error
+      );
       throw error;
     }
   }
@@ -44,9 +51,9 @@ export function initSearchTools(config: ServiceModulerConfig) {
   currentConfig = config;
 
   // 預先初始化搜尋服務（異步，不阻塞）
-  if (config.agent?.enableManualIndexSearch) {
-    initSearchService().catch(err => {
-      console.error('[Search Tools] Failed to init search service:', err);
+  if (config.agent?.enableInternalSearch) {
+    initSearchService().catch((err) => {
+      console.error("[Search Tools] Failed to init search service:", err);
     });
   }
 }
@@ -74,15 +81,25 @@ export const searchInternalContentTool = new DynamicStructuredTool({
 
   schema: z.object({
     query: z.string().describe("搜尋查詢（使用自然語言描述要找什麼）"),
-    contentTypes: z.array(z.enum(['static_page', 'ai_page', 'product', 'article'])).optional()
+    contentTypes: z
+      .array(z.enum(["static_page", "ai_page", "product", "article"]))
+      .optional()
       .describe("限定內容類型（可選）。例如：['ai_page'] 只搜尋 AI 生成的頁面"),
-    limit: z.number().optional().default(10)
+    limit: z
+      .number()
+      .optional()
+      .default(10)
       .describe("返回結果數量（預設 10，最多 20）"),
-    mode: z.enum(['keyword', 'semantic', 'hybrid']).optional().default('hybrid')
-      .describe("搜尋模式：keyword=關鍵字匹配, semantic=語意搜尋, hybrid=混合（推薦）"),
+    mode: z
+      .enum(["keyword", "semantic", "hybrid"])
+      .optional()
+      .default("hybrid")
+      .describe(
+        "搜尋模式：keyword=關鍵字匹配, semantic=語意搜尋, hybrid=混合（推薦）"
+      ),
   }),
 
-  func: async ({ query, contentTypes, limit = 10, mode = 'hybrid' }) => {
+  func: async ({ query, contentTypes, limit = 10, mode = "hybrid" }) => {
     try {
       // 初始化搜尋服務
       const service = await initSearchService();
@@ -110,16 +127,22 @@ export const searchInternalContentTool = new DynamicStructuredTool({
         contentId: result.contentId,
         title: result.title,
         contentType: result.contentType,
-        summary: result.summary || (result.content ? result.content.substring(0, 200) : ''),
+        summary:
+          result.summary ||
+          (result.content ? result.content.substring(0, 200) : ""),
         url: result.url,
         tags: result.tags,
         category: result.category,
-        score: result.score ? result.score.toFixed(3) : '0',
+        score: result.score ? result.score.toFixed(3) : "0",
         bm25Score: result.bm25Score ? result.bm25Score.toFixed(3) : undefined,
-        vectorScore: result.vectorScore ? result.vectorScore.toFixed(3) : undefined,
+        vectorScore: result.vectorScore
+          ? result.vectorScore.toFixed(3)
+          : undefined,
       }));
 
-      console.log(`[Search Tools] Found ${resultsArray.length} results for query: "${query}"`);
+      console.log(
+        `[Search Tools] Found ${resultsArray.length} results for query: "${query}"`
+      );
 
       return JSON.stringify({
         success: true,
@@ -130,10 +153,12 @@ export const searchInternalContentTool = new DynamicStructuredTool({
         message: `找到 ${resultsArray.length} 個相關結果`,
       });
     } catch (error) {
-      console.error('[Search Tools] Search failed:', error);
+      console.error("[Search Tools] Search failed:", error);
       return JSON.stringify({
         success: false,
-        message: `搜尋失敗：${error instanceof Error ? error.message : '未知錯誤'}`,
+        message: `搜尋失敗：${
+          error instanceof Error ? error.message : "未知錯誤"
+        }`,
         results: [],
       });
     }
@@ -169,7 +194,7 @@ export const getContentDetailTool = new DynamicStructuredTool({
 
       // 使用 content_id 作為查詢，exact match
       const result = await service.pool.query(
-        'SELECT * FROM search_index WHERE content_id = $1',
+        "SELECT * FROM search_index WHERE content_id = $1",
         [contentId]
       );
 
@@ -197,10 +222,12 @@ export const getContentDetailTool = new DynamicStructuredTool({
         },
       });
     } catch (error) {
-      console.error('[Search Tools] Failed to get content detail:', error);
+      console.error("[Search Tools] Failed to get content detail:", error);
       return JSON.stringify({
         success: false,
-        message: `取得內容失敗：${error instanceof Error ? error.message : '未知錯誤'}`,
+        message: `取得內容失敗：${
+          error instanceof Error ? error.message : "未知錯誤"
+        }`,
       });
     }
   },
