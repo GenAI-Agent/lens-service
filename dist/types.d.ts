@@ -49,16 +49,16 @@ export interface ServiceModulerConfig {
         excludePaths?: string[];
     };
     ui?: {
-        position?: 'left' | 'right';
+        position?: "left" | "right";
         width?: string;
         primaryColor?: string;
-        language?: 'zh-TW' | 'en';
+        language?: "zh-TW" | "en";
         iconPosition?: {
             bottom?: string;
             right?: string;
             top?: string;
             left?: string;
-        } | 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left' | false;
+        } | "bottom-right" | "bottom-left" | "top-right" | "top-left" | false;
     };
     features?: {
         enableScreenshot?: boolean;
@@ -70,7 +70,6 @@ export interface ServiceModulerConfig {
         enableTelegramNotify?: boolean;
         enableAIPageGeneration?: boolean;
         enablePermissionCheck?: boolean;
-        enableManualIndexSearch?: boolean;
         enableInternalSearch?: boolean;
         enableWebScraper?: boolean;
         dangerousActions?: string[];
@@ -98,7 +97,7 @@ export interface Rule {
 export interface Message {
     id?: string;
     conversationId?: string;
-    role: 'user' | 'assistant' | 'system' | 'human-agent';
+    role: "user" | "assistant" | "system" | "human-agent";
     content: string;
     imageBase64?: string;
     timestamp: number;
@@ -111,7 +110,7 @@ export interface Message {
     };
 }
 export interface Source {
-    type?: 'manual-index' | 'frontend-page' | 'sitemap' | 'sql' | 'agent-content';
+    type?: "manual-index" | "frontend-page" | "sitemap" | "sql" | "agent-content";
     url: string;
     title: string;
     snippet?: string;
@@ -146,7 +145,7 @@ export interface Conversation {
     lastMessageAt: number;
     createdAt?: number;
     updatedAt?: number;
-    status: 'active' | 'closed' | 'human-takeover';
+    status: "active" | "closed" | "human-takeover";
     humanAgentId?: string;
     metadata?: {
         userAgent?: string;
@@ -187,7 +186,7 @@ export interface SitemapPage {
 export interface SQLConnection {
     id: string;
     name: string;
-    type: 'mysql' | 'postgresql' | 'mssql' | 'sqlite';
+    type: "mysql" | "postgresql" | "mssql" | "sqlite";
     enabled: boolean;
     createdAt: string;
     config: {
@@ -239,7 +238,7 @@ export interface IndexedPage {
 export interface SearchIndex {
     version: string;
     lastUpdated: number;
-    type: 'site' | 'project';
+    type: "site" | "project";
     config: {
         totalPages: number;
         totalKeywords: number;

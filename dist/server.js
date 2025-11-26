@@ -57607,7 +57607,7 @@ async function initSearchService() {
 }
 function initSearchTools(config2) {
   currentConfig3 = config2;
-  if (config2.agent?.enableManualIndexSearch) {
+  if (config2.agent?.enableInternalSearch) {
     initSearchService().catch((err) => {
       console.error("[Search Tools] Failed to init search service:", err);
     });
@@ -57615,7 +57615,7 @@ function initSearchTools(config2) {
 }
 var searchCustomerServiceDataTool = new DynamicStructuredTool({
   name: "search_customer_service_data",
-  description: `\u26A0\uFE0F CRITICAL: Searches the customer service knowledge base for company policies, order processes, FAQs, and service documentation.
+  description: `\u26A0\uFE0F CRITICAL: Searches the Lens customer service knowledge base for company policies, order processes, FAQs, and service documentation.
 
 **MANDATORY USAGE RULES:**
 Use this tool when users ask about:
@@ -57627,9 +57627,8 @@ Use this tool when users ask about:
 
 **Examples:**
 - "What is the return policy?" \u2192 USE THIS TOOL
-- "\u8A02\u55AE\u72C0\u614B\u7684\u5B9A\u7FA9" (order status definitions) \u2192 USE THIS TOOL FIRST before querying database
+- "\u4EC0\u9EBC\u662F Lens" (order status definitions) \u2192 USE THIS TOOL FIRST before querying database
 - "How does shipping work?" \u2192 USE THIS TOOL
-- "\u9000\u8CA8\u6D41\u7A0B" (return process) \u2192 USE THIS TOOL
 
 \u26A0\uFE0F IMPORTANT: When user asks about **definitions** (\u5B9A\u7FA9) or **explanations** (\u8AAA\u660E), ALWAYS search this knowledge base FIRST, even if they also mention querying the database.
 
@@ -57833,371 +57832,16 @@ Example workflow: search_products finds relevant items \u2192 use their contentI
     }
   }
 });
-var searchBestsellersTool = new DynamicStructuredTool({
-  name: "search_bestsellers",
-  description: `Searches for bestselling books in the catalog.
-
-Use this tool when users ask about:
-- Bestselling books or popular books (\u66A2\u92B7\u66F8\u3001\u71B1\u9580\u66F8\u7C4D)
-- Top-selling or best-performing books
-- Popular book recommendations
-
-This tool searches books that have been marked as bestsellers in our database.
-Results are ranked by semantic relevance and include only bestselling titles.
-
-Example: User asks "\u6709\u54EA\u4E9B\u66A2\u92B7\u66F8?" \u2192 Use this tool with query: "\u66A2\u92B7\u66F8"`,
-  schema: external_exports2.object({
-    query: external_exports2.string().describe("Search query to find relevant bestselling books"),
-    limit: external_exports2.number().optional().default(20).describe("Maximum results to return (default: 20)")
-  }),
-  func: async ({ query, limit = 20 }) => {
-    try {
-      const service = await initSearchService();
-      if (!service) {
-        return JSON.stringify({
-          success: false,
-          message: "\u641C\u5C0B\u670D\u52D9\u672A\u555F\u7528",
-          results: []
-        });
-      }
-      const results = await service.pool.query(
-        `
-        WITH bm25_results AS (
-          SELECT
-            content_id,
-            title,
-            content,
-            summary,
-            url,
-            tags,
-            category,
-            metadata,
-            ts_rank(title_tsv, plainto_tsquery('simple', $1)) as bm25_score
-          FROM search_index
-          WHERE
-            content_type = 'static_page'
-            AND metadata->'book_types' ? 'bestseller'
-            AND (
-              title_tsv @@ plainto_tsquery('simple', $1)
-              OR content_tsv @@ plainto_tsquery('simple', $1)
-            )
-        ),
-        vector_results AS (
-          SELECT
-            content_id,
-            title,
-            content,
-            summary,
-            url,
-            tags,
-            category,
-            metadata,
-            1 - (title_vector <=> $2::vector) as vector_score
-          FROM search_index
-          WHERE
-            content_type = 'static_page'
-            AND metadata->'book_types' ? 'bestseller'
-            AND title_vector IS NOT NULL
-          ORDER BY title_vector <=> $2::vector
-          LIMIT 100
-        ),
-        combined AS (
-          SELECT
-            COALESCE(b.content_id, v.content_id) as content_id,
-            COALESCE(b.title, v.title) as title,
-            COALESCE(b.content, v.content) as content,
-            COALESCE(b.summary, v.summary) as summary,
-            COALESCE(b.url, v.url) as url,
-            COALESCE(b.tags, v.tags) as tags,
-            COALESCE(b.category, v.category) as category,
-            COALESCE(b.metadata, v.metadata) as metadata,
-            COALESCE(b.bm25_score, 0) as bm25_score,
-            COALESCE(v.vector_score, 0) as vector_score
-          FROM bm25_results b
-          FULL OUTER JOIN vector_results v ON b.content_id = v.content_id
-        )
-        SELECT
-          *,
-          (bm25_score * 0.4 + vector_score * 0.6) as final_score
-        FROM combined
-        ORDER BY final_score DESC
-        LIMIT $3
-      `,
-        [
-          query,
-          JSON.stringify(await embeddingService.generateEmbedding(query)),
-          limit
-        ]
-      );
-      const formattedResults = results.rows.map((row) => ({
-        contentId: row.content_id,
-        title: row.title,
-        summary: row.summary || (row.content ? row.content.substring(0, 200) : ""),
-        url: row.url,
-        tags: row.tags,
-        category: row.category,
-        metadata: row.metadata,
-        score: parseFloat(row.final_score).toFixed(3)
-      }));
-      console.log(
-        `[Bestsellers Search Tool] Found ${formattedResults.length} bestselling books for query: ${query}`
-      );
-      return JSON.stringify({
-        success: true,
-        query,
-        totalResults: formattedResults.length,
-        results: formattedResults,
-        message: `\u627E\u5230 ${formattedResults.length} \u672C\u66A2\u92B7\u66F8`
-      });
-    } catch (error46) {
-      console.error("[Bestsellers Search Tool] Search failed:", error46);
-      return JSON.stringify({
-        success: false,
-        message: `\u66A2\u92B7\u66F8\u641C\u5C0B\u5931\u6557\uFF1A${error46 instanceof Error ? error46.message : "\u672A\u77E5\u932F\u8AA4"}`,
-        results: []
-      });
-    }
-  }
-});
-var search79DiscountBooksTool = new DynamicStructuredTool({
-  name: "search_79_discount_books",
-  description: `Searches for books with 79% discount (21% off) in the catalog.
-
-Use this tool when users ask about:
-- 79\u6298\u66F8\u7C4D or discounted books
-- Special offers or promotional books
-- Books on sale at 79\u6298
-
-This tool searches books that are currently offered at 79% of the original price.
-Results are ranked by semantic relevance and include only discounted titles.
-
-Example: User asks "\u6709\u54EA\u4E9B79\u6298\u7684\u66F8?" \u2192 Use this tool with query: "79\u6298\u512A\u60E0"`,
-  schema: external_exports2.object({
-    query: external_exports2.string().describe("Search query to find relevant 79% discount books"),
-    limit: external_exports2.number().optional().default(20).describe("Maximum results to return (default: 20)")
-  }),
-  func: async ({ query, limit = 20 }) => {
-    try {
-      const service = await initSearchService();
-      if (!service) {
-        return JSON.stringify({
-          success: false,
-          message: "\u641C\u5C0B\u670D\u52D9\u672A\u555F\u7528",
-          results: []
-        });
-      }
-      const results = await service.pool.query(
-        `
-        WITH bm25_results AS (
-          SELECT
-            content_id,
-            title,
-            content,
-            summary,
-            url,
-            tags,
-            category,
-            metadata,
-            ts_rank(title_tsv, plainto_tsquery('simple', $1)) as bm25_score
-          FROM search_index
-          WHERE
-            content_type = 'static_page'
-            AND metadata->'book_types' ? 'discount'
-            AND (
-              title_tsv @@ plainto_tsquery('simple', $1)
-              OR content_tsv @@ plainto_tsquery('simple', $1)
-            )
-        ),
-        vector_results AS (
-          SELECT
-            content_id,
-            title,
-            content,
-            summary,
-            url,
-            tags,
-            category,
-            metadata,
-            1 - (title_vector <=> $2::vector) as vector_score
-          FROM search_index
-          WHERE
-            content_type = 'static_page'
-            AND metadata->'book_types' ? 'discount'
-            AND title_vector IS NOT NULL
-          ORDER BY title_vector <=> $2::vector
-          LIMIT 100
-        ),
-        combined AS (
-          SELECT
-            COALESCE(b.content_id, v.content_id) as content_id,
-            COALESCE(b.title, v.title) as title,
-            COALESCE(b.content, v.content) as content,
-            COALESCE(b.summary, v.summary) as summary,
-            COALESCE(b.url, v.url) as url,
-            COALESCE(b.tags, v.tags) as tags,
-            COALESCE(b.category, v.category) as category,
-            COALESCE(b.metadata, v.metadata) as metadata,
-            COALESCE(b.bm25_score, 0) as bm25_score,
-            COALESCE(v.vector_score, 0) as vector_score
-          FROM bm25_results b
-          FULL OUTER JOIN vector_results v ON b.content_id = v.content_id
-        )
-        SELECT
-          *,
-          (bm25_score * 0.4 + vector_score * 0.6) as final_score
-        FROM combined
-        ORDER BY final_score DESC
-        LIMIT $3
-      `,
-        [
-          query,
-          JSON.stringify(await embeddingService.generateEmbedding(query)),
-          limit
-        ]
-      );
-      const formattedResults = results.rows.map((row) => ({
-        contentId: row.content_id,
-        title: row.title,
-        summary: row.summary || (row.content ? row.content.substring(0, 200) : ""),
-        url: row.url,
-        tags: row.tags,
-        category: row.category,
-        metadata: row.metadata,
-        score: parseFloat(row.final_score).toFixed(3)
-      }));
-      console.log(
-        `[79 Discount Search Tool] Found ${formattedResults.length} discounted books for query: ${query}`
-      );
-      return JSON.stringify({
-        success: true,
-        query,
-        totalResults: formattedResults.length,
-        results: formattedResults,
-        message: `\u627E\u5230 ${formattedResults.length} \u672C79\u6298\u512A\u60E0\u66F8\u7C4D`
-      });
-    } catch (error46) {
-      console.error("[79 Discount Search Tool] Search failed:", error46);
-      return JSON.stringify({
-        success: false,
-        message: `79\u6298\u66F8\u7C4D\u641C\u5C0B\u5931\u6557\uFF1A${error46 instanceof Error ? error46.message : "\u672A\u77E5\u932F\u8AA4"}`,
-        results: []
-      });
-    }
-  }
-});
-var keywordSearchBooksTool = new DynamicStructuredTool({
-  name: "keyword_search_books",
-  description: `Performs keyword-based search (BM25) for books by title, author, or publisher.
-
-Use this tool when users search for:
-- Specific book titles, authors, or publishers by exact keywords
-- Books when user wants exact keyword matching (not semantic search)
-- "\u641C\u5C0BXXX\u4F5C\u8005\u7684\u66F8" or "XXX\u51FA\u7248\u793E\u7684\u66F8"
-
-This tool uses BM25 full-text search on:
-1. Book title (\u66F8\u540D)
-2. Author name (\u4F5C\u8005)
-3. Publisher name (\u51FA\u7248\u793E)
-
-Example: User asks "\u6751\u4E0A\u6625\u6A39\u7684\u66F8" \u2192 Use this tool with keyword: "\u6751\u4E0A\u6625\u6A39"`,
-  schema: external_exports2.object({
-    keyword: external_exports2.string().describe("Keyword to search in book titles, authors, and publishers"),
-    limit: external_exports2.number().optional().default(20).describe("Maximum results to return (default: 20)")
-  }),
-  func: async ({ keyword, limit = 20 }) => {
-    try {
-      const service = await initSearchService();
-      if (!service) {
-        return JSON.stringify({
-          success: false,
-          message: "\u641C\u5C0B\u670D\u52D9\u672A\u555F\u7528",
-          results: []
-        });
-      }
-      const results = await service.pool.query(
-        `
-        SELECT
-          content_id,
-          title,
-          content,
-          summary,
-          url,
-          tags,
-          category,
-          metadata,
-          (
-            ts_rank(title_tsv, plainto_tsquery('simple', $1)) * 3.0 +
-            ts_rank(to_tsvector('simple', COALESCE(metadata->>'author', '')), plainto_tsquery('simple', $1)) * 2.0 +
-            ts_rank(to_tsvector('simple', COALESCE(metadata->>'publisher', '')), plainto_tsquery('simple', $1)) * 1.0
-          ) as bm25_score
-        FROM search_index
-        WHERE
-          content_type = 'static_page'
-          AND (
-            title_tsv @@ plainto_tsquery('simple', $1)
-            OR to_tsvector('simple', COALESCE(metadata->>'author', '')) @@ plainto_tsquery('simple', $1)
-            OR to_tsvector('simple', COALESCE(metadata->>'publisher', '')) @@ plainto_tsquery('simple', $1)
-          )
-        ORDER BY bm25_score DESC
-        LIMIT $2
-      `,
-        [keyword, limit]
-      );
-      const formattedResults = results.rows.map((row) => ({
-        contentId: row.content_id,
-        title: row.title,
-        summary: row.summary || (row.content ? row.content.substring(0, 200) : ""),
-        url: row.url,
-        tags: row.tags,
-        category: row.category,
-        metadata: row.metadata,
-        score: parseFloat(row.bm25_score).toFixed(3),
-        matchType: determineMatchType(row, keyword)
-      }));
-      console.log(
-        `[Keyword Search Tool] Found ${formattedResults.length} books for keyword: ${keyword}`
-      );
-      return JSON.stringify({
-        success: true,
-        keyword,
-        totalResults: formattedResults.length,
-        results: formattedResults,
-        message: `\u627E\u5230 ${formattedResults.length} \u672C\u66F8\u7C4D`
-      });
-    } catch (error46) {
-      console.error("[Keyword Search Tool] Search failed:", error46);
-      return JSON.stringify({
-        success: false,
-        message: `\u95DC\u9375\u5B57\u641C\u5C0B\u5931\u6557\uFF1A${error46 instanceof Error ? error46.message : "\u672A\u77E5\u932F\u8AA4"}`,
-        results: []
-      });
-    }
-  }
-});
-function determineMatchType(row, keyword) {
-  const title = row.title?.toLowerCase() || "";
-  const author = row.metadata?.author?.toLowerCase() || "";
-  const publisher = row.metadata?.publisher?.toLowerCase() || "";
-  const kw = keyword.toLowerCase();
-  const matches = [];
-  if (title.includes(kw)) matches.push("\u66F8\u540D");
-  if (author.includes(kw)) matches.push("\u4F5C\u8005");
-  if (publisher.includes(kw)) matches.push("\u51FA\u7248\u793E");
-  return matches.length > 0 ? `\u5339\u914D: ${matches.join(", ")}` : "\u76F8\u95DC\u5339\u914D";
-}
 var searchTools = [
   searchCustomerServiceDataTool,
   // 客服資料庫搜尋 (manual_indexes)
   searchProductsTool,
   // 商品搜尋 (search_index)
-  getContentDetailTool,
+  getContentDetailTool
   // 取得完整內容
-  searchBestsellersTool,
-  // 暢銷書搜尋
-  search79DiscountBooksTool,
-  // 79折書籍搜尋
-  keywordSearchBooksTool
-  // 關鍵字搜尋 (BM25)
+  // searchBestsellersTool, // 暢銷書搜尋
+  // search79DiscountBooksTool, // 79折書籍搜尋
+  // keywordSearchBooksTool, // 關鍵字搜尋 (BM25)
 ];
 
 // src/agent/AgentService.ts
@@ -58255,7 +57899,7 @@ var AgentService = class {
       initAIPageTools({});
       this.enabledTools.push(...aipageTools);
     }
-    if (agentConfig.enableManualIndexSearch !== false) {
+    if (agentConfig.enableInternalSearch !== false) {
       initSearchTools(this.config);
       this.enabledTools.push(...searchTools);
       console.log(
@@ -58418,7 +58062,7 @@ ${options.customSystemPrompt}`;
       minute: "2-digit",
       hour12: false
     });
-    let systemPrompt = `\u4F60\u662F TzAI \u667A\u80FD\u5BA2\u670D\u52A9\u7406\u3002\u7576\u524D\u6642\u9593\uFF1A${currentDateTime}\uFF0C\u7528\u6236ID\uFF1A${userId || "\u672A\u77E5"}
+    let systemPrompt = `\u4F60\u662F Lens \u667A\u80FD\u5BA2\u670D\u52A9\u7406\u3002\u7576\u524D\u6642\u9593\uFF1A${currentDateTime}\uFF0C\u7528\u6236ID\uFF1A${userId || "\u672A\u77E5"}
 
 ## \u56DE\u8986\u98A8\u683C\u6307\u5357
 
@@ -58450,21 +58094,19 @@ ${options.customSystemPrompt}`;
   **\u4F7F\u7528\u6642\u6A5F\uFF08\u5FC5\u9808\u4F7F\u7528\uFF09**\uFF1A
   - \u8A02\u55AE\u76F8\u95DC\u554F\u984C\uFF08\u67E5\u8A62\u3001\u4FEE\u6539\u3001\u53D6\u6D88\u3001\u9000\u8CA8\u3001\u63DB\u8CA8\uFF09
   - \u4ED8\u6B3E\u554F\u984C\uFF08\u532F\u6B3E\u3001\u9000\u6B3E\u3001\u767C\u7968\uFF09
-  - \u914D\u9001\u554F\u984C\uFF08\u7269\u6D41\u3001\u904B\u9001\u6642\u9593\u3001\u8D85\u5546\u53D6\u8CA8\uFF09
+  - Lens \u76F8\u95DC\u554F\u984C\uFF08\u4F7F\u7528\u3001\u529F\u80FD\u3001\u554F\u984C\uFF09
   - \u6703\u54E1\u554F\u984C\uFF08\u8A3B\u518A\u3001\u767B\u5165\u3001\u5BC6\u78BC\u3001\u6B0A\u9650\uFF09
-  - \u516C\u53F8\u653F\u7B56\uFF08\u9000\u63DB\u8CA8\u653F\u7B56\u3001\u96B1\u79C1\u6B0A\u3001\u670D\u52D9\u689D\u6B3E\uFF09
-  - \u4EFB\u4F55\u8207\u5BA2\u670D\u3001\u552E\u5F8C\u670D\u52D9\u76F8\u95DC\u7684\u554F\u984C
 
   **\u5DE5\u4F5C\u6D41\u7A0B\uFF08\u5F37\u5236\u57F7\u884C\uFF09**\uFF1A
-  1. \u7528\u6236\u63D0\u51FA\u5BA2\u670D\u76F8\u95DC\u554F\u984C\u6642\uFF0C**\u5FC5\u9808\u5148**\u4F7F\u7528 search_customer_service_data \u641C\u5C0B
+  1. \u7528\u6236\u63D0\u51FA Lens \u76F8\u95DC\u554F\u984C\u6642\uFF0C**\u5FC5\u9808\u5148**\u4F7F\u7528 search_customer_service_data \u641C\u5C0B
   2. \u6839\u64DA\u641C\u5C0B\u7D50\u679C\u56DE\u7B54\u7528\u6236\u554F\u984C
   3. \u5982\u679C\u641C\u5C0B\u7121\u7D50\u679C\uFF0C\u624D\u4F7F\u7528 send_notification \u901A\u77E5\u5BA2\u670D
 
 - **search_products**: \u641C\u5C0B\u5546\u54C1\uFF08\u7528\u65BC\u66F8\u7C4D/\u5546\u54C1\u63A8\u85A6\uFF09
-  \u7528\u9014: \u641C\u5C0B\u5DF2\u7D22\u5F15\u7684\u66F8\u7C4D\u3001\u5546\u54C1\u3001AI\u9801\u9762\u3001\u6587\u7AE0
+  \u7528\u9014: \u641C\u5C0B\u5DF2\u7D22\u5F15\u7684\u7522\u54C1\u3001AI\u9801\u9762\u3001\u6587\u7AE0
   \u53C3\u6578: query, contentTypes, limit, mode
-  \u4F7F\u7528\u6642\u6A5F: \u7528\u6236\u641C\u5C0B\u7279\u5B9A\u66F8\u7C4D\u3001\u5546\u54C1\u63A8\u85A6\u3001\u7522\u54C1\u8CC7\u8A0A\u67E5\u8A62
-  \u91CD\u8981: \u66F8\u7C4D\u63A8\u85A6\u61C9\u4F7F\u7528\u6B64\u5DE5\u5177\uFF0C\u641C\u5C0B search_index \u4E2D\u5DF2\u7D22\u5F15\u7684\u5546\u54C1\u8CC7\u6599
+  \u4F7F\u7528\u6642\u6A5F: \u7528\u6236\u641C\u5C0B\u7279\u5B9A\u7522\u54C1\u3001\u7522\u54C1\u63A8\u85A6\u3001\u7522\u54C1\u8CC7\u8A0A\u67E5\u8A62
+  \u91CD\u8981: \u7522\u54C1\u63A8\u85A6\u61C9\u4F7F\u7528\u6B64\u5DE5\u5177\uFF0C\u641C\u5C0B search_index \u4E2D\u5DF2\u7D22\u5F15\u7684\u7522\u54C1\u8CC7\u6599
 
 - **get_content_detail**: \u53D6\u5F97\u5B8C\u6574\u5167\u5BB9
   \u7528\u9014: \u5F9E\u641C\u5C0B\u7D50\u679C\u7372\u53D6\u5B8C\u6574\u8CC7\u8A0A
@@ -58474,8 +58116,6 @@ ${options.customSystemPrompt}`;
 \u274C \u7528\u6236\u554F\u300C\u532F\u6B3E\u4EC0\u9EBC\u6642\u5019\u5165\u5E33\u300D\u2192 \u76F4\u63A5\u56DE\u7B54\u300C\u8ACB\u806F\u7D61\u5BA2\u670D\u300D
 \u2705 \u7528\u6236\u554F\u300C\u532F\u6B3E\u4EC0\u9EBC\u6642\u5019\u5165\u5E33\u300D\u2192 \u5148\u7528 search_customer_service_data \u641C\u5C0B\u300C\u532F\u6B3E \u5165\u5E33\u300D\u2192 \u6839\u64DA\u641C\u5C0B\u7D50\u679C\u56DE\u7B54
 `;
-    }
-    if (agentConfig.enableManualIndexSearch !== false) {
     }
     const dbSchema = this.loadDatabaseSchema();
     if (agentConfig.enableDatabaseTools && dbSchema) {
@@ -58561,6 +58201,14 @@ ${JSON.stringify(dbSchema, null, 2)}
 ### \u7DB2\u9801\u722C\u53D6
 - **scrape_web**: \u722C\u53D6\u7DB2\u9801\u5167\u5BB9
   \u53C3\u6578: url
+  \u554F Lens Eureka \u7DB2\u7AD9\uFF1Ahttps://eureka.ask-lens.ai
+  \u554F Lens Astro \u7DB2\u7AD9\uFF1Ahttps://astro.ask-lens.ai
+  \u554F Lens \u4E7E\u5764\u7DB2\u7AD9\uFF1Ahttps://qiankun.ask-lens.ai
+  \u554F Lens 1999Lens\u7DB2\u7AD9\uFF1Ahttps://1999lens.ask-lens.ai
+  \u554F Lens Image Lens\u7DB2\u7AD9\uFF1Ahttps://image-lens.ask-lens.ai
+  \u554F Lens \u4E3B\u7AD9\uFF0C\u5305\u542B\u6240\u6709Lens\u4ECB\u7D39\uFF1Ahttps://www.ask-lens.ai
+  \u554F Lens Quant\uFF1Ahttps://quant.ask-lens.ai
+  \u554F Lens Audio\uFF1Ahttps://audio.ask-lens.ai
 `;
     }
     return systemPrompt;
@@ -59903,7 +59551,10 @@ async function initSearchService2() {
       );
       console.log("[Search Tools] \u2705 Search service initialized");
     } catch (error46) {
-      console.error("[Search Tools] \u26A0\uFE0F  Failed to initialize search service:", error46);
+      console.error(
+        "[Search Tools] \u26A0\uFE0F  Failed to initialize search service:",
+        error46
+      );
       throw error46;
     }
   }
@@ -59911,7 +59562,7 @@ async function initSearchService2() {
 }
 function initSearchTools2(config2) {
   currentConfig7 = config2;
-  if (config2.agent?.enableManualIndexSearch) {
+  if (config2.agent?.enableInternalSearch) {
     initSearchService2().catch((err) => {
       console.error("[Search Tools] Failed to init search service:", err);
     });
@@ -59938,7 +59589,9 @@ var searchInternalContentTool = new DynamicStructuredTool({
     query: external_exports2.string().describe("\u641C\u5C0B\u67E5\u8A62\uFF08\u4F7F\u7528\u81EA\u7136\u8A9E\u8A00\u63CF\u8FF0\u8981\u627E\u4EC0\u9EBC\uFF09"),
     contentTypes: external_exports2.array(external_exports2.enum(["static_page", "ai_page", "product", "article"])).optional().describe("\u9650\u5B9A\u5167\u5BB9\u985E\u578B\uFF08\u53EF\u9078\uFF09\u3002\u4F8B\u5982\uFF1A['ai_page'] \u53EA\u641C\u5C0B AI \u751F\u6210\u7684\u9801\u9762"),
     limit: external_exports2.number().optional().default(10).describe("\u8FD4\u56DE\u7D50\u679C\u6578\u91CF\uFF08\u9810\u8A2D 10\uFF0C\u6700\u591A 20\uFF09"),
-    mode: external_exports2.enum(["keyword", "semantic", "hybrid"]).optional().default("hybrid").describe("\u641C\u5C0B\u6A21\u5F0F\uFF1Akeyword=\u95DC\u9375\u5B57\u5339\u914D, semantic=\u8A9E\u610F\u641C\u5C0B, hybrid=\u6DF7\u5408\uFF08\u63A8\u85A6\uFF09")
+    mode: external_exports2.enum(["keyword", "semantic", "hybrid"]).optional().default("hybrid").describe(
+      "\u641C\u5C0B\u6A21\u5F0F\uFF1Akeyword=\u95DC\u9375\u5B57\u5339\u914D, semantic=\u8A9E\u610F\u641C\u5C0B, hybrid=\u6DF7\u5408\uFF08\u63A8\u85A6\uFF09"
+    )
   }),
   func: async ({ query, contentTypes, limit = 10, mode = "hybrid" }) => {
     try {
@@ -59969,7 +59622,9 @@ var searchInternalContentTool = new DynamicStructuredTool({
         bm25Score: result.bm25Score ? result.bm25Score.toFixed(3) : void 0,
         vectorScore: result.vectorScore ? result.vectorScore.toFixed(3) : void 0
       }));
-      console.log(`[Search Tools] Found ${resultsArray.length} results for query: "${query}"`);
+      console.log(
+        `[Search Tools] Found ${resultsArray.length} results for query: "${query}"`
+      );
       return JSON.stringify({
         success: true,
         query,

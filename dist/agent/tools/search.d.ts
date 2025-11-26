@@ -44,52 +44,6 @@ export declare const getContentDetailTool: DynamicStructuredTool<z.ZodObject<{
 }, {
     contentId: string;
 }, string>;
-/**
- * Tool: 搜尋暢銷書
- *
- * 專門搜尋已索引的暢銷書籍（來自 books_bestsellers.jsonl）
- */
-export declare const searchBestsellersTool: DynamicStructuredTool<z.ZodObject<{
-    query: z.ZodString;
-    limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-}, z.core.$strip>, {
-    query: string;
-    limit: number;
-}, {
-    query: string;
-    limit?: number | undefined;
-}, string>;
-/**
- * Tool: 搜尋79折優惠書籍
- *
- * 專門搜尋已索引的79折優惠書籍（來自 books_79_discount.jsonl）
- */
-export declare const search79DiscountBooksTool: DynamicStructuredTool<z.ZodObject<{
-    query: z.ZodString;
-    limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-}, z.core.$strip>, {
-    query: string;
-    limit: number;
-}, {
-    query: string;
-    limit?: number | undefined;
-}, string>;
-/**
- * Tool: 關鍵字搜尋書籍
- *
- * 使用 BM25 純關鍵字搜尋（不使用語意向量）
- * 搜尋範圍：書名、作者、出版社
- */
-export declare const keywordSearchBooksTool: DynamicStructuredTool<z.ZodObject<{
-    keyword: z.ZodString;
-    limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-}, z.core.$strip>, {
-    keyword: string;
-    limit: number;
-}, {
-    keyword: string;
-    limit?: number | undefined;
-}, string>;
 export declare const searchTools: (DynamicStructuredTool<z.ZodObject<{
     query: z.ZodString;
     limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
@@ -117,22 +71,4 @@ export declare const searchTools: (DynamicStructuredTool<z.ZodObject<{
     contentId: string;
 }, {
     contentId: string;
-}, string> | DynamicStructuredTool<z.ZodObject<{
-    query: z.ZodString;
-    limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-}, z.core.$strip>, {
-    query: string;
-    limit: number;
-}, {
-    query: string;
-    limit?: number | undefined;
-}, string> | DynamicStructuredTool<z.ZodObject<{
-    keyword: z.ZodString;
-    limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
-}, z.core.$strip>, {
-    keyword: string;
-    limit: number;
-}, {
-    keyword: string;
-    limit?: number | undefined;
 }, string>)[];
