@@ -1,0 +1,43 @@
+{
+  "name": "@lens-service/core",
+  "version": "3.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./services": "./src/services/index.ts",
+    "./agents": "./src/agents/index.ts",
+    "./tools": "./src/tools/index.ts",
+    "./retrieval": "./src/retrieval/index.ts",
+    "./skills": "./src/skills/index.ts"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/",
+    "clean": "rm -rf dist",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "@lens-service/shared": "workspace:*",
+    "@anthropic-ai/sdk": "^0.32.0",
+    "@langchain/core": "^0.3.0",
+    "@langchain/langgraph": "^0.2.0",
+    "@langchain/openai": "^0.3.0",
+    "openai": "^4.72.0",
+    "pg": "^8.11.0",
+    "pgvector": "^0.2.0",
+    "redis": "^4.6.0",
+    "zod": "^3.22.0",
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "p-queue": "^8.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/pg": "^8.10.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  }
+}

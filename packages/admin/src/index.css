@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #213547;
+  background-color: #f9fafb;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a1a1a1;
+}
+
+/* Agent Panel styles */
+.agent-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.tool-call-log {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+}
+
+.tool-call-item {
+  border-left: 3px solid #3b82f6;
+  padding-left: 12px;
+  margin-bottom: 8px;
+}
+
+.tool-call-item.success {
+  border-color: #10b981;
+}
+
+.tool-call-item.error {
+  border-color: #ef4444;
+}
+
+/* Streaming text animation */
+.streaming-cursor::after {
+  content: '|';
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* Plan steps */
+.plan-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: #f3f4f6;
+  margin-bottom: 8px;
+}
+
+.plan-step.executing {
+  background: #fef3c7;
+  border-left: 3px solid #f59e0b;
+}
+
+.plan-step.completed {
+  background: #d1fae5;
+  border-left: 3px solid #10b981;
+}
+
+.plan-step.failed {
+  background: #fee2e2;
+  border-left: 3px solid #ef4444;
+}
+
+/* Resizable panels */
+.resizable-divider {
+  width: 4px;
+  cursor: col-resize;
+  background: #e5e7eb;
+  transition: background 0.2s;
+}
+
+.resizable-divider:hover {
+  background: #3b82f6;
+}
