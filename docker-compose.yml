@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lens-postgres
+    restart: unless-stopped
+    ports:
+      - "8888:5432"
+    environment:
+      POSTGRES_USER: lens_admin
+      POSTGRES_PASSWORD: lens_secret_2025
+      POSTGRES_DB: lens_service
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./packages/database/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lens_admin -d lens_service"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - lens-network
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  lens-network:
+    driver: bridge

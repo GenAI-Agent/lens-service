@@ -1,40 +1,31 @@
 {
   "name": "lens-service-v3",
-  "version": "3.0.0",
+  "version": "1.0.0",
   "private": true,
-  "description": "Lens Service v3 - Multi-Agent AI Widget with Agentic Flow",
-  "workspaces": [
-    "packages/*"
-  ],
+  "description": "AI Customer Service Widget - Standalone Service",
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "dev:server": "turbo run dev --filter=@lens-service/server",
-    "dev:widget": "turbo run dev --filter=@lens-service/widget",
-    "dev:admin": "turbo run dev --filter=@lens-service/admin",
-    "lint": "turbo run lint",
-    "test": "turbo run test",
-    "test:unit": "turbo run test:unit",
-    "test:integration": "turbo run test:integration",
-    "test:e2e": "turbo run test:e2e",
-    "typecheck": "turbo run typecheck",
-    "clean": "turbo run clean && rm -rf node_modules",
-    "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio",
-    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+    "install-all": "yarn install && cd agents && yarn install && cd ../server && yarn install && cd ../widget && yarn install && cd ../admin && yarn install",
+    "setup": "yarn install-all && yarn prisma generate --schema=./prisma/schema.prisma && yarn prisma db push --schema=./prisma/schema.prisma && yarn build",
+    "db:init": "yarn prisma generate --schema=./prisma/schema.prisma && yarn prisma db push --schema=./prisma/schema.prisma",
+    "dev": "concurrently \"yarn dev:server\" \"yarn dev:widget\" \"yarn dev:admin\"",
+    "dev:server": "cd server && yarn dev",
+    "dev:widget": "cd widget && yarn dev",
+    "dev:admin": "cd admin && yarn dev",
+    "build": "yarn build:widget && yarn build:admin && yarn build:server",
+    "build:widget": "cd widget && yarn build",
+    "build:admin": "cd admin && yarn build",
+    "build:server": "cd server && yarn build",
+    "start": "cd server && yarn start",
+    "prisma:generate": "yarn prisma generate --schema=./prisma/schema.prisma",
+    "prisma:push": "yarn prisma db push --schema=./prisma/schema.prisma",
+    "prisma:studio": "yarn prisma studio --schema=./prisma/schema.prisma"
   },
   "devDependencies": {
-    "@types/node": "^20.10.0",
-    "prettier": "^3.1.0",
-    "turbo": "^2.0.0",
-    "typescript": "^5.3.0",
-    "vitest": "^1.0.0"
+    "concurrently": "^8.2.2",
+    "prisma": "^5.22.0"
   },
-  "engines": {
-    "node": ">=18.0.0",
-    "pnpm": ">=8.0.0"
-  },
-  "packageManager": "pnpm@8.15.0"
+  "dependencies": {
+    "@prisma/client": "^5.22.0",
+    "openai": "^6.9.1"
+  }
 }
