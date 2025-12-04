@@ -1,6 +1,6 @@
 /**
  * Tool Parser
- * Parses streaming LLM output to detect tool calls in <tool></tool> format
+ * Parses streaming LLM output to detect tool calls in <tool><call></call></tool> format
  */
 
 import { ToolCall } from '../config/types';
@@ -11,9 +11,9 @@ export class ToolParser {
   private toolContent: string = '';
 
   /**
-   * Add chunk to parser and check if tool call is complete
+   * Add chunk to parser and check if tool block is complete
    */
-  addChunk(chunk: string): { text: string; toolCall: ToolCall | null } {
+  addChunk(chunk: string): { text: string; toolCalls: ToolCall[] } {
     this.buffer += chunk;
 
     // Check if we're entering a tool block
@@ -23,7 +23,7 @@ export class ToolParser {
       this.inToolBlock = true;
       this.toolContent = '';
 
-      return { text: beforeTool, toolCall: null };
+      return { text: beforeTool, toolCalls: [] };
     }
 
     // Check if we're exiting a tool block
@@ -33,30 +33,57 @@ export class ToolParser {
       this.buffer = this.buffer.substring(toolEnd + 7);
       this.inToolBlock = false;
 
-      // Parse tool content
-      const toolCall = this.parseToolContent(this.toolContent);
+      // Parse all <call> blocks inside <tool>
+      const toolCalls = this.parseToolContent(this.toolContent);
       this.toolContent = '';
 
-      return { text: '', toolCall };
+      return { text: '', toolCalls };
     }
 
     // If in tool block, accumulate content
     if (this.inToolBlock) {
       this.toolContent += this.buffer;
       this.buffer = '';
-      return { text: '', toolCall: null };
+      return { text: '', toolCalls: [] };
     }
 
-    // Normal text output
+    // Otherwise, return all buffer as text
     const text = this.buffer;
     this.buffer = '';
-    return { text, toolCall: null };
+    return { text, toolCalls: [] };
   }
 
   /**
-   * Parse tool content to extract tool_name and parameters
+   * Parse tool content to extract all <call> blocks
    */
-  private parseToolContent(content: string): ToolCall | null {
+  private parseToolContent(content: string): ToolCall[] {
+    const calls: ToolCall[] = [];
+
+    try {
+      // Extract all <call>...</call> blocks
+      const callRegex = /<call>([\s\S]*?)<\/call>/g;
+      let match;
+
+      while ((match = callRegex.exec(content)) !== null) {
+        const callContent = match[1];
+        const toolCall = this.parseCallContent(callContent);
+
+        if (toolCall) {
+          calls.push(toolCall);
+        }
+      }
+
+      return calls;
+    } catch (error) {
+      console.error('Failed to parse tool content:', content, error);
+      return [];
+    }
+  }
+
+  /**
+   * Parse individual call content (uses 'name:' and 'parameters:')
+   */
+  private parseCallContent(content: string): ToolCall | null {
     try {
       const lines = content.trim().split('\n');
       let toolName = '';
@@ -65,8 +92,8 @@ export class ToolParser {
       for (const line of lines) {
         const trimmed = line.trim();
 
-        if (trimmed.startsWith('tool_name:')) {
-          toolName = trimmed.substring('tool_name:'.length).trim();
+        if (trimmed.startsWith('name:')) {
+          toolName = trimmed.substring('name:'.length).trim();
         } else if (trimmed.startsWith('parameters:')) {
           parametersJson = trimmed.substring('parameters:'.length).trim();
         } else if (parametersJson) {
@@ -76,7 +103,7 @@ export class ToolParser {
       }
 
       if (!toolName || !parametersJson) {
-        console.error('Invalid tool format:', content);
+        console.error('Invalid call format:', content);
         return null;
       }
 
@@ -87,7 +114,7 @@ export class ToolParser {
         parameters,
       };
     } catch (error) {
-      console.error('Failed to parse tool content:', content, error);
+      console.error('Failed to parse call content:', content, error);
       return null;
     }
   }

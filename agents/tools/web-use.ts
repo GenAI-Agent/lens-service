@@ -7,7 +7,7 @@
 import { ToolResult, PageState } from '../config/types';
 
 interface WebUseParams {
-  action: 'analyze' | 'click' | 'scroll' | 'highlight' | 'drag' | 'doubleClick' | 'scrollToElement' | 'deepCrawl';
+  action: 'click' | 'scroll' | 'highlight' | 'drag' | 'doubleClick' | 'scrollToElement' | 'deepCrawl';
   selector?: string;
   direction?: 'up' | 'down' | 'top' | 'bottom';
   distance?: number;
@@ -31,9 +31,6 @@ export class WebUseTool {
       const { action } = params;
 
       switch (action) {
-        case 'analyze':
-          return await this.analyze();
-
         case 'click':
           if (!params.selector) {
             return {
@@ -82,8 +79,11 @@ export class WebUseTool {
           }
           return await this.scrollToElement(params.selector);
 
-        case 'deepCrawl':
-          return await this.deepCrawl(params.maxDepth || 2, params.urlFilter);
+        case 'deepCrawl': {
+          // Enforce max depth limit of 3
+          const maxDepth = Math.min(params.maxDepth || 2, 3);
+          return await this.deepCrawl(maxDepth, params.urlFilter);
+        }
 
         default:
           return {
@@ -98,28 +98,6 @@ export class WebUseTool {
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
-  }
-
-  /**
-   * Analyze current page (DOM to markdown + screenshot)
-   */
-  private async analyze(): Promise<ToolResult> {
-    const result = await this.widgetCallback('analyze', {});
-
-    if (!result) {
-      return {
-        success: false,
-        error: 'Failed to analyze page',
-      };
-    }
-
-    return {
-      success: true,
-      result: {
-        message: 'Page analyzed successfully',
-        pageState: result as PageState,
-      },
-    };
   }
 
   /**

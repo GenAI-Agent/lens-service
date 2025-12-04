@@ -206,6 +206,10 @@ yarn prisma generate
 
 # 推送 Schema 到資料庫
 yarn prisma db push
+
+# 開啟 Prisma Studio (資料庫視覺化管理介面)
+yarn prisma studio
+# 會在 http://localhost:5555 開啟前端介面
 ```
 
 ### 4. 啟動服務

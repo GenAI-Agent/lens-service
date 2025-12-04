@@ -6,10 +6,13 @@
 import { Router } from 'express';
 import { PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
+import tracesRouter from '../routes/admin/traces';
+import { PuppeteerLoader } from './puppeteer-loader';
 
 export function createAdminRouter(prisma: PrismaClient, openaiApiKey: string) {
   const router = Router();
   const openai = new OpenAI({ apiKey: openaiApiKey });
+  const puppeteerLoader = new PuppeteerLoader();
 
   // Site Prompts
   router.get('/site-prompts', async (req, res) => {
@@ -216,6 +219,92 @@ export function createAdminRouter(prisma: PrismaClient, openaiApiKey: string) {
       },
     });
     res.json(message);
+  });
+
+  // LLM Traces
+  router.use('/traces', tracesRouter);
+
+  // Test Agent - Reset session (clear messages)
+  router.post('/test-agent/reset-session', async (req, res) => {
+    try {
+      const { userId } = req.body;
+
+      if (!userId) {
+        res.status(400).json({ error: 'userId is required' });
+        return;
+      }
+
+      console.log('[Admin API] Resetting session for userId:', userId);
+
+      // Delete all sessions and messages for this user
+      await prisma.session.deleteMany({
+        where: { userId },
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[Admin API] Failed to reset session:', error);
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to reset session',
+      });
+    }
+  });
+
+  // Test Agent - Load URL with Puppeteer
+  router.post('/test-agent/load-url', async (req, res) => {
+    try {
+      const { url } = req.body;
+
+      if (!url) {
+        res.status(400).json({ error: 'URL is required' });
+        return;
+      }
+
+      console.log('[Admin API] Loading URL with Puppeteer:', url);
+
+      // Load page with Puppeteer
+      const pageState = await puppeteerLoader.loadPage(url, 30000);
+
+      res.json(pageState);
+    } catch (error) {
+      console.error('[Admin API] Failed to load URL:', error);
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to load URL',
+      });
+    }
+  });
+
+  // Test Agent - Execute web action with Puppeteer
+  router.post('/test-agent/web-action', async (req, res) => {
+    try {
+      const { action, params } = req.body;
+
+      if (!action) {
+        res.status(400).json({ error: 'Action is required' });
+        return;
+      }
+
+      console.log('[Admin API] Executing web action:', action, params);
+
+      // Execute web action with Puppeteer
+      const result = await puppeteerLoader.executeWebAction(action, params || {});
+
+      res.json(result);
+    } catch (error) {
+      console.error('[Admin API] Failed to execute web action:', error);
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : 'Failed to execute web action',
+      });
+    }
+  });
+
+  // Cleanup on process exit
+  process.on('SIGINT', async () => {
+    await puppeteerLoader.close();
+  });
+  process.on('SIGTERM', async () => {
+    await puppeteerLoader.close();
   });
 
   return router;

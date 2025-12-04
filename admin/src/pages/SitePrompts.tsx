@@ -72,22 +72,17 @@ export default function SitePrompts() {
     }
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="lens-os-admin-loading">Loading...</div>;
 
   return (
     <div>
-      <div className="page-header">
-        <h1>Site Prompts</h1>
-        <p>Global site-wide prompts and instructions</p>
-      </div>
-
-      <div className="card">
-        <div className="card-header">
-          <div className="card-title">Site Prompts</div>
-          <button className="btn btn-primary" onClick={handleCreate}>+ Add Prompt</button>
+      <div className="lens-os-admin-card">
+        <div className="lens-os-admin-card-header">
+          <div className="lens-os-admin-card-title">Site Prompts</div>
+          <button className="lens-os-admin-btn lens-os-admin-btn-primary" onClick={handleCreate}>+ Add Prompt</button>
         </div>
 
-        <table className="table">
+        <table className="lens-os-admin-table">
           <thead>
             <tr>
               <th>Name</th>
@@ -107,9 +102,9 @@ export default function SitePrompts() {
                   {item.isActive ? 'Active' : 'Inactive'}
                 </td>
                 <td>
-                  <div className="table-actions">
-                    <button className="btn btn-secondary" onClick={() => handleEdit(item)}>Edit</button>
-                    <button className="btn btn-danger" onClick={() => handleDelete(item.id)}>Delete</button>
+                  <div className="lens-os-admin-table-actions">
+                    <button className="lens-os-admin-btn lens-os-admin-btn-secondary" onClick={() => handleEdit(item)}>Edit</button>
+                    <button className="lens-os-admin-btn lens-os-admin-btn-danger" onClick={() => handleDelete(item.id)}>Delete</button>
                   </div>
                 </td>
               </tr>
@@ -119,42 +114,42 @@ export default function SitePrompts() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">{editingItem ? 'Edit' : 'Create'} Site Prompt</h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>×</button>
+        <div className="lens-os-admin-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="lens-os-admin-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="lens-os-admin-modal-header">
+              <h2 className="lens-os-admin-modal-title">{editingItem ? 'Edit' : 'Create'} Site Prompt</h2>
+              <button className="lens-os-admin-modal-close" onClick={() => setShowModal(false)}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">Name *</label>
+              <div className="lens-os-admin-form-group">
+                <label className="lens-os-admin-form-label">Name *</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="lens-os-admin-form-input"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label">Prompt *</label>
+              <div className="lens-os-admin-form-group">
+                <label className="lens-os-admin-form-label">Prompt *</label>
                 <textarea
-                  className="form-textarea"
+                  className="lens-os-admin-form-textarea"
                   style={{ minHeight: '200px' }}
                   value={formData.prompt}
                   onChange={(e) => setFormData({ ...formData, prompt: e.target.value })}
                   required
                 />
               </div>
-              <div className="form-group">
+              <div className="lens-os-admin-form-group">
                 <label><input type="checkbox" checked={formData.isGlobal} onChange={(e) => setFormData({ ...formData, isGlobal: e.target.checked })} /> Global</label>
               </div>
-              <div className="form-group">
+              <div className="lens-os-admin-form-group">
                 <label><input type="checkbox" checked={formData.isActive} onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })} /> Active</label>
               </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-                <button type="submit" className="btn btn-primary">{editingItem ? 'Update' : 'Create'}</button>
+              <div className="lens-os-admin-modal-footer">
+                <button type="button" className="lens-os-admin-btn lens-os-admin-btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="submit" className="lens-os-admin-btn lens-os-admin-btn-primary">{editingItem ? 'Update' : 'Create'}</button>
               </div>
             </form>
           </div>

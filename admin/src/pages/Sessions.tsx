@@ -94,33 +94,28 @@ export default function Sessions() {
     return sortOrder === 'asc' ? ' ↑' : ' ↓';
   };
 
-  if (loading) return <div className="loading">Loading...</div>;
+  if (loading) return <div className="lens-os-admin-loading">Loading...</div>;
 
   return (
     <div>
-      <div className="page-header">
-        <h1>Sessions</h1>
-        <p>View and manage user chat sessions</p>
-      </div>
-
-      <div className="card">
+      <div className="lens-os-admin-card">
         {/* Filter and Sort Controls */}
         <div style={{ padding: '20px', borderBottom: '1px solid #ecf0f1' }}>
           <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-end' }}>
             <div style={{ flex: 1 }}>
-              <label className="form-label">Search User ID</label>
+              <label className="lens-os-admin-form-label">Search User ID</label>
               <input
                 type="text"
-                className="form-input"
+                className="lens-os-admin-form-input"
                 placeholder="Filter by user ID..."
                 value={searchUserId}
                 onChange={(e) => setSearchUserId(e.target.value)}
               />
             </div>
             <div>
-              <label className="form-label">Sort By</label>
+              <label className="lens-os-admin-form-label">Sort By</label>
               <select
-                className="form-input"
+                className="lens-os-admin-form-input"
                 value={sortField}
                 onChange={(e) => setSortField(e.target.value as SortField)}
                 style={{ minWidth: '150px' }}
@@ -131,9 +126,9 @@ export default function Sessions() {
               </select>
             </div>
             <div>
-              <label className="form-label">Order</label>
+              <label className="lens-os-admin-form-label">Order</label>
               <select
-                className="form-input"
+                className="lens-os-admin-form-input"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as SortOrder)}
                 style={{ minWidth: '120px' }}
@@ -143,13 +138,10 @@ export default function Sessions() {
               </select>
             </div>
           </div>
-          <div style={{ marginTop: '10px', fontSize: '14px', color: '#7f8c8d' }}>
-            Showing {filteredSessions.length} of {sessions.length} sessions
-          </div>
         </div>
 
         {/* Sessions Table */}
-        <table className="table">
+        <table className="lens-os-admin-table">
           <thead>
             <tr>
               <th style={{ cursor: 'pointer' }} onClick={() => handleSortChange('userId')}>
@@ -177,9 +169,9 @@ export default function Sessions() {
                   </span>
                 </td>
                 <td>
-                  <div className="table-actions">
+                  <div className="lens-os-admin-table-actions">
                     <button
-                      className="btn btn-secondary"
+                      className="lens-os-admin-btn lens-os-admin-btn-secondary"
                       onClick={() => loadMessages(session)}
                     >
                       View Messages
@@ -200,11 +192,11 @@ export default function Sessions() {
 
       {/* Messages Modal */}
       {showMessageModal && selectedSession && (
-        <div className="modal-overlay" onClick={() => setShowMessageModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
-            <div className="modal-header">
-              <h2 className="modal-title">Messages - {selectedSession.userId}</h2>
-              <button className="modal-close" onClick={() => setShowMessageModal(false)}>×</button>
+        <div className="lens-os-admin-modal-overlay" onClick={() => setShowMessageModal(false)}>
+          <div className="lens-os-admin-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px' }}>
+            <div className="lens-os-admin-modal-header">
+              <h2 className="lens-os-admin-modal-title">Messages - {selectedSession.userId}</h2>
+              <button className="lens-os-admin-modal-close" onClick={() => setShowMessageModal(false)}>×</button>
             </div>
 
             <div style={{ maxHeight: '60vh', overflow: 'auto', padding: '20px' }}>
@@ -240,8 +232,8 @@ export default function Sessions() {
               )}
             </div>
 
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowMessageModal(false)}>
+            <div className="lens-os-admin-modal-footer">
+              <button className="lens-os-admin-btn lens-os-admin-btn-secondary" onClick={() => setShowMessageModal(false)}>
                 Close
               </button>
             </div>

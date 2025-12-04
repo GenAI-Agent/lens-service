@@ -27,7 +27,7 @@ export class PromptLoader {
       return null;
     }
 
-    return prompts.map((p) => p.prompt).join('\n\n');
+    return prompts.map((p: any) => p.prompt).join('\n\n');
   }
 
   /**
@@ -85,37 +85,19 @@ export class PromptLoader {
 
   /**
    * Load navigation history summary for a session
+   * Note: navigationHistory table removed from schema, this is now a no-op
    */
   async loadNavigationHistory(sessionId: string, limit: number = 5): Promise<string | null> {
-    const history = await this.prisma.navigationHistory.findMany({
-      where: { sessionId },
-      orderBy: { timestamp: 'desc' },
-      take: limit,
-    });
-
-    if (history.length === 0) {
-      return null;
-    }
-
-    const lines = history.reverse().map((h) => {
-      const url = h.url;
-      const summary = h.summary || 'Visited page';
-      return `- ${url}: ${summary}`;
-    });
-
-    return `Recent Navigation:\n${lines.join('\n')}`;
+    // Navigation history tracking removed from schema
+    return null;
   }
 
   /**
    * Save navigation entry
+   * Note: navigationHistory table removed from schema, this is now a no-op
    */
   async saveNavigation(sessionId: string, url: string, summary?: string): Promise<void> {
-    await this.prisma.navigationHistory.create({
-      data: {
-        sessionId,
-        url,
-        summary,
-      },
-    });
+    // Navigation history tracking removed from schema
+    // This is a no-op for backwards compatibility
   }
 }

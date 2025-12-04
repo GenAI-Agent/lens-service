@@ -62,6 +62,11 @@ export class SupervisorAgent extends EventEmitter {
     try {
       // Parse skill if present (/skill_name query)
       const skillResult = await this.skillParser.parseSkill(userQuery);
+      console.log('[Supervisor] Skill parsing result:', skillResult ? 'Found skill' : 'No skill');
+      if (skillResult) {
+        console.log('[Supervisor] Skill prompt:', skillResult.skillPrompt);
+        console.log('[Supervisor] Modified query:', skillResult.modifiedQuery);
+      }
       const finalQuery = skillResult ? skillResult.modifiedQuery : userQuery;
 
       // Save user message to DB
@@ -86,20 +91,44 @@ export class SupervisorAgent extends EventEmitter {
         const messages = await this.promptBuilder.buildPrompt(context);
 
         // Call LLM with streaming
-        const { response, toolCalls, hasCompleteTag } = await this.streamLLM(messages);
+        const { response, toolCalls, hasCompleteTag } = await this.streamLLM(messages, context);
 
         // Save assistant response to DB
         await this.memoryManager.saveMessage(context.sessionId, 'assistant', response);
 
-        // Execute tools if any
+        // Handle tool execution
         if (toolCalls.length > 0) {
-          await this.executeTools(toolCalls, context);
+          console.log('[Supervisor] Executing', toolCalls.length, 'tool(s)');
+
+          // Execute ALL tools (use Promise.all for parallel execution)
+          const results = await Promise.all(
+            toolCalls.map(tc => this.executeTool(tc))
+          );
+
+          // Save all results to DB and emit events
+          for (let i = 0; i < toolCalls.length; i++) {
+            const resultText = JSON.stringify({
+              tool: toolCalls[i].name,
+              result: results[i]
+            });
+            await this.memoryManager.saveMessage(context.sessionId, 'tool', resultText);
+
+            this.emit('event', {
+              type: 'tool_result',
+              toolCall: toolCalls[i],
+              toolResult: results[i],
+            } as StreamEvent);
+          }
+
+          // Continue to next LLM turn with all results
+          continue;
         }
 
-        // Check for completion
+        // Check for completion (only if no tool calls)
         if (hasCompleteTag) {
           isComplete = true;
           this.emit('event', { type: 'done' } as StreamEvent);
+          break; // Stop immediately when complete tag is detected
         }
 
         // Check if memory compact is needed
@@ -128,7 +157,7 @@ export class SupervisorAgent extends EventEmitter {
   /**
    * Stream LLM response and parse for tool calls
    */
-  private async streamLLM(messages: any[]): Promise<{
+  private async streamLLM(messages: any[], context: SessionContext): Promise<{
     response: string;
     toolCalls: ToolCall[];
     hasCompleteTag: boolean;
@@ -158,13 +187,13 @@ export class SupervisorAgent extends EventEmitter {
         chunks.push(content);
 
         // Parse for tool calls and text
-        const { text, toolCall } = toolParser.addChunk(content);
+        const { text, toolCalls: parsedCalls } = toolParser.addChunk(content);
 
         if (text) {
           // Check for complete tag
-          if (text.includes('<complete/>')) {
+          if (text.includes('</complete>')) {
             hasCompleteTag = true;
-            const cleanText = text.replace('<complete/>', '').trim();
+            const cleanText = text.replace('</complete>', '').trim();
             if (cleanText) {
               this.emit('event', {
                 type: 'text',
@@ -179,12 +208,22 @@ export class SupervisorAgent extends EventEmitter {
           }
         }
 
-        if (toolCall) {
-          toolCalls.push(toolCall);
-          this.emit('event', {
-            type: 'tool_call',
-            toolCall,
-          } as StreamEvent);
+        // Handle tool calls (can be one or multiple)
+        if (parsedCalls && parsedCalls.length > 0) {
+          const isMultiple = parsedCalls.length > 1;
+          if (isMultiple) {
+            console.log('[Supervisor] Detected multiple tool calls:', parsedCalls.length);
+          } else {
+            console.log('[Supervisor] Detected single tool call');
+          }
+
+          for (const call of parsedCalls) {
+            toolCalls.push(call);
+            this.emit('event', {
+              type: 'tool_call',
+              toolCall: call,
+            } as StreamEvent);
+          }
         }
       }
     }
@@ -196,6 +235,21 @@ export class SupervisorAgent extends EventEmitter {
     }
 
     const fullResponse = chunks.join('');
+
+    // Save LLMTrace to DB (exact input/output pair)
+    try {
+      await this.prisma.lLMTrace.create({
+        data: {
+          sessionId: context.sessionId,
+          userId: context.userId,
+          input: messages as any, // Store as JSON array (exact format sent to LLM)
+          output: fullResponse, // Store as text string (exact output from LLM)
+        } as any,
+      });
+      console.log('[Supervisor] LLM trace saved');
+    } catch (error) {
+      console.error('[Supervisor] Failed to save LLM trace:', error);
+    }
 
     return {
       response: fullResponse,

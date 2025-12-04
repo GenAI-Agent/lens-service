@@ -11,6 +11,7 @@ import { PrismaClient } from '@prisma/client';
 import { SupervisorAgent } from '../../agents/supervisor-agent';
 import { SessionContext, StreamEvent } from '../../agents/config/types';
 import { createAdminRouter } from './admin-routes';
+import { TelegramService } from './telegram-service';
 
 // Load .env from root directory
 // __dirname will be dist/server/src, so we need to go up 4 levels to reach root
@@ -18,6 +19,7 @@ dotenv.config({ path: path.join(__dirname, '../../../../.env') });
 
 const app = express();
 const prisma = new PrismaClient();
+const telegramService = new TelegramService();
 const port = process.env.PORT || 3002;
 
 app.use(cors());
@@ -29,6 +31,20 @@ app.use('/widget', express.static(path.join(__dirname, '../../../../widget/dist'
 
 // Serve static files for Admin Dashboard
 app.use('/admin', express.static(path.join(__dirname, '../../../../admin/dist')));
+
+// Serve widget_icon.svg at root level
+app.get('/widget_icon.svg', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../../../packages/agent-panel/widget_icon.svg'));
+});
+
+// Serve flag SVG files
+app.get('/flags/tw.svg', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../../../packages/agent-panel/Flag_of_the_Republic_of_China.svg'));
+});
+
+app.get('/flags/us.svg', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../../../packages/agent-panel/Flag_of_the_United_States.svg'));
+});
 
 // Admin API routes
 app.use('/api/admin', createAdminRouter(prisma, process.env.OPENAI_API_KEY!));
@@ -75,7 +91,29 @@ app.post('/api/chat', async (req: Request, res: Response) => {
 
     // Widget callback for web use actions
     const widgetCallback = async (action: string, params: any) => {
-      // Send action request to widget via SSE
+      // For Test Agent (userId: test-admin-user), execute via Puppeteer
+      if (userId === 'test-admin-user') {
+        try {
+          const response = await fetch(`http://localhost:${port}/api/admin/test-agent/web-action`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ action, params }),
+          });
+
+          const result = await response.json();
+          return result;
+        } catch (error) {
+          console.error('Failed to execute web action via Puppeteer:', error);
+          return {
+            success: false,
+            error: error instanceof Error ? error.message : 'Failed to execute web action',
+          };
+        }
+      }
+
+      // For normal widget mode, send action request to widget via SSE
       sendSSE(res, {
         type: 'widget_action',
         action,
@@ -172,6 +210,155 @@ async function getOrCreateSession(userId: string) {
  */
 app.get('/admin/*', (req, res) => {
   res.sendFile(path.join(__dirname, '../../../../admin/dist/index.html'));
+});
+
+/**
+ * GET /api/sessions/:userId
+ * Get all sessions for a user
+ */
+app.get('/api/sessions/:userId', async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.params;
+    const { limit = '10' } = req.query;
+
+    const sessions = await prisma.session.findMany({
+      where: {
+        userId,
+        isActive: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: parseInt(limit as string),
+      include: {
+        messages: {
+          take: 1,
+          orderBy: {
+            timestamp: 'desc',
+          },
+          where: {
+            role: 'user',
+          },
+        },
+      },
+    });
+
+    const formattedSessions = sessions.map(session => ({
+      id: session.id,
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt,
+      isActive: session.isActive,
+      lastMessage: session.messages[0]?.content || 'New conversation',
+      messageCount: 0, // Will be populated if needed
+    }));
+
+    res.json(formattedSessions);
+  } catch (error) {
+    console.error('Get sessions error:', error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Internal server error',
+    });
+  }
+});
+
+/**
+ * POST /api/sessions/create
+ * Create a new session for a user
+ */
+app.post('/api/sessions/create', async (req: Request, res: Response) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) {
+      res.status(400).json({ error: 'Missing userId' });
+      return;
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    const session = await prisma.session.create({
+      data: {
+        userId,
+        expiresAt,
+        isActive: true,
+      },
+    });
+
+    res.json({
+      id: session.id,
+      createdAt: session.createdAt,
+      expiresAt: session.expiresAt,
+      isActive: session.isActive,
+    });
+  } catch (error) {
+    console.error('Create session error:', error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Internal server error',
+    });
+  }
+});
+
+/**
+ * GET /api/sessions/:sessionId/messages
+ * Get all messages for a session
+ */
+app.get('/api/sessions/:sessionId/messages', async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+
+    const messages = await prisma.message.findMany({
+      where: {
+        sessionId,
+        archived: false,
+      },
+      orderBy: {
+        timestamp: 'asc',
+      },
+    });
+
+    res.json(messages);
+  } catch (error) {
+    console.error('Get messages error:', error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Internal server error',
+    });
+  }
+});
+
+/**
+ * POST /api/human-support
+ * Send message to human support via Telegram
+ */
+app.post('/api/human-support', async (req: Request, res: Response) => {
+  try {
+    const { userId, category, recipient, message, sessionId } = req.body;
+
+    if (!userId || !category || !recipient || !message) {
+      res.status(400).json({
+        success: false,
+        error: 'Missing required fields'
+      });
+      return;
+    }
+
+    const result = await telegramService.sendHumanSupportMessage({
+      userId,
+      category,
+      recipient,
+      message,
+      timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+      sessionId,
+    });
+
+    res.json(result);
+  } catch (error) {
+    console.error('Human support endpoint error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Internal server error',
+    });
+  }
 });
 
 /**

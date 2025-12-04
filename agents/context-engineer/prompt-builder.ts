@@ -37,15 +37,26 @@ export class PromptBuilder {
 
     // 2. Current Page State (Fixed Input - never stored in DB)
     if (context.currentPage) {
+      console.log('[PromptBuilder] Current page state:', {
+        url: context.currentPage.url,
+        title: context.currentPage.title,
+        hasScreenshot: !!context.currentPage.screenshot,
+        markdownLength: context.currentPage.markdown?.length || 0,
+        actionableElements: context.currentPage.actionableElements?.length || 0,
+      });
       messages.push({
         role: 'system',
         content: this.buildPageStateContent(context.currentPage),
       });
+    } else {
+      console.log('[PromptBuilder] No current page state provided');
     }
 
     // 3. Site-wide Prompts
     const sitePrompt = await this.promptLoader.loadSitePrompts();
+    console.log('[PromptBuilder] Site prompts loaded:', sitePrompt ? 'Yes' : 'No');
     if (sitePrompt) {
+      console.log('[PromptBuilder] Site prompt content:', sitePrompt.substring(0, 100) + '...');
       messages.push({
         role: 'system',
         content: `[Site Information]\n${sitePrompt}`,
@@ -54,7 +65,9 @@ export class PromptBuilder {
 
     // 4. URL-specific Prompts
     const urlPrompt = await this.promptLoader.loadUrlPrompt(context.currentUrl);
+    console.log('[PromptBuilder] URL prompts loaded for', context.currentUrl, ':', urlPrompt ? 'Yes' : 'No');
     if (urlPrompt) {
+      console.log('[PromptBuilder] URL prompt content:', urlPrompt.substring(0, 100) + '...');
       messages.push({
         role: 'system',
         content: `[Page Type Information]\n${urlPrompt}`,

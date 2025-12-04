@@ -171,34 +171,29 @@ export default function KnowledgeBasePage() {
   };
 
   if (loading) {
-    return <div className="loading">Loading...</div>;
+    return <div className="lens-os-admin-loading">Loading...</div>;
   }
 
   return (
     <div>
-      <div className="page-header">
-        <h1>Knowledge Base</h1>
-        <p>Manage customer service Q&A and documentation (BM25 searches content field)</p>
-      </div>
-
-      <div className="card">
+      <div className="lens-os-admin-card">
         {/* Filter and Sort Controls */}
         <div style={{ padding: '20px', borderBottom: '1px solid #ecf0f1' }}>
           <div style={{ display: 'flex', gap: '15px', alignItems: 'flex-end', marginBottom: '15px' }}>
             <div style={{ flex: 1 }}>
-              <label className="form-label">Search Name</label>
+              <label className="lens-os-admin-form-label">Search Name</label>
               <input
                 type="text"
-                className="form-input"
+                className="lens-os-admin-form-input"
                 placeholder="Filter by name..."
                 value={searchName}
                 onChange={(e) => setSearchName(e.target.value)}
               />
             </div>
             <div style={{ flex: 1 }}>
-              <label className="form-label">Filter Category</label>
+              <label className="lens-os-admin-form-label">Filter Category</label>
               <select
-                className="form-input"
+                className="lens-os-admin-form-input"
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
               >
@@ -209,9 +204,9 @@ export default function KnowledgeBasePage() {
               </select>
             </div>
             <div>
-              <label className="form-label">Sort By</label>
+              <label className="lens-os-admin-form-label">Sort By</label>
               <select
-                className="form-input"
+                className="lens-os-admin-form-input"
                 value={sortField}
                 onChange={(e) => setSortField(e.target.value as SortField)}
                 style={{ minWidth: '150px' }}
@@ -223,9 +218,9 @@ export default function KnowledgeBasePage() {
               </select>
             </div>
             <div>
-              <label className="form-label">Order</label>
+              <label className="lens-os-admin-form-label">Order</label>
               <select
-                className="form-input"
+                className="lens-os-admin-form-input"
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as SortOrder)}
                 style={{ minWidth: '120px' }}
@@ -234,17 +229,14 @@ export default function KnowledgeBasePage() {
                 <option value="asc">Ascending</option>
               </select>
             </div>
-            <button className="btn btn-primary" onClick={handleCreate}>
+            <button className="lens-os-admin-btn lens-os-admin-btn-primary" onClick={handleCreate}>
               + Add New Entry
             </button>
-          </div>
-          <div style={{ fontSize: '14px', color: '#7f8c8d' }}>
-            Showing {filteredItems.length} of {items.length} entries
           </div>
         </div>
 
         {/* Knowledge Base Table */}
-        <table className="table">
+        <table className="lens-os-admin-table">
           <thead>
             <tr>
               <th style={{ cursor: 'pointer' }} onClick={() => handleSortChange('name')}>
@@ -274,11 +266,11 @@ export default function KnowledgeBasePage() {
                   </span>
                 </td>
                 <td>
-                  <div className="table-actions">
-                    <button className="btn btn-secondary" onClick={() => handleEdit(item)}>
+                  <div className="lens-os-admin-table-actions">
+                    <button className="lens-os-admin-btn lens-os-admin-btn-secondary" onClick={() => handleEdit(item)}>
                       Edit
                     </button>
-                    <button className="btn btn-danger" onClick={() => handleDelete(item.id)}>
+                    <button className="lens-os-admin-btn lens-os-admin-btn-danger" onClick={() => handleDelete(item.id)}>
                       Delete
                     </button>
                   </div>
@@ -296,35 +288,35 @@ export default function KnowledgeBasePage() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2 className="modal-title">
+        <div className="lens-os-admin-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="lens-os-admin-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="lens-os-admin-modal-header">
+              <h2 className="lens-os-admin-modal-title">
                 {editingItem ? 'Edit Knowledge Entry' : 'Create Knowledge Entry'}
               </h2>
-              <button className="modal-close" onClick={() => setShowModal(false)}>
+              <button className="lens-os-admin-modal-close" onClick={() => setShowModal(false)}>
                 ×
               </button>
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div className="form-group">
-                <label className="form-label">Name *</label>
+              <div className="lens-os-admin-form-group">
+                <label className="lens-os-admin-form-label">Name *</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="lens-os-admin-form-input"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">
+              <div className="lens-os-admin-form-group">
+                <label className="lens-os-admin-form-label">
                   Description * (used for vector search)
                 </label>
                 <textarea
-                  className="form-textarea"
+                  className="lens-os-admin-form-textarea"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="Short description that will be used for semantic search"
@@ -332,34 +324,34 @@ export default function KnowledgeBasePage() {
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Category (for filtering)</label>
+              <div className="lens-os-admin-form-group">
+                <label className="lens-os-admin-form-label">Category (for filtering)</label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="lens-os-admin-form-input"
                   value={formData.category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   placeholder="e.g., shipping, returns, product"
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">
+              <div className="lens-os-admin-form-group">
+                <label className="lens-os-admin-form-label">
                   Keywords (comma-separated, optional tags for filtering)
                 </label>
                 <input
                   type="text"
-                  className="form-input"
+                  className="lens-os-admin-form-input"
                   value={formData.keywords}
                   onChange={(e) => setFormData({ ...formData, keywords: e.target.value })}
-                  placeholder="退貨, 退款, refund, return"
+                  placeholder="refund, return"
                 />
               </div>
 
-              <div className="form-group">
-                <label className="form-label">Content * (BM25 searches this field)</label>
+              <div className="lens-os-admin-form-group">
+                <label className="lens-os-admin-form-label">Content * (BM25 searches this field)</label>
                 <textarea
-                  className="form-textarea"
+                  className="lens-os-admin-form-textarea"
                   style={{ minHeight: '200px' }}
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
@@ -368,7 +360,7 @@ export default function KnowledgeBasePage() {
                 />
               </div>
 
-              <div className="form-group">
+              <div className="lens-os-admin-form-group">
                 <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <input
                     type="checkbox"
@@ -379,11 +371,11 @@ export default function KnowledgeBasePage() {
                 </label>
               </div>
 
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+              <div className="lens-os-admin-modal-footer">
+                <button type="button" className="lens-os-admin-btn lens-os-admin-btn-secondary" onClick={() => setShowModal(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button type="submit" className="lens-os-admin-btn lens-os-admin-btn-primary">
                   {editingItem ? 'Update' : 'Create'}
                 </button>
               </div>

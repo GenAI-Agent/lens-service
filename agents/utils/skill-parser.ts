@@ -85,7 +85,7 @@ export class SkillParser {
         },
       });
 
-      return skills.map((s) => ({
+      return skills.map((s: any) => ({
         name: s.name,
         prompt: s.prompt,
       }));

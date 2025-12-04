@@ -48,7 +48,7 @@ export class MemoryManager {
       },
     });
 
-    return messages.map((m) => ({
+    return messages.map((m: any) => ({
       role: m.role as 'user' | 'assistant' | 'system' | 'tool',
       content: m.content,
     }));
@@ -131,7 +131,7 @@ export class MemoryManager {
     await this.prisma.message.updateMany({
       where: {
         id: {
-          in: toCompact.map((m) => m.id),
+          in: toCompact.map((m: any) => m.id),
         },
       },
       data: {

@@ -1,7 +1,7 @@
 # Web Use Architecture - 完整說明文件
 
-**日期**: 2025-12-02
-**版本**: 3.0 (Widget-based, 非 Playwright)
+**最後更新**: 2025-12-03
+**版本**: 3.1 (Widget-based, 非 Playwright)
 
 ---
 
@@ -90,14 +90,15 @@ html2canvas(element)
 
 ---
 
-## 🗄️ Database Schema (新增)
+## 🗄️ Database Schema
 
-### site_prompts (站主配置的全站 Prompt)
+**重要變更 (2025-12-03)**: 簡化為單租戶架構，移除 `tenant_id` 依賴
+
+### site_prompts (站點提示詞)
 
 ```sql
 CREATE TABLE site_prompts (
   id SERIAL PRIMARY KEY,
-  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
   prompt TEXT NOT NULL,
   is_global BOOLEAN DEFAULT TRUE,  -- 適用於所有頁面
@@ -116,12 +117,11 @@ CREATE TABLE site_prompts (
 用戶登入後可以查看訂單、修改資料、查詢物流。
 ```
 
-### url_path_prompts (URL 路徑匹配的 Prompt)
+### url_path_prompts (URL 路徑提示詞)
 
 ```sql
 CREATE TABLE url_path_prompts (
   id SERIAL PRIMARY KEY,
-  tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   url_pattern TEXT NOT NULL,  -- e.g., "/products/*", "/cart"
   prompt TEXT NOT NULL,
   priority INT DEFAULT 0,     -- 匹配優先級
@@ -140,6 +140,8 @@ CREATE TABLE url_path_prompts (
 | `/cart` | 這是購物車頁面。用戶可以修改數量、刪除商品、查看總價、進行結帳。 |
 | `/checkout/*` | 這是結帳流程頁面。包含：填寫收件資訊 → 選擇付款方式 → 確認訂單。 |
 
+完整 schema 請參考 [DATABASE_SCHEMA.md](./DATABASE_SCHEMA.md)
+
 ---
 
 ## 🧠 PromptBuilder 更新
@@ -150,15 +152,16 @@ CREATE TABLE url_path_prompts (
 // 舊版（已移除）
 buildPrompt(sessionId, currentPage, currentQuery, baseSystemPrompt)
 
-// 新版（支援 site/URL prompts + multimodal screenshot）
+// 當前版本（支援 site/URL prompts + multimodal screenshot）
 buildPrompt(
   sessionId: string,
-  tenantId: string,        // ← 新增：用來載入 site_prompts
-  currentUrl: string,      // ← 新增：用來匹配 url_path_prompts
+  currentUrl: string,      // ← 用來匹配 url_path_prompts
   currentPage: PageState | null,
   currentQuery: string,
   baseSystemPrompt: string
 ): Promise<ChatMessage[]>
+
+// Note: tenantId 已移除，改為單租戶架構
 ```
 
 ### Prompt 組成順序
@@ -539,8 +542,7 @@ await webUse.highlight({ selector: '.product-price' }, 2000);
 
 ```sql
 -- 站主配置全站說明
-INSERT INTO site_prompts (tenant_id, name, prompt, is_global) VALUES (
-  'tenant-123',
+INSERT INTO site_prompts (name, prompt, is_global) VALUES (
   '網站結構說明',
   '我們是 3C 電商網站。主要功能：
    • 瀏覽產品
@@ -551,8 +553,7 @@ INSERT INTO site_prompts (tenant_id, name, prompt, is_global) VALUES (
 );
 
 -- 配置產品頁說明
-INSERT INTO url_path_prompts (tenant_id, url_pattern, prompt, priority) VALUES (
-  'tenant-123',
+INSERT INTO url_path_prompts (url_pattern, prompt, priority) VALUES (
   '/products/*',
   '產品詳情頁。包含：
    • 產品名稱、圖片、價格（.product-price）
@@ -563,8 +564,7 @@ INSERT INTO url_path_prompts (tenant_id, url_pattern, prompt, priority) VALUES (
 );
 
 -- 配置購物車頁說明
-INSERT INTO url_path_prompts (tenant_id, url_pattern, prompt, priority) VALUES (
-  'tenant-123',
+INSERT INTO url_path_prompts (url_pattern, prompt, priority) VALUES (
   '/cart',
   '購物車頁面。包含：
    • 商品列表（可修改數量、刪除）
@@ -573,6 +573,137 @@ INSERT INTO url_path_prompts (tenant_id, url_pattern, prompt, priority) VALUES (
    • 優惠券輸入框',
   100
 );
+```
+
+---
+
+## 🎨 Agent Panel UI (新增 2025-12-03)
+
+### 概述
+
+Agent Panel 是一個獨立的 TypeScript 類別，提供完整的聊天介面與工具執行視覺化。
+
+### 位置
+
+```
+packages/agent-panel/agent-panel.ts
+```
+
+### 核心功能
+
+#### 1. 雙模式切換
+
+```typescript
+type PanelMode = 'agent' | 'human-support';
+
+// Agent 模式：AI 對話
+// Human Support 模式：真人客服表單（Telegram 整合）
+```
+
+#### 2. 多語言支援
+
+```typescript
+private language: string = 'zh-TW'; // 'zh-TW' | 'en' | 'ja'
+
+cycleLanguage() {
+  const languages = ['zh-TW', 'en', 'ja'];
+  const currentIndex = languages.indexOf(this.language);
+  this.language = languages[(currentIndex + 1) % languages.length];
+}
+```
+
+#### 3. 自動執行模式 (Auto Mode)
+
+**第一次查詢提示**:
+```typescript
+// 用戶第一次發送訊息時，顯示藍色提示框
+showAutoModePrompt() {
+  // 詢問是否允許 AI 自動執行工具操作
+  // 用戶選擇：同意 / 不同意
+}
+```
+
+**工具執行確認** (Auto Mode 關閉時):
+```typescript
+// 當 LLM 想要執行工具時，顯示黃色確認框
+showToolConfirmation(toolCall: ToolCall) {
+  // 顯示工具名稱與參數
+  // 用戶選擇：✓ 執行 / ✗ 拒絕 / ✏️ 修改請求
+}
+```
+
+#### 4. Hover 菜單
+
+```typescript
+// 滑鼠移至 Panel 邊緣時顯示
+<div class="lens-hover-menu">
+  <button>🌐 語言 (zh-TW)</button>
+  <button>⚡ 開啟自動</button>
+  <button>🔄 重新開始</button>
+  <button>💬 聯絡客服</button>
+</div>
+```
+
+#### 5. 工具執行視覺化
+
+```typescript
+// 工具呼叫顯示為可折疊區塊
+<details class="lens-tool-call">
+  <summary>🔧 web_extract_text</summary>
+  <div class="lens-tool-params">
+    { "selector": ".product-price" }
+  </div>
+  <div class="lens-tool-result">
+    NT$ 36,900
+  </div>
+</details>
+```
+
+#### 6. 真人客服整合
+
+```typescript
+// Telegram Bot 整合
+async submitHumanSupport(name: string, email: string, message: string) {
+  const response = await fetch(`${apiUrl}/api/support/telegram`, {
+    method: 'POST',
+    body: JSON.stringify({ name, email, message }),
+  });
+}
+```
+
+### 樣式設計
+
+**Frosted Glass 效果**:
+```css
+.lens-agent-panel {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+```
+
+**深色模式相容**:
+```css
+@media (prefers-color-scheme: dark) {
+  .lens-agent-panel {
+    background: rgba(30, 30, 30, 0.95);
+    color: #e0e0e0;
+  }
+}
+```
+
+### 使用範例
+
+```typescript
+import { AgentPanel } from './agent-panel';
+
+const panel = new AgentPanel({
+  apiUrl: 'http://localhost:3333',
+  userId: 'user-123',
+});
+
+panel.mount(document.body);
 ```
 
 ---
@@ -601,6 +732,12 @@ INSERT INTO url_path_prompts (tenant_id, url_pattern, prompt, priority) VALUES (
    - URL-specific prompts
    - 幫助 AI 理解網站結構
 
+5. **用戶體驗優先 (新增)**
+   - 多語言支援 (zh-TW/en/ja)
+   - 自動執行權限控制
+   - 工具執行視覺化
+   - 真人客服快速切換
+
 ### 技術優勢
 
 - ✅ 不需要 Session 管理（已在網站內）
@@ -609,6 +746,9 @@ INSERT INTO url_path_prompts (tenant_id, url_pattern, prompt, priority) VALUES (
 - ✅ Multimodal 支援（screenshot）
 - ✅ 站主可配置（site/URL prompts）
 - ✅ Memory Compact（節省 75-85% tokens）
+- ✅ **Agent Panel 整合**（完整 UI/UX）
+- ✅ **權限控制**（Auto Mode + Tool Confirmation）
+- ✅ **多語言支援**（zh-TW/en/ja）
 
 ---
 
@@ -624,8 +764,13 @@ INSERT INTO url_path_prompts (tenant_id, url_pattern, prompt, priority) VALUES (
 - [Browser-Use](https://github.com/browser-use/browser-use) - AI Browser Agent
 - [Stagehand](https://github.com/browserbase/stagehand) - AI Web Browsing
 
+### UI/UX 參考
+- Intercom - Chat Widget Design
+- Zendesk - Support Widget
+- Linear - Frosted Glass Design
+
 ---
 
 **狀態**: ✅ 架構設計完成，實作完成
 **作者**: Claude (Sonnet 4.5)
-**最後更新**: 2025-12-02
+**最後更新**: 2025-12-03

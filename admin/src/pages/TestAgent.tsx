@@ -1,371 +1,286 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { AgentPanel } from '../../../packages/agent-panel/agent-panel';
 
-interface Message {
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-}
-
-interface PromptLog {
-  timestamp: string;
-  systemPrompt: string;
-  userMessage: string;
-  context: string;
-}
-
-interface WebAction {
-  type: string;
-  target: string;
-  description: string;
-  timestamp: string;
-}
+// Fixed test credentials
+const TEST_USER_ID = 'test-admin-user';
 
 export default function TestAgent() {
-  // URL input
-  const [targetUrl, setTargetUrl] = useState('https://example.com');
+  const [targetUrl, setTargetUrl] = useState('https://www.ask-lens.ai/en');
   const [loadedUrl, setLoadedUrl] = useState('');
-
-  // Chat messages (right panel - what user sees)
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  // Prompt logs (left panel - what LLM sees)
-  const [promptLogs, setPromptLogs] = useState<PromptLog[]>([]);
-
-  // Web actions (middle panel overlay)
-  const [webActions, setWebActions] = useState<WebAction[]>([]);
-
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const agentPanelRef = useRef<any>(null);
 
-  const handleLoadUrl = () => {
-    setLoadedUrl(targetUrl);
-    setMessages([]);
-    setPromptLogs([]);
-    setWebActions([]);
+  useEffect(() => {
+    // Initialize Agent Panel when component mounts
+    initializeAgentPanel();
+
+    return () => {
+      // Cleanup
+      if (agentPanelRef.current) {
+        // Agent panel cleanup if needed
+      }
+    };
+  }, []);
+
+  const initializeAgentPanel = () => {
+    // Create container for agent panel
+    const container = document.getElementById('agent-panel-root');
+    if (!container) {
+      console.error('Agent panel root not found');
+      return;
+    }
+
+    // Initialize Agent Panel
+    const panel = new AgentPanel({
+      apiUrl: window.location.origin,
+      userId: TEST_USER_ID,
+    });
+    panel.mount(container);
+    agentPanelRef.current = panel;
   };
 
-  const handleSend = async () => {
-    if (!input.trim()) return;
+  const handleLoadUrl = () => {
+    if (!targetUrl) return;
+    setLoadedUrl(targetUrl);
+  };
 
-    const userMessage = input;
-    setInput('');
-    setMessages((prev) => [...prev, { role: 'user', content: userMessage }]);
-    setLoading(true);
-
+  const handleResetSession = async () => {
     try {
-      const response = await fetch('/api/chat', {
+      const response = await fetch('/api/admin/test-agent/reset-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId: 'admin-test',
-          message: userMessage,
-          currentUrl: loadedUrl || targetUrl,
-          currentPage: {
-            url: loadedUrl || targetUrl,
-            title: 'Test Page',
-            markdown: '# Test Environment',
-            screenshot: '',
-            actionableElements: [],
-          },
-        }),
+        body: JSON.stringify({ userId: TEST_USER_ID }),
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error('Failed to reset session');
       }
 
-      // Log the prompt sent to LLM
-      const promptLog: PromptLog = {
-        timestamp: new Date().toLocaleTimeString(),
-        systemPrompt: 'System: Customer service agent...',
-        userMessage: userMessage,
-        context: `URL: ${loadedUrl || targetUrl}`,
-      };
-      setPromptLogs((prev) => [...prev, promptLog]);
-
-      // Handle SSE streaming
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-
-      if (!reader) {
-        throw new Error('No response body');
-      }
-
-      let assistantMessage = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = line.substring(6).trim();
-            if (data === '[DONE]') break;
-
-            try {
-              const event = JSON.parse(data);
-
-              if (event.type === 'text') {
-                assistantMessage += event.content;
-                setMessages((prev) => {
-                  const newMessages = [...prev];
-                  const lastMsg = newMessages[newMessages.length - 1];
-                  if (lastMsg && lastMsg.role === 'assistant') {
-                    lastMsg.content = assistantMessage;
-                  } else {
-                    newMessages.push({ role: 'assistant', content: assistantMessage });
-                  }
-                  return newMessages;
-                });
-              } else if (event.type === 'tool_call') {
-                const toolCall = event.toolCall;
-
-                // Add to web actions if it's a web use action
-                if (toolCall.name === 'web_use') {
-                  const action: WebAction = {
-                    type: toolCall.parameters.action || 'unknown',
-                    target: toolCall.parameters.selector || '',
-                    description: `${toolCall.parameters.action} on ${toolCall.parameters.selector}`,
-                    timestamp: new Date().toLocaleTimeString(),
-                  };
-                  setWebActions((prev) => [...prev, action]);
-                }
-
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    role: 'system',
-                    content: `🔧 Tool: ${toolCall.name}\n${JSON.stringify(toolCall.parameters, null, 2)}`,
-                  },
-                ]);
-              } else if (event.type === 'tool_result') {
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    role: 'system',
-                    content: `✅ Result: ${event.toolResult.success ? 'Success' : 'Failed'}`,
-                  },
-                ]);
-              } else if (event.type === 'error') {
-                setMessages((prev) => [...prev, { role: 'system', content: `❌ Error: ${event.error}` }]);
-              }
-            } catch (error) {
-              console.error('Parse SSE error:', error);
-            }
-          }
-        }
-      }
+      // Reload agent panel
+      window.location.reload();
     } catch (error) {
-      console.error('Send message error:', error);
-      setMessages((prev) => [
-        ...prev,
-        { role: 'system', content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}` },
-      ]);
-    } finally {
-      setLoading(false);
+      console.error('[TestAgent] Failed to reset session:', error);
+      alert('Failed to reset session: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 
-  const handleClear = () => {
-    setMessages([]);
-    setPromptLogs([]);
-    setWebActions([]);
-  };
-
   return (
-    <div style={{ height: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column' }}>
-      <div className="page-header" style={{ marginBottom: '15px' }}>
-        <h1>Test Agent</h1>
-        <p>Test AI agent with live webpage interaction</p>
-      </div>
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      overflow: 'hidden'
+    }}>
+      {/* Top Control Bar */}
+      <div
+        style={{
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          borderBottom: '1px solid rgba(0, 0, 0, 0.1)',
+          padding: '12px 20px',
+          display: 'flex',
+          alignItems: 'center',
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+          zIndex: 1000
+        }}
+      >
+        {/* Left: Title and Back button */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: '200px' }}>
+          <div style={{
+            fontSize: '18px',
+            fontWeight: '700',
+            background: 'linear-gradient(135deg, #FF9A56 0%, #FF7F50 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}>
+            Test Agent
+          </div>
 
-      {/* URL Input */}
-      <div className="card" style={{ marginBottom: '15px', padding: '15px' }}>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-          <label className="form-label" style={{ marginBottom: 0, minWidth: '80px' }}>Target URL:</label>
+          <button
+            onClick={() => window.location.href = '/admin'}
+            style={{
+              padding: '8px 16px',
+              border: '1px solid rgba(0, 0, 0, 0.1)',
+              borderRadius: '10px',
+              background: 'white',
+              color: '#333',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = '#f5f5f5';
+              e.currentTarget.style.borderColor = '#FF9A56';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'white';
+              e.currentTarget.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Back
+          </button>
+        </div>
+
+        {/* Center: URL input and Load button */}
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' }}>
           <input
             type="text"
-            className="form-input"
             value={targetUrl}
             onChange={(e) => setTargetUrl(e.target.value)}
             placeholder="https://example.com"
-            style={{ flex: 1 }}
+            style={{
+              width: '400px',
+              padding: '10px 16px',
+              border: '1px solid rgba(0, 0, 0, 0.1)',
+              borderRadius: '12px',
+              fontSize: '14px',
+              outline: 'none',
+              transition: 'all 0.2s'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = '#FF9A56';
+              e.target.style.boxShadow = '0 0 0 3px rgba(255, 154, 86, 0.1)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+              e.target.style.boxShadow = 'none';
+            }}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') {
+                handleLoadUrl();
+              }
+            }}
           />
-          <button className="btn btn-primary" onClick={handleLoadUrl}>
-            Load Page
+
+          <button
+            onClick={handleLoadUrl}
+            style={{
+              padding: '10px 24px',
+              border: 'none',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #FF9A56 0%, #FF7F50 100%)',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'transform 0.2s, box-shadow 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)';
+              e.currentTarget.style.boxShadow = '0 8px 20px rgba(255, 154, 86, 0.4)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)';
+              e.currentTarget.style.boxShadow = 'none';
+            }}
+          >
+            Load URL
           </button>
-          <button className="btn btn-secondary" onClick={handleClear}>
-            Clear All
+        </div>
+
+        {/* Right: Reset Session button */}
+        <div style={{ minWidth: '200px', display: 'flex', justifyContent: 'flex-end' }}>
+          <button
+            onClick={handleResetSession}
+            style={{
+              padding: '10px 24px',
+              border: '1px solid rgba(255, 154, 86, 0.3)',
+              borderRadius: '12px',
+              background: 'transparent',
+              color: '#FF9A56',
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'linear-gradient(135deg, #FF9A56 0%, #FF7F50 100%)';
+              e.currentTarget.style.color = 'white';
+              e.currentTarget.style.borderColor = '#FF9A56';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = '#FF9A56';
+              e.currentTarget.style.borderColor = 'rgba(255, 154, 86, 0.3)';
+            }}
+          >
+            Reset Session
           </button>
         </div>
       </div>
 
-      {/* Three-column layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr 1fr', gap: '15px', flex: 1, minHeight: 0 }}>
-
-        {/* LEFT PANEL - Prompt Logs (What LLM sees) */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <div className="card-header" style={{ flexShrink: 0 }}>
-            <div className="card-title">📝 LLM Prompt</div>
-          </div>
-          <div style={{ flex: 1, overflow: 'auto', padding: '15px', backgroundColor: '#f8f9fa' }}>
-            {promptLogs.map((log, idx) => (
-              <div key={idx} style={{ marginBottom: '20px', fontSize: '12px', fontFamily: 'monospace' }}>
-                <div style={{ color: '#7f8c8d', marginBottom: '5px' }}>[{log.timestamp}]</div>
-                <div style={{ whiteSpace: 'pre-wrap', backgroundColor: '#fff', padding: '10px', borderRadius: '5px', marginBottom: '10px' }}>
-                  <strong>System:</strong> {log.systemPrompt}
-                </div>
-                <div style={{ whiteSpace: 'pre-wrap', backgroundColor: '#e3f2fd', padding: '10px', borderRadius: '5px', marginBottom: '10px' }}>
-                  <strong>User:</strong> {log.userMessage}
-                </div>
-                <div style={{ whiteSpace: 'pre-wrap', backgroundColor: '#fff', padding: '10px', borderRadius: '5px' }}>
-                  <strong>Context:</strong> {log.context}
-                </div>
-              </div>
-            ))}
-            {promptLogs.length === 0 && (
-              <p style={{ textAlign: 'center', color: '#7f8c8d', paddingTop: '50px' }}>
-                Prompts sent to LLM will appear here
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* MIDDLE PANEL - Webpage Preview */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0, position: 'relative' }}>
-          <div className="card-header" style={{ flexShrink: 0 }}>
-            <div className="card-title">🌐 Webpage Preview</div>
-            <div style={{ fontSize: '12px', color: '#7f8c8d' }}>{loadedUrl || 'No page loaded'}</div>
-          </div>
-
-          {/* Web Actions Overlay */}
-          {webActions.length > 0 && (
-            <div style={{
-              position: 'absolute',
-              top: '60px',
-              right: '10px',
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              padding: '10px',
-              borderRadius: '5px',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-              maxWidth: '200px',
-              zIndex: 10,
-              fontSize: '11px'
-            }}>
-              <div style={{ fontWeight: 'bold', marginBottom: '8px' }}>🎬 Agent Actions</div>
-              {webActions.slice(-5).map((action, idx) => (
-                <div key={idx} style={{ marginBottom: '5px', padding: '5px', backgroundColor: '#e8f4f8', borderRadius: '3px' }}>
-                  <div style={{ color: '#2196f3', fontWeight: 'bold' }}>{action.type}</div>
-                  <div style={{ color: '#666' }}>{action.target}</div>
-                  <div style={{ color: '#999', fontSize: '10px' }}>{action.timestamp}</div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div style={{ flex: 1, minHeight: 0, backgroundColor: '#f0f0f0' }}>
-            {loadedUrl ? (
-              <iframe
-                ref={iframeRef}
-                src={loadedUrl}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  border: 'none',
-                  backgroundColor: 'white'
-                }}
-                title="Target Webpage"
-              />
-            ) : (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                height: '100%',
-                color: '#7f8c8d'
-              }}>
-                Enter a URL and click "Load Page" to start testing
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* RIGHT PANEL - Chat (What user sees) */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <div className="card-header" style={{ flexShrink: 0 }}>
-            <div className="card-title">💬 User Chat</div>
-          </div>
-
-          {/* Messages */}
-          <div style={{ flex: 1, overflow: 'auto', padding: '15px', backgroundColor: '#f8f9fa' }}>
-            {messages.map((msg, idx) => (
-              <div
-                key={idx}
-                style={{
-                  marginBottom: '12px',
-                  padding: '10px',
-                  backgroundColor:
-                    msg.role === 'user'
-                      ? '#e3f2fd'
-                      : msg.role === 'assistant'
-                      ? '#f3e5f5'
-                      : '#fff3cd',
-                  borderRadius: '8px',
-                  fontSize: '13px'
-                }}
-              >
-                <div style={{ fontSize: '11px', fontWeight: 'bold', marginBottom: '5px', color: '#666' }}>
-                  {msg.role.toUpperCase()}
-                </div>
-                <div style={{ whiteSpace: 'pre-wrap' }}>{msg.content}</div>
-              </div>
-            ))}
-            {messages.length === 0 && (
-              <p style={{ textAlign: 'center', color: '#7f8c8d', paddingTop: '50px' }}>
-                Chat messages will appear here
-              </p>
-            )}
-          </div>
-
-          {/* Input */}
-          <div style={{ flexShrink: 0, padding: '15px', borderTop: '1px solid #ecf0f1' }}>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                handleSend();
+      {/* Full Screen Iframe */}
+      <div style={{
+        flex: 1,
+        position: 'relative',
+        backgroundColor: '#f5f5f5'
+      }}>
+        {loadedUrl ? (
+          <iframe
+            ref={iframeRef}
+            src={loadedUrl}
+            style={{
+              width: '100%',
+              height: '100%',
+              border: 'none',
+              display: 'block'
+            }}
+            title="Test Page"
+          />
+        ) : (
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              height: '100%',
+              flexDirection: 'column',
+              gap: '16px'
+            }}
+          >
+            <div
+              style={{
+                fontSize: '48px',
+                opacity: 0.3
               }}
             >
-              <textarea
-                className="form-input"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder="Type your message..."
-                disabled={loading}
-                rows={3}
-                style={{ marginBottom: '10px', resize: 'none' }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSend();
-                  }
-                }}
-              />
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={loading || !input.trim()}
-                style={{ width: '100%' }}
-              >
-                {loading ? 'Sending...' : 'Send'}
-              </button>
-            </form>
+              🌐
+            </div>
+            <div
+              style={{
+                fontSize: '18px',
+                color: '#7f8c8d',
+                fontWeight: '500'
+              }}
+            >
+              Enter a URL above to start testing
+            </div>
+            <div
+              style={{
+                fontSize: '14px',
+                color: '#95a5a6'
+              }}
+            >
+              The Agent Panel will overlay on the page
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Agent Panel Container */}
+        <div id="agent-panel-root"></div>
       </div>
     </div>
   );

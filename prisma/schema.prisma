@@ -24,7 +24,6 @@ model Session {
 
   // Relations
   messages          Message[]
-  navigationHistory NavigationHistory[]
 
   @@index([userId, isActive])
   @@map("sessions")
@@ -61,25 +60,6 @@ model Message {
   @@index([sessionId, archived, timestamp])
   @@index([sessionId, isCompacted])
   @@map("messages")
-}
-
-// ==============================================================================
-// Navigation History (Page visits)
-// ==============================================================================
-
-model NavigationHistory {
-  id        Int      @id @default(autoincrement())
-  sessionId String   @map("session_id") @db.Uuid
-  url       String   @db.Text
-  summary   String?  @db.Text
-  timestamp DateTime @default(now())
-  createdAt DateTime @default(now()) @map("created_at")
-
-  // Relations
-  session Session @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@index([sessionId, timestamp(sort: Desc)])
-  @@map("navigation_history")
 }
 
 // ==============================================================================
@@ -153,4 +133,41 @@ model Skill {
 
   @@index([isActive])
   @@map("skills")
+}
+
+// ==============================================================================
+// LLM Traces (For debugging and monitoring LLM calls)
+// ==============================================================================
+
+model LLMTrace {
+  id            String   @id @default(uuid())
+  sessionId     String   @map("session_id") // Which session this belongs to
+  userId        String   @map("user_id") // Which user made the request
+
+  // Input & Output (exact format sent to and received from LLM)
+  input         Json     @db.JsonB // Messages array sent to LLM API
+  output        String   @db.Text // Complete text output from LLM
+
+  // LLM Configuration
+  model         String   @default("gpt-4") // Model used for this call
+  temperature   Float?   // Temperature parameter
+  maxTokens     Int?     @map("max_tokens") // Max tokens parameter
+
+  // Token Usage & Cost
+  inputTokens   Int?     @map("input_tokens") // Input tokens from API response
+  outputTokens  Int?     @map("output_tokens") // Output tokens from API response
+  totalTokens   Int?     @map("total_tokens") // Total tokens from API response
+  cost          Float?   // Estimated cost in USD
+
+  // Status & Performance
+  status        String   @default("success") // success | error | timeout
+  error         String?  @db.Text // Error message if status is error
+
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([sessionId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([status])
+  @@map("llm_traces")
 }
