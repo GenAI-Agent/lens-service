@@ -12,18 +12,10 @@ export interface LLMTraceInput {
   sessionId?: string;
   userId?: string;
   messages: Message[];
-  model: string;
-  temperature?: number;
-  maxTokens?: number;
 }
 
 export interface LLMTraceOutput {
-  response?: any; // Full OpenAI API response
   completion?: string;
-  toolCalls?: any[];
-  inputTokens?: number; // From response.usage.prompt_tokens
-  outputTokens?: number; // From response.usage.completion_tokens
-  totalTokens?: number; // From response.usage.total_tokens
   error?: string;
   status: 'success' | 'error' | 'timeout';
 }
@@ -40,9 +32,6 @@ export class TraceLogger {
         userId: input.userId || 'unknown',
         input: input.messages as any,
         output: '', // Will be updated later
-        model: input.model,
-        temperature: input.temperature,
-        maxTokens: input.maxTokens,
       },
     });
 
@@ -53,39 +42,14 @@ export class TraceLogger {
    * Update trace with output
    */
   async updateTrace(traceId: string, output: LLMTraceOutput): Promise<void> {
-    // Calculate cost from token usage
-    const cost =
-      output.inputTokens && output.outputTokens
-        ? this.estimateCost(output.inputTokens, output.outputTokens)
-        : null;
-
     await prisma.lLMTrace.update({
       where: { id: traceId },
       data: {
-        output: output.completion || JSON.stringify(output.response) || '',
-        inputTokens: output.inputTokens,
-        outputTokens: output.outputTokens,
-        totalTokens: output.totalTokens,
-        cost,
+        output: output.completion || '',
         status: output.status,
         error: output.error,
       },
     });
-  }
-
-  /**
-   * Estimate cost based on token usage
-   * OpenAI GPT-5.1 pricing (as of 2024)
-   */
-  private estimateCost(inputTokens: number, outputTokens: number): number {
-    // GPT-4 pricing: $0.01 per 1K input tokens, $0.03 per 1K output tokens
-    const INPUT_COST_PER_1K = 0.01;
-    const OUTPUT_COST_PER_1K = 0.03;
-
-    const inputCost = (inputTokens / 1_000) * INPUT_COST_PER_1K;
-    const outputCost = (outputTokens / 1_000) * OUTPUT_COST_PER_1K;
-
-    return inputCost + outputCost;
   }
 
   /**
@@ -148,26 +112,13 @@ export class TraceLogger {
       where: { ...where, status: 'error' },
     });
 
-    // Calculate total cost
-    const costAgg = await prisma.lLMTrace.aggregate({
-      where,
-      _sum: {
-        cost: true,
-        totalTokens: true,
-      },
-    });
-
     const successRate = totalTraces > 0 ? (successCount / totalTraces) * 100 : 0;
-    const totalCost = costAgg._sum.cost || 0;
-    const totalTokens = costAgg._sum.totalTokens || 0;
 
     return {
       totalTraces,
       successCount,
       errorCount,
       successRate,
-      totalCost,
-      totalTokens,
     };
   }
 }

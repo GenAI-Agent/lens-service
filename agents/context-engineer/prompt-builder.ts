@@ -21,10 +21,9 @@ export class PromptBuilder {
    * 1. System prompt
    * 2. Current page state (text + screenshot) - Fixed Input
    * 3. Site-wide prompts
-   * 4. URL-specific prompts
-   * 5. Navigation history
-   * 6. Session messages (including compacted summaries)
-   * 7. Current user query (already in messages from DB)
+   * 4. Navigation history
+   * 5. Session messages (including compacted summaries)
+   * 6. Current user query (already in messages from DB)
    */
   async buildPrompt(context: SessionContext): Promise<Message[]> {
     const messages: Message[] = [];
@@ -63,18 +62,7 @@ export class PromptBuilder {
       });
     }
 
-    // 4. URL-specific Prompts
-    const urlPrompt = await this.promptLoader.loadUrlPrompt(context.currentUrl);
-    console.log('[PromptBuilder] URL prompts loaded for', context.currentUrl, ':', urlPrompt ? 'Yes' : 'No');
-    if (urlPrompt) {
-      console.log('[PromptBuilder] URL prompt content:', urlPrompt.substring(0, 100) + '...');
-      messages.push({
-        role: 'system',
-        content: `[Page Type Information]\n${urlPrompt}`,
-      });
-    }
-
-    // 5. Navigation History
+    // 4. Navigation History
     const navHistory = await this.promptLoader.loadNavigationHistory(
       context.sessionId,
       5

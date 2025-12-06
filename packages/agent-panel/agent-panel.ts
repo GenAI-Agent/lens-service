@@ -33,6 +33,7 @@ export class AgentPanel {
   private hasAskedAutoMode: boolean = false;
   private contactForm: ContactFormDynamic;
   private speechRecognition: SpeechRecognitionService;
+  private isThinking: boolean = false;
 
   constructor(config: AgentPanelConfig) {
     this.container = document.createElement('div');
@@ -44,15 +45,15 @@ export class AgentPanel {
   public async mount(container: HTMLElement): Promise<void> {
     this.container = container;
     await this.loadSessions();
-    // Always create a new session when mounting
-    await this.createNewSession();
     this.render();
   }
 
   public async open(): Promise<void> {
     this.isOpen = true;
-    // Always create a new session when opening panel
-    await this.createNewSession();
+    // Only create new session if we don't have one
+    if (!this.sessionId) {
+      await this.createNewSession();
+    }
     this.render();
 
     if (!this.hasAskedAutoMode) {
@@ -129,7 +130,7 @@ export class AgentPanel {
 
   private async render(): Promise<void> {
     const mainContent = this.mode === 'agent'
-      ? renderChatInterface(this.messages, this.currentInput, this.language, this.speechRecognition.getIsListening())
+      ? renderChatInterface(this.messages, this.currentInput, this.language, this.speechRecognition.getIsListening(), this.isThinking)
       : this.contactForm.render(this.language);
 
     this.container.innerHTML = `
@@ -249,13 +250,80 @@ export class AgentPanel {
       });
     }
 
+    this.attachInlineToolListeners();
+  }
+
+  private attachInlineToolListeners(): void {
     // Inline tool click handlers
     document.querySelectorAll('.lens-os-agent-tool-inline').forEach((el, index) => {
-      el.addEventListener('click', (e) => {
+      // Remove existing listener if any
+      const newEl = el.cloneNode(true) as HTMLElement;
+      el.parentNode?.replaceChild(newEl, el);
+
+      newEl.addEventListener('click', (e) => {
         e.stopPropagation();
         this.toggleInlineToolExpand(index);
       });
     });
+
+    // Memory summary click handlers
+    document.querySelectorAll('.lens-os-agent-memory-summary .memory-summary-toggle').forEach((toggle) => {
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const content = toggle.nextElementSibling as HTMLElement;
+        if (content && content.classList.contains('memory-summary-content')) {
+          const isHidden = content.style.display === 'none';
+          content.style.display = isHidden ? 'block' : 'none';
+        }
+      });
+    });
+  }
+
+  /**
+   * Simple markdown parser
+   */
+  private parseMarkdown(text: string): string {
+    return text
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
+      .replace(/^-\s+(.+)$/gm, '<li>$1</li>')
+      .replace(/\n/g, '<br>');
+  }
+
+  /**
+   * Parse content and convert <tool>...</tool> to inline HTML divs
+   */
+  private parseContentToHTML(content: string): string {
+    let toolIndex = 0;
+    let memoryIndex = 0;
+    // First escape the content
+    let html = escapeHtml(content);
+
+    // Then replace escaped tool tags with actual div elements
+    html = html
+      .replace(/&lt;tool&gt;([\s\S]*?)&lt;\/tool&gt;/g, () => {
+        const placeholderId = `tool-inline-${toolIndex}`;
+        toolIndex++;
+        return `<div class="lens-os-agent-tool-inline" data-tool-id="${placeholderId}">${t('toolCall', this.language)}</div>`;
+      })
+      // Replace [Memory Summary] blocks
+      .replace(/\[Memory Summary\]\s*([\s\S]*?)(?=&lt;br&gt;&lt;br&gt;\[Memory Summary\]|&lt;br&gt;&lt;br&gt;&lt;tool&gt;|&lt;\/complete&gt;|$)/g, (_match, summaryContent) => {
+        const placeholderId = `memory-summary-${memoryIndex}`;
+        memoryIndex++;
+        const parsedContent = this.parseMarkdown(summaryContent.trim());
+        return `<div class="lens-os-agent-memory-summary" data-memory-id="${placeholderId}">
+          <div class="memory-summary-toggle">${t('memorySummary', this.language) || 'Memory Summary'}</div>
+          <div class="memory-summary-content" style="display:none;">${parsedContent}</div>
+        </div>`;
+      })
+      .replace(/&lt;\/complete&gt;/g, '')
+      .replace(/\n/g, '<br>')
+      .trim();
+
+    return html;
   }
 
   /**
@@ -263,7 +331,7 @@ export class AgentPanel {
    */
   private parseToolData(toolData: string): { name: string; params: Record<string, any> } {
     try {
-      // Parse format: <call>\nname: X\nparameters: {...}\n</call>
+      // Parse format: name: tool_name\nparameters: {...}
       const nameMatch = toolData.match(/name:\s*(.+)/);
       const paramsMatch = toolData.match(/parameters:\s*(\{[\s\S]*\})/);
 
@@ -272,8 +340,11 @@ export class AgentPanel {
 
       if (paramsMatch) {
         try {
-          params = JSON.parse(paramsMatch[1]);
+          // Clean up the JSON string - remove trailing commas and whitespace
+          const jsonStr = paramsMatch[1].trim();
+          params = JSON.parse(jsonStr);
         } catch (e) {
+          console.error('Failed to parse tool parameters:', e);
           params = { raw: paramsMatch[1] };
         }
       }
@@ -315,20 +386,17 @@ export class AgentPanel {
       const expandedDiv = document.createElement('div');
       expandedDiv.className = 'lens-os-agent-tool-inline-expanded';
 
-      // Format parameters as key-value pairs
+      // Format parameters as simple list
       const paramsHtml = Object.entries(parsed.params)
         .map(([key, value]) => {
           const displayValue = typeof value === 'object' ? JSON.stringify(value) : value;
-          return `<div style="margin-bottom: 4px;"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(String(displayValue))}</div>`;
+          return `<div class="param-item"><span class="param-key">${escapeHtml(key)}:</span> <span class="param-value">${escapeHtml(String(displayValue))}</span></div>`;
         })
         .join('');
 
       expandedDiv.innerHTML = `
-        <div class="lens-os-agent-tool-inline-header">
-          <span>${t('toolName', this.language)}: ${escapeHtml(parsed.name)}</span>
-          <span style="cursor: pointer; font-size: 14px;">✕</span>
-        </div>
-        <div class="lens-os-agent-tool-inline-content">${paramsHtml}</div>
+        <div class="tool-name-row">${escapeHtml(parsed.name)}</div>
+        <div class="params-list">${paramsHtml}</div>
       `;
 
       // Insert after the tool span
@@ -381,6 +449,9 @@ export class AgentPanel {
     this.messages.push({ role: 'user', content: this.currentInput });
     const userMessage = this.currentInput;
     this.currentInput = '';
+
+    // Show thinking animation
+    this.isThinking = true;
     this.render();
 
     setTimeout(() => {
@@ -421,6 +492,12 @@ export class AgentPanel {
             try {
               const data = JSON.parse(line.slice(6));
 
+              // Hide thinking animation on first response
+              if (this.isThinking) {
+                this.isThinking = false;
+                this.render();
+              }
+
               console.log('[AgentPanel] SSE event:', data.type, data);
 
               if (data.type === 'session_id' && !this.sessionId) {
@@ -429,11 +506,21 @@ export class AgentPanel {
               } else if (data.type === 'text') {
                 // Server sends 'text' type for streaming content
                 assistantMessage.content += data.content;
-                this.render();
-                setTimeout(() => {
-                  const messagesArea = document.getElementById('messagesArea');
-                  if (messagesArea) messagesArea.scrollTop = messagesArea.scrollHeight;
-                }, 10);
+
+                // 直接更新最後一個 message 的 DOM，保留 HTML 結構
+                const messagesArea = document.getElementById('messagesArea');
+                if (messagesArea) {
+                  const lastMessage = messagesArea.querySelector('.lens-os-agent-message.assistant:last-child .lens-os-agent-message-content');
+                  if (lastMessage) {
+                    // Parse and convert <tool>...</tool> to inline divs
+                    const html = this.parseContentToHTML(assistantMessage.content);
+                    lastMessage.innerHTML = html;
+
+                    // Re-attach event listeners for any new inline tools
+                    this.attachInlineToolListeners();
+                  }
+                  messagesArea.scrollTop = messagesArea.scrollHeight;
+                }
               } else if (data.type === 'tool_call') {
                 console.log('[AgentPanel] Tool call received:', data.toolCall);
                 // Add tool call to message for display
@@ -589,8 +676,22 @@ export class AgentPanel {
 
       const messages = await response.json();
 
+      // Find the index of the LAST Memory Summary
+      let lastMemorySummaryIndex = -1;
+      for (let i = messages.length - 1; i >= 0; i--) {
+        if (messages[i].role === 'system' && messages[i].content.startsWith('[Memory Summary]')) {
+          lastMemorySummaryIndex = i;
+          break;
+        }
+      }
+
+      // Only show messages from the last Memory Summary onwards
+      const visibleMessages = lastMemorySummaryIndex >= 0
+        ? messages.slice(lastMemorySummaryIndex)
+        : messages;
+
       this.sessionId = sessionId;
-      this.messages = messages.map((msg: any) => ({
+      this.messages = visibleMessages.map((msg: any) => ({
         role: msg.role,
         content: msg.content,
         tools: msg.toolCalls ? JSON.parse(msg.toolCalls) : undefined,
@@ -606,24 +707,8 @@ export class AgentPanel {
   }
 
   private async createNewSession(): Promise<void> {
-    try {
-      // Create a new session with unique ID
-      const response = await fetch(`${this.config.apiUrl}/api/sessions/create`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: this.config.userId }),
-      });
-
-      if (response.ok) {
-        const newSession = await response.json();
-        this.sessionId = newSession.id;
-      } else {
-        this.sessionId = '';
-      }
-    } catch (error) {
-      console.error('[AgentPanel] Create new session error:', error);
-      this.sessionId = '';
-    }
+    // Generate a local session ID (will be created in DB on first message)
+    this.sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     this.messages = [];
     this.currentInput = '';
@@ -661,11 +746,16 @@ export class AgentPanel {
         () => {
           console.log('[AgentPanel] Voice recognition ended');
           this.render();
+        },
+        // On start callback - 當實際開始錄音時更新 UI
+        () => {
+          console.log('[AgentPanel] Voice recognition actually started');
+          this.render();
         }
       );
 
-      if (success) {
-        this.render(); // Re-render to show listening state
+      if (!success) {
+        console.error('[AgentPanel] Failed to start voice recognition');
       }
     }
   }

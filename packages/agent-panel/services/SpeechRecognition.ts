@@ -68,7 +68,7 @@ export class SpeechRecognitionService {
     };
   }
 
-  public start(onResult: (text: string) => void, onEnd: () => void): boolean {
+  public start(onResult: (text: string) => void, onEnd: () => void, onStart?: () => void): boolean {
     if (!this.recognition) {
       alert('您的瀏覽器不支援語音輸入功能\nYour browser does not support voice input');
       return false;
@@ -82,10 +82,20 @@ export class SpeechRecognitionService {
     this.onResultCallback = onResult;
     this.onEndCallback = onEnd;
 
+    // Add onStart callback to recognition
+    if (onStart) {
+      const originalOnStart = this.recognition.onstart;
+      this.recognition.onstart = () => {
+        this.isListening = true;
+        console.log('[SpeechRecognition] Recognition started');
+        onStart();
+        if (originalOnStart) originalOnStart();
+      };
+    }
+
     try {
       this.recognition.start();
-      this.isListening = true;
-      console.log('[SpeechRecognition] Started listening');
+      console.log('[SpeechRecognition] Starting recognition...');
       return true;
     } catch (error) {
       console.error('[SpeechRecognition] Failed to start:', error);

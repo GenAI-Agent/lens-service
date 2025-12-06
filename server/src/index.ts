@@ -70,15 +70,15 @@ app.post('/api/chat', async (req: Request, res: Response) => {
   try {
     const body = req.body as ChatRequest;
 
-    const { userId, message, currentUrl, currentPage } = body;
+    const { userId, message, currentUrl, currentPage, sessionId } = body;
 
     if (!userId || !message) {
       res.status(400).json({ error: 'Missing required fields' });
       return;
     }
 
-    // Get or create session
-    const session = await getOrCreateSession(userId);
+    // Get or create session (creates in DB on first message if sessionId provided)
+    const session = await getOrCreateSession(userId, sessionId);
 
     // Set up SSE
     res.setHeader('Content-Type', 'text/event-stream');
@@ -181,8 +181,40 @@ function sendSSE(res: Response, data: any): void {
 
 /**
  * Helper: Get or create session
+ * @param userId - User ID
+ * @param sessionId - Optional session ID from frontend (if provided, will create with this ID)
  */
-async function getOrCreateSession(userId: string) {
+async function getOrCreateSession(userId: string, sessionId?: string) {
+  // If sessionId is provided, try to find it first
+  if (sessionId) {
+    let session = await prisma.session.findUnique({
+      where: { id: sessionId },
+    });
+
+    // If session exists and is valid, return it
+    if (session && session.isActive && session.expiresAt > new Date()) {
+      return session;
+    }
+
+    // If session doesn't exist, create it with the provided ID
+    if (!session) {
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+
+      session = await prisma.session.create({
+        data: {
+          id: sessionId,
+          userId,
+          expiresAt,
+          isActive: true,
+        },
+      });
+
+      return session;
+    }
+  }
+
+  // Fallback: find or create active session
   let session = await prisma.session.findFirst({
     where: {
       userId,
@@ -219,43 +251,65 @@ app.get('/admin/*', (req, res) => {
 
 /**
  * GET /api/sessions/:userId
- * Get all sessions for a user
+ * Get all sessions for a user (only sessions with messages)
  */
 app.get('/api/sessions/:userId', async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const { limit = '10' } = req.query;
 
+    // Get all sessions with messages, sorted by latest message time
     const sessions = await prisma.session.findMany({
       where: {
         userId,
         isActive: true,
+        messages: {
+          some: {}, // Only include sessions that have at least one message
+        },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: parseInt(limit as string),
       include: {
         messages: {
-          take: 1,
           orderBy: {
-            timestamp: 'asc',
+            timestamp: 'desc',
           },
-          where: {
-            role: 'user',
-          },
+          take: 1, // Get the latest message for sorting and display
         },
       },
     });
 
-    const formattedSessions = sessions.map(session => ({
-      id: session.id,
-      createdAt: session.createdAt,
-      expiresAt: session.expiresAt,
-      isActive: session.isActive,
-      lastMessage: session.messages[0]?.content || 'New conversation',
-      messageCount: 0, // Will be populated if needed
-    }));
+    // Sort sessions by latest message timestamp
+    const sortedSessions = sessions
+      .filter(session => session.messages.length > 0) // Extra safety check
+      .sort((a, b) => {
+        const timeA = a.messages[0]?.timestamp || a.createdAt;
+        const timeB = b.messages[0]?.timestamp || b.createdAt;
+        return timeB.getTime() - timeA.getTime(); // Descending order
+      })
+      .slice(0, parseInt(limit as string));
+
+    // Get first user message for session name
+    const formattedSessions = await Promise.all(
+      sortedSessions.map(async (session) => {
+        const firstUserMessage = await prisma.message.findFirst({
+          where: {
+            sessionId: session.id,
+            role: 'user',
+          },
+          orderBy: {
+            timestamp: 'asc',
+          },
+        });
+
+        return {
+          id: session.id,
+          createdAt: session.createdAt,
+          expiresAt: session.expiresAt,
+          isActive: session.isActive,
+          lastMessage: firstUserMessage?.content || 'New conversation',
+          messageCount: 0, // Will be populated if needed
+        };
+      })
+    );
 
     res.json(formattedSessions);
   } catch (error) {

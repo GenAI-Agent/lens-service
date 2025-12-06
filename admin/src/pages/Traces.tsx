@@ -10,18 +10,8 @@ interface LLMTrace {
   id: string;
   sessionId: string | null;
   userId: string | null;
-  messages: any[];
-  model: string;
-  temperature: number | null;
-  maxTokens: number | null;
-  response: any | null;
-  completion: string | null;
-  toolCalls: any[] | null;
-  latencyMs: number | null;
-  inputTokens: number | null;
-  outputTokens: number | null;
-  totalTokens: number | null;
-  cost: number | null;
+  input: any;
+  output: string;
   error: string | null;
   status: string;
   createdAt: string;
@@ -32,14 +22,13 @@ interface TraceStats {
   successCount: number;
   errorCount: number;
   successRate: number;
-  totalCost: number;
-  totalTokens: number;
 }
 
 export default function Traces() {
   const [traces, setTraces] = useState<LLMTrace[]>([]);
   const [stats, setStats] = useState<TraceStats | null>(null);
   const [selectedTrace, setSelectedTrace] = useState<LLMTrace | null>(null);
+  const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
   // Filters
@@ -117,14 +106,10 @@ export default function Traces() {
       const response = await fetch(`/api/admin/traces/${id}`);
       const data = await response.json();
       setSelectedTrace(data);
+      setShowModal(true);
     } catch (error) {
       console.error('Failed to load trace details:', error);
     }
-  };
-
-  const formatCost = (cost: number | null) => {
-    if (cost === null) return 'N/A';
-    return `$${cost.toFixed(6)}`;
   };
 
   const formatDate = (dateStr: string) => {
@@ -144,14 +129,6 @@ export default function Traces() {
           <div className="stat-card">
             <div className="stat-label">Success Rate</div>
             <div className="stat-value">{stats.successRate.toFixed(1)}%</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Total Tokens</div>
-            <div className="stat-value">{stats.totalTokens?.toLocaleString() || '0'}</div>
-          </div>
-          <div className="stat-card">
-            <div className="stat-label">Total Cost</div>
-            <div className="stat-value">{formatCost(stats.totalCost)}</div>
           </div>
         </div>
       )}
@@ -198,30 +175,21 @@ export default function Traces() {
                   <th>Time</th>
                   <th>Session</th>
                   <th>User</th>
-                  <th>Model</th>
                   <th>Status</th>
-                  <th>Total Tokens</th>
-                  <th>Cost</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {traces.map((trace) => (
-                  <tr
-                    key={trace.id}
-                    className={selectedTrace?.id === trace.id ? 'selected' : ''}
-                  >
+                  <tr key={trace.id}>
                     <td>{formatDate(trace.createdAt)}</td>
                     <td className="mono">{trace.sessionId?.substring(0, 8) || 'N/A'}</td>
                     <td className="mono">{trace.userId?.substring(0, 12) || 'N/A'}</td>
-                    <td>{trace.model}</td>
                     <td>
                       <span className={`status-badge status-${trace.status}`}>
                         {trace.status}
                       </span>
                     </td>
-                    <td>{trace.totalTokens?.toLocaleString() || 'N/A'}</td>
-                    <td>{formatCost(trace.cost)}</td>
                     <td>
                       <button
                         className="btn-view"
@@ -237,100 +205,74 @@ export default function Traces() {
           )}
         </div>
 
-        {/* Trace Details */}
-        {selectedTrace && (
-          <div className="trace-details">
-            <div className="detail-header">
-              <h2>Trace Details</h2>
-              <button onClick={() => setSelectedTrace(null)}>Close</button>
-            </div>
-
-            <div className="detail-section">
-              <h3>Metadata</h3>
-              <div className="detail-grid">
-                <div>
-                  <strong>Trace ID:</strong> <span className="mono">{selectedTrace.id}</span>
-                </div>
-                <div>
-                  <strong>Session ID:</strong> <span className="mono">{selectedTrace.sessionId || 'N/A'}</span>
-                </div>
-                <div>
-                  <strong>User ID:</strong> <span className="mono">{selectedTrace.userId || 'N/A'}</span>
-                </div>
-                <div>
-                  <strong>Model:</strong> {selectedTrace.model}
-                </div>
-                <div>
-                  <strong>Temperature:</strong> {selectedTrace.temperature || 'N/A'}
-                </div>
-                <div>
-                  <strong>Max Tokens:</strong> {selectedTrace.maxTokens || 'N/A'}
-                </div>
-                <div>
-                  <strong>Status:</strong>{' '}
-                  <span className={`status-badge status-${selectedTrace.status}`}>
-                    {selectedTrace.status}
-                  </span>
-                </div>
-                <div>
-                  <strong>Created:</strong> {formatDate(selectedTrace.createdAt)}
-                </div>
-              </div>
-            </div>
-
-            <div className="detail-section">
-              <h3>Performance</h3>
-              <div className="detail-grid">
-                <div>
-                  <strong>Input Tokens:</strong> {selectedTrace.inputTokens?.toLocaleString() || 'N/A'}
-                </div>
-                <div>
-                  <strong>Output Tokens:</strong> {selectedTrace.outputTokens?.toLocaleString() || 'N/A'}
-                </div>
-                <div>
-                  <strong>Total Tokens:</strong> {selectedTrace.totalTokens?.toLocaleString() || 'N/A'}
-                </div>
-                <div>
-                  <strong>Cost:</strong> {formatCost(selectedTrace.cost)}
-                </div>
-              </div>
-            </div>
-
-            {selectedTrace.error && (
-              <div className="detail-section error-section">
-                <h3>Error</h3>
-                <pre>{selectedTrace.error}</pre>
-              </div>
-            )}
-
-            <div className="detail-section">
-              <h3>Input Messages</h3>
-              <pre className="json-viewer">{JSON.stringify(selectedTrace.messages, null, 2)}</pre>
-            </div>
-
-            {selectedTrace.response && (
-              <div className="detail-section">
-                <h3>Full Response</h3>
-                <pre className="json-viewer">{JSON.stringify(selectedTrace.response, null, 2)}</pre>
-              </div>
-            )}
-
-            {selectedTrace.completion && (
-              <div className="detail-section">
-                <h3>Completion Text</h3>
-                <pre className="completion-text">{selectedTrace.completion}</pre>
-              </div>
-            )}
-
-            {selectedTrace.toolCalls && selectedTrace.toolCalls.length > 0 && (
-              <div className="detail-section">
-                <h3>Tool Calls</h3>
-                <pre className="json-viewer">{JSON.stringify(selectedTrace.toolCalls, null, 2)}</pre>
-              </div>
-            )}
-          </div>
-        )}
       </div>
+
+      {/* Trace Details Modal */}
+      {showModal && selectedTrace && (
+        <div className="lens-os-admin-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="lens-os-admin-modal" style={{ maxWidth: '900px', maxHeight: '90vh' }} onClick={(e) => e.stopPropagation()}>
+            <div className="lens-os-admin-modal-header">
+              <h2 className="lens-os-admin-modal-title">Trace Details</h2>
+              <button className="lens-os-admin-modal-close" onClick={() => setShowModal(false)}>×</button>
+            </div>
+
+            <div style={{ padding: '20px', overflowY: 'auto', maxHeight: 'calc(90vh - 120px)' }}>
+              {/* Metadata */}
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{ marginBottom: '10px' }}>Metadata</h3>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '14px' }}>
+                  <div><strong>Trace ID:</strong> <span className="mono">{selectedTrace.id}</span></div>
+                  <div><strong>Session ID:</strong> <span className="mono">{selectedTrace.sessionId || 'N/A'}</span></div>
+                  <div><strong>User ID:</strong> <span className="mono">{selectedTrace.userId || 'N/A'}</span></div>
+                  <div>
+                    <strong>Status:</strong>{' '}
+                    <span className={`status-badge status-${selectedTrace.status}`}>{selectedTrace.status}</span>
+                  </div>
+                  <div><strong>Created:</strong> {formatDate(selectedTrace.createdAt)}</div>
+                </div>
+              </div>
+
+              {/* Error */}
+              {selectedTrace.error && (
+                <div style={{ marginBottom: '20px', padding: '10px', backgroundColor: '#fee', border: '1px solid #fcc', borderRadius: '4px' }}>
+                  <h3 style={{ marginBottom: '10px', color: '#c00' }}>Error</h3>
+                  <pre style={{ fontSize: '12px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{selectedTrace.error}</pre>
+                </div>
+              )}
+
+              {/* Input */}
+              <div style={{ marginBottom: '20px' }}>
+                <h3 style={{ marginBottom: '10px' }}>LLM Input</h3>
+                <pre style={{
+                  fontSize: '12px',
+                  backgroundColor: '#f5f5f5',
+                  padding: '15px',
+                  borderRadius: '4px',
+                  overflow: 'auto',
+                  maxHeight: '400px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
+                }}>{JSON.stringify(selectedTrace.input, null, 2)}</pre>
+              </div>
+
+              {/* Output */}
+              <div>
+                <h3 style={{ marginBottom: '10px' }}>LLM Output</h3>
+                <pre style={{
+                  fontSize: '12px',
+                  backgroundColor: '#f5f5f5',
+                  padding: '15px',
+                  borderRadius: '4px',
+                  overflow: 'auto',
+                  maxHeight: '400px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
+                }}>{selectedTrace.output}</pre>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

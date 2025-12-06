@@ -45,37 +45,6 @@ export function createAdminRouter(prisma: PrismaClient, openaiApiKey: string) {
     res.json({ success: true });
   });
 
-  // URL Prompts
-  router.get('/url-prompts', async (req, res) => {
-    const prompts = await prisma.urlPathPrompt.findMany({ orderBy: { priority: 'desc' } });
-    res.json(prompts);
-  });
-
-  router.get('/url-prompts/:id', async (req, res) => {
-    const prompt = await prisma.urlPathPrompt.findUnique({
-      where: { id: parseInt(req.params.id) },
-    });
-    res.json(prompt);
-  });
-
-  router.post('/url-prompts', async (req, res) => {
-    const prompt = await prisma.urlPathPrompt.create({ data: req.body });
-    res.json(prompt);
-  });
-
-  router.put('/url-prompts/:id', async (req, res) => {
-    const prompt = await prisma.urlPathPrompt.update({
-      where: { id: parseInt(req.params.id) },
-      data: req.body,
-    });
-    res.json(prompt);
-  });
-
-  router.delete('/url-prompts/:id', async (req, res) => {
-    await prisma.urlPathPrompt.delete({ where: { id: parseInt(req.params.id) } });
-    res.json({ success: true });
-  });
-
   // Skills
   router.get('/skills', async (req, res) => {
     const skills = await prisma.skill.findMany({ orderBy: { createdAt: 'desc' } });

@@ -1,6 +1,5 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
 import Dashboard from './pages/Dashboard';
-import Prompts from './pages/Prompts';
 import Skills from './pages/Skills';
 import KnowledgeBase from './pages/KnowledgeBase';
 import Sessions from './pages/Sessions';
@@ -40,11 +39,6 @@ function App() {
               </Link>
             </li>
             <li>
-              <Link to="/prompts" className={isActive('/prompts')}>
-                Prompts
-              </Link>
-            </li>
-            <li>
               <Link to="/skills" className={isActive('/skills')}>
                 Skills
               </Link>
@@ -81,7 +75,6 @@ function App() {
       <main className="lens-os-admin-main-content">
         <Routes>
           <Route path="/" element={<Dashboard />} />
-          <Route path="/prompts" element={<Prompts />} />
           <Route path="/skills" element={<Skills />} />
           <Route path="/knowledge-base" element={<KnowledgeBase />} />
           <Route path="/sessions" element={<Sessions />} />

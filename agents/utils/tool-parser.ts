@@ -54,36 +54,10 @@ export class ToolParser {
   }
 
   /**
-   * Parse tool content to extract all <call> blocks
+   * Parse tool content to extract tool call (simplified format)
+   * Format: name: tool_name\nparameters: {json}
    */
   private parseToolContent(content: string): ToolCall[] {
-    const calls: ToolCall[] = [];
-
-    try {
-      // Extract all <call>...</call> blocks
-      const callRegex = /<call>([\s\S]*?)<\/call>/g;
-      let match;
-
-      while ((match = callRegex.exec(content)) !== null) {
-        const callContent = match[1];
-        const toolCall = this.parseCallContent(callContent);
-
-        if (toolCall) {
-          calls.push(toolCall);
-        }
-      }
-
-      return calls;
-    } catch (error) {
-      console.error('Failed to parse tool content:', content, error);
-      return [];
-    }
-  }
-
-  /**
-   * Parse individual call content (uses 'name:' and 'parameters:')
-   */
-  private parseCallContent(content: string): ToolCall | null {
     try {
       const lines = content.trim().split('\n');
       let toolName = '';
@@ -103,19 +77,19 @@ export class ToolParser {
       }
 
       if (!toolName || !parametersJson) {
-        console.error('Invalid call format:', content);
-        return null;
+        console.error('Invalid tool format:', content);
+        return [];
       }
 
       const parameters = JSON.parse(parametersJson);
 
-      return {
+      return [{
         name: toolName,
         parameters,
-      };
+      }];
     } catch (error) {
-      console.error('Failed to parse call content:', content, error);
-      return null;
+      console.error('Failed to parse tool content:', content, error);
+      return [];
     }
   }
 

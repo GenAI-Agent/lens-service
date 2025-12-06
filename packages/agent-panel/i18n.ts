@@ -42,9 +42,12 @@ export const translations: Record<string, Record<string, string>> = {
     attachments: '附件',
     selectFiles: '選擇檔案',
     voiceInput: '語音輸入',
-    toolCall: '🔧 工具調用',
+    toolCall: '工具調用',
     toolName: '工具名稱',
     toolParams: '參數',
+    toolExpandHint: '點擊查看詳情',
+    memorySummary: '記憶摘要',
+    thinking: '思考中',
   },
   'en-US': {
     newSession: '+ New Chat',
@@ -85,9 +88,12 @@ export const translations: Record<string, Record<string, string>> = {
     attachments: 'Attachments',
     selectFiles: 'Select Files',
     voiceInput: 'Voice Input',
-    toolCall: '🔧 Tool Call',
+    toolCall: 'Tool Call',
     toolName: 'Tool Name',
     toolParams: 'Parameters',
+    toolExpandHint: 'Click to view details',
+    memorySummary: 'Memory Summary',
+    thinking: 'Thinking',
   }
 };
 

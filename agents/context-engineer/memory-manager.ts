@@ -97,14 +97,13 @@ export class MemoryManager {
 
   /**
    * Compact old messages into a summary
-   * Keep recent 10 messages, compact the rest
+   * Keep recent 10 messages, compact the rest (including previous compacted summaries)
    */
   async compactMemory(sessionId: string): Promise<void> {
     const messages = await this.prisma.message.findMany({
       where: {
         sessionId,
         archived: false,
-        isCompacted: false, // Don't compact already compacted messages
       },
       orderBy: {
         timestamp: 'asc',
@@ -116,7 +115,7 @@ export class MemoryManager {
       return;
     }
 
-    // Keep recent 10 messages, compact the rest
+    // Keep recent 10 messages, compact the rest (including any previous compacted summaries)
     const keepCount = 10;
     const toCompact = messages.slice(0, -keepCount);
 
@@ -124,10 +123,10 @@ export class MemoryManager {
       return;
     }
 
-    // Generate summary using LLM
+    // Generate summary using LLM (includes previous summaries if any)
     const summary = await this.generateSummary(toCompact);
 
-    // Archive old messages
+    // Archive old messages (including old compacted summaries)
     await this.prisma.message.updateMany({
       where: {
         id: {
@@ -139,7 +138,7 @@ export class MemoryManager {
       },
     });
 
-    // Create compacted summary message
+    // Create NEW compacted summary message (this replaces all previous summaries)
     await this.prisma.message.create({
       data: {
         sessionId,
@@ -159,24 +158,48 @@ export class MemoryManager {
 
   /**
    * Generate summary of messages using LLM
+   * If there's a previous [Memory Summary], include it in the new summary
    */
   private async generateSummary(messages: DbMessage[]): Promise<string> {
+    // Check if there's a previous memory summary in these messages
+    const previousSummary = messages.find(
+      m => m.role === 'system' && m.content.startsWith('[Memory Summary]')
+    );
+
     const conversationText = messages
       .map((m) => `${m.role}: ${m.content}`)
       .join('\n\n');
+
+    const systemPrompt = previousSummary
+      ? `Summarize the following conversation concisely.
+
+IMPORTANT: There is a previous [Memory Summary] in the messages below. You MUST:
+1. Include all key information from the previous summary
+2. Add new information from the subsequent messages
+3. Combine them into ONE comprehensive summary
+
+Focus on:
+- Previous context and history (from the old summary)
+- Key topics discussed
+- Important information exchanged
+- User's requests and agent's responses
+- Any actions taken
+
+Keep the combined summary under 400 words.`
+      : `Summarize the following conversation concisely. Focus on:
+- Key topics discussed
+- Important information exchanged
+- User's requests and agent's responses
+- Any actions taken
+
+Keep it under 300 words.`;
 
     const response = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
         {
           role: 'system',
-          content: `Summarize the following conversation concisely. Focus on:
-- Key topics discussed
-- Important information exchanged
-- User's requests and agent's responses
-- Any actions taken
-
-Keep it under 300 words.`,
+          content: systemPrompt,
         },
         {
           role: 'user',

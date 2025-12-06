@@ -274,13 +274,20 @@ export class SupervisorAgent extends EventEmitter {
       case 'knowledge_search':
         return await this.knowledgeSearchTool.execute(parameters as { query: string; topK?: number });
 
-      case 'web_use':
-        return await this.webUseTool.execute(parameters as any);
+      // Web interaction tools
+      case 'click':
+      case 'doubleClick':
+      case 'scroll':
+      case 'scrollToElement':
+      case 'highlight':
+      case 'drag':
+      case 'deepCrawl':
+        return await this.webUseTool.execute({ action: name, ...parameters } as any);
 
       default:
         return {
           success: false,
-          error: `Unknown tool: ${name}`,
+          error: `Unknown tool: ${name}. Available tools: knowledge_search, click, doubleClick, scroll, scrollToElement, highlight, drag, deepCrawl`,
         };
     }
   }

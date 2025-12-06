@@ -10,16 +10,6 @@ export interface SitePrompt {
   updatedAt: Date;
 }
 
-export interface UrlPathPrompt {
-  id: number;
-  urlPattern: string;
-  prompt: string;
-  priority: number;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface Skill {
   id: number;
   name: string;
@@ -95,41 +85,6 @@ export const sitePromptsApi = {
 
   delete: async (id: number): Promise<void> => {
     await fetch(`${API_BASE}/site-prompts/${id}`, { method: 'DELETE' });
-  },
-};
-
-// URL Prompts API
-export const urlPromptsApi = {
-  getAll: async (): Promise<UrlPathPrompt[]> => {
-    const res = await fetch(`${API_BASE}/url-prompts`);
-    return res.json();
-  },
-
-  getById: async (id: number): Promise<UrlPathPrompt> => {
-    const res = await fetch(`${API_BASE}/url-prompts/${id}`);
-    return res.json();
-  },
-
-  create: async (data: Partial<UrlPathPrompt>): Promise<UrlPathPrompt> => {
-    const res = await fetch(`${API_BASE}/url-prompts`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    return res.json();
-  },
-
-  update: async (id: number, data: Partial<UrlPathPrompt>): Promise<UrlPathPrompt> => {
-    const res = await fetch(`${API_BASE}/url-prompts/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    return res.json();
-  },
-
-  delete: async (id: number): Promise<void> => {
-    await fetch(`${API_BASE}/url-prompts/${id}`, { method: 'DELETE' });
   },
 };
 

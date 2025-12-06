@@ -16,10 +16,34 @@ function escapeHtml(text: string): string {
  */
 function getToolDisplayName(toolName: string): string {
   const toolNames: Record<string, string> = {
-    'knowledge_search': '📚 Knowledge Base',
-    'web_use': '🌐 Web Action',
+    'knowledge_search': '📚 Knowledge Search',
+    'click': '👆 Click',
+    'doubleClick': '👆👆 Double Click',
+    'scroll': '📜 Scroll',
+    'scrollToElement': '🎯 Scroll To Element',
+    'highlight': '✨ Highlight',
+    'drag': '🤏 Drag',
+    'deepCrawl': '🕷️ Deep Crawl',
   };
   return toolNames[toolName] || toolName;
+}
+
+/**
+ * Simple markdown to HTML converter
+ */
+function parseMarkdown(text: string): string {
+  return text
+    // Headers
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // Bold
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Lists
+    .replace(/^\d+\.\s+(.+)$/gm, '<li>$1</li>')
+    .replace(/^-\s+(.+)$/gm, '<li>$1</li>')
+    // Line breaks
+    .replace(/\n/g, '<br>');
 }
 
 /**
@@ -28,15 +52,33 @@ function getToolDisplayName(toolName: string): string {
  */
 function parseAssistantContentWithTools(content: string, language: string): { html: string; inlineTools: string[] } {
   const inlineTools: string[] = [];
-  let index = 0;
+  let toolIndex = 0;
+  let memoryIndex = 0;
 
-  // Replace <tool>...</tool> with block tool placeholder (one per line)
-  const html = content
+  // Replace <tool>...</tool> with full-width clickable tool placeholder
+  let html = content
     .replace(/<tool>([\s\S]*?)<\/tool>/g, (_match, toolContent) => {
       inlineTools.push(toolContent.trim());
-      const placeholderId = `tool-inline-${index}`;
-      index++;
-      return `<div class="lens-os-agent-tool-inline" data-tool-id="${placeholderId}">${t('toolCall', language)}</div>`;
+      const placeholderId = `tool-inline-${toolIndex}`;
+      toolIndex++;
+      return `<div class="lens-os-agent-tool-inline" data-tool-id="${placeholderId}">
+        <span class="tool-icon">🔧</span>
+        <span class="tool-text">${t('toolCall', language)}</span>
+        <span class="tool-expand-hint">${t('toolExpandHint', language)}</span>
+      </div>`;
+    })
+    // Replace [Memory Summary] blocks with full-width collapsible divs
+    .replace(/\[Memory Summary\]\s*([\s\S]*?)(?=\n\n\[Memory Summary\]|\n\n<tool>|<\/complete>|$)/g, (_match, summaryContent) => {
+      const placeholderId = `memory-summary-${memoryIndex}`;
+      memoryIndex++;
+      const parsedContent = parseMarkdown(summaryContent.trim());
+      return `<div class="lens-os-agent-memory-summary" data-memory-id="${placeholderId}">
+        <div class="memory-summary-toggle">
+          <span class="memory-icon">📝</span>
+          <span class="memory-text">${t('memorySummary', language)}</span>
+        </div>
+        <div class="memory-summary-content" style="display:none;">${parsedContent}</div>
+      </div>`;
     })
     .replace(/<\/complete>/g, '')
     .trim();
@@ -45,30 +87,16 @@ function parseAssistantContentWithTools(content: string, language: string): { ht
 }
 
 /**
- * Render tool block with nice styling
+ * Render tool block - compact style without showing result content
  */
 function renderToolBlock(tool: ToolResult): string {
   const isPending = tool.status === 'pending';
   const toolName = getToolDisplayName(tool.toolCall.name);
 
-  let resultHtml = '';
-  if (isPending) {
-    resultHtml = '<div class="lens-os-agent-tool-loading">執行中...</div>';
-  } else if (tool.result) {
-    // Show simplified result
-    const resultText = typeof tool.result === 'string'
-      ? tool.result
-      : JSON.stringify(tool.result, null, 2);
-    resultHtml = `<div class="lens-os-agent-tool-result">${escapeHtml(resultText)}</div>`;
-  }
-
   return `
-    <div class="lens-os-agent-tool-block ${isPending ? 'pending' : 'completed'}">
-      <div class="lens-os-agent-tool-header">
-        <span class="lens-os-agent-tool-name">${toolName}</span>
-        ${isPending ? '<span class="lens-os-agent-tool-spinner"></span>' : ''}
-      </div>
-      ${resultHtml}
+    <div class="lens-os-agent-tool-block-compact ${isPending ? 'pending' : 'completed'}">
+      <span class="lens-os-agent-tool-name">· ${toolName}</span>
+      ${isPending ? '<span class="lens-os-agent-tool-spinner"></span>' : ''}
     </div>
   `;
 }
@@ -107,12 +135,23 @@ export function renderChatInterface(
   messages: Message[],
   currentInput: string,
   language: string,
-  isListening: boolean = false
+  isListening: boolean = false,
+  isThinking: boolean = false
 ): string {
   return `
     <div class="lens-os-agent-chat">
       <div class="lens-os-agent-messages" id="messagesArea">
         ${messages.map(msg => renderMessage(msg, language)).join('')}
+        ${isThinking ? `
+          <div class="lens-os-agent-thinking">
+            <span>${t('thinking', language) || '思考中'}</span>
+            <div class="lens-os-agent-thinking-dots">
+              <div class="lens-os-agent-thinking-dot"></div>
+              <div class="lens-os-agent-thinking-dot"></div>
+              <div class="lens-os-agent-thinking-dot"></div>
+            </div>
+          </div>
+        ` : ''}
       </div>
 
       <div class="lens-os-agent-input-area">

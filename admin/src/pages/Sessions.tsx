@@ -71,7 +71,22 @@ export default function Sessions() {
   const loadMessages = async (session: Session) => {
     try {
       const data = await sessionsApi.getMessages(session.id);
-      setMessages(data);
+
+      // Find the index of the LAST Memory Summary
+      let lastMemorySummaryIndex = -1;
+      for (let i = data.length - 1; i >= 0; i--) {
+        if (data[i].role === 'system' && data[i].content.startsWith('[Memory Summary]')) {
+          lastMemorySummaryIndex = i;
+          break;
+        }
+      }
+
+      // Only show messages from the last Memory Summary onwards
+      const visibleMessages = lastMemorySummaryIndex >= 0
+        ? data.slice(lastMemorySummaryIndex)
+        : data;
+
+      setMessages(visibleMessages);
       setSelectedSession(session);
       setShowMessageModal(true);
     } catch (error) {
