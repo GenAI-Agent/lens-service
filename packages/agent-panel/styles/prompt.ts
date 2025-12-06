@@ -10,7 +10,7 @@ export const promptStyles = `
     top: 60px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.6);
     backdrop-filter: blur(20px);
     border-radius: 18px;
     padding: 24px 28px;

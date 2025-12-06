@@ -24,7 +24,7 @@ export const fabStyles = `
   .lens-os-agent-fab-main {
     width: 64px;
     height: 64px;
-    background: transparent;
+    background: linear-gradient(135deg, #00f5a0 0%, #00d9f5 100%);
     border: none;
     border-radius: 50%;
     cursor: pointer;
@@ -34,18 +34,18 @@ export const fabStyles = `
     position: relative;
     overflow: visible;
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: none;
-    padding: 0;
+    box-shadow: 0 8px 24px rgba(0, 245, 160, 0.35);
+    padding: 8px;
   }
 
   .lens-os-agent-fab-main:hover {
     transform: scale(1.08);
-    box-shadow: none;
+    box-shadow: 0 12px 32px rgba(0, 245, 160, 0.5);
   }
 
   .lens-os-agent-fab-icon {
-    width: 64px;
-    height: 64px;
+    width: 62px;
+    height: 62px;
     object-fit: contain;
     transition: transform 0.35s ease;
     z-index: 1;
@@ -213,6 +213,109 @@ export const fabStyles = `
     height: 20px;
     border-radius: 50%;
     object-fit: cover;
+  }
+
+  /* Voice Mode Styles */
+  .lens-os-agent-fab-main.voice-mode {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
+    box-shadow: 0 8px 24px rgba(255, 107, 107, 0.35);
+  }
+
+  .lens-os-agent-fab-main.voice-mode:hover {
+    box-shadow: 0 12px 32px rgba(255, 107, 107, 0.5);
+  }
+
+  .lens-os-agent-fab-main.listening {
+    animation: pulse-mic 1.5s ease-in-out infinite;
+  }
+
+  @keyframes pulse-mic {
+    0%, 100% {
+      box-shadow: 0 8px 24px rgba(255, 107, 107, 0.35);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 12px 32px rgba(255, 107, 107, 0.7), 0 0 0 8px rgba(255, 107, 107, 0.2);
+      transform: scale(1.05);
+    }
+  }
+
+  .lens-os-agent-fab-mic-icon {
+    stroke: #fff;
+  }
+
+  .lens-os-agent-fab-mic-icon.listening {
+    animation: mic-pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes mic-pulse {
+    0%, 100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    50% {
+      transform: scale(1.1);
+      opacity: 0.8;
+    }
+  }
+
+  /* Voice Hint Animation */
+  .lens-os-agent-voice-hint {
+    position: absolute;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .lens-os-agent-voice-hint.show {
+    opacity: 1;
+    animation: bounce-hint 2s ease-in-out infinite;
+  }
+
+  @keyframes bounce-hint {
+    0%, 20%, 50%, 80%, 100% {
+      transform: translateX(-50%) translateY(0);
+    }
+    40% {
+      transform: translateX(-50%) translateY(-10px);
+    }
+    60% {
+      transform: translateX(-50%) translateY(-5px);
+    }
+  }
+
+  .lens-os-agent-voice-hint svg {
+    color: rgba(0, 245, 160, 0.9);
+    filter: drop-shadow(0 2px 8px rgba(0, 245, 160, 0.3));
+  }
+
+  .lens-os-agent-voice-hint-text {
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Dragging State */
+  .lens-os-agent-fab-container.dragging .lens-os-agent-fab-main {
+    cursor: grabbing;
+    transform: scale(1.1);
+  }
+
+  .lens-os-agent-fab-container.dragging .lens-os-agent-fab-expanded {
+    opacity: 0;
+    pointer-events: none;
   }
 
   @media (max-width: 768px) {

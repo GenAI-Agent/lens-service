@@ -17,10 +17,15 @@ export const panelStyles = `
     max-width: 92vw;
     height: 520px;
     max-height: 80vh;
-    background: rgba(255, 255, 255, 0.92);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.65), rgba(248, 248, 250, 0.55));
+    backdrop-filter: blur(12px);
     border-radius: 24px;
-    border: 1px solid rgba(0, 0, 0, 0.1);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow:
+      0 8px 32px rgba(0, 0, 0, 0.12),
+      0 2px 8px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.8),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.05);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -43,50 +48,35 @@ export const panelStyles = `
     border-bottom: 1px solid rgba(0, 0, 0, 0.08);
     gap: 10px;
     flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.95);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(252, 252, 253, 0.85));
+    box-shadow:
+      0 1px 3px rgba(0, 0, 0, 0.05),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
     position: relative;
     z-index: 10;
   }
 
   .lens-os-agent-menu-toggle {
-    background: rgba(0, 0, 0, 0.05);
+    width: 28px;
+    height: 28px;
     border: none;
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
+    background-color: transparent;
+    padding: 0;
     cursor: pointer;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    transition: all 0.25s ease;
-    flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .lens-os-agent-menu-toggle svg {
+    width: 100%;
+    height: 100%;
+    transition: transform 0.2s ease;
   }
 
   .lens-os-agent-menu-toggle:hover {
-    background: rgba(0, 0, 0, 0.1);
     transform: scale(1.05);
-  }
-
-  .lens-os-agent-menu-toggle .bar {
-    width: 16px;
-    height: 2px;
-    background: #333;
-    border-radius: 2px;
-    transition: all 0.3s ease;
-  }
-
-  .lens-os-agent-menu-toggle.active .bar:nth-child(1) {
-    transform: rotate(45deg) translate(4px, 4px);
-  }
-
-  .lens-os-agent-menu-toggle.active .bar:nth-child(2) {
-    opacity: 0;
-  }
-
-  .lens-os-agent-menu-toggle.active .bar:nth-child(3) {
-    transform: rotate(-45deg) translate(4px, -4px);
   }
 
   .lens-os-agent-brand {
@@ -120,10 +110,11 @@ export const panelStyles = `
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: all 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     border-right: none;
     visibility: hidden;
     opacity: 0;
+    transform: translateX(-20px);
   }
 
   .lens-os-agent-sidebar.open {
@@ -131,10 +122,11 @@ export const panelStyles = `
     min-width: 160px;
     max-width: 160px;
     flex: 0 0 160px;
-    background: rgba(250, 250, 250, 0.5);
+    background: rgba(250, 250, 250, 0.8);
     border-right: 1px solid rgba(0, 0, 0, 0.08);
     visibility: visible;
     opacity: 1;
+    transform: translateX(0);
   }
 
   .lens-os-agent-sidebar-content {
@@ -160,6 +152,8 @@ export const panelStyles = `
     cursor: pointer;
     transition: all 0.2s ease;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     color: #666;
     font-size: 13px;
     background: transparent;
@@ -201,6 +195,68 @@ export const panelStyles = `
     align-items: stretch;
   }
 
+  /* Voice Mode Prompt Styles */
+  .lens-os-agent-voice-mode-prompt {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 20px;
+    padding: 32px;
+    z-index: 1000;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    min-width: 320px;
+    text-align: center;
+    animation: voicePromptFadeIn 0.3s ease-out;
+  }
+
+  @keyframes voicePromptFadeIn {
+    from {
+      opacity: 0;
+      transform: translate(-50%, -45%);
+    }
+    to {
+      opacity: 1;
+      transform: translate(-50%, -50%);
+    }
+  }
+
+  .lens-os-agent-voice-mode-prompt h3 {
+    margin: 0 0 12px 0;
+    color: #00f5a0;
+    font-size: 20px;
+    font-weight: 600;
+  }
+
+  .lens-os-agent-voice-mode-prompt p {
+    margin: 0 0 20px 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .lens-os-agent-voice-mode-animation {
+    margin: 20px 0;
+    animation: voiceBounce 1.5s ease-in-out infinite;
+  }
+
+  .lens-os-agent-voice-mode-animation svg {
+    color: #00f5a0;
+    filter: drop-shadow(0 0 10px rgba(0, 245, 160, 0.5));
+  }
+
+  @keyframes voiceBounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-12px);
+    }
+  }
+
   @media (max-width: 768px) {
     .lens-os-agent-panel {
       width: 96vw;
@@ -214,6 +270,11 @@ export const panelStyles = `
 
     .lens-os-agent-brand {
       font-size: 16px;
+    }
+
+    .lens-os-agent-voice-mode-prompt {
+      min-width: 280px;
+      padding: 24px;
     }
   }
 `;

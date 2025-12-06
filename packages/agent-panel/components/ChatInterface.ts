@@ -23,16 +23,25 @@ function getToolDisplayName(toolName: string): string {
 }
 
 /**
- * Parse and clean assistant content - remove tool tags and complete tags
+ * Parse assistant content and replace <tool>...</tool> with inline placeholders
+ * Returns { html, tools } where html has placeholders and tools is array of tool contents
  */
-function parseAssistantContent(content: string): string {
-  // Remove <tool>...</tool> blocks completely (they are shown separately)
-  let cleaned = content.replace(/<tool>[\s\S]*?<\/tool>/g, '');
-  // Remove </complete> tag
-  cleaned = cleaned.replace(/<\/complete>/g, '');
-  // Clean up extra whitespace
-  cleaned = cleaned.trim();
-  return cleaned;
+function parseAssistantContentWithTools(content: string, language: string): { html: string; inlineTools: string[] } {
+  const inlineTools: string[] = [];
+  let index = 0;
+
+  // Replace <tool>...</tool> with block tool placeholder (one per line)
+  const html = content
+    .replace(/<tool>([\s\S]*?)<\/tool>/g, (_match, toolContent) => {
+      inlineTools.push(toolContent.trim());
+      const placeholderId = `tool-inline-${index}`;
+      index++;
+      return `<div class="lens-os-agent-tool-inline" data-tool-id="${placeholderId}">${t('toolCall', language)}</div>`;
+    })
+    .replace(/<\/complete>/g, '')
+    .trim();
+
+  return { html, inlineTools };
 }
 
 /**
@@ -64,7 +73,7 @@ function renderToolBlock(tool: ToolResult): string {
   `;
 }
 
-function renderMessage(msg: Message): string {
+function renderMessage(msg: Message, language: string): string {
   const isUser = msg.role === 'user';
 
   if (isUser) {
@@ -77,7 +86,7 @@ function renderMessage(msg: Message): string {
   }
 
   // Assistant message - full width, no box
-  const cleanedContent = parseAssistantContent(msg.content);
+  const { html, inlineTools } = parseAssistantContentWithTools(msg.content, language);
 
   // Render tool blocks if any
   let toolsHtml = '';
@@ -87,8 +96,9 @@ function renderMessage(msg: Message): string {
 
   return `
     <div class="lens-os-agent-message assistant">
-      ${cleanedContent ? `<div class="lens-os-agent-message-content">${escapeHtml(cleanedContent)}</div>` : ''}
+      ${html ? `<div class="lens-os-agent-message-content">${html}</div>` : ''}
       ${toolsHtml}
+      ${inlineTools.length > 0 ? `<script type="application/json" class="inline-tools-data">${JSON.stringify(inlineTools)}</script>` : ''}
     </div>
   `;
 }
@@ -96,17 +106,26 @@ function renderMessage(msg: Message): string {
 export function renderChatInterface(
   messages: Message[],
   currentInput: string,
-  language: string
+  language: string,
+  isListening: boolean = false
 ): string {
   return `
     <div class="lens-os-agent-chat">
       <div class="lens-os-agent-messages" id="messagesArea">
-        ${messages.map(msg => renderMessage(msg)).join('')}
+        ${messages.map(msg => renderMessage(msg, language)).join('')}
       </div>
 
       <div class="lens-os-agent-input-area">
         <div class="lens-os-agent-input-wrapper">
           <textarea class="lens-os-agent-input" id="chatInput" placeholder="${t('inputPlaceholder', language)}" rows="1">${escapeHtml(currentInput)}</textarea>
+          <button class="lens-os-agent-voice-btn ${isListening ? 'listening' : ''}" id="voiceBtn" title="${t('voiceInput', language)}">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
           <button class="lens-os-agent-send-btn" id="sendBtn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />

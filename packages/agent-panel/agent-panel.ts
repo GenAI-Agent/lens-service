@@ -5,10 +5,18 @@
 import { AgentPanelConfig, PanelMode, Session, Message, ToolCall } from './types';
 import { t } from './i18n';
 import { getAllStyles } from './styles';
-import { renderContactForm, renderChatInterface, renderSidebar, renderFAB } from './components';
+import { renderChatInterface, renderSidebar, renderFAB, ContactFormDynamic } from './components';
+import { SpeechRecognitionService } from './services/SpeechRecognition';
 
 // Re-export types for external use
 export type { ToolCall, ToolResult, PanelMode, Session, AgentPanelConfig } from './types';
+
+// Helper function
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
 
 export class AgentPanel {
   private container: HTMLElement;
@@ -23,20 +31,28 @@ export class AgentPanel {
   private language: string = 'zh-TW';
   private autoMode: boolean = false;
   private hasAskedAutoMode: boolean = false;
+  private contactForm: ContactFormDynamic;
+  private speechRecognition: SpeechRecognitionService;
 
   constructor(config: AgentPanelConfig) {
     this.container = document.createElement('div');
     this.config = config;
+    this.contactForm = new ContactFormDynamic(config.apiUrl);
+    this.speechRecognition = new SpeechRecognitionService();
   }
 
-  public mount(container: HTMLElement): void {
+  public async mount(container: HTMLElement): Promise<void> {
     this.container = container;
-    this.loadSessions();
+    await this.loadSessions();
+    // Always create a new session when mounting
+    await this.createNewSession();
     this.render();
   }
 
-  public open(): void {
+  public async open(): Promise<void> {
     this.isOpen = true;
+    // Always create a new session when opening panel
+    await this.createNewSession();
     this.render();
 
     if (!this.hasAskedAutoMode) {
@@ -111,10 +127,10 @@ export class AgentPanel {
     });
   }
 
-  private render(): void {
+  private async render(): Promise<void> {
     const mainContent = this.mode === 'agent'
-      ? renderChatInterface(this.messages, this.currentInput, this.language)
-      : renderContactForm(this.language);
+      ? renderChatInterface(this.messages, this.currentInput, this.language, this.speechRecognition.getIsListening())
+      : this.contactForm.render(this.language);
 
     this.container.innerHTML = `
       <!-- Glass Panel -->
@@ -122,11 +138,21 @@ export class AgentPanel {
         <!-- Panel Header -->
         <div class="lens-os-agent-header">
           <button class="lens-os-agent-menu-toggle ${this.isSidebarOpen ? 'active' : ''}" id="menuToggle">
-            <span class="bar"></span>
-            <span class="bar"></span>
-            <span class="bar"></span>
+            <svg width="28" height="28" viewBox="0 0 65 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M22.6501 26.8306L24.9088 29.084L27.6775 29.5844C28.5254 28.0816 30.0467 27.0531 31.7673 26.8306H22.6501Z" fill="#121212"/>
+              <path d="M42.3499 37.7283L40.0938 35.4775L37.2794 34.9688C36.432 36.4752 34.9086 37.5058 33.1854 37.7283H42.3499Z" fill="#121212"/>
+              <path d="M33.1765 26.8306C33.2621 26.8416 33.3479 26.8547 33.4338 26.8698C35.0025 27.1461 36.2977 28.0596 37.0999 29.2963L38.1911 28.0171C36.6474 27.2489 34.9334 26.8358 33.1765 26.8306Z" fill="#121212"/>
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M37.0999 29.2963L37.1014 29.2987L35.977 30.6145L35.7549 30.8743L34.4547 32.3957L33.6942 30.2714L32.731 27.5807L32.7135 27.5319L32.6252 27.2853L32.4624 26.8306H33.143C33.1541 26.8306 33.1653 26.8306 33.1765 26.8306C33.2621 26.8416 33.3479 26.8547 33.4338 26.8698C35.0025 27.1461 36.2977 28.0596 37.0999 29.2963Z" fill="#121212"/>
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M32.2742 36.2627L32.815 37.7283H32.8735H33.1854C34.9086 37.5058 36.432 36.4752 37.2794 34.9688L37.2805 34.967L36.8491 34.8911L33.4216 34.2875L31.4151 33.9342L31.5455 34.2875L32.2742 36.2627Z" fill="#121212"/>
+              <path d="M36.1506 30.7877L33.3875 34.021L34.8618 34.2875L37.3984 34.746C37.6312 34.282 37.8043 33.7714 37.8994 33.2343C37.9345 33.0361 37.9607 32.8032 37.9739 32.6068C38.0416 31.4975 37.7686 30.4294 37.2362 29.5174L36.1506 30.7877Z" fill="#121212"/>
+              <path d="M48.75 37.7283L41.1387 30.1348C40.3293 29.3273 39.4098 28.6548 38.4154 28.1319L37.2362 29.5174C37.7686 30.4294 38.0416 31.4975 37.9739 32.6068L43.1075 37.7283H48.75Z" fill="#121212"/>
+              <path d="M31.2845 34.2875L30.5006 32.1628L28.9994 33.9209L27.8537 35.2628C28.6559 36.4995 29.9511 37.4131 31.5197 37.6893C31.6046 37.7042 31.6894 37.7171 31.774 37.728C31.8017 37.7282 31.8293 37.7283 31.857 37.7283H32.5539L32.2668 36.9499L31.2845 34.2875Z" fill="#121212"/>
+              <path d="M28.8258 33.7477L31.5756 30.5273L30.3586 30.313L28.8465 30.0467L27.5527 29.8189C27.5309 29.8623 27.5097 29.9061 27.489 29.9503C27.2887 30.3777 27.1405 30.838 27.0543 31.3248C27.0189 31.5253 26.9958 31.7102 26.9826 31.9088C26.9084 33.0293 27.181 34.1238 27.7189 35.0441L28.8258 33.7477Z" fill="#121212"/>
+              <path d="M31.5306 30.2714L33.5623 30.6291L33.4343 30.2714L32.5012 27.665L32.5011 27.6651L32.2073 26.8684L32.1934 26.8306H32.1694H32.0701H31.7673C30.0467 27.0531 28.5254 28.0816 27.6775 29.5844L29.5012 29.914L31.5306 30.2714Z" fill="#121212"/>
+              <path fill-rule="evenodd" clip-rule="evenodd" d="M16.25 26.8306H21.8925L26.9826 31.9088C26.9084 33.0293 27.181 34.1238 27.7189 35.0441L26.5556 36.4117C25.5724 35.891 24.6628 35.2238 23.8613 34.4241L16.25 26.8306ZM26.7661 36.5203C28.3063 37.2951 30.0181 37.7152 31.774 37.728C31.6894 37.7171 31.6046 37.7042 31.5197 37.6893C29.9511 37.4131 28.6559 36.4995 27.8537 35.2628L26.7661 36.5203Z" fill="#121212"/>
+            </svg>
           </button>
-          <div class="lens-os-agent-brand">LENS <span>OS</span></div>
+          <div class="lens-os-agent-brand">LENS OS</div>
         </div>
 
         <!-- Panel Body -->
@@ -143,7 +169,11 @@ export class AgentPanel {
         </div>
       </div>
 
-      ${renderFAB({ isOpen: this.isOpen, autoMode: this.autoMode, language: this.language })}
+      ${renderFAB({
+        isOpen: this.isOpen,
+        autoMode: this.autoMode,
+        language: this.language
+      })}
 
       <style>${getAllStyles()}</style>
     `;
@@ -160,6 +190,9 @@ export class AgentPanel {
 
     // Send button
     document.getElementById('sendBtn')?.addEventListener('click', () => this.handleSend());
+
+    // Voice button
+    document.getElementById('voiceBtn')?.addEventListener('click', () => this.toggleVoiceInput());
 
     // Textarea enter key (Enter to send, Shift+Enter for new line) and value change
     const input = document.getElementById('chatInput') as HTMLTextAreaElement;
@@ -205,34 +238,135 @@ export class AgentPanel {
         this.handleAction(action!);
       });
     });
+
+    // Voice button
+    const voiceBtn = document.getElementById('voiceBtn');
+    if (voiceBtn) {
+      voiceBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.toggleVoiceInput();
+      });
+    }
+
+    // Inline tool click handlers
+    document.querySelectorAll('.lens-os-agent-tool-inline').forEach((el, index) => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleInlineToolExpand(index);
+      });
+    });
   }
 
-  private handleAction(action: string): void {
+  /**
+   * Parse tool data from XML format to structured object
+   */
+  private parseToolData(toolData: string): { name: string; params: Record<string, any> } {
+    try {
+      // Parse format: <call>\nname: X\nparameters: {...}\n</call>
+      const nameMatch = toolData.match(/name:\s*(.+)/);
+      const paramsMatch = toolData.match(/parameters:\s*(\{[\s\S]*\})/);
+
+      const name = nameMatch ? nameMatch[1].trim() : 'Unknown';
+      let params: Record<string, any> = {};
+
+      if (paramsMatch) {
+        try {
+          params = JSON.parse(paramsMatch[1]);
+        } catch (e) {
+          params = { raw: paramsMatch[1] };
+        }
+      }
+
+      return { name, params };
+    } catch (error) {
+      console.error('Failed to parse tool data:', error);
+      return { name: 'Unknown', params: {} };
+    }
+  }
+
+  /**
+   * Toggle inline tool expand/collapse
+   */
+  private toggleInlineToolExpand(toolIndex: number): void {
+    const toolSpans = document.querySelectorAll('.lens-os-agent-tool-inline');
+    const toolSpan = toolSpans[toolIndex] as HTMLElement;
+    if (!toolSpan) return;
+
+    // Get the tool data from the nearest parent message
+    const messageEl = toolSpan.closest('.lens-os-agent-message');
+    if (!messageEl) return;
+
+    const dataScript = messageEl.querySelector('.inline-tools-data');
+    if (!dataScript) return;
+
+    const inlineTools = JSON.parse(dataScript.textContent || '[]');
+    const toolData = inlineTools[toolIndex];
+    if (!toolData) return;
+
+    // Check if already expanded
+    const existingExpanded = toolSpan.nextElementSibling;
+    if (existingExpanded && existingExpanded.classList.contains('lens-os-agent-tool-inline-expanded')) {
+      // Collapse - remove expanded view
+      existingExpanded.remove();
+    } else {
+      // Expand - create expanded view
+      const parsed = this.parseToolData(toolData);
+      const expandedDiv = document.createElement('div');
+      expandedDiv.className = 'lens-os-agent-tool-inline-expanded';
+
+      // Format parameters as key-value pairs
+      const paramsHtml = Object.entries(parsed.params)
+        .map(([key, value]) => {
+          const displayValue = typeof value === 'object' ? JSON.stringify(value) : value;
+          return `<div style="margin-bottom: 4px;"><strong>${escapeHtml(key)}:</strong> ${escapeHtml(String(displayValue))}</div>`;
+        })
+        .join('');
+
+      expandedDiv.innerHTML = `
+        <div class="lens-os-agent-tool-inline-header">
+          <span>${t('toolName', this.language)}: ${escapeHtml(parsed.name)}</span>
+          <span style="cursor: pointer; font-size: 14px;">✕</span>
+        </div>
+        <div class="lens-os-agent-tool-inline-content">${paramsHtml}</div>
+      `;
+
+      // Insert after the tool span
+      toolSpan.parentNode?.insertBefore(expandedDiv, toolSpan.nextSibling);
+
+      // Add close button handler
+      const closeBtn = expandedDiv.querySelector('.lens-os-agent-tool-inline-header span:last-child');
+      closeBtn?.addEventListener('click', () => expandedDiv.remove());
+    }
+  }
+
+  private async handleAction(action: string): Promise<void> {
     switch (action) {
       case 'refresh':
         this.resetSession();
         break;
       case 'toggle-mode':
         this.autoMode = !this.autoMode;
-        this.render();
+        await this.render();
         break;
       case 'toggle-language':
         // Toggle to next language
         const languages = ['zh-TW', 'en-US'];
         const currentIndex = languages.indexOf(this.language);
         this.language = languages[(currentIndex + 1) % languages.length];
-        this.render();
+        await this.render();
         break;
       case 'contact':
         this.mode = 'human-support';
-        this.render();
+        await this.contactForm.loadFormConfig();
+        await this.render();
         break;
       case 'back-to-chat':
         this.mode = 'agent';
-        this.render();
+        await this.render();
         break;
       case 'submit-contact':
-        this.handleContactSubmit();
+        await this.handleContactSubmit();
         break;
       case 'new-session':
         this.createNewSession();
@@ -396,28 +530,16 @@ export class AgentPanel {
   }
 
   private async handleContactSubmit(): Promise<void> {
-    const name = (document.getElementById('contactName') as HTMLInputElement)?.value;
-    const email = (document.getElementById('contactEmail') as HTMLInputElement)?.value;
-    const type = (document.getElementById('contactType') as HTMLSelectElement)?.value;
-    const message = (document.getElementById('contactMessage') as HTMLTextAreaElement)?.value;
-
-    if (!name || !email || !message) {
-      alert(t('fillRequired', this.language));
-      return;
-    }
-
     try {
-      const response = await fetch(`${this.config.apiUrl}/api/contact`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: this.config.userId, name, email, type, message }),
-      });
+      const success = await this.contactForm.handleSubmit(this.config.userId, this.language, this.sessionId);
 
-      if (!response.ok) throw new Error('Failed to submit contact form');
-
-      alert(t('submitted', this.language));
-      this.mode = 'agent';
-      this.render();
+      if (success) {
+        alert(t('submitted', this.language));
+        this.mode = 'agent';
+        await this.render();
+      } else {
+        alert(t('fillRequired', this.language));
+      }
     } catch (error) {
       console.error('[AgentPanel] Contact submit error:', error);
       alert(t('submitFailed', this.language));
@@ -425,7 +547,22 @@ export class AgentPanel {
   }
 
   private async resetSession(): Promise<void> {
-    this.sessionId = '';
+    try {
+      // Clear all messages in the current session (keep the same session ID)
+      if (this.sessionId) {
+        const response = await fetch(`${this.config.apiUrl}/api/sessions/${this.sessionId}/messages`, {
+          method: 'DELETE',
+        });
+
+        if (!response.ok) {
+          console.error('[AgentPanel] Failed to clear messages');
+        }
+      }
+    } catch (error) {
+      console.error('[AgentPanel] Reset session error:', error);
+    }
+
+    // Clear local messages
     this.messages = [];
     this.currentInput = '';
     this.render();
@@ -469,11 +606,67 @@ export class AgentPanel {
   }
 
   private async createNewSession(): Promise<void> {
-    this.sessionId = '';
+    try {
+      // Create a new session with unique ID
+      const response = await fetch(`${this.config.apiUrl}/api/sessions/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: this.config.userId }),
+      });
+
+      if (response.ok) {
+        const newSession = await response.json();
+        this.sessionId = newSession.id;
+      } else {
+        this.sessionId = '';
+      }
+    } catch (error) {
+      console.error('[AgentPanel] Create new session error:', error);
+      this.sessionId = '';
+    }
+
     this.messages = [];
     this.currentInput = '';
     this.mode = 'agent';
     this.isSidebarOpen = false;
+    await this.loadSessions();
     this.render();
+  }
+
+  /**
+   * Toggle voice input on/off
+   */
+  private toggleVoiceInput(): void {
+    if (this.speechRecognition.getIsListening()) {
+      // Stop listening
+      this.speechRecognition.stop();
+      this.render();
+    } else {
+      // Start listening
+      this.speechRecognition.setLanguage(this.language);
+
+      const success = this.speechRecognition.start(
+        // On result callback
+        (transcript: string) => {
+          console.log('[AgentPanel] Voice recognized:', transcript);
+          this.currentInput = transcript;
+          this.render();
+
+          // Auto-send after 500ms
+          setTimeout(() => {
+            this.handleSend();
+          }, 500);
+        },
+        // On end callback
+        () => {
+          console.log('[AgentPanel] Voice recognition ended');
+          this.render();
+        }
+      );
+
+      if (success) {
+        this.render(); // Re-render to show listening state
+      }
+    }
   }
 }

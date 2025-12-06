@@ -6,6 +6,7 @@ import KnowledgeBase from './pages/KnowledgeBase';
 import Sessions from './pages/Sessions';
 import TestAgent from './pages/TestAgent';
 import Traces from './pages/Traces';
+import FormSettings from './pages/FormSettings';
 
 function App() {
   const location = useLocation();
@@ -64,6 +65,11 @@ function App() {
               </Link>
             </li>
             <li>
+              <Link to="/form-settings" className={isActive('/form-settings')}>
+                Form Settings
+              </Link>
+            </li>
+            <li>
               <Link to="/test-agent" className={isActive('/test-agent')}>
                 Test Agent
               </Link>
@@ -80,6 +86,7 @@ function App() {
           <Route path="/knowledge-base" element={<KnowledgeBase />} />
           <Route path="/sessions" element={<Sessions />} />
           <Route path="/traces" element={<Traces />} />
+          <Route path="/form-settings" element={<FormSettings />} />
         </Routes>
       </main>
     </div>

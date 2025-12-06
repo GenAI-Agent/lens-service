@@ -75,7 +75,7 @@ export class TraceLogger {
 
   /**
    * Estimate cost based on token usage
-   * OpenAI GPT-4 pricing (as of 2024)
+   * OpenAI GPT-5.1 pricing (as of 2024)
    */
   private estimateCost(inputTokens: number, outputTokens: number): number {
     // GPT-4 pricing: $0.01 per 1K input tokens, $0.03 per 1K output tokens

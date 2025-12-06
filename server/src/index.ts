@@ -37,6 +37,11 @@ app.get('/widget_icon.svg', (req, res) => {
   res.sendFile(path.join(__dirname, '../../../../packages/agent-panel/widget_icon.svg'));
 });
 
+// Serve logo-mark-dark.svg at root level
+app.get('/logo-mark-dark.svg', (req, res) => {
+  res.sendFile(path.join(__dirname, '../../../../packages/agent-panel/logo-mark-dark.svg'));
+});
+
 // Serve flag SVG files
 app.get('/flags/tw.svg', (req, res) => {
   res.sendFile(path.join(__dirname, '../../../../packages/agent-panel/Flag_of_the_Republic_of_China.svg'));
@@ -234,7 +239,7 @@ app.get('/api/sessions/:userId', async (req: Request, res: Response) => {
         messages: {
           take: 1,
           orderBy: {
-            timestamp: 'desc',
+            timestamp: 'asc',
           },
           where: {
             role: 'user',
@@ -327,6 +332,34 @@ app.get('/api/sessions/:sessionId/messages', async (req: Request, res: Response)
 });
 
 /**
+ * DELETE /api/sessions/:sessionId/messages
+ * Clear all messages for a session
+ */
+app.delete('/api/sessions/:sessionId/messages', async (req: Request, res: Response) => {
+  try {
+    const { sessionId } = req.params;
+
+    // Archive all messages in this session
+    await prisma.message.updateMany({
+      where: {
+        sessionId,
+        archived: false,
+      },
+      data: {
+        archived: true,
+      },
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Clear messages error:', error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Internal server error',
+    });
+  }
+});
+
+/**
  * POST /api/human-support
  * Send message to human support via Telegram
  */
@@ -357,6 +390,156 @@ app.post('/api/human-support', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Internal server error',
+    });
+  }
+});
+
+/**
+ * GET /api/contact-form-fields
+ * Get available form fields (public API)
+ */
+app.get('/api/contact-form-fields', async (req: Request, res: Response) => {
+  try {
+    const fields = await prisma.contactFormField.findMany({
+      orderBy: { order: 'asc' },
+    });
+    res.json(fields);
+  } catch (error) {
+    console.error('Get form fields error:', error);
+    res.status(500).json({ error: 'Failed to get form fields' });
+  }
+});
+
+/**
+ * GET /api/contact-form-settings
+ * Get form settings (public API)
+ */
+app.get('/api/contact-form-settings', async (req: Request, res: Response) => {
+  try {
+    const settings = await prisma.contactFormSettings.findFirst({
+      where: { tenantId: 'default', isActive: true },
+    });
+    res.json(settings);
+  } catch (error) {
+    console.error('Get form settings error:', error);
+    res.status(500).json({ error: 'Failed to get form settings' });
+  }
+});
+
+/**
+ * POST /api/contact-submit
+ * Submit contact form with attachments
+ */
+app.post('/api/contact-submit', async (req: Request, res: Response) => {
+  try {
+    const { formData, attachments } = req.body;
+
+    if (!formData || !formData.userId) {
+      res.status(400).json({ error: 'Missing required data' });
+      return;
+    }
+
+    // Get settings for message template
+    const settings = await prisma.contactFormSettings.findFirst({
+      where: { tenantId: 'default', isActive: true },
+    });
+
+    if (!settings) {
+      res.status(500).json({ error: 'Form settings not found' });
+      return;
+    }
+
+    // Store submission
+    const submission = await prisma.contactFormSubmission.create({
+      data: {
+        userId: formData.userId,
+        sessionId: formData.sessionId || null,
+        formData: formData,
+        attachments: attachments || [],
+        telegramSent: false,
+      },
+    });
+
+    // Auto-generate message from all form data
+    const messageLanguage = settings.messageLanguage || 'zh-TW';
+    const fieldLabels: Record<string, Record<string, string>> = {
+      name: { 'zh-TW': '姓名', 'en-US': 'Name' },
+      email: { 'zh-TW': '電子郵件', 'en-US': 'Email' },
+      phone: { 'zh-TW': '電話', 'en-US': 'Phone' },
+      problemType: { 'zh-TW': '問題類型', 'en-US': 'Problem Type' },
+      message: { 'zh-TW': '訊息內容', 'en-US': 'Message' },
+    };
+
+    let messageParts: string[] = [
+      messageLanguage === 'zh-TW' ? '📋 新的客服表單提交' : '📋 New Contact Form Submission',
+      '',
+    ];
+
+    // Add all form fields
+    for (const [key, value] of Object.entries(formData)) {
+      if (key !== 'userId' && key !== 'sessionId' && value) {
+        const label = fieldLabels[key]?.[messageLanguage] || key;
+        messageParts.push(`${label}: ${value}`);
+      }
+    }
+
+    // Add attachments info
+    if (attachments && attachments.length > 0) {
+      messageParts.push('');
+      messageParts.push(messageLanguage === 'zh-TW' ? '📎 附件:' : '📎 Attachments:');
+      attachments.forEach((att: any) => {
+        messageParts.push(`  • ${att.name} (${(att.size / 1024).toFixed(1)}KB)`);
+      });
+    }
+
+    const message = messageParts.join('\n');
+
+    // Send to Telegram
+    try {
+      const telegramResult = await telegramService.sendHumanSupportMessage(
+        {
+          userId: formData.userId,
+          category: formData.problemType || 'contact',
+          recipient: formData.email || formData.name,
+          message: message,
+          timestamp: new Date().toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' }),
+          sessionId: formData.sessionId,
+        },
+        attachments // Pass attachments to Telegram service
+      );
+
+      // Update submission status
+      await prisma.contactFormSubmission.update({
+        where: { id: submission.id },
+        data: {
+          telegramSent: telegramResult.success,
+          telegramError: telegramResult.success ? null : telegramResult.error,
+        },
+      });
+
+      res.json({ success: true, submissionId: submission.id });
+    } catch (telegramError) {
+      console.error('Telegram send error:', telegramError);
+
+      await prisma.contactFormSubmission.update({
+        where: { id: submission.id },
+        data: {
+          telegramSent: false,
+          telegramError: telegramError instanceof Error ? telegramError.message : 'Unknown error',
+        },
+      });
+
+      // Still return success since we stored the submission
+      res.json({
+        success: true,
+        submissionId: submission.id,
+        warning: 'Form submitted but Telegram notification failed',
+      });
+    }
+  } catch (error) {
+    console.error('Contact submit error:', error);
+    res.status(500).json({
+      error: error instanceof Error ? error.message : 'Failed to submit form',
     });
   }
 });

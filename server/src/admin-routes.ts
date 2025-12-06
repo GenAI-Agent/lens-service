@@ -236,10 +236,27 @@ export function createAdminRouter(prisma: PrismaClient, openaiApiKey: string) {
 
       console.log('[Admin API] Resetting session for userId:', userId);
 
-      // Delete all sessions and messages for this user
+      // Get all session IDs for this user
+      const sessions = await prisma.session.findMany({
+        where: { userId },
+        select: { id: true },
+      });
+
+      const sessionIds = sessions.map(s => s.id);
+
+      // Delete LLM traces for these sessions
+      if (sessionIds.length > 0) {
+        await prisma.lLMTrace.deleteMany({
+          where: { sessionId: { in: sessionIds } },
+        });
+      }
+
+      // Delete all sessions (cascade will delete messages)
       await prisma.session.deleteMany({
         where: { userId },
       });
+
+      console.log(`[Admin API] Deleted ${sessions.length} sessions, all messages, and LLM traces for user: ${userId}`);
 
       res.json({ success: true });
     } catch (error) {
@@ -296,6 +313,122 @@ export function createAdminRouter(prisma: PrismaClient, openaiApiKey: string) {
         success: false,
         error: error instanceof Error ? error.message : 'Failed to execute web action',
       });
+    }
+  });
+
+  // Contact Form Fields
+  router.get('/contact-form-fields', async (req, res) => {
+    try {
+      const fields = await prisma.contactFormField.findMany({ orderBy: { order: 'asc' } });
+      res.json(fields);
+    } catch (error) {
+      console.error('[Admin API] Failed to get form fields:', error);
+      res.status(500).json({ error: 'Failed to get form fields' });
+    }
+  });
+
+  router.post('/contact-form-fields', async (req, res) => {
+    try {
+      const field = await prisma.contactFormField.create({ data: req.body });
+      res.json(field);
+    } catch (error) {
+      console.error('[Admin API] Failed to create form field:', error);
+      res.status(500).json({ error: 'Failed to create form field' });
+    }
+  });
+
+  router.put('/contact-form-fields/:id', async (req, res) => {
+    try {
+      const field = await prisma.contactFormField.update({
+        where: { id: parseInt(req.params.id) },
+        data: req.body,
+      });
+      res.json(field);
+    } catch (error) {
+      console.error('[Admin API] Failed to update form field:', error);
+      res.status(500).json({ error: 'Failed to update form field' });
+    }
+  });
+
+  router.delete('/contact-form-fields/:id', async (req, res) => {
+    try {
+      await prisma.contactFormField.delete({ where: { id: parseInt(req.params.id) } });
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[Admin API] Failed to delete form field:', error);
+      res.status(500).json({ error: 'Failed to delete form field' });
+    }
+  });
+
+  // Contact Form Settings
+  router.get('/contact-form-settings', async (req, res) => {
+    try {
+      const settings = await prisma.contactFormSettings.findFirst({
+        where: { tenantId: 'default', isActive: true },
+      });
+      res.json(settings);
+    } catch (error) {
+      console.error('[Admin API] Failed to get form settings:', error);
+      res.status(500).json({ error: 'Failed to get form settings' });
+    }
+  });
+
+  router.post('/contact-form-settings', async (req, res) => {
+    try {
+      const { tenantId, enabledFields, problemTypes, notificationChannels, messageLanguage, maxFileSize, allowedFileTypes, isActive } = req.body;
+      const settings = await prisma.contactFormSettings.create({
+        data: {
+          tenantId: tenantId || 'default',
+          enabledFields,
+          problemTypes,
+          notificationChannels: notificationChannels || [],
+          messageLanguage: messageLanguage || 'zh-TW',
+          maxFileSize,
+          allowedFileTypes,
+          isActive: isActive !== undefined ? isActive : true,
+        },
+      });
+      res.json(settings);
+    } catch (error) {
+      console.error('[Admin API] Failed to create form settings:', error);
+      res.status(500).json({ error: 'Failed to create form settings' });
+    }
+  });
+
+  router.put('/contact-form-settings', async (req, res) => {
+    try {
+      const { id, tenantId, enabledFields, problemTypes, notificationChannels, messageLanguage, maxFileSize, allowedFileTypes, isActive } = req.body;
+      const settings = await prisma.contactFormSettings.update({
+        where: { id },
+        data: {
+          tenantId,
+          enabledFields,
+          problemTypes,
+          notificationChannels,
+          messageLanguage,
+          maxFileSize,
+          allowedFileTypes,
+          isActive,
+        },
+      });
+      res.json(settings);
+    } catch (error) {
+      console.error('[Admin API] Failed to update form settings:', error);
+      res.status(500).json({ error: 'Failed to update form settings' });
+    }
+  });
+
+  // Contact Form Submissions
+  router.get('/contact-form-submissions', async (req, res) => {
+    try {
+      const submissions = await prisma.contactFormSubmission.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 100,
+      });
+      res.json(submissions);
+    } catch (error) {
+      console.error('[Admin API] Failed to get submissions:', error);
+      res.status(500).json({ error: 'Failed to get submissions' });
     }
   });
 

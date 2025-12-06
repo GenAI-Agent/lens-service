@@ -74,9 +74,8 @@ export class SupervisorAgent extends EventEmitter {
 
       // Multi-turn loop
       let turnCount = 0;
-      let isComplete = false;
 
-      while (turnCount < this.maxTurns && !isComplete) {
+      while (turnCount < this.maxTurns) {
         if (this.abortController.signal.aborted) {
           this.emit('event', {
             type: 'error',
@@ -91,10 +90,19 @@ export class SupervisorAgent extends EventEmitter {
         const messages = await this.promptBuilder.buildPrompt(context);
 
         // Call LLM with streaming
-        const { response, toolCalls, hasCompleteTag } = await this.streamLLM(messages, context);
+        const { response, toolCalls } = await this.streamLLM(messages, context);
 
         // Save assistant response to DB
         await this.memoryManager.saveMessage(context.sessionId, 'assistant', response);
+
+        // 檢查 response 是否包含 </complete> - 如果有就直接結束
+        if (response.includes('</complete>')) {
+          console.log('[Supervisor] 偵測到 </complete>，結束執行');
+          this.emit('event', { type: 'done' } as StreamEvent);
+          break;
+        }
+
+        console.log('[Supervisor] Turn', turnCount, '- toolCalls:', toolCalls.length);
 
         // Handle tool execution
         if (toolCalls.length > 0) {
@@ -122,13 +130,6 @@ export class SupervisorAgent extends EventEmitter {
 
           // Continue to next LLM turn with all results
           continue;
-        }
-
-        // Check for completion (only if no tool calls)
-        if (hasCompleteTag) {
-          isComplete = true;
-          this.emit('event', { type: 'done' } as StreamEvent);
-          break; // Stop immediately when complete tag is detected
         }
 
         // Check if memory compact is needed
@@ -160,12 +161,10 @@ export class SupervisorAgent extends EventEmitter {
   private async streamLLM(messages: any[], context: SessionContext): Promise<{
     response: string;
     toolCalls: ToolCall[];
-    hasCompleteTag: boolean;
   }> {
     const toolParser = new ToolParser();
     const chunks: string[] = [];
     const toolCalls: ToolCall[] = [];
-    let hasCompleteTag = false;
 
     const stream = await this.openai.chat.completions.create(
       {
@@ -190,22 +189,10 @@ export class SupervisorAgent extends EventEmitter {
         const { text, toolCalls: parsedCalls } = toolParser.addChunk(content);
 
         if (text) {
-          // Check for complete tag
-          if (text.includes('</complete>')) {
-            hasCompleteTag = true;
-            const cleanText = text.replace('</complete>', '').trim();
-            if (cleanText) {
-              this.emit('event', {
-                type: 'text',
-                content: cleanText,
-              } as StreamEvent);
-            }
-          } else {
-            this.emit('event', {
-              type: 'text',
-              content: text,
-            } as StreamEvent);
-          }
+          this.emit('event', {
+            type: 'text',
+            content: text,
+          } as StreamEvent);
         }
 
         // Handle tool calls (can be one or multiple)
@@ -254,7 +241,6 @@ export class SupervisorAgent extends EventEmitter {
     return {
       response: fullResponse,
       toolCalls,
-      hasCompleteTag,
     };
   }
 

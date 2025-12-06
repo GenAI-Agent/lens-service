@@ -35,6 +35,11 @@ export class PromptLoader {
    * Uses pattern matching (supports wildcards)
    */
   async loadUrlPrompt(currentUrl: string): Promise<string | null> {
+    // If currentUrl is not provided or invalid, return null
+    if (!currentUrl || currentUrl === 'undefined') {
+      return null;
+    }
+
     try {
       const url = new URL(currentUrl);
       const pathname = url.pathname;

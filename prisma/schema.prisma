@@ -149,7 +149,7 @@ model LLMTrace {
   output        String   @db.Text // Complete text output from LLM
 
   // LLM Configuration
-  model         String   @default("gpt-4") // Model used for this call
+  model         String   @default("gpt-5.1") // Model used for this call
   temperature   Float?   // Temperature parameter
   maxTokens     Int?     @map("max_tokens") // Max tokens parameter
 
@@ -170,4 +170,69 @@ model LLMTrace {
   @@index([createdAt])
   @@index([status])
   @@map("llm_traces")
+}
+
+// ==============================================================================
+// Contact Form Fields (Available form fields definitions)
+// ==============================================================================
+
+model ContactFormField {
+  id          Int      @id @default(autoincrement())
+  fieldKey    String   @unique @map("field_key") @db.VarChar(100) // e.g., "name", "email", "subject"
+  fieldType   String   @map("field_type") @db.VarChar(50) // "text", "email", "textarea", "select", "file"
+  label       Json     @db.JsonB // Multilingual labels: {"zh-TW": "姓名", "en-US": "Name"}
+  placeholder Json?    @db.JsonB // Multilingual placeholders
+  isRequired  Boolean  @default(false) @map("is_required")
+  options     Json?    @db.JsonB // For select fields: array of options
+  validation  Json?    @db.JsonB // Validation rules (e.g., regex, maxLength)
+  order       Int      @default(0) // Display order
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([fieldKey])
+  @@index([order])
+  @@map("contact_form_fields")
+}
+
+// ==============================================================================
+// Contact Form Settings (Form configuration per tenant)
+// ==============================================================================
+
+model ContactFormSettings {
+  id                    Int      @id @default(autoincrement())
+  tenantId              String   @default("default") @map("tenant_id") @db.VarChar(255) // For multi-tenant support
+  enabledFields         String[] @map("enabled_fields") // Array of field keys that are enabled
+  problemTypes          Json     @db.JsonB // Array of problem type definitions with multilingual labels
+  notificationChannels  Json     @default("[]") @map("notification_channels") @db.JsonB // Array of notification configs: [{type: 'telegram', token: '', chatId: ''}, {type: 'email', address: ''}]
+  messageLanguage       String   @default("zh-TW") @map("message_language") @db.VarChar(10) // Language for notification messages
+  allowFileUpload       Boolean  @default(true) @map("allow_file_upload")
+  maxFileSize           Int      @default(10485760) @map("max_file_size") // Max file size in bytes (default 10MB)
+  allowedFileTypes      String[] @map("allowed_file_types") // Array of allowed MIME types
+  isActive              Boolean  @default(true) @map("is_active")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@index([tenantId])
+  @@index([isActive])
+  @@map("contact_form_settings")
+}
+
+// ==============================================================================
+// Contact Form Submissions (Store submitted form data with files)
+// ==============================================================================
+
+model ContactFormSubmission {
+  id            Int      @id @default(autoincrement())
+  userId        String   @map("user_id") // User who submitted the form
+  sessionId     String?  @map("session_id") // Associated session if any
+  formData      Json     @db.JsonB // All form field data
+  attachments   Json?    @db.JsonB // Array of file information (filename, size, url/path)
+  telegramSent  Boolean  @default(false) @map("telegram_sent") // Whether sent to Telegram
+  telegramError String?  @map("telegram_error") @db.Text // Error if Telegram send failed
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([userId])
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("contact_form_submissions")
 }

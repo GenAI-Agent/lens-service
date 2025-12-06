@@ -48,9 +48,11 @@ export const chatStyles = `
     padding: 10px 14px;
     border-radius: 10px;
     max-width: 75%;
-    background: linear-gradient(135deg, #00f5a0 0%, #00d9f5 100%);
-    color: #1a1a2e;
+    width: fit-content;
+    background: linear-gradient(135deg, rgba(0, 245, 160, 0.25) 0%, rgba(0, 217, 245, 0.25) 100%);
+    color: #000;
     margin-left: auto;
+    font-weight: 500;
   }
 
   .lens-os-agent-message.assistant {
@@ -108,7 +110,7 @@ export const chatStyles = `
 
   .lens-os-agent-input {
     flex: 1;
-    padding: 10px 48px 10px 14px;
+    padding: 10px 86px 10px 14px;
     background: transparent;
     border: none;
     font-size: 14px;
@@ -143,6 +145,48 @@ export const chatStyles = `
   .lens-os-agent-input::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.15);
     border-radius: 2px;
+  }
+
+  .lens-os-agent-voice-btn {
+    position: absolute;
+    right: 44px;
+    bottom: 6px;
+    width: 32px;
+    height: 32px;
+    background: rgba(0, 0, 0, 0.05);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #555;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
+  }
+
+  .lens-os-agent-voice-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    transform: scale(1.05);
+  }
+
+  .lens-os-agent-voice-btn.listening {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%) !important;
+    color: white !important;
+    box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.2), 0 4px 12px rgba(255, 107, 107, 0.4);
+    animation: lens-os-agent-pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes lens-os-agent-pulse {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 0 0 4px rgba(255, 107, 107, 0.2), 0 4px 12px rgba(255, 107, 107, 0.4);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 0 0 6px rgba(255, 107, 107, 0.3), 0 6px 16px rgba(255, 107, 107, 0.5);
+    }
   }
 
   .lens-os-agent-send-btn {
@@ -242,5 +286,64 @@ export const chatStyles = `
   .lens-os-agent-tool-result::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.15);
     border-radius: 2px;
+  }
+
+  /* Inline Tool Call Styles */
+  .lens-os-agent-tool-inline {
+    display: block;
+    width: fit-content;
+    padding: 6px 12px;
+    margin: 6px 0;
+    background: linear-gradient(135deg, rgba(0, 245, 160, 0.08) 0%, rgba(0, 217, 245, 0.08) 100%);
+    border: 1px solid rgba(0, 200, 150, 0.25);
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #00a0c8;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .lens-os-agent-tool-inline:hover {
+    background: linear-gradient(135deg, rgba(0, 245, 160, 0.12) 0%, rgba(0, 217, 245, 0.12) 100%);
+    border-color: rgba(0, 200, 150, 0.4);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 200, 150, 0.15);
+  }
+
+  .lens-os-agent-tool-inline-expanded {
+    display: block;
+    margin: 8px 0;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 200, 150, 0.2);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .lens-os-agent-tool-inline-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 13px;
+    font-weight: 600;
+    color: #00a0c8;
+  }
+
+  .lens-os-agent-tool-inline-content {
+    font-size: 12px;
+    line-height: 1.6;
+    color: #333;
+    background: transparent;
+  }
+
+  .lens-os-agent-tool-inline-content strong {
+    color: #555;
+    font-weight: 600;
+    margin-right: 4px;
   }
 `;

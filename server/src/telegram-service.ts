@@ -14,6 +14,12 @@ export interface HumanSupportMessage {
   sessionId?: string;
 }
 
+export interface FileAttachment {
+  name: string;
+  size: number;
+  data: string; // base64 encoded file data
+}
+
 export class TelegramService {
   private botToken: string;
   private chatId: string;
@@ -30,7 +36,10 @@ export class TelegramService {
   /**
    * Send human support request to Telegram
    */
-  async sendHumanSupportMessage(data: HumanSupportMessage): Promise<{ success: boolean; error?: string }> {
+  async sendHumanSupportMessage(
+    data: HumanSupportMessage,
+    attachments?: FileAttachment[]
+  ): Promise<{ success: boolean; error?: string }> {
     if (!this.botToken || !this.chatId) {
       return {
         success: false,
@@ -64,9 +73,67 @@ export class TelegramService {
       }
 
       console.log('[TelegramService] Message sent successfully');
+
+      // Send attachments if any
+      if (attachments && attachments.length > 0) {
+        for (const attachment of attachments) {
+          const fileResult = await this.sendFile(attachment);
+          if (!fileResult.success) {
+            console.error(`[TelegramService] Failed to send file ${attachment.name}:`, fileResult.error);
+          }
+        }
+      }
+
       return { success: true };
     } catch (error) {
       console.error('[TelegramService] Error sending message:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Send file to Telegram
+   */
+  private async sendFile(attachment: FileAttachment): Promise<{ success: boolean; error?: string }> {
+    try {
+      // Convert base64 to Buffer
+      const base64Data = attachment.data.split(',')[1] || attachment.data;
+      const buffer = Buffer.from(base64Data, 'base64');
+
+      // Create form data
+      const FormData = (await import('form-data')).default;
+      const formData = new FormData();
+
+      formData.append('chat_id', this.chatId);
+      formData.append('document', buffer, {
+        filename: attachment.name,
+        contentType: 'application/octet-stream',
+      });
+      formData.append('caption', `📎 ${attachment.name} (${(attachment.size / 1024).toFixed(1)}KB)`);
+
+      const response = await fetch(`https://api.telegram.org/bot${this.botToken}/sendDocument`, {
+        method: 'POST',
+        body: formData as any,
+        headers: formData.getHeaders(),
+      });
+
+      const result: any = await response.json();
+
+      if (!response.ok || !result.ok) {
+        console.error('[TelegramService] Failed to send file:', result);
+        return {
+          success: false,
+          error: result.description || 'Failed to send file',
+        };
+      }
+
+      console.log(`[TelegramService] File ${attachment.name} sent successfully`);
+      return { success: true };
+    } catch (error) {
+      console.error('[TelegramService] Error sending file:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
