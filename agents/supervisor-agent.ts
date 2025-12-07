@@ -13,6 +13,7 @@ import { PromptLoader } from './context-engineer/prompt-loader';
 import { ToolParser } from './utils/tool-parser';
 import { SkillParser } from './utils/skill-parser';
 import { KnowledgeSearchTool } from './tools/knowledge-search';
+import { ProductSearchTool } from './tools/product-search';
 import { WebUseTool } from './tools/web-use';
 
 interface AgentConfig {
@@ -30,6 +31,7 @@ export class SupervisorAgent extends EventEmitter {
   private promptLoader: PromptLoader;
   private skillParser: SkillParser;
   private knowledgeSearchTool: KnowledgeSearchTool;
+  private productSearchTool: ProductSearchTool;
   private webUseTool: WebUseTool;
   private abortController: AbortController | null = null;
 
@@ -49,6 +51,7 @@ export class SupervisorAgent extends EventEmitter {
     this.promptBuilder = new PromptBuilder(this.memoryManager, this.promptLoader);
     this.skillParser = new SkillParser(prisma);
     this.knowledgeSearchTool = new KnowledgeSearchTool(prisma, config.openaiApiKey);
+    this.productSearchTool = new ProductSearchTool(prisma, config.openaiApiKey);
     this.webUseTool = new WebUseTool(widgetCallback);
   }
 
@@ -115,11 +118,9 @@ export class SupervisorAgent extends EventEmitter {
 
           // Save all results to DB and emit events
           for (let i = 0; i < toolCalls.length; i++) {
-            const resultText = JSON.stringify({
-              tool: toolCalls[i].name,
-              result: results[i]
-            });
-            await this.memoryManager.saveMessage(context.sessionId, 'tool', resultText);
+            // Format tool result as a user message for LLM to understand
+            const resultText = `[Tool Result for ${toolCalls[i].name}]\n${JSON.stringify(results[i], null, 2)}`;
+            await this.memoryManager.saveMessage(context.sessionId, 'user', resultText);
 
             this.emit('event', {
               type: 'tool_result',
@@ -274,6 +275,9 @@ export class SupervisorAgent extends EventEmitter {
       case 'knowledge_search':
         return await this.knowledgeSearchTool.execute(parameters as { query: string; topK?: number });
 
+      case 'product_search':
+        return await this.productSearchTool.execute(parameters as { query: string; topK?: number });
+
       // Web interaction tools
       case 'click':
       case 'doubleClick':
@@ -287,7 +291,7 @@ export class SupervisorAgent extends EventEmitter {
       default:
         return {
           success: false,
-          error: `Unknown tool: ${name}. Available tools: knowledge_search, click, doubleClick, scroll, scrollToElement, highlight, drag, deepCrawl`,
+          error: `Unknown tool: ${name}. Available tools: knowledge_search, product_search, click, doubleClick, scroll, scrollToElement, highlight, drag, deepCrawl`,
         };
     }
   }

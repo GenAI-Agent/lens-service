@@ -50,9 +50,29 @@ export const chatStyles = `
     max-width: 75%;
     width: fit-content;
     background: linear-gradient(135deg, rgba(0, 245, 160, 0.25) 0%, rgba(0, 217, 245, 0.25) 100%);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid rgba(0, 200, 150, 0.2);
     color: #000;
     margin-left: auto;
     font-weight: 500;
+    box-shadow:
+      inset 2px 2px 4px rgba(255, 255, 255, 0.4),
+      inset -1px -1px 3px rgba(0, 0, 0, 0.1),
+      0 2px 4px rgba(0, 0, 0, 0.05);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lens-os-agent-message.user::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+    pointer-events: none;
   }
 
   .lens-os-agent-message.assistant {
@@ -90,29 +110,32 @@ export const chatStyles = `
     position: relative;
     display: flex;
     align-items: flex-end;
-    background: rgba(255, 255, 255, 0.6);
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 12px;
     overflow: hidden;
     box-shadow:
-      inset 2px 2px 4px rgba(0, 0, 0, 0.06),
-      inset -1px -1px 3px rgba(255, 255, 255, 0.8),
-      0 1px 2px rgba(0, 0, 0, 0.04);
+      inset 3px 3px 8px rgba(0, 0, 0, 0.15),
+      inset -2px -2px 6px rgba(255, 255, 255, 0.6),
+      0 2px 4px rgba(0, 0, 0, 0.08);
     transition: all 0.2s ease;
   }
 
   .lens-os-agent-input-wrapper:focus-within {
-    background: rgba(255, 255, 255, 0.85);
-    border-color: rgba(0, 200, 150, 0.4);
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(0, 200, 150, 0.3);
     box-shadow:
-      inset 2px 2px 4px rgba(0, 0, 0, 0.05),
-      inset -1px -1px 3px rgba(255, 255, 255, 0.9),
-      0 0 0 2px rgba(0, 245, 160, 0.15);
+      inset 3px 3px 8px rgba(0, 0, 0, 0.12),
+      inset -2px -2px 6px rgba(255, 255, 255, 0.7),
+      0 0 0 2px rgba(0, 245, 160, 0.15),
+      0 4px 8px rgba(0, 0, 0, 0.1);
   }
 
   .lens-os-agent-input {
     flex: 1;
-    padding: 10px 86px 10px 14px;
+    padding: 10px 10px 10px 14px;
     background: transparent;
     border: none;
     font-size: 14px;
@@ -151,11 +174,13 @@ export const chatStyles = `
 
   .lens-os-agent-voice-btn {
     position: absolute;
-    right: 44px;
+    right: 12px;
     bottom: 6px;
     width: 32px;
     height: 32px;
-    background: rgba(0, 0, 0, 0.05);
+    background: rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
     border: none;
     border-radius: 8px;
     cursor: pointer;
@@ -165,12 +190,30 @@ export const chatStyles = `
     color: #555;
     transition: all 0.3s ease;
     flex-shrink: 0;
-    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
+    box-shadow:
+      inset 0 1px 3px rgba(255, 255, 255, 0.4),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lens-os-agent-voice-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 35%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+    pointer-events: none;
   }
 
   .lens-os-agent-voice-btn:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: rgba(0, 0, 0, 0.12);
     transform: scale(1.05);
+    box-shadow:
+      inset 0 1px 3px rgba(255, 255, 255, 0.5),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.2);
   }
 
   .lens-os-agent-voice-btn.listening {
@@ -207,11 +250,31 @@ export const chatStyles = `
     color: #1a1a2e;
     transition: all 0.2s ease;
     flex-shrink: 0;
+    box-shadow:
+      inset 0 2px 4px rgba(255, 255, 255, 0.6),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.15),
+      0 1px 3px rgba(0, 245, 160, 0.2);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lens-os-agent-send-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 35%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.5), transparent);
+    pointer-events: none;
   }
 
   .lens-os-agent-send-btn:hover {
     transform: scale(1.05);
-    opacity: 0.9;
+    box-shadow:
+      inset 0 2px 4px rgba(255, 255, 255, 0.7),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.2),
+      0 2px 6px rgba(0, 245, 160, 0.3);
   }
 
   /* Tool Block Styles */
@@ -301,6 +364,22 @@ export const chatStyles = `
     font-size: 12px;
     font-weight: 500;
     color: #00a0c8;
+    box-shadow:
+      inset 0 1px 2px rgba(255, 255, 255, 0.3),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lens-os-agent-tool-block-compact::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.25), transparent);
+    pointer-events: none;
   }
 
   .lens-os-agent-tool-block-compact.pending {
@@ -336,15 +415,34 @@ export const chatStyles = `
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(0, 245, 160, 0.2);
+    box-shadow:
+      0 2px 6px rgba(0, 245, 160, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.5),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.15);
     display: flex;
     align-items: center;
     gap: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lens-os-agent-tool-inline::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 45%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), transparent);
+    pointer-events: none;
   }
 
   .lens-os-agent-tool-inline:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 245, 160, 0.35);
+    box-shadow:
+      0 4px 12px rgba(0, 245, 160, 0.35),
+      inset 0 2px 4px rgba(255, 255, 255, 0.6),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.2);
     border-color: rgba(0, 200, 150, 0.6);
   }
 
@@ -368,33 +466,49 @@ export const chatStyles = `
   .lens-os-agent-tool-inline-expanded {
     display: block;
     margin: 0 0 8px 0;
-    padding: 12px 16px;
+    padding: 8px 12px;
     background: linear-gradient(135deg, rgba(0, 245, 160, 0.08) 0%, rgba(0, 217, 245, 0.08) 100%);
     border: 1px solid rgba(0, 200, 150, 0.25);
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.06),
+      inset 0 1px 3px rgba(255, 255, 255, 0.4),
+      inset 0 -1px 2px rgba(0, 0, 0, 0.1);
     font-size: 12px;
-    line-height: 1.4;
+    line-height: 1.2;
     color: #333;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lens-os-agent-tool-inline-expanded::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.3), transparent);
+    pointer-events: none;
   }
 
   .lens-os-agent-tool-inline-expanded .tool-name-row {
     font-size: 13px;
     font-weight: 600;
     color: #000;
-    margin-bottom: 6px;
-    line-height: 1.4;
+    margin-bottom: 3px;
+    line-height: 1.3;
   }
 
   .lens-os-agent-tool-inline-expanded .params-list {
     font-size: 12px;
-    line-height: 1.4;
+    line-height: 1.3;
     color: #333;
   }
 
   .lens-os-agent-tool-inline-expanded .param-item {
     margin-bottom: 0;
-    line-height: 1.4;
+    line-height: 1.3;
   }
 
   .lens-os-agent-tool-inline-expanded .param-key {
@@ -425,12 +539,31 @@ export const chatStyles = `
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(0, 245, 160, 0.2);
+    box-shadow:
+      0 2px 6px rgba(0, 245, 160, 0.2),
+      inset 0 2px 4px rgba(255, 255, 255, 0.5),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .lens-os-agent-memory-summary .memory-summary-toggle::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 45%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), transparent);
+    pointer-events: none;
   }
 
   .lens-os-agent-memory-summary .memory-summary-toggle:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 245, 160, 0.35);
+    box-shadow:
+      0 4px 12px rgba(0, 245, 160, 0.35),
+      inset 0 2px 4px rgba(255, 255, 255, 0.6),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.2);
     border-color: rgba(0, 200, 150, 0.6);
   }
 
@@ -533,5 +666,52 @@ export const chatStyles = `
       transform: translateY(-10px);
       opacity: 1;
     }
+  }
+
+  /* Skill Autocomplete Dropdown */
+  .lens-os-agent-skill-dropdown {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    margin-bottom: 5px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+  }
+
+  .lens-os-agent-skill-item {
+    padding: 10px 14px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    border-bottom: 1px solid #f5f5f5;
+  }
+
+  .lens-os-agent-skill-item:last-child {
+    border-bottom: none;
+  }
+
+  .lens-os-agent-skill-item:hover,
+  .lens-os-agent-skill-item.selected {
+    background-color: #f0f9ff;
+  }
+
+  .lens-os-agent-skill-name {
+    font-weight: 600;
+    color: #00d084;
+    font-size: 13px;
+  }
+
+  .lens-os-agent-skill-prompt {
+    font-size: 11px;
+    color: #666;
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 `;

@@ -121,4 +121,13 @@ export class TraceLogger {
       successRate,
     };
   }
+
+  /**
+   * Delete a trace by ID
+   */
+  async deleteTrace(traceId: string): Promise<void> {
+    await prisma.lLMTrace.delete({
+      where: { id: traceId },
+    });
+  }
 }

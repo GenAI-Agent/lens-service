@@ -112,6 +112,23 @@ export default function Traces() {
     }
   };
 
+  const deleteTrace = async (id: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    if (!confirm('Are you sure you want to delete this trace?')) {
+      return;
+    }
+
+    try {
+      await fetch(`/api/admin/traces/${id}`, { method: 'DELETE' });
+      await loadTraces();
+      await loadStats();
+    } catch (error) {
+      console.error('Failed to delete trace:', error);
+      alert('Failed to delete trace');
+    }
+  };
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return date.toLocaleString();
@@ -196,6 +213,13 @@ export default function Traces() {
                         onClick={() => viewTrace(trace.id)}
                       >
                         View
+                      </button>
+                      <button
+                        className="btn-delete"
+                        onClick={(e) => deleteTrace(trace.id, e)}
+                        style={{ marginLeft: '8px' }}
+                      >
+                        Delete
                       </button>
                     </td>
                   </tr>

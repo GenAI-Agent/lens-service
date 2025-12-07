@@ -95,6 +95,22 @@ export default function Sessions() {
     }
   };
 
+  const deleteSession = async (sessionId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    if (!confirm('Are you sure you want to delete this session? This will also delete all associated messages and traces.')) {
+      return;
+    }
+
+    try {
+      await sessionsApi.delete(sessionId);
+      await loadSessions();
+    } catch (error) {
+      console.error('Failed to delete session:', error);
+      alert('Failed to delete session');
+    }
+  };
+
   const handleSortChange = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -190,6 +206,13 @@ export default function Sessions() {
                       onClick={() => loadMessages(session)}
                     >
                       View Messages
+                    </button>
+                    <button
+                      className="lens-os-admin-btn lens-os-admin-btn-danger"
+                      onClick={(e) => deleteSession(session.id, e)}
+                      style={{ marginLeft: '8px' }}
+                    >
+                      Delete
                     </button>
                   </div>
                 </td>

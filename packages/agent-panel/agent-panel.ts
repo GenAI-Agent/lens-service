@@ -34,6 +34,9 @@ export class AgentPanel {
   private contactForm: ContactFormDynamic;
   private speechRecognition: SpeechRecognitionService;
   private isThinking: boolean = false;
+  private skills: Array<{ name: string; prompt: string }> = [];
+  private skillSuggestions: Array<{ name: string; prompt: string }> = [];
+  private selectedSkillIndex: number = -1;
 
   constructor(config: AgentPanelConfig) {
     this.container = document.createElement('div');
@@ -45,6 +48,7 @@ export class AgentPanel {
   public async mount(container: HTMLElement): Promise<void> {
     this.container = container;
     await this.loadSessions();
+    await this.loadSkills();
     this.render();
   }
 
@@ -198,6 +202,27 @@ export class AgentPanel {
     // Textarea enter key (Enter to send, Shift+Enter for new line) and value change
     const input = document.getElementById('chatInput') as HTMLTextAreaElement;
     input?.addEventListener('keydown', (e) => {
+      // Handle skill dropdown navigation
+      if (this.skillSuggestions.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          this.selectedSkillIndex = Math.min(this.selectedSkillIndex + 1, this.skillSuggestions.length - 1);
+          this.renderSkillDropdown();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          this.selectedSkillIndex = Math.max(this.selectedSkillIndex - 1, 0);
+          this.renderSkillDropdown();
+        } else if (e.key === 'Enter' && this.selectedSkillIndex >= 0) {
+          e.preventDefault();
+          this.selectSkill(this.skillSuggestions[this.selectedSkillIndex]);
+          return;
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          this.hideSkillDropdown();
+          return;
+        }
+      }
+
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         this.handleSend();
@@ -209,6 +234,9 @@ export class AgentPanel {
       // Auto-resize textarea
       textarea.style.height = 'auto';
       textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+
+      // Check for skill autocomplete
+      this.handleSkillAutocomplete();
     });
 
     // Session items
@@ -460,7 +488,7 @@ export class AgentPanel {
     }, 100);
 
     try {
-      const response = await fetch(`${this.config.apiUrl}/api/chat`, {
+      const response = await fetch(`${this.config.apiUrl}/api/lens/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -489,14 +517,15 @@ export class AgentPanel {
 
         for (const line of lines) {
           if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
+            const dataStr = line.slice(6);
 
-              // Hide thinking animation on first response
-              if (this.isThinking) {
-                this.isThinking = false;
-                this.render();
-              }
+            // Skip non-JSON lines like "[DONE]"
+            if (dataStr === '[DONE]' || !dataStr.trim()) {
+              continue;
+            }
+
+            try {
+              const data = JSON.parse(dataStr);
 
               console.log('[AgentPanel] SSE event:', data.type, data);
 
@@ -504,13 +533,32 @@ export class AgentPanel {
                 this.sessionId = data.sessionId;
                 await this.loadSessions();
               } else if (data.type === 'text') {
+                // Hide thinking animation on first text response (without re-rendering)
+                if (this.isThinking) {
+                  this.isThinking = false;
+                  const thinkingEl = document.querySelector('.lens-os-agent-thinking');
+                  if (thinkingEl) {
+                    thinkingEl.remove();
+                  }
+                }
+
                 // Server sends 'text' type for streaming content
                 assistantMessage.content += data.content;
 
                 // 直接更新最後一個 message 的 DOM，保留 HTML 結構
                 const messagesArea = document.getElementById('messagesArea');
                 if (messagesArea) {
-                  const lastMessage = messagesArea.querySelector('.lens-os-agent-message.assistant:last-child .lens-os-agent-message-content');
+                  let lastMessage = messagesArea.querySelector('.lens-os-agent-message.assistant:last-child .lens-os-agent-message-content');
+
+                  // If no assistant message in DOM yet, create one
+                  if (!lastMessage) {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.className = 'lens-os-agent-message assistant';
+                    messageDiv.innerHTML = `<div class="lens-os-agent-message-content"></div>`;
+                    messagesArea.appendChild(messageDiv);
+                    lastMessage = messageDiv.querySelector('.lens-os-agent-message-content');
+                  }
+
                   if (lastMessage) {
                     // Parse and convert <tool>...</tool> to inline divs
                     const html = this.parseContentToHTML(assistantMessage.content);
@@ -531,7 +579,23 @@ export class AgentPanel {
                   status: 'pending'
                 });
                 console.log('[AgentPanel] Tools array:', assistantMessage.tools);
-                this.render();
+
+                // Don't call render() here - it would clear streaming text
+                // Instead, just append tool block to the current message
+                const messagesArea = document.getElementById('messagesArea');
+                if (messagesArea) {
+                  const lastMessage = messagesArea.querySelector('.lens-os-agent-message.assistant:last-child');
+                  if (lastMessage) {
+                    const toolBlock = document.createElement('div');
+                    toolBlock.className = 'lens-os-agent-tool-block-compact pending';
+                    const toolName = this.getToolDisplayName(data.toolCall.name);
+                    toolBlock.innerHTML = `
+                      <span class="lens-os-agent-tool-name">· ${toolName}</span>
+                      <span class="lens-os-agent-tool-spinner"></span>
+                    `;
+                    lastMessage.appendChild(toolBlock);
+                  }
+                }
 
                 // Show confirmation if not in auto mode
                 if (!this.autoMode) {
@@ -551,7 +615,18 @@ export class AgentPanel {
                     pendingTool.status = 'completed';
                   }
                 }
-                this.render();
+
+                // Update tool block status in DOM without full re-render
+                const messagesArea = document.getElementById('messagesArea');
+                if (messagesArea) {
+                  const pendingBlock = messagesArea.querySelector('.lens-os-agent-tool-block-compact.pending');
+                  if (pendingBlock) {
+                    pendingBlock.classList.remove('pending');
+                    pendingBlock.classList.add('completed');
+                    const spinner = pendingBlock.querySelector('.lens-os-agent-tool-spinner');
+                    if (spinner) spinner.remove();
+                  }
+                }
               } else if (data.type === 'done') {
                 // Stream complete
                 console.log('[AgentPanel] Stream done');
@@ -637,7 +712,7 @@ export class AgentPanel {
     try {
       // Clear all messages in the current session (keep the same session ID)
       if (this.sessionId) {
-        const response = await fetch(`${this.config.apiUrl}/api/sessions/${this.sessionId}/messages`, {
+        const response = await fetch(`${this.config.apiUrl}/api/lens/sessions/${this.sessionId}/messages`, {
           method: 'DELETE',
         });
 
@@ -658,7 +733,7 @@ export class AgentPanel {
 
   private async loadSessions(): Promise<void> {
     try {
-      const response = await fetch(`${this.config.apiUrl}/api/sessions/${this.config.userId}?limit=20`);
+      const response = await fetch(`${this.config.apiUrl}/api/lens/users/${this.config.userId}/sessions?limit=20`);
       if (response.ok) {
         this.sessions = await response.json();
         this.render();
@@ -669,9 +744,22 @@ export class AgentPanel {
     }
   }
 
+  private async loadSkills(): Promise<void> {
+    try {
+      const response = await fetch(`${this.config.apiUrl}/api/lens/skills`);
+      if (response.ok) {
+        this.skills = await response.json();
+        console.log('[AgentPanel] Skills loaded:', this.skills.length);
+      }
+    } catch (error) {
+      console.error('[AgentPanel] Load skills error:', error);
+      this.skills = [];
+    }
+  }
+
   private async switchSession(sessionId: string): Promise<void> {
     try {
-      const response = await fetch(`${this.config.apiUrl}/api/sessions/${sessionId}/messages`);
+      const response = await fetch(`${this.config.apiUrl}/api/lens/sessions/${sessionId}/messages`);
       if (!response.ok) throw new Error('Failed to load session');
 
       const messages = await response.json();
@@ -719,6 +807,23 @@ export class AgentPanel {
   }
 
   /**
+   * Get friendly display name for tool
+   */
+  private getToolDisplayName(toolName: string): string {
+    const toolNames: Record<string, string> = {
+      'knowledge_search': '📚 Knowledge Search',
+      'click': '👆 Click',
+      'doubleClick': '👆👆 Double Click',
+      'scroll': '📜 Scroll',
+      'scrollToElement': '🎯 Scroll To Element',
+      'highlight': '✨ Highlight',
+      'drag': '🤏 Drag',
+      'deepCrawl': '🕷️ Deep Crawl',
+    };
+    return toolNames[toolName] || toolName;
+  }
+
+  /**
    * Toggle voice input on/off
    */
   private toggleVoiceInput(): void {
@@ -757,6 +862,108 @@ export class AgentPanel {
       if (!success) {
         console.error('[AgentPanel] Failed to start voice recognition');
       }
+    }
+  }
+
+  /**
+   * Handle skill autocomplete when user types "/"
+   */
+  private handleSkillAutocomplete(): void {
+    const input = this.currentInput;
+
+    // Find the last "/" in the input
+    const lastSlashIndex = input.lastIndexOf('/');
+
+    if (lastSlashIndex === -1) {
+      this.hideSkillDropdown();
+      return;
+    }
+
+    // Get text after the last "/"
+    const textAfterSlash = input.substring(lastSlashIndex + 1);
+
+    // If there's a space after the slash, hide dropdown
+    if (textAfterSlash.includes(' ')) {
+      this.hideSkillDropdown();
+      return;
+    }
+
+    // Filter skills based on text after slash
+    const filtered = this.skills.filter(skill =>
+      skill.name.toLowerCase().includes(textAfterSlash.toLowerCase())
+    );
+
+    if (filtered.length === 0) {
+      this.hideSkillDropdown();
+      return;
+    }
+
+    this.skillSuggestions = filtered;
+    this.selectedSkillIndex = 0;
+    this.renderSkillDropdown();
+  }
+
+  /**
+   * Render skill dropdown
+   */
+  private renderSkillDropdown(): void {
+    const dropdown = document.getElementById('skillDropdown');
+    if (!dropdown) return;
+
+    if (this.skillSuggestions.length === 0) {
+      dropdown.style.display = 'none';
+      return;
+    }
+
+    dropdown.style.display = 'block';
+    dropdown.innerHTML = this.skillSuggestions.map((skill, index) => `
+      <div class="lens-os-agent-skill-item ${index === this.selectedSkillIndex ? 'selected' : ''}" data-skill-index="${index}">
+        <div class="lens-os-agent-skill-name">/${skill.name}</div>
+        <div class="lens-os-agent-skill-prompt">${escapeHtml(skill.prompt.substring(0, 60))}${skill.prompt.length > 60 ? '...' : ''}</div>
+      </div>
+    `).join('');
+
+    // Add click handlers
+    dropdown.querySelectorAll('.lens-os-agent-skill-item').forEach((el) => {
+      el.addEventListener('click', () => {
+        const index = parseInt((el as HTMLElement).dataset.skillIndex || '0');
+        this.selectSkill(this.skillSuggestions[index]);
+      });
+    });
+  }
+
+  /**
+   * Select a skill from dropdown
+   */
+  private selectSkill(skill: { name: string; prompt: string }): void {
+    const input = this.currentInput;
+    const lastSlashIndex = input.lastIndexOf('/');
+
+    // Replace from "/" to end with the selected skill name
+    this.currentInput = input.substring(0, lastSlashIndex) + `/${skill.name} `;
+
+    this.hideSkillDropdown();
+    this.render();
+
+    // Focus back on input
+    setTimeout(() => {
+      const chatInput = document.getElementById('chatInput') as HTMLTextAreaElement;
+      if (chatInput) {
+        chatInput.focus();
+        chatInput.selectionStart = chatInput.selectionEnd = chatInput.value.length;
+      }
+    }, 0);
+  }
+
+  /**
+   * Hide skill dropdown
+   */
+  private hideSkillDropdown(): void {
+    this.skillSuggestions = [];
+    this.selectedSkillIndex = -1;
+    const dropdown = document.getElementById('skillDropdown');
+    if (dropdown) {
+      dropdown.style.display = 'none';
     }
   }
 }

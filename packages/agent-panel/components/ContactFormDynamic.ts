@@ -34,8 +34,8 @@ export class ContactFormDynamic {
   async loadFormConfig(): Promise<void> {
     try {
       const [fieldsRes, settingsRes] = await Promise.all([
-        fetch(`${this.apiUrl}/api/contact-form-fields`),
-        fetch(`${this.apiUrl}/api/contact-form-settings`),
+        fetch(`${this.apiUrl}/api/lens/contact-form-fields`),
+        fetch(`${this.apiUrl}/api/lens/contact-form-settings`),
       ]);
 
       if (fieldsRes.ok) {
@@ -243,7 +243,7 @@ export class ContactFormDynamic {
       }
 
       // Submit to server
-      const response = await fetch(`${this.apiUrl}/api/contact-submit`, {
+      const response = await fetch(`${this.apiUrl}/api/lens/contact-submit`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ formData, attachments }),

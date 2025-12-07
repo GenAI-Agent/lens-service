@@ -155,6 +155,7 @@ export function renderChatInterface(
       </div>
 
       <div class="lens-os-agent-input-area">
+        <div class="lens-os-agent-skill-dropdown" id="skillDropdown" style="display: none;"></div>
         <div class="lens-os-agent-input-wrapper">
           <textarea class="lens-os-agent-input" id="chatInput" placeholder="${t('inputPlaceholder', language)}" rows="1">${escapeHtml(currentInput)}</textarea>
           <button class="lens-os-agent-voice-btn ${isListening ? 'listening' : ''}" id="voiceBtn" title="${t('voiceInput', language)}">

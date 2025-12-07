@@ -190,6 +190,29 @@ export function createAdminRouter(prisma: PrismaClient, openaiApiKey: string) {
     res.json(message);
   });
 
+  router.delete('/sessions/:sessionId', async (req, res) => {
+    try {
+      const { sessionId } = req.params;
+
+      // Delete related LLM traces first
+      await prisma.lLMTrace.deleteMany({
+        where: { sessionId },
+      });
+
+      // Delete the session (cascade will delete messages)
+      await prisma.session.delete({
+        where: { id: sessionId },
+      });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[Admin API] Failed to delete session:', error);
+      res.status(500).json({
+        error: error instanceof Error ? error.message : 'Failed to delete session',
+      });
+    }
+  });
+
   // LLM Traces
   router.use('/traces', tracesRouter);
 

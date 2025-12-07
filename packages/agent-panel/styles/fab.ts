@@ -34,13 +34,31 @@ export const fabStyles = `
     position: relative;
     overflow: visible;
     transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 8px 24px rgba(0, 245, 160, 0.35);
+    box-shadow:
+      0 8px 24px rgba(0, 245, 160, 0.35),
+      inset 0 2px 6px rgba(255, 255, 255, 0.6),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.15);
     padding: 8px;
+  }
+
+  .lens-os-agent-fab-main::before {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 10%;
+    right: 10%;
+    height: 35%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.6), transparent);
+    border-radius: 50%;
+    pointer-events: none;
   }
 
   .lens-os-agent-fab-main:hover {
     transform: scale(1.08);
-    box-shadow: 0 12px 32px rgba(0, 245, 160, 0.5);
+    box-shadow:
+      0 12px 32px rgba(0, 245, 160, 0.5),
+      inset 0 2px 6px rgba(255, 255, 255, 0.7),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2);
   }
 
   .lens-os-agent-fab-icon {
@@ -107,12 +125,30 @@ export const fabStyles = `
     color: white;
     transition: all 0.25s ease;
     position: relative;
+    box-shadow:
+      inset 0 2px 4px rgba(255, 255, 255, 0.3),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  .lens-os-agent-fab-mini::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 15%;
+    right: 15%;
+    height: 30%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.4), transparent);
+    border-radius: 50%;
+    pointer-events: none;
   }
 
   .lens-os-agent-fab-mini.active {
     background: linear-gradient(135deg, #00f5a0 0%, #00d9f5 100%);
     color: #1a1a2e;
-    box-shadow: 0 0 20px rgba(0, 245, 160, 0.6);
+    box-shadow:
+      0 0 20px rgba(0, 245, 160, 0.6),
+      inset 0 2px 4px rgba(255, 255, 255, 0.5),
+      inset 0 -2px 3px rgba(0, 0, 0, 0.2);
   }
 
   .lens-os-agent-fab-mini:hover {
@@ -178,6 +214,21 @@ export const fabStyles = `
     margin-top: -16px;
     margin-left: -16px;
     transform: scale(0);
+    box-shadow:
+      inset 0 2px 3px rgba(255, 255, 255, 0.25),
+      inset 0 -2px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  .lens-os-agent-lang-option::before {
+    content: '';
+    position: absolute;
+    top: 1px;
+    left: 15%;
+    right: 15%;
+    height: 30%;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.35), transparent);
+    border-radius: 50%;
+    pointer-events: none;
   }
 
   .lens-os-agent-fab-container.panel-open:hover .lens-os-agent-lang-option {
@@ -198,6 +249,9 @@ export const fabStyles = `
   .lens-os-agent-lang-option.active {
     background: linear-gradient(135deg, #00f5a0 0%, #00d9f5 100%);
     border-color: rgba(0, 245, 160, 0.5);
+    box-shadow:
+      inset 0 2px 3px rgba(255, 255, 255, 0.5),
+      inset 0 -2px 2px rgba(0, 0, 0, 0.2);
   }
 
   .lens-os-agent-lang-option:hover {

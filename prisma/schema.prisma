@@ -8,7 +8,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = env("LENS_SERVICE_DATABASE_URL")
 }
 
 // ==============================================================================
@@ -206,4 +206,46 @@ model ContactFormSubmission {
   @@index([sessionId])
   @@index([createdAt])
   @@map("contact_form_submissions")
+}
+
+// ==============================================================================
+// AI Generated Pages (Dynamically generated product/content pages)
+// ==============================================================================
+
+model AIPage {
+  id         String   @id @default(uuid())
+  pageId     String   @unique @map("page_id") // URL-safe page identifier
+  title      String   @db.VarChar(500)
+  template   String   @db.VarChar(100) // Template style name
+  items      Json     @db.JsonB // Array of products/content items to display
+  bannerUrl  String?  @map("banner_url") @db.Text // Generated banner image URL
+  userId     String?  @map("user_id") // User who requested generation (optional)
+  sessionId  String?  @map("session_id") // Associated session (optional)
+  expiresAt  DateTime @map("expires_at") // Auto-delete after expiration
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([pageId])
+  @@index([expiresAt])
+  @@index([createdAt])
+  @@map("ai_pages")
+}
+
+// ==============================================================================
+// Products (Book catalog with hybrid search: Vector + BM25)
+// ==============================================================================
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  productId   String   @unique @map("product_id") @db.VarChar(255) // org_prod_id from JSONL
+  productName String   @map("product_name") @db.VarChar(500) // title
+  description String   @db.Text // title (used for vector embedding and BM25)
+  content     String   @db.Text // author + publisher + category_name + sale_price
+  data        Json     @db.JsonB // {list_price, sale_price, category_name, book_type: []}
+  embedding   String?  @db.Text // JSON array of floats (vector of description)
+  createdAt   DateTime @map("created_at") // publish_date from JSONL
+  updatedAt   DateTime @updatedAt @map("updated_at") // current timestamp
+
+  @@index([productId])
+  @@index([productName])
+  @@map("products")
 }

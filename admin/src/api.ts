@@ -183,4 +183,8 @@ export const sessionsApi = {
     });
     return res.json();
   },
+
+  delete: async (sessionId: string): Promise<void> => {
+    await fetch(`${API_BASE}/sessions/${sessionId}`, { method: 'DELETE' });
+  },
 };

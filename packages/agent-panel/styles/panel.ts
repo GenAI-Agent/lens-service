@@ -17,15 +17,16 @@ export const panelStyles = `
     max-width: 92vw;
     height: 520px;
     max-height: 80vh;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.65), rgba(248, 248, 250, 0.55));
-    backdrop-filter: blur(12px);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.25), rgba(248, 248, 250, 0.65));
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     border-radius: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.35);
     box-shadow:
       0 8px 32px rgba(0, 0, 0, 0.12),
       0 2px 8px rgba(0, 0, 0, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.8),
-      inset 0 -1px 0 rgba(0, 0, 0, 0.05);
+      inset 0 2px 4px rgba(255, 255, 255, 0.5),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.08);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -44,21 +45,18 @@ export const panelStyles = `
   .lens-os-agent-header {
     display: flex;
     align-items: center;
-    padding: 10px 16px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    gap: 10px;
+    padding: 12px 24px;
+    border-bottom: none;
+    gap: 14px;
     flex-shrink: 0;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(252, 252, 253, 0.85));
-    box-shadow:
-      0 1px 3px rgba(0, 0, 0, 0.05),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    background: transparent;
     position: relative;
     z-index: 10;
   }
 
   .lens-os-agent-menu-toggle {
-    width: 28px;
-    height: 28px;
+    width: 40px;
+    height: 40px;
     border: none;
     background-color: transparent;
     padding: 0;
@@ -81,10 +79,10 @@ export const panelStyles = `
 
   .lens-os-agent-brand {
     font-family: 'Space Grotesk', sans-serif;
-    font-size: 14px;
+    font-size: 20px;
     font-weight: 700;
     color: #333;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
     text-transform: uppercase;
   }
 
@@ -122,7 +120,7 @@ export const panelStyles = `
     min-width: 160px;
     max-width: 160px;
     flex: 0 0 160px;
-    background: rgba(250, 250, 250, 0.8);
+    background: transparent;
     border-right: 1px solid rgba(0, 0, 0, 0.08);
     visibility: visible;
     opacity: 1;

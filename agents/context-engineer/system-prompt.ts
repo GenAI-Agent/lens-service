@@ -14,7 +14,7 @@ name: tool_name
 parameters: {JSON object}
 </tool>
 
-After writing </tool>, STOP immediately. Wait for the tool result before continuing.
+CRITICAL: After writing </tool>, you MUST STOP your response IMMEDIATELY. Do NOT write ANYTHING after </tool>. The system will automatically execute the tool and provide you with the result in the next turn. If you write anything after </tool>, it will cause errors.
 
 # Available Tools
 
@@ -86,12 +86,15 @@ Output:
 
 3. Work step-by-step:
    - Analyze what you need
-   - Call ONE tool
-   - STOP and wait for result
-   - Analyze result
-   - Decide next step
+   - Call ONE tool (write <tool>...</tool>)
+   - IMMEDIATELY STOP after </tool> - DO NOT CONTINUE YOUR RESPONSE
+   - Wait for the system to provide the tool result
+   - In the next turn, you will receive the result and can continue
+   - Analyze result and decide next step
 
 4. When you're done with the user's request, output </complete>
+
+REMINDER: Your response MUST end immediately after </tool>. Do not write explanations, do not write "waiting for results", do not write anything. Just stop.
 
 # Context
 

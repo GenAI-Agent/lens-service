@@ -12,20 +12,20 @@ export class SkillParser {
 
   /**
    * Parse user query for skill invocation
-   * Format: /skill_name user query
+   * Format: /skill_name (can appear anywhere in the query)
    * Returns: { skillPrompt: string, modifiedQuery: string } or null
    */
   async parseSkill(
     query: string
   ): Promise<{ skillPrompt: string; modifiedQuery: string } | null> {
-    const match = query.match(/^\/([a-z0-9_-]+)\s+(.+)$/i);
+    // Find /skill_name pattern anywhere in the query
+    const match = query.match(/\/([a-z0-9_-]+)/i);
 
     if (!match) {
       return null;
     }
 
     const skillName = match[1];
-    const userQuery = match[2];
 
     // Load skill from database
     const skill = await this.loadSkill(skillName);
@@ -35,8 +35,8 @@ export class SkillParser {
       return null;
     }
 
-    // Construct modified query with skill prompt
-    const modifiedQuery = `${skill.prompt}\n\nUser Query:\n${userQuery}`;
+    // Replace /skill_name with the skill prompt
+    const modifiedQuery = query.replace(`/${skillName}`, skill.prompt);
 
     return {
       skillPrompt: skill.prompt,
@@ -49,12 +49,18 @@ export class SkillParser {
    */
   private async loadSkill(skillName: string): Promise<Skill | null> {
     try {
+      console.log('[SkillParser] Loading skill from DB:', skillName);
       const skillRecord = await this.prisma.skill.findFirst({
         where: {
           name: skillName,
           isActive: true,
         },
       });
+
+      console.log('[SkillParser] Skill record found:', skillRecord ? 'Yes' : 'No');
+      if (skillRecord) {
+        console.log('[SkillParser] Skill prompt:', skillRecord.prompt.substring(0, 50) + '...');
+      }
 
       if (!skillRecord) {
         return null;
@@ -65,7 +71,7 @@ export class SkillParser {
         prompt: skillRecord.prompt,
       };
     } catch (error) {
-      console.error('Failed to load skill:', error);
+      console.error('[SkillParser] Failed to load skill:', error);
       return null;
     }
   }

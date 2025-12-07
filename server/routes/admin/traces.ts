@@ -74,4 +74,19 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * DELETE /api/admin/traces/:id
+ * Delete a trace by ID
+ */
+router.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    const { id } = req.params;
+    await traceLogger.deleteTrace(id);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Delete trace error:', error);
+    res.status(500).json({ error: 'Failed to delete trace' });
+  }
+});
+
 export default router;
