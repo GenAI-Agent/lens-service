@@ -8,10 +8,12 @@
 import { PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
 import { ToolResult } from '../config/types';
+import { AIPageGenerateTool } from './ai-page-generate';
 
 interface ProductSearchParams {
   query: string;
   topK?: number;
+  generatePage?: boolean; // Auto-generate recommendation page if true
 }
 
 interface SearchResult {
@@ -25,12 +27,14 @@ interface SearchResult {
 
 export class ProductSearchTool {
   private openai: OpenAI;
+  private pageGenerator: AIPageGenerateTool;
 
   constructor(
     private prisma: PrismaClient,
     openaiApiKey: string
   ) {
     this.openai = new OpenAI({ apiKey: openaiApiKey });
+    this.pageGenerator = new AIPageGenerateTool('http://localhost:8080');
   }
 
   /**
@@ -38,7 +42,7 @@ export class ProductSearchTool {
    */
   async execute(params: ProductSearchParams): Promise<ToolResult> {
     try {
-      const { query, topK = 10 } = params;
+      const { query, topK = 10, generatePage = true } = params;
 
       // Generate query embedding
       const embedding = await this.generateEmbedding(query);
@@ -62,15 +66,34 @@ export class ProductSearchTool {
         };
       }
 
+      const products = combinedResults.map((r) => ({
+        productName: r.productName,
+        content: r.content,
+        score: r.score.toFixed(3),
+      }));
+
+      // Auto-generate page if enabled and we have 3+ products
+      let pageUrl = null;
+      if (generatePage && products.length >= 3) {
+        const pageResult = await this.pageGenerator.execute({
+          products,
+          context: `Top ${products.length} product recommendations based on your search.`,
+          userQuery: query,
+        });
+
+        if (pageResult.success && pageResult.result?.pageUrl) {
+          pageUrl = pageResult.result.pageUrl;
+        }
+      }
+
       return {
         success: true,
         result: {
-          message: `Found ${combinedResults.length} products.`,
-          results: combinedResults.map((r) => ({
-            productName: r.productName,
-            content: r.content,
-            score: r.score.toFixed(3),
-          })),
+          message: pageUrl
+            ? `Found ${combinedResults.length} products. View your personalized recommendations: ${pageUrl}`
+            : `Found ${combinedResults.length} products.`,
+          results: products,
+          pageUrl, // Include page URL in result
         },
       };
     } catch (error) {

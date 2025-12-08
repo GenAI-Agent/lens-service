@@ -7,7 +7,7 @@
 import { ToolResult, PageState } from '../config/types';
 
 interface WebUseParams {
-  action: 'click' | 'scroll' | 'highlight' | 'drag' | 'doubleClick' | 'scrollToElement' | 'deepCrawl';
+  action: 'click' | 'scroll' | 'highlight' | 'drag' | 'doubleClick' | 'scrollToElement' | 'deepCrawl' | 'navigate';
   selector?: string;
   direction?: 'up' | 'down' | 'top' | 'bottom';
   distance?: number;
@@ -16,6 +16,8 @@ interface WebUseParams {
   // For deepCrawl action
   maxDepth?: number;
   urlFilter?: string;
+  // For navigate action
+  url?: string;
 }
 
 type WidgetCallback = (action: string, params: any) => Promise<any>;
@@ -84,6 +86,15 @@ export class WebUseTool {
           const maxDepth = Math.min(params.maxDepth || 2, 3);
           return await this.deepCrawl(maxDepth, params.urlFilter);
         }
+
+        case 'navigate':
+          if (!params.url) {
+            return {
+              success: false,
+              error: 'url is required for navigate action',
+            };
+          }
+          return await this.navigate(params.url);
 
         default:
           return {
@@ -262,6 +273,27 @@ export class WebUseTool {
     return {
       success: false,
       error: result?.error || 'Failed to perform deep crawl',
+    };
+  }
+
+  /**
+   * Navigate to a URL
+   */
+  private async navigate(url: string): Promise<ToolResult> {
+    const result = await this.widgetCallback('navigate', { url });
+
+    if (result?.success) {
+      return {
+        success: true,
+        result: {
+          message: `Navigated to: ${url}`,
+        },
+      };
+    }
+
+    return {
+      success: false,
+      error: result?.error || 'Failed to navigate to URL',
     };
   }
 }

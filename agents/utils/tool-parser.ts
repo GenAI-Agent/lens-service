@@ -30,7 +30,10 @@ export class ToolParser {
     if (this.inToolBlock && this.buffer.includes('</tool>')) {
       const toolEnd = this.buffer.indexOf('</tool>');
       this.toolContent += this.buffer.substring(0, toolEnd);
-      this.buffer = this.buffer.substring(toolEnd + 7);
+
+      // CRITICAL: Discard everything after </tool> including </complete>
+      // LLM should NOT output anything after </tool> as per system prompt rules
+      this.buffer = '';
       this.inToolBlock = false;
 
       // Parse all <call> blocks inside <tool>

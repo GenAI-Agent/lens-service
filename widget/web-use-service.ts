@@ -6,6 +6,7 @@
 
 import TurndownService from 'turndown';
 import html2canvas from 'html2canvas';
+import { HighlightEffects, type HighlightStyle } from './effects/highlight-effects';
 
 export interface PageState {
   url: string;
@@ -28,12 +29,14 @@ export interface ActionableElement {
 export class WebUseService {
   private turndownService: TurndownService;
   private elementIdCounter = 0;
+  private highlightEffects: HighlightEffects;
 
   constructor() {
     this.turndownService = new TurndownService({
       headingStyle: 'atx',
       codeBlockStyle: 'fenced',
     });
+    this.highlightEffects = new HighlightEffects();
   }
 
   /**
@@ -274,28 +277,21 @@ export class WebUseService {
   async highlight(params: {
     selector: string;
     duration?: number;
+    style?: HighlightStyle;
   }): Promise<{ success: boolean; error?: string }> {
     try {
-      const { selector, duration = 2000 } = params;
+      const { selector, duration = 2000, style } = params;
       const el = document.querySelector(selector) as HTMLElement;
 
       if (!el) {
         return { success: false, error: 'Element not found' };
       }
 
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      await this.sleep(300);
+      // Auto-detect style if not specified
+      const effectStyle = style || this.highlightEffects.detectBestStyle(el);
 
-      const originalOutline = el.style.outline;
-      const originalBackground = el.style.backgroundColor;
-
-      el.style.outline = '3px solid #ff0000';
-      el.style.backgroundColor = 'rgba(255, 255, 0, 0.3)';
-
-      setTimeout(() => {
-        el.style.outline = originalOutline;
-        el.style.backgroundColor = originalBackground;
-      }, duration);
+      // Apply highlight effect
+      await this.highlightEffects.highlight(el, effectStyle, duration);
 
       return { success: true };
     } catch (error) {
@@ -543,6 +539,119 @@ export class WebUseService {
         summary,
         pages,
       };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Type text into input field
+   */
+  async type(params: {
+    selector: string;
+    text: string;
+    clear?: boolean;
+  }): Promise<{ success: boolean; error?: string }> {
+    try {
+      const { selector, text, clear = true } = params;
+      const el = document.querySelector(selector) as HTMLInputElement | HTMLTextAreaElement;
+
+      if (!el) {
+        return { success: false, error: 'Element not found' };
+      }
+
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      await this.sleep(300);
+
+      // Focus the element
+      el.focus();
+
+      // Clear existing text if requested
+      if (clear) {
+        el.value = '';
+      }
+
+      // Type the text
+      el.value += text;
+
+      // Trigger input event
+      const inputEvent = new Event('input', { bubbles: true, cancelable: true });
+      el.dispatchEvent(inputEvent);
+
+      // Trigger change event
+      const changeEvent = new Event('change', { bubbles: true, cancelable: true });
+      el.dispatchEvent(changeEvent);
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Extract text content from elements
+   */
+  async extract(params: {
+    selector: string;
+    attribute?: string;
+    all?: boolean;
+  }): Promise<{ success: boolean; data?: any; error?: string }> {
+    try {
+      const { selector, attribute, all = false } = params;
+
+      if (all) {
+        // Extract from all matching elements
+        const elements = document.querySelectorAll(selector);
+        const results: string[] = [];
+
+        elements.forEach((el) => {
+          if (attribute) {
+            const value = el.getAttribute(attribute);
+            if (value) results.push(value);
+          } else {
+            const text = el.textContent?.trim();
+            if (text) results.push(text);
+          }
+        });
+
+        return { success: true, data: results };
+      } else {
+        // Extract from first matching element
+        const el = document.querySelector(selector);
+        if (!el) {
+          return { success: false, error: 'Element not found' };
+        }
+
+        let data: string | null;
+        if (attribute) {
+          data = el.getAttribute(attribute);
+        } else {
+          data = el.textContent?.trim() || '';
+        }
+
+        return { success: true, data };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
+   * Take screenshot (public method for tool use)
+   */
+  async screenshot(): Promise<{ success: boolean; screenshot?: string; error?: string }> {
+    try {
+      const screenshotData = await this.takeScreenshot();
+      return { success: true, screenshot: screenshotData };
     } catch (error) {
       return {
         success: false,

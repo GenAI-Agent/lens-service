@@ -15,6 +15,8 @@ import { SkillParser } from './utils/skill-parser';
 import { KnowledgeSearchTool } from './tools/knowledge-search';
 import { ProductSearchTool } from './tools/product-search';
 import { WebUseTool } from './tools/web-use';
+import { WebAgentTool } from './tools/web-agent';
+import { AIPageGenerateTool } from './tools/ai-page-generate';
 
 interface AgentConfig {
   openaiApiKey: string;
@@ -33,6 +35,9 @@ export class SupervisorAgent extends EventEmitter {
   private knowledgeSearchTool: KnowledgeSearchTool;
   private productSearchTool: ProductSearchTool;
   private webUseTool: WebUseTool;
+  private webAgentTool: WebAgentTool;
+  private aiPageGenerateTool: AIPageGenerateTool;
+  private panelController: any;
   private abortController: AbortController | null = null;
 
   constructor(
@@ -53,6 +58,22 @@ export class SupervisorAgent extends EventEmitter {
     this.knowledgeSearchTool = new KnowledgeSearchTool(prisma, config.openaiApiKey);
     this.productSearchTool = new ProductSearchTool(prisma, config.openaiApiKey);
     this.webUseTool = new WebUseTool(widgetCallback);
+
+    // Initialize panel controller (will be set by widget if needed)
+    this.panelController = null;
+
+    // Initialize Web Agent Tool with panel controller
+    this.webAgentTool = new WebAgentTool(
+      {
+        openaiApiKey: config.openaiApiKey,
+        model: 'gpt-5.1',
+      },
+      widgetCallback,
+      this.panelController
+    );
+
+    // Initialize AI Page Generate Tool
+    this.aiPageGenerateTool = new AIPageGenerateTool('http://localhost:8080');
   }
 
   /**
@@ -98,16 +119,9 @@ export class SupervisorAgent extends EventEmitter {
         // Save assistant response to DB
         await this.memoryManager.saveMessage(context.sessionId, 'assistant', response);
 
-        // 檢查 response 是否包含 </complete> - 如果有就直接結束
-        if (response.includes('</complete>')) {
-          console.log('[Supervisor] 偵測到 </complete>，結束執行');
-          this.emit('event', { type: 'done' } as StreamEvent);
-          break;
-        }
-
         console.log('[Supervisor] Turn', turnCount, '- toolCalls:', toolCalls.length);
 
-        // Handle tool execution
+        // Handle tool execution FIRST (tool calls have priority over </complete>)
         if (toolCalls.length > 0) {
           console.log('[Supervisor] Executing', toolCalls.length, 'tool(s)');
 
@@ -133,10 +147,16 @@ export class SupervisorAgent extends EventEmitter {
           continue;
         }
 
-        // Check if memory compact is needed
-        if (await this.memoryManager.shouldCompact(context.sessionId)) {
-          await this.memoryManager.compactMemory(context.sessionId);
+        // Only check for </complete> if there are NO tool calls
+        if (response.includes('</complete>')) {
+          console.log('[Supervisor] 偵測到 </complete> (無 tool calls)，結束執行');
+          this.emit('event', { type: 'done' } as StreamEvent);
+          break;
         }
+
+        // If no tools and no complete tag, check if this is a normal response
+        // This shouldn't happen often as LLM should either call tools or output </complete>
+        console.log('[Supervisor] Warning: Response has no tool calls and no </complete> tag');
       }
 
       if (turnCount >= this.maxTurns) {
@@ -278,7 +298,14 @@ export class SupervisorAgent extends EventEmitter {
       case 'product_search':
         return await this.productSearchTool.execute(parameters as { query: string; topK?: number });
 
-      // Web interaction tools
+      case 'ai_page_generate':
+        return await this.aiPageGenerateTool.execute(parameters as { products: any[]; context?: string; userQuery?: string });
+
+      // Web Agent - LangChain-based sub-agent for complex web operations
+      case 'web_agent':
+        return await this.webAgentTool.execute(parameters as { task: string; pageState?: any });
+
+      // Legacy web interaction tools (kept for backwards compatibility)
       case 'click':
       case 'doubleClick':
       case 'scroll':
@@ -286,12 +313,13 @@ export class SupervisorAgent extends EventEmitter {
       case 'highlight':
       case 'drag':
       case 'deepCrawl':
+      case 'navigate':
         return await this.webUseTool.execute({ action: name, ...parameters } as any);
 
       default:
         return {
           success: false,
-          error: `Unknown tool: ${name}. Available tools: knowledge_search, product_search, click, doubleClick, scroll, scrollToElement, highlight, drag, deepCrawl`,
+          error: `Unknown tool: ${name}. Available tools: knowledge_search, product_search, ai_page_generate, web_agent, click, doubleClick, scroll, scrollToElement, highlight, drag, deepCrawl, navigate`,
         };
     }
   }
