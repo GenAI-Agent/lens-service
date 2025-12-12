@@ -12,17 +12,22 @@ export class ToolParser {
 
   /**
    * Add chunk to parser and check if tool block is complete
+   *
+   * IMPORTANT: This handles streaming where tags may be split across chunks
+   * e.g., '<' in one chunk, 'tool>' in next chunk
    */
   addChunk(chunk: string): { text: string; toolCalls: ToolCall[] } {
     this.buffer += chunk;
 
     // Check if we're entering a tool block
     if (!this.inToolBlock && this.buffer.includes('<tool>')) {
-      const beforeTool = this.buffer.substring(0, this.buffer.indexOf('<tool>'));
-      this.buffer = this.buffer.substring(this.buffer.indexOf('<tool>') + 6);
+      const toolStart = this.buffer.indexOf('<tool>');
+      const beforeTool = this.buffer.substring(0, toolStart);
+      this.buffer = this.buffer.substring(toolStart + 6);
       this.inToolBlock = true;
       this.toolContent = '';
 
+      console.log('[ToolParser] Entered tool block, before text:', beforeTool.substring(0, 50));
       return { text: beforeTool, toolCalls: [] };
     }
 
@@ -31,26 +36,41 @@ export class ToolParser {
       const toolEnd = this.buffer.indexOf('</tool>');
       this.toolContent += this.buffer.substring(0, toolEnd);
 
+      console.log('[ToolParser] Exiting tool block, content:', this.toolContent.substring(0, 100));
+
       // CRITICAL: Discard everything after </tool> including </complete>
       // LLM should NOT output anything after </tool> as per system prompt rules
       this.buffer = '';
       this.inToolBlock = false;
 
-      // Parse all <call> blocks inside <tool>
+      // Parse tool content
       const toolCalls = this.parseToolContent(this.toolContent);
+      console.log('[ToolParser] Parsed tool calls:', toolCalls.length, toolCalls);
       this.toolContent = '';
 
       return { text: '', toolCalls };
     }
 
-    // If in tool block, accumulate content
+    // If in tool block, accumulate content but DON'T return it as text
     if (this.inToolBlock) {
       this.toolContent += this.buffer;
       this.buffer = '';
       return { text: '', toolCalls: [] };
     }
 
-    // Otherwise, return all buffer as text
+    // NOT in tool block - but check if we might be at a partial tag
+    // Keep potential partial tags in buffer (last 6 chars could be start of <tool>)
+    if (this.buffer.length > 6) {
+      const potentialTagStart = this.buffer.lastIndexOf('<');
+      if (potentialTagStart > -1 && potentialTagStart >= this.buffer.length - 6) {
+        // Keep partial tag in buffer for next chunk
+        const text = this.buffer.substring(0, potentialTagStart);
+        this.buffer = this.buffer.substring(potentialTagStart);
+        return { text, toolCalls: [] };
+      }
+    }
+
+    // No partial tag, return all buffer as text
     const text = this.buffer;
     this.buffer = '';
     return { text, toolCalls: [] };

@@ -314,7 +314,10 @@ export class SupervisorAgent extends EventEmitter {
       case 'drag':
       case 'deepCrawl':
       case 'navigate':
-        return await this.webUseTool.execute({ action: name, ...parameters } as any);
+        console.log('[Supervisor] Executing web use tool:', name, 'with params:', parameters);
+        const webResult = await this.webUseTool.execute({ action: name, ...parameters } as any);
+        console.log('[Supervisor] Web use tool result:', webResult);
+        return webResult;
 
       default:
         return {

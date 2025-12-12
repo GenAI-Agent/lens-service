@@ -115,7 +115,9 @@ export class WebUseTool {
    * Click on element
    */
   private async click(selector: string): Promise<ToolResult> {
+    console.log('[WebUseTool] click - calling widgetCallback with selector:', selector);
     const result = await this.widgetCallback('click', { selector });
+    console.log('[WebUseTool] click - widgetCallback result:', result);
 
     if (result?.success) {
       return {
@@ -280,7 +282,9 @@ export class WebUseTool {
    * Navigate to a URL
    */
   private async navigate(url: string): Promise<ToolResult> {
+    console.log('[WebUseTool] navigate - calling widgetCallback with url:', url);
     const result = await this.widgetCallback('navigate', { url });
+    console.log('[WebUseTool] navigate - widgetCallback result:', result);
 
     if (result?.success) {
       return {

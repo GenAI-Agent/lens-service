@@ -22,6 +22,18 @@ const prisma = new PrismaClient();
 const telegramService = new TelegramService();
 const port = process.env.PORT || 3002;
 
+// Store pending widget action callbacks (requestId -> { resolve, reject, timeout })
+const pendingWidgetActions = new Map<string, {
+  resolve: (result: any) => void;
+  reject: (error: any) => void;
+  timeout: NodeJS.Timeout;
+}>();
+
+// Generate unique request ID
+function generateRequestId(): string {
+  return `wa-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
@@ -53,6 +65,33 @@ app.get('/flags/us.svg', (req, res) => {
 
 // Admin API routes
 app.use('/api/admin', createAdminRouter(prisma, process.env.OPENAI_API_KEY!));
+
+/**
+ * POST /api/lens/widget-result
+ * Frontend reports widget action execution result
+ */
+app.post('/api/lens/widget-result', (req: Request, res: Response) => {
+  const { requestId, success, result, error } = req.body;
+
+  console.log('[WidgetResult] Received result:', { requestId, success, error });
+
+  const pending = pendingWidgetActions.get(requestId);
+  if (pending) {
+    clearTimeout(pending.timeout);
+    pendingWidgetActions.delete(requestId);
+
+    pending.resolve({
+      success: success ?? false,
+      result: result ?? null,
+      error: error ?? null,
+    });
+
+    res.json({ received: true });
+  } else {
+    console.log('[WidgetResult] No pending action found for requestId:', requestId);
+    res.status(404).json({ error: 'No pending action found for this requestId' });
+  }
+});
 
 interface ChatRequest {
   sessionId?: string;
@@ -118,16 +157,35 @@ app.post('/api/chat', async (req: Request, res: Response) => {
         }
       }
 
-      // For normal widget mode, send action request to widget via SSE
+      // For normal widget mode, send action request to widget via SSE and wait for response
+      const requestId = generateRequestId();
+      console.log('[WidgetCallback] Sending widget_action via SSE:', { requestId, action, params });
+
+      // Create a promise that will be resolved when frontend reports back
+      const resultPromise = new Promise<any>((resolve, reject) => {
+        // Set timeout (10 seconds for most actions, 30 seconds for navigate)
+        const timeoutMs = action === 'navigate' ? 30000 : 10000;
+        const timeout = setTimeout(() => {
+          pendingWidgetActions.delete(requestId);
+          console.log('[WidgetCallback] Timeout waiting for action:', requestId);
+          resolve({ success: false, error: `Timeout waiting for ${action} action` });
+        }, timeoutMs);
+
+        pendingWidgetActions.set(requestId, { resolve, reject, timeout });
+      });
+
+      // Send SSE with requestId so frontend knows how to report back
       sendSSE(res, {
         type: 'widget_action',
+        requestId,
         action,
         params,
       });
 
-      // In real implementation, wait for widget response
-      // For now, return success
-      return { success: true };
+      // Wait for frontend to report result
+      const result = await resultPromise;
+      console.log('[WidgetCallback] Received result for action:', requestId, result);
+      return result;
     };
 
     // Create agent
